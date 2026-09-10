@@ -9,8 +9,6 @@ const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const TYPE_OPTIONS = [
   { value: "all", label: "All Type" },
-  { value: "post", label: "Post" },
-  { value: "comment", label: "Comment" },
   { value: "job-post", label: "Job Post" },
   { value: "declined-applicants", label: "Declined Applicants" },
   { value: "inactive-account", label: "Inactive Account" },
@@ -556,8 +554,6 @@ const AdminArchive = () => {
   const navigate = useNavigate();
   const [archiveGroups, setArchiveGroups] = useState([]);
   const [archiveOptions, setArchiveOptions] = useState({
-    campuses: [],
-    courses: [],
     companies: [],
     industries: [],
   });
@@ -568,12 +564,9 @@ const AdminArchive = () => {
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
-    role: "all",
-    type: "all",
-    campus: "all",
-    course: "all",
     company: "all",
     industry: "all",
+    type: "all",
     date: "all",
     dateFrom: "",
     dateTo: "",
@@ -581,17 +574,6 @@ const AdminArchive = () => {
 
   const updateFilter = (key, value) => {
     setFilters((previous) => ({ ...previous, [key]: value }));
-  };
-
-  const handleRoleChange = (value) => {
-    setFilters((previous) => ({
-      ...previous,
-      role: value,
-      campus: "all",
-      course: "all",
-      company: "all",
-      industry: "all",
-    }));
   };
 
   const handleDateFilterChange = (value) => {
@@ -625,12 +607,9 @@ const AdminArchive = () => {
       const response = await api.get("/admin/archive", {
         params: {
           q: filters.search,
-          role: hasSearch ? "all" : filters.role,
-          type: hasSearch ? "all" : filters.type,
-          campus: hasSearch ? "all" : filters.campus,
-          course: hasSearch ? "all" : filters.course,
           company: hasSearch ? "all" : filters.company,
           industry: hasSearch ? "all" : filters.industry,
+          type: hasSearch ? "all" : filters.type,
           date: hasSearch ? "all" : filters.date,
           dateFrom: hasSearch ? "" : filters.dateFrom,
           dateTo: hasSearch ? "" : filters.dateTo,
@@ -639,20 +618,13 @@ const AdminArchive = () => {
 
       setArchiveGroups(response.data?.archiveGroups || []);
       setArchiveOptions({
-        campuses: response.data?.options?.campuses || [],
-        courses: response.data?.options?.courses || [],
         companies: response.data?.options?.companies || [],
         industries: response.data?.options?.industries || [],
       });
     } catch (error) {
       console.error("Failed to load admin archive:", error);
       setArchiveGroups([]);
-      setArchiveOptions({
-        campuses: [],
-        courses: [],
-        companies: [],
-        industries: [],
-      });
+      setArchiveOptions({ companies: [], industries: [] });
       setErrorMessage(error?.response?.data?.message || "Failed to load archived records.");
     } finally {
       setLoading(false);
@@ -673,36 +645,29 @@ const AdminArchive = () => {
 
   const paginatedGroups = useMemo(() => {
     if (pageSize === "all") return archiveGroups;
-    const start = (safePage - 1) * pageSize;
-    return archiveGroups.slice(start, start + pageSize);
-  }, [archiveGroups, safePage, pageSize]);
+    const startIndex = (safePage - 1) * pageSize;
+    return archiveGroups.slice(startIndex, startIndex + pageSize);
+  }, [archiveGroups, pageSize, safePage]);
 
-  const isJobseekerView = filters.role === "jobseeker";
-  const isEmployerView = filters.role === "employer";
-
-  const filterGridClass =
-    isJobseekerView || isEmployerView
-      ? "grid gap-3 lg:grid-cols-[minmax(240px,1.45fr)_minmax(125px,0.65fr)_minmax(135px,0.72fr)_minmax(145px,0.8fr)_minmax(155px,0.9fr)_minmax(165px,0.85fr)]"
-      : "grid gap-3 lg:grid-cols-[minmax(300px,1.7fr)_minmax(140px,0.65fr)_minmax(160px,0.75fr)_minmax(170px,0.8fr)]";
-
-  const tableGridClass = isJobseekerView
-    ? "grid-cols-[1.3fr_0.85fr_1.35fr_1.2fr_0.9fr_0.55fr]"
-    : isEmployerView
-      ? "grid-cols-[1.3fr_1fr_1.1fr_1.2fr_0.9fr_0.55fr]"
-      : "grid-cols-[1.45fr_0.7fr_1.4fr_0.8fr_0.55fr]";
+  const openDetails = (entry) => {
+    if (!entry?.accountId) return;
+    navigate(`/admin/archive/account/${entry.accountId}`);
+  };
 
   return (
     <AdminLayout>
       <main className="mx-auto w-full max-w-[1480px] px-1 py-7 sm:py-8">
         <header className="mb-5">
-          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Archived</h1>
+          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">
+            Archived
+          </h1>
           <p className="mt-1.5 text-sm text-slate-600">
-            Manage archived jobseekers, employers, posts, comments, and inactive accounts.
+            Manage archived employer accounts, job posts, declined applicants, and inactive accounts.
           </p>
         </header>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-          <div className={filterGridClass}>
+          <div className="grid gap-3 lg:grid-cols-[minmax(300px,1.6fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)]">
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
               <Icon
@@ -713,19 +678,31 @@ const AdminArchive = () => {
                 type="search"
                 value={filters.search}
                 onChange={(event) => updateFilter("search", event.target.value)}
-                placeholder="Search name, role, archived type..."
+                placeholder="Search name, company, industry..."
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10"
               />
             </label>
 
             <SelectField
-              value={filters.role}
-              onChange={(event) => handleRoleChange(event.target.value)}
-              ariaLabel="Filter by role"
+              value={filters.company}
+              onChange={(event) => updateFilter("company", event.target.value)}
+              ariaLabel="Filter by company"
             >
-              <option value="all">All Roles</option>
-              <option value="jobseeker">Jobseeker</option>
-              <option value="employer">Employer</option>
+              <option value="all">All Company</option>
+              {archiveOptions.companies.map((company) => (
+                <option key={company} value={company}>{company}</option>
+              ))}
+            </SelectField>
+
+            <SelectField
+              value={filters.industry}
+              onChange={(event) => updateFilter("industry", event.target.value)}
+              ariaLabel="Filter by industry"
+            >
+              <option value="all">All Industry</option>
+              {archiveOptions.industries.map((industry) => (
+                <option key={industry} value={industry}>{industry}</option>
+              ))}
             </SelectField>
 
             <SelectField
@@ -734,71 +711,9 @@ const AdminArchive = () => {
               ariaLabel="Filter by archived type"
             >
               {TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+                <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </SelectField>
-
-            {isJobseekerView ? (
-              <>
-                <SelectField
-                  value={filters.campus}
-                  onChange={(event) => updateFilter("campus", event.target.value)}
-                  ariaLabel="Filter by campus"
-                >
-                  <option value="all">All Campus</option>
-                  {archiveOptions.campuses.map((campus) => (
-                    <option key={campus} value={campus}>
-                      {campus}
-                    </option>
-                  ))}
-                </SelectField>
-
-                <SelectField
-                  value={filters.course}
-                  onChange={(event) => updateFilter("course", event.target.value)}
-                  ariaLabel="Filter by course"
-                >
-                  <option value="all">All Course</option>
-                  {archiveOptions.courses.map((course) => (
-                    <option key={course} value={course}>
-                      {course}
-                    </option>
-                  ))}
-                </SelectField>
-              </>
-            ) : null}
-
-            {isEmployerView ? (
-              <>
-                <SelectField
-                  value={filters.company}
-                  onChange={(event) => updateFilter("company", event.target.value)}
-                  ariaLabel="Filter by company"
-                >
-                  <option value="all">All Company</option>
-                  {archiveOptions.companies.map((company) => (
-                    <option key={company} value={company}>
-                      {company}
-                    </option>
-                  ))}
-                </SelectField>
-
-                <SelectField
-                  value={filters.industry}
-                  onChange={(event) => updateFilter("industry", event.target.value)}
-                  ariaLabel="Filter by industry"
-                >
-                  <option value="all">All Industry</option>
-                  {archiveOptions.industries.map((industry) => (
-                    <option key={industry} value={industry}>
-                      {industry}
-                    </option>
-                  ))}
-                </SelectField>
-              </>
-            ) : null}
 
             <DateFilterDropdown
               value={filters.date}
@@ -815,30 +730,13 @@ const AdminArchive = () => {
         </section>
 
         <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-          <div className="max-w-full overflow-x-auto lg:overflow-x-hidden">
-            <div className={isJobseekerView || isEmployerView ? "min-w-[960px] lg:min-w-0" : "min-w-[820px] lg:min-w-0"}>
-              <div
-                className={cn(
-                  "grid gap-4 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600",
-                  tableGridClass
-                )}
-              >
+          <div className="overflow-x-auto">
+            <div className="min-w-[980px]">
+              <div className="grid grid-cols-[1.35fr_1.1fr_1.1fr_1.3fr_0.55fr] gap-4 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 <span>Name</span>
-                {isJobseekerView ? (
-                  <>
-                    <span>Campus</span>
-                    <span>Course</span>
-                  </>
-                ) : isEmployerView ? (
-                  <>
-                    <span>Company</span>
-                    <span>Industry</span>
-                  </>
-                ) : (
-                  <span>Role</span>
-                )}
+                <span>Company</span>
+                <span>Industry</span>
                 <span>Archived Type</span>
-                <span>Contact Number</span>
                 <span className="text-center">Actions</span>
               </div>
 
@@ -860,17 +758,14 @@ const AdminArchive = () => {
                       key={entry.accountId}
                       role="button"
                       tabIndex={0}
-                      onClick={() => navigate(`/admin/archive/account/${entry.accountId}`)}
+                      onClick={() => openDetails(entry)}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          navigate(`/admin/archive/account/${entry.accountId}`);
+                          openDetails(entry);
                         }
                       }}
-                      className={cn(
-                        "grid cursor-pointer items-center gap-4 border-b border-slate-200 px-5 py-3.5 transition last:border-b-0 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#212C61]/30",
-                        tableGridClass
-                      )}
+                      className="grid cursor-pointer grid-cols-[1.35fr_1.1fr_1.1fr_1.3fr_0.55fr] items-center gap-4 border-b border-slate-200 px-5 py-3.5 transition last:border-b-0 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#212C61]/30"
                       aria-label={`Open archived records of ${name}`}
                     >
                       <div className="flex min-w-0 items-center gap-3">
@@ -889,42 +784,22 @@ const AdminArchive = () => {
                         </div>
                       </div>
 
-                      {isJobseekerView ? (
-                        <>
-                          <span className="truncate text-sm text-slate-600" title={entry.campus || ""}>
-                            {entry.campus || "—"}
-                          </span>
-                          <span className="truncate text-sm text-slate-600" title={entry.course || ""}>
-                            {entry.course || "—"}
-                          </span>
-                        </>
-                      ) : isEmployerView ? (
-                        <>
-                          <span className="truncate text-sm text-slate-600" title={entry.company || ""}>
-                            {entry.company || "—"}
-                          </span>
-                          <span className="truncate text-sm text-slate-600" title={entry.industry || ""}>
-                            {entry.industry || "—"}
-                          </span>
-                        </>
-                      ) : (
-                        <div>
-                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold capitalize text-black">
-                            {entry.role || "—"}
-                          </span>
-                        </div>
-                      )}
+                      <span className="truncate text-sm text-slate-600" title={entry.company || ""}>
+                        {entry.company || "—"}
+                      </span>
+
+                      <span className="truncate text-sm text-slate-600" title={entry.industry || ""}>
+                        {entry.industry || "—"}
+                      </span>
 
                       <ArchiveTypeBadges types={entry.archivedTypes || []} />
-
-                      <span className="text-sm text-slate-600">{entry.contactNumber || "—"}</span>
 
                       <div className="flex justify-center">
                         <button
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            navigate(`/admin/archive/account/${entry.accountId}`);
+                            openDetails(entry);
                           }}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                           aria-label={`Open archived records of ${name}`}

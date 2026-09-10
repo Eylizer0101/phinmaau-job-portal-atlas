@@ -1094,16 +1094,9 @@ const AdminArchiveDetails = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [communityModalRecord, setCommunityModalRecord] = useState(null);
-  const [declinedModalRecord, setDeclinedModalRecord] = useState(null);
-  const [selectedDeclinedApplicant, setSelectedDeclinedApplicant] = useState(null);
-  const [selectedApplication, setSelectedApplication] = useState(null);
-  const [applicantDetailsLoading, setApplicantDetailsLoading] = useState(false);
-  const [applicantDetailsError, setApplicantDetailsError] = useState("");
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
-    type: "all",
     title: "all",
     date: "all",
     dateFrom: "",
@@ -1170,121 +1163,65 @@ const AdminArchiveDetails = () => {
     setCurrentPage(1);
   }, [filters]);
 
-  const isJobseekerAccount = String(account?.role || "").toLowerCase() === "jobseeker";
-  const isEmployerAccount = String(account?.role || "").toLowerCase() === "employer";
-
-  const secondaryFilterOptions = useMemo(() => {
+  const jobTitleOptions = useMemo(() => {
     const values = records
-      .filter((record) =>
-        isJobseekerAccount
-          ? ["post", "comment"].includes(record.archiveType)
-          : ["job-post", "declined-applicants", "inactive-account"].includes(record.archiveType)
-      )
-      .map((record) =>
-        isJobseekerAccount
-          ? String(record.category || "").trim()
-          : String(record.title || "").trim()
-      )
+      .filter((record) => ["job-post", "declined-applicants"].includes(record.archiveType))
+      .map((record) => String(record.title || "").trim())
       .filter(Boolean);
 
-    return [...new Set(values)].sort((first, second) => first.localeCompare(second));
-  }, [isJobseekerAccount, records]);
+    return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+  }, [records]);
 
   const visibleRecords = useMemo(() => {
     const query = filters.search.trim().toLowerCase();
     const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
     const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59.999`) : null;
 
-    const filtered = records.filter((record) => {
-      const allowedTypes = isJobseekerAccount
-        ? ["post", "comment"]
-        : isEmployerAccount
-          ? ["job-post", "declined-applicants", "inactive-account"]
-          : [];
+    return records
+      .filter((record) => ["job-post", "declined-applicants", "inactive-account"].includes(record.archiveType))
+      .filter((record) => {
+        if (filters.title !== "all" && String(record.title || "").trim() !== filters.title) return false;
 
-      if (!allowedTypes.includes(record.archiveType)) return false;
-      if (filters.type !== "all" && record.archiveType !== filters.type) return false;
+        if (query) {
+          const searchable = [
+            record.title,
+            record.typeLabel,
+            record.status,
+            record.companyName,
+            ...(Array.isArray(record.applicants)
+              ? record.applicants.flatMap((applicant) => [
+                  applicant.applicantName,
+                  applicant.email,
+                  applicant.declinedStage,
+                ])
+              : []),
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
 
-      const secondaryValue = isJobseekerAccount
-        ? String(record.category || "").trim()
-        : String(record.title || "").trim();
-      if (filters.title !== "all" && secondaryValue !== filters.title) return false;
+          if (!searchable.includes(query)) return false;
+        }
 
-      if (query) {
-        const searchable = [
-          record.typeLabel,
-          record.title,
-          record.category,
-          ...(Array.isArray(record.topics) ? record.topics : []),
-          record.content,
-          record.postContent,
-          ...(Array.isArray(record.applicants)
-            ? record.applicants.flatMap((applicant) => [
-                applicant.applicantName,
-                applicant.email,
-                applicant.declinedStage,
-              ])
-            : []),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
+        if (filters.date !== "all") {
+          const archivedAt = new Date(record.archivedAt || 0);
+          if (Number.isNaN(archivedAt.getTime())) return false;
+          if (from && archivedAt < from) return false;
+          if (to && archivedAt > to) return false;
+        }
 
-        if (!searchable.includes(query)) return false;
-      }
-
-      if (filters.date !== "all") {
-        const archivedAt = new Date(record.archivedAt || 0);
-        if (Number.isNaN(archivedAt.getTime())) return false;
-        if (from && archivedAt < from) return false;
-        if (to && archivedAt > to) return false;
-      }
-
-      return true;
-    });
-
-    return [...filtered].sort(
-      (first, second) =>
-        new Date(second.archivedAt || 0) - new Date(first.archivedAt || 0)
-    );
-  }, [filters, isEmployerAccount, isJobseekerAccount, records]);
+        return true;
+      })
+      .sort((a, b) => new Date(b.archivedAt || 0) - new Date(a.archivedAt || 0));
+  }, [filters, records]);
 
   const pageCount = pageSize === "all" ? 1 : Math.max(1, Math.ceil(visibleRecords.length / pageSize));
   const safePage = Math.min(currentPage, pageCount);
   const paginatedRecords = useMemo(() => {
     if (pageSize === "all") return visibleRecords;
-    const start = (safePage - 1) * pageSize;
-    return visibleRecords.slice(start, start + pageSize);
+    const startIndex = (safePage - 1) * pageSize;
+    return visibleRecords.slice(startIndex, startIndex + pageSize);
   }, [pageSize, safePage, visibleRecords]);
-
-  const handleViewDeclinedApplicant = async (applicant) => {
-    const applicationId = applicant?.applicationId || applicant?._id;
-    if (!applicationId) return;
-
-    setSelectedDeclinedApplicant(applicant);
-    setSelectedApplication(null);
-    setApplicantDetailsError("");
-    setApplicantDetailsLoading(true);
-
-    try {
-      const response = await api.get(`/applications/${applicationId}`);
-      setSelectedApplication(response.data?.application || null);
-    } catch (error) {
-      console.error("Failed to load declined applicant details:", error);
-      setApplicantDetailsError(
-        error?.response?.data?.message || "Unable to load the complete application details."
-      );
-    } finally {
-      setApplicantDetailsLoading(false);
-    }
-  };
-
-  const closeDeclinedApplicantDetails = () => {
-    setSelectedDeclinedApplicant(null);
-    setSelectedApplication(null);
-    setApplicantDetailsError("");
-    setApplicantDetailsLoading(false);
-  };
 
   const handleViewRecord = (record) => {
     if (record.archiveType === "job-post" && record.jobId) {
@@ -1298,13 +1235,14 @@ const AdminArchiveDetails = () => {
       return;
     }
 
-    if (record.archiveType === "declined-applicants") {
-      setDeclinedModalRecord(record);
-      return;
-    }
-
-    if (record.archiveType === "post" || record.archiveType === "comment") {
-      setCommunityModalRecord(record);
+    if (record.archiveType === "declined-applicants" && record.jobId) {
+      navigate(`/admin/archive/account/${id}/job/${record.jobId}/declined-applicants`, {
+        state: {
+          jobTitle: record.title,
+          backPath: `/admin/archive/account/${id}`,
+          backLabel: "Archive Details",
+        },
+      });
       return;
     }
 
@@ -1321,12 +1259,20 @@ const AdminArchiveDetails = () => {
     }
   };
 
-  const accountName = getName(account || {});
+  const employerProfile = account?.employerProfile || {};
+  const companyName = employerProfile.companyName || account?.companyName || getName(account || {});
+  const industry = employerProfile.industry || employerProfile.businessType || summary.industryOrCourse || "Industry not specified";
+  const companyAddress =
+    employerProfile.companyAddress ||
+    employerProfile.regionCity ||
+    employerProfile.address ||
+    summary.location ||
+    "Company address not specified";
+
   const avatarUrl = resolveMediaUrl(
-    account?.employerProfile?.companyLogo ||
+    employerProfile.companyLogo ||
       account?.companyLogo ||
       account?.profileImage ||
-      account?.jobSeekerProfile?.profileImage ||
       ""
   );
 
@@ -1343,36 +1289,31 @@ const AdminArchiveDetails = () => {
             Back
           </button>
 
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-fuchsia-200 text-sm font-bold text-[#212C61]">
-            {avatarUrl ? <img src={avatarUrl} alt={accountName} className="h-full w-full object-cover" /> : getInitials(accountName)}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-sm font-bold text-[#212C61]">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={companyName} className="h-full w-full object-cover" />
+            ) : (
+              getInitials(companyName)
+            )}
           </div>
 
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="truncate text-2xl font-bold text-black">{accountName}</h1>
-              {isJobseekerAccount && summary.graduationYear ? (
-                <span className="inline-flex rounded-full bg-[#212C61]/10 px-3 py-1 text-xs font-semibold text-[#212C61]">
-                  Class of {summary.graduationYear}
-                </span>
-              ) : null}
-            </div>
+            <h1 className="truncate text-2xl font-bold text-black">{companyName}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
               <span className="inline-flex items-center gap-1.5">
                 <Icon name="building" className="h-3.5 w-3.5" />
-                {summary.industryOrCourse || account?.role || "Archived account"}
+                {industry}
               </span>
-              {summary.location ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <Icon name="location" className="h-3.5 w-3.5" />
-                  {summary.location}
-                </span>
-              ) : null}
+              <span className="inline-flex items-center gap-1.5">
+                <Icon name="location" className="h-3.5 w-3.5" />
+                {companyAddress}
+              </span>
             </div>
           </div>
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(280px,1.6fr)_minmax(140px,0.75fr)_minmax(180px,0.95fr)_minmax(170px,0.85fr)]">
+          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(320px,1.5fr)_minmax(220px,0.9fr)_minmax(180px,0.8fr)]">
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
               <Icon
@@ -1383,41 +1324,19 @@ const AdminArchiveDetails = () => {
                 type="search"
                 value={filters.search}
                 onChange={(event) => updateFilter("search", event.target.value)}
-                placeholder={isJobseekerAccount ? "Search category or content..." : "Search job title or content..."}
+                placeholder="Search job title or content..."
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10"
               />
             </label>
 
             <SelectField
-              value={filters.type}
-              onChange={(event) => updateFilter("type", event.target.value)}
-              ariaLabel="Filter by archived type"
-            >
-              <option value="all">All Type</option>
-              {isJobseekerAccount ? (
-                <>
-                  <option value="post">Post</option>
-                  <option value="comment">Comment</option>
-                </>
-              ) : (
-                <>
-                  <option value="job-post">Job Post</option>
-                  <option value="declined-applicants">Declined Applicants</option>
-                  <option value="inactive-account">Inactive Account</option>
-                </>
-              )}
-            </SelectField>
-
-            <SelectField
               value={filters.title}
               onChange={(event) => updateFilter("title", event.target.value)}
-              ariaLabel={isJobseekerAccount ? "Filter by category" : "Filter by job title"}
+              ariaLabel="Filter by job title"
             >
-              <option value="all">{isJobseekerAccount ? "All Category" : "All Job Title"}</option>
-              {secondaryFilterOptions.map((value) => (
-                <option key={value} value={value}>
-                  {isJobseekerAccount ? formatCategoryLabel(value) : value}
-                </option>
+              <option value="all">All Job Title</option>
+              {jobTitleOptions.map((value) => (
+                <option key={value} value={value}>{value}</option>
               ))}
             </SelectField>
 
@@ -1428,26 +1347,18 @@ const AdminArchiveDetails = () => {
               disabled={loading}
               onSelect={handleDateFilterChange}
             />
-
           </div>
 
-
           <div className="overflow-x-auto">
-            <div className={isJobseekerAccount ? "min-w-[620px]" : "min-w-[560px]"}>
-              {isJobseekerAccount ? (
-                <div className="grid grid-cols-[0.8fr_1.65fr_0.9fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
-                  <span>Type</span>
-                  <span>Category</span>
-                  <span>Archived Date</span>
-                  <span className="text-center">Actions</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-[0.85fr_2fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
-                  <span>Type</span>
-                  <span>Job Title</span>
-                  <span className="text-center">Actions</span>
-                </div>
-              )}
+            <div className="min-w-[1000px]">
+              <div className="grid grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                <span>Job Title</span>
+                <span>Archived Type</span>
+                <span>Vacancy</span>
+                <span>Applicant</span>
+                <span>Status</span>
+                <span className="text-center">Actions</span>
+              </div>
 
               {loading ? (
                 <div className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">
@@ -1459,7 +1370,7 @@ const AdminArchiveDetails = () => {
                 </div>
               ) : paginatedRecords.length === 0 ? (
                 <div className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">
-                  No archived records found for this account.
+                  No archived records found for this employer.
                 </div>
               ) : (
                 paginatedRecords.map((record) => (
@@ -1474,30 +1385,21 @@ const AdminArchiveDetails = () => {
                         handleViewRecord(record);
                       }
                     }}
-                    className={cn(
-                      "cursor-pointer items-center gap-4 border-b border-slate-200 px-5 py-4 transition last:border-b-0 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#212C61]/30",
-                      isJobseekerAccount
-                        ? "grid grid-cols-[0.8fr_1.65fr_0.9fr_0.55fr]"
-                        : "grid grid-cols-[0.85fr_2fr_0.55fr]"
-                    )}
-                    aria-label={`Open ${record.typeLabel}`}
+                    className="grid cursor-pointer grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] items-center gap-4 border-b border-slate-200 px-5 py-4 transition last:border-b-0 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#212C61]/30"
                   >
-                    <div>
-                      <TypeBadge type={record.archiveType} label={record.typeLabel} />
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-black">
-                        {isJobseekerAccount
-                          ? formatCategoryLabel(record.category)
-                          : record.title || "Archived record"}
-                      </p>
-                    </div>
-
-                    {isJobseekerAccount ? (
-                      <span className="text-sm text-slate-600">{formatDate(record.archivedAt)}</span>
-                    ) : null}
-
+                    <span className="truncate text-sm font-semibold text-black">
+                      {record.title || "Archived record"}
+                    </span>
+                    <div><TypeBadge type={record.archiveType} label={record.typeLabel} /></div>
+                    <span className="text-sm text-slate-600">
+                      {record.vacancies ?? "—"}
+                    </span>
+                    <span className="text-sm text-slate-600">
+                      {record.applicantCount ?? (Array.isArray(record.applicants) ? record.applicants.length : "—")}
+                    </span>
+                    <span className="text-sm font-medium capitalize text-slate-700">
+                      {record.status || (record.archiveType === "declined-applicants" ? "Declined" : "—")}
+                    </span>
                     <div className="flex justify-center">
                       <button
                         type="button"
@@ -1505,7 +1407,7 @@ const AdminArchiveDetails = () => {
                           event.stopPropagation();
                           handleViewRecord(record);
                         }}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61]/30"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61]"
                         aria-label={`View ${record.typeLabel}`}
                         title={`View ${record.typeLabel}`}
                       >
@@ -1534,28 +1436,6 @@ const AdminArchiveDetails = () => {
         endDate={filters.dateTo}
         onCancel={() => setShowCustomDateModal(false)}
         onApply={applyCustomDateRange}
-      />
-
-      <CommunityContentModal
-        record={communityModalRecord}
-        account={account}
-        onClose={() => setCommunityModalRecord(null)}
-      />
-      <DeclinedApplicantsModal
-        record={selectedDeclinedApplicant ? null : declinedModalRecord}
-        onClose={() => {
-          closeDeclinedApplicantDetails();
-          setDeclinedModalRecord(null);
-        }}
-        onViewApplicant={handleViewDeclinedApplicant}
-      />
-      <DeclinedApplicantDetailsModal
-        applicant={selectedDeclinedApplicant}
-        record={declinedModalRecord}
-        application={selectedApplication}
-        loading={applicantDetailsLoading}
-        errorMessage={applicantDetailsError}
-        onBack={closeDeclinedApplicantDetails}
       />
     </AdminLayout>
   );

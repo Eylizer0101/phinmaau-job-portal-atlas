@@ -3698,25 +3698,23 @@ exports.getAdminArchive = async (req, res) => {
     const getSecondaryText = (user = {}) => user?.email || '';
 
     const typeDefinitions = {
-      post: { key: 'post', label: 'Post', order: 1 },
-      comment: { key: 'comment', label: 'Comment', order: 2 },
-      'job-post': { key: 'job-post', label: 'Job Post', order: 3 },
+      'job-post': { key: 'job-post', label: 'Job Post', order: 1 },
       'declined-applicants': {
         key: 'declined-applicants',
         label: 'Declined Applicants',
-        order: 4,
+        order: 2,
       },
       'inactive-account': {
         key: 'inactive-account',
         label: 'Inactive Account',
-        order: 5,
+        order: 3,
       },
     };
 
     const grouped = new Map();
 
     const ensureGroup = (account) => {
-      if (!account?._id) return null;
+      if (!account?._id || String(account.role || '').toLowerCase() !== 'employer') return null;
       const accountId = String(account._id);
 
       if (!grouped.has(accountId)) {
@@ -3775,23 +3773,14 @@ exports.getAdminArchive = async (req, res) => {
       }
     };
 
-    const [communityPosts, archivedJobs, archivedDeclinedApplications, inactiveUsers] =
+    const [archivedJobs, archivedDeclinedApplications, inactiveUsers] =
       await Promise.all([
-        CommunityPost.find({
-          $or: [
-            { isDeleted: true },
-            { comments: { $elemMatch: { isDeleted: true } } },
-          ],
-        })
-          .populate('author', archiveUserFields)
-          .populate('comments.author', archiveUserFields)
-          .lean(),
         Job.find({
           $or: [{ isArchived: true }, { archivedAt: { $ne: null } }],
         })
           .populate('employer', archiveUserFields)
           .select(
-            'title companyName companyLogo employer status isActive isPublished isArchived archivedAt applicationDeadline createdAt updatedAt'
+            'title companyName companyLogo employer status vacancies isActive isPublished isArchived archivedAt applicationDeadline createdAt updatedAt'
           )
           .lean(),
         Application.find({
@@ -3814,31 +3803,6 @@ exports.getAdminArchive = async (req, res) => {
           .select(archiveUserFields)
           .lean(),
       ]);
-
-    communityPosts.forEach((post) => {
-      if (post.isDeleted === true) {
-        addRecord(post.author, {
-          archiveType: 'post',
-          typeLabel: 'Post',
-          title: 'Community Post',
-          content: post.content || '',
-          archivedAt: post.deletedAt || post.updatedAt,
-          searchText: [post.category, ...(post.topics || [])].filter(Boolean).join(' '),
-        });
-      }
-
-      (post.comments || []).forEach((comment) => {
-        if (comment.isDeleted !== true) return;
-        addRecord(comment.author, {
-          archiveType: 'comment',
-          typeLabel: 'Comment',
-          title: 'Community Comment',
-          content: comment.content || '',
-          postContent: post.content || '',
-          archivedAt: comment.deletedAt || comment.updatedAt,
-        });
-      });
-    });
 
     archivedJobs.forEach((job) => {
       addRecord(job.employer, {
@@ -4066,23 +4030,14 @@ exports.getAdminArchiveDetails = async (req, res) => {
         });
       }
 
-      const [communityPosts, archivedJobs, archivedDeclinedApplications] = await Promise.all([
-        CommunityPost.find({
-          $or: [
-            { author: id, isDeleted: true },
-            { comments: { $elemMatch: { author: id, isDeleted: true } } },
-          ],
-        })
-          .populate('deletedBy', 'email firstName middleName lastName fullName')
-          .populate('comments.deletedBy', 'email firstName middleName lastName fullName')
-          .lean(),
+      const [archivedJobs, archivedDeclinedApplications] = await Promise.all([
         account.role === 'employer'
           ? Job.find({
               employer: id,
               $or: [{ isArchived: true }, { archivedAt: { $ne: null } }],
             })
               .select(
-                'title companyName companyLogo employer status applicationDeadline isActive isPublished isArchived archivedAt createdAt updatedAt'
+                'title companyName companyLogo employer status vacancies applicationDeadline isActive isPublished isArchived archivedAt createdAt updatedAt'
               )
               .lean()
           : [],
@@ -4092,7 +4047,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
               status: 'declined',
               isDeclinedArchived: true,
             })
-              .populate('job', 'title companyName companyLogo')
+              .populate('job', 'title companyName companyLogo vacancies status')
               .populate(
                 'jobseeker',
                 'email firstName middleName lastName fullName profileImage jobSeekerProfile'
@@ -4105,47 +4060,18 @@ exports.getAdminArchiveDetails = async (req, res) => {
           : [],
       ]);
 
+      const archivedJobIds = archivedJobs.map((job) => job._id);
+      const applicantCountRows = archivedJobIds.length
+        ? await Application.aggregate([
+            { $match: { job: { $in: archivedJobIds } } },
+            { $group: { _id: '$job', count: { $sum: 1 } } },
+          ])
+        : [];
+      const applicantCountByJob = new Map(
+        applicantCountRows.map((row) => [String(row._id), Number(row.count || 0)])
+      );
+
       const records = [];
-
-      communityPosts.forEach((post) => {
-        if (String(post.author || '') === String(id) && post.isDeleted === true) {
-          records.push({
-            recordId: `post-${post._id}`,
-            archiveType: 'post',
-            typeLabel: 'Post',
-            title: 'Community Post',
-            subtitle: post.category ? `Category: ${post.category}` : '',
-            content: post.content || '',
-            category: post.category || '',
-            topics: post.topics || [],
-            imageUrl: post.imageUrl || '',
-            linkUrl: post.linkUrl || '',
-            archivedAt: post.deletedAt || post.updatedAt,
-            archivedBy: getArchiveUserName(post.deletedBy || {}),
-            postId: String(post._id),
-          });
-        }
-
-        (post.comments || []).forEach((comment) => {
-          if (String(comment.author || '') !== String(id) || comment.isDeleted !== true) return;
-
-          records.push({
-            recordId: `comment-${comment._id}`,
-            archiveType: 'comment',
-            typeLabel: 'Comment',
-            title: 'Community Comment',
-            subtitle: post.category ? `Category: ${post.category}` : '',
-            content: comment.content || '',
-            postContent: post.content || '',
-            category: post.category || '',
-            topics: post.topics || [],
-            archivedAt: comment.deletedAt || comment.updatedAt,
-            archivedBy: getArchiveUserName(comment.deletedBy || {}),
-            postId: String(post._id),
-            commentId: String(comment._id),
-          });
-        });
-      });
 
       archivedJobs.forEach((job) => {
         records.push({
@@ -4157,6 +4083,9 @@ exports.getAdminArchiveDetails = async (req, res) => {
           archivedAt: job.archivedAt || job.updatedAt,
           jobId: String(job._id),
           companyName: job.companyName || getArchiveUserName(account),
+          vacancies: Number(job.vacancies || 0),
+          applicantCount: applicantCountByJob.get(String(job._id)) || 0,
+          status: String(job.status || (job.isPublished ? 'published' : 'draft')),
         });
       });
 
@@ -4178,6 +4107,9 @@ exports.getAdminArchiveDetails = async (req, res) => {
             archivedAt,
             jobId: jobId === 'unknown-job' ? '' : jobId,
             companyName: application.job?.companyName || getArchiveUserName(account),
+            vacancies: Number(application.job?.vacancies || 0),
+            applicantCount: 0,
+            status: 'declined',
             applicants: [],
           });
         }
@@ -4211,6 +4143,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
         group.applicants.push({
           applicationId: String(application._id),
           _id: String(application._id),
+          jobseekerId: String(jobseeker._id || ''),
           applicantName:
             jobseeker.fullName ||
             [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
@@ -4230,6 +4163,8 @@ exports.getAdminArchiveDetails = async (req, res) => {
             declinedActivity?.occurredAt || application.reviewedAt || application.updatedAt,
           archivedAt,
         });
+
+        group.applicantCount = group.applicants.length;
       });
 
       records.push(...declinedByJob.values());
@@ -4363,6 +4298,20 @@ exports.getAdminArchiveDetails = async (req, res) => {
         .sort({ reviewedAt: -1, updatedAt: -1 })
         .lean();
 
+      const isDraft =
+        String(job.status || '').toLowerCase() === 'draft' ||
+        job.isPublished === false;
+
+      const allApplications = isDraft
+        ? []
+        : await Application.find({ job: id })
+            .populate(
+              'jobseeker',
+              'email firstName middleName lastName fullName profileImage jobSeekerProfile'
+            )
+            .sort({ appliedAt: -1, createdAt: -1 })
+            .lean();
+
       const now = new Date();
 
       const isExpired =
@@ -4427,6 +4376,8 @@ exports.getAdminArchiveDetails = async (req, res) => {
         job,
         isClosed,
         isExpired,
+        isDraft,
+        applicants: allApplications,
         declinedApplicants,
       });
     }

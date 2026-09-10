@@ -811,6 +811,13 @@ const AdminJobView = () => {
 
         setJob(patchedJob);
 
+        if (isArchivedView) {
+          const archivedApplicants = Array.isArray(response.data?.applicants)
+            ? response.data.applicants
+            : [];
+          setApplicants(archivedApplicants);
+        }
+
         if (jobData.employerDetails) {
           setCompanyInfo({
             companyName: jobData.employerDetails.companyName || '',
@@ -1039,13 +1046,66 @@ const AdminJobView = () => {
                 </div>
 
                 {isArchivedView ? (
-                  <div className="flex w-full shrink-0 justify-center lg:w-[260px]">
+                  <div className="flex w-full shrink-0 flex-col gap-3 lg:w-[285px]">
                     <div className="w-full rounded-xl border border-[#d8e2ee] bg-[#f7faff] px-5 py-4 text-center">
                       <p className="text-xs font-semibold text-black/55">Archived Date</p>
                       <p className="mt-1 text-base font-bold text-black">
                         {formatArchivedDate(job.archivedAt || job.updatedAt)}
                       </p>
                     </div>
+
+                    {String(job.status || "").toLowerCase() !== "draft" && job.isPublished !== false ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/admin/jobs/${jobId}/applicants`, {
+                            state: {
+                              jobTitle: job.title,
+                              backPath: `/admin/jobs/${jobId}?archive=1`,
+                              backLabel: "Archived Job Details",
+                              isArchivedView: true,
+                            },
+                          })
+                        }
+                        className={`group flex h-14 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`}
+                        aria-label={`View ${applicants.length} ${applicants.length === 1 ? "applicant" : "applicants"}`}
+                      >
+                        <div className="flex -space-x-2">
+                          {applicantPreview.length > 0 ? (
+                            applicantPreview.map((application, index) => {
+                              const image = getApplicantImage(application);
+                              const applicantName = getApplicantName(application);
+                              return image ? (
+                                <img
+                                  key={application._id || index}
+                                  src={image}
+                                  alt={applicantName}
+                                  className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                                />
+                              ) : (
+                                <span
+                                  key={application._id || index}
+                                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]"
+                                >
+                                  {applicantName.charAt(0).toUpperCase()}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20">
+                              <SvgIcon name="users" className="h-4 w-4" />
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base font-bold">
+                            {applicants.length} {applicants.length === 1 ? "Applicant" : "Applicants"}
+                          </p>
+                          <p className="truncate text-[11px] text-blue-100">View submitted applications</p>
+                        </div>
+                      </button>
+                    ) : null}
                   </div>
                 ) : (
                   <div className="flex w-full shrink-0 lg:w-[285px]">

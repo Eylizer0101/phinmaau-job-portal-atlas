@@ -89,6 +89,7 @@ import AdminJobApplicants from './pages/admin/AdminJobApplicants';
 import AdminJobOffers from './pages/admin/AdminJobOffers';
 import AdminArchive from './pages/admin/AdminArchive';
 import AdminArchiveDetails from './pages/admin/AdminArchiveDetails';
+import AdminArchiveDeclinedApplicants from './pages/admin/AdminArchiveDeclinedApplicants';
 import AdminSystemLogs from './pages/admin/AdminSystemLogs';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminEmployerJobEditRequests from './pages/admin/AdminEmployerJobEditRequests';
@@ -727,6 +728,15 @@ function App() {
           element={
             <RequireRole role="admin" redirectTo="/login">
               <AdminArchiveDetails />
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="/admin/archive/account/:employerId/job/:jobId/declined-applicants"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminArchiveDeclinedApplicants />
             </RequireRole>
           }
         />
