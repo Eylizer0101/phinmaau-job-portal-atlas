@@ -834,6 +834,14 @@ const UserManagementDetails = () => {
     [
       ["Preferred Work Mode", profile.preferredWorkMode],
       ["Employment Type", profile.employmentType],
+      [
+        "Employment Status",
+        profile.employmentStatus === "employed"
+          ? "Employed — Currently working in a role"
+          : profile.employmentStatus === "unemployed"
+            ? "Unemployed — Not working at the moment"
+            : ""
+      ],
       ["Willing to Relocate", profile.willingToRelocate],
       ["How Soon Can Start", profile.howSoonCanYouStart],
       ["Experience", profile.experience || profile.whatHaveYouDone],

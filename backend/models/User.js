@@ -93,6 +93,16 @@ const employerResubmitRequestSchema = new mongoose.Schema(
       enum: ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit', ''],
       default: '',
     },
+    docTypes: {
+      type: [String],
+      enum: ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'],
+      default: [],
+    },
+    completedDocTypes: {
+      type: [String],
+      enum: ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'],
+      default: [],
+    },
     reasonMessage: { type: String, default: '' },
     requestedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
@@ -140,6 +150,16 @@ const alumniResubmitRequestSchema = new mongoose.Schema(
       type: String,
       enum: ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId', ''],
       default: '',
+    },
+    docTypes: {
+      type: [String],
+      enum: ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'],
+      default: [],
+    },
+    completedDocTypes: {
+      type: [String],
+      enum: ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'],
+      default: [],
     },
     reasonMessage: { type: String, default: '' },
     requestedAt: { type: Date, default: null },
@@ -489,6 +509,7 @@ const userSchema = new mongoose.Schema(
       preferredLanguage: { type: String, default: '', trim: true },
 
       employmentType: { type: String, default: '', trim: true },
+      employmentStatus: { type: String, enum: ['', 'employed', 'unemployed'], default: '', trim: true },
       educationalAttainment: { type: String, default: '', trim: true },
       willingToRelocate: { type: String, default: '', trim: true },
       studyField: { type: String, default: '', trim: true },

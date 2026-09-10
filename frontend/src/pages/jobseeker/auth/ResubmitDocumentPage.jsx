@@ -73,6 +73,8 @@ const ResubmitDocumentPage = () => {
 
   const [tokenValid, setTokenValid] = useState(false);
   const [docType, setDocType] = useState("");
+  const [docTypes, setDocTypes] = useState([]);
+  const [completedDocTypes, setCompletedDocTypes] = useState([]);
   const [reasonMessage, setReasonMessage] = useState("");
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -97,6 +99,8 @@ const ResubmitDocumentPage = () => {
         if (res.data?.success) {
           setTokenValid(true);
           setDocType(res.data.docType || "");
+          setDocTypes(Array.isArray(res.data.docTypes) ? res.data.docTypes : [res.data.docType].filter(Boolean));
+          setCompletedDocTypes(Array.isArray(res.data.completedDocTypes) ? res.data.completedDocTypes : []);
           setReasonMessage(res.data.reasonMessage || "");
         } else {
           setTokenValid(false);
@@ -186,15 +190,29 @@ const ResubmitDocumentPage = () => {
       });
 
       if (res.data?.success) {
-        setSuccess(res.data?.message || "Document resubmitted successfully. Redirecting to login...");
-        setTimeout(() => {
-          navigate("/jobseeker/login", {
-            replace: true,
-            state: {
-              successMessage: "Your document was resubmitted successfully.",
-            },
-          });
-        }, 1500);
+        const remainingDocTypes = Array.isArray(res.data.remainingDocTypes)
+          ? res.data.remainingDocTypes
+          : [];
+
+        if (remainingDocTypes.length > 0) {
+          setCompletedDocTypes((prev) => [...new Set([...prev, docType])]);
+          setDocType(remainingDocTypes[0]);
+          setSelectedFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          setSuccess(
+            `${res.data?.docLabel || acceptedLabel} resubmitted successfully. Please upload the next requested document.`
+          );
+        } else {
+          setSuccess(res.data?.message || "Document resubmitted successfully. Redirecting to login...");
+          setTimeout(() => {
+            navigate("/login", {
+              replace: true,
+              state: {
+                successMessage: "Your requested document(s) were resubmitted successfully.",
+              },
+            });
+          }, 1500);
+        }
       } else {
         setError("Failed to resubmit document.");
       }
