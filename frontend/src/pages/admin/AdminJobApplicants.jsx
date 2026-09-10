@@ -55,6 +55,10 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
     x: <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />,
     refresh: <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0012 3l3-4M19 9A7 7 0 007 6L4 10" />,
     eye: <><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="m4 7 8 6 8-6" /></>,
+    phone: <path strokeLinecap="round" strokeLinejoin="round" d="M5 4h4l2 5-3 2a16 16 0 007 7l2-3 5 2v4a2 2 0 01-2 2C10 23 1 14 1 4a2 2 0 012-2h2z" />,
+    arrow: <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-5-5 5 5-5 5" />,
+    sparkle: <><path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14z" /></>,
   };
 
   return <svg {...common}>{icons[name] || null}</svg>;
@@ -850,6 +854,269 @@ const DateFilterDropdown = ({
   );
 };
 
+
+const API_HOST = process.env.REACT_APP_API_URL
+  ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, "")
+  : "https://phinmaau-job-portal-atlas.onrender.com";
+
+const stripHtmlForMatch = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeMatchText = (value = "") =>
+  stripHtmlForMatch(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9+#.\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeSkillName = (value = "") =>
+  normalizeMatchText(value)
+    .replace(/\s[—-]\s(?:basic|novice|intermediate|advanced|expert)$/i, "")
+    .trim();
+
+const parseSkills = (value) => {
+  const raw = Array.isArray(value) ? value : String(value || "").split(/\|\||,|\n/);
+  return raw
+    .map((item) => {
+      if (item && typeof item === "object") {
+        return {
+          skill: item.skill || item.name || "",
+          proficiency: item.proficiency || "Basic",
+        };
+      }
+
+      const clean = String(item || "").trim();
+      const match = clean.match(
+        /^(.*?)\s+[—-]\s+(Basic|Novice|Intermediate|Advanced|Expert)$/i
+      );
+
+      return match
+        ? { skill: match[1].trim(), proficiency: match[2] }
+        : { skill: clean, proficiency: "Basic" };
+    })
+    .filter((item) => item.skill);
+};
+
+const getRequiredExperienceYears = (value = "") => {
+  const normalized = normalizeMatchText(value);
+  if (!normalized || normalized.includes("no experience")) return 0;
+  const match = normalized.match(/(\d+)/);
+  return match ? Number(match[1]) : 0;
+};
+
+const getApplicantExperienceYears = (workExperiences = [], profileExperience = "") => {
+  const dateBasedYears = (Array.isArray(workExperiences) ? workExperiences : []).reduce(
+    (total, item) => {
+      const start = new Date(item?.startDate);
+      const end = item?.isPresent ? new Date() : new Date(item?.endDate);
+      if (
+        Number.isNaN(start.getTime()) ||
+        Number.isNaN(end.getTime()) ||
+        end < start
+      ) {
+        return total;
+      }
+
+      return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    },
+    0
+  );
+
+  if (dateBasedYears > 0) return dateBasedYears;
+
+  const normalized = normalizeMatchText(profileExperience);
+  if (!normalized || normalized.includes("no experience")) return 0;
+  if (normalized.includes("less than 1")) return 0.5;
+
+  const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
+  if (rangeMatch) return Number(rangeMatch[2]);
+
+  const numberMatch = normalized.match(/(\d+)/);
+  return numberMatch ? Number(numberMatch[1]) : 0;
+};
+
+const getEducationRank = (value = "") => {
+  const normalized = normalizeMatchText(value);
+  if (!normalized) return 0;
+  if (normalized.includes("doctor")) return 5;
+  if (normalized.includes("master")) return 4;
+  if (
+    normalized.includes("bachelor") ||
+    normalized.includes("college degree") ||
+    normalized.includes("college graduate")
+  ) {
+    return 3;
+  }
+  if (normalized.includes("associate") || normalized.includes("vocational")) return 2;
+  if (normalized.includes("high school") || normalized.includes("senior high")) return 1;
+  return 0;
+};
+
+const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work = [], education = [] }) => {
+  let totalWeight = 0;
+  let earnedWeight = 0;
+
+  const requiredSkills = (Array.isArray(job.skillsRequired) ? job.skillsRequired : [])
+    .map(normalizeSkillName)
+    .filter(Boolean);
+
+  if (requiredSkills.length) {
+    totalWeight += 45;
+    const applicantSkills = skills.map((item) => normalizeSkillName(item?.skill || item)).filter(Boolean);
+    const matchedSkills = requiredSkills.filter((required) =>
+      applicantSkills.some(
+        (applicantSkill) =>
+          applicantSkill === required ||
+          applicantSkill.includes(required) ||
+          required.includes(applicantSkill)
+      )
+    );
+    earnedWeight += 45 * (matchedSkills.length / requiredSkills.length);
+  }
+
+  const requiredExperience = getRequiredExperienceYears(job.experienceLevel);
+  if (job.experienceLevel) {
+    totalWeight += 25;
+    if (requiredExperience === 0) {
+      earnedWeight += 25;
+    } else {
+      const applicantExperience = getApplicantExperienceYears(work, profile.experience);
+      earnedWeight += 25 * Math.min(1, applicantExperience / requiredExperience);
+    }
+  }
+
+  if (job.educationLevel) {
+    totalWeight += 20;
+    const requiredRank = getEducationRank(job.educationLevel);
+    const educationValues = [
+      profile.educationalAttainment,
+      profile.educationLevel,
+      ...education.map((item) => item?.degree || item?.educationLevel || item?.course || ""),
+    ];
+    const applicantRank = Math.max(0, ...educationValues.map(getEducationRank));
+
+    if (requiredRank === 0 || applicantRank >= requiredRank) {
+      earnedWeight += 20;
+    } else if (applicantRank > 0) {
+      earnedWeight += 20 * (applicantRank / requiredRank);
+    }
+  }
+
+  const categoryText = normalizeMatchText(job.category);
+  if (categoryText) {
+    totalWeight += 10;
+    const applicantText = normalizeMatchText(
+      [
+        profile.studyField,
+        profile.course,
+        profile.objective,
+        ...work.map((item) => `${item?.position || ""} ${item?.companyName || item?.company || ""}`),
+      ].join(" ")
+    );
+
+    if (applicantText.includes(categoryText) || categoryText.includes(applicantText)) {
+      earnedWeight += 10;
+    }
+  }
+
+  if (totalWeight <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round((earnedWeight / totalWeight) * 100)));
+};
+
+const hasMeaningfulObjectValue = (value) => {
+  if (Array.isArray(value)) return value.some(hasMeaningfulObjectValue);
+  if (value && typeof value === "object") {
+    return Object.values(value).some(hasMeaningfulObjectValue);
+  }
+  return value !== undefined && value !== null && String(value).trim() !== "";
+};
+
+const calculateJobSeekerLevel = ({
+  skills = [],
+  certifications = [],
+  projects = [],
+  seminars = [],
+  awards = [],
+  workExperiences = [],
+}) => {
+  const score =
+    skills.length +
+    certifications.filter(hasMeaningfulObjectValue).length * 2 +
+    projects.filter(hasMeaningfulObjectValue).length * 2 +
+    seminars.filter(hasMeaningfulObjectValue).length +
+    awards.filter(hasMeaningfulObjectValue).length * 2 +
+    workExperiences.filter(hasMeaningfulObjectValue).length * 3;
+
+  if (score >= 30) return "Legend";
+  if (score >= 20) return "Pro";
+  if (score >= 12) return "Expert";
+  if (score >= 6) return "Intermediate";
+  return "First Time Job Seeker";
+};
+
+const formatRelativeTime = (value) => {
+  const date = new Date(value || 0);
+  if (Number.isNaN(date.getTime())) return "date unavailable";
+
+  const diffMs = Date.now() - date.getTime();
+  const future = diffMs < 0;
+  const absoluteMs = Math.abs(diffMs);
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (absoluteMs < minute) return future ? "in a moment" : "just now";
+  if (absoluteMs < hour) {
+    const count = Math.max(1, Math.floor(absoluteMs / minute));
+    return future ? `in ${count} minute${count === 1 ? "" : "s"}` : `${count} minute${count === 1 ? "" : "s"} ago`;
+  }
+  if (absoluteMs < day) {
+    const count = Math.max(1, Math.floor(absoluteMs / hour));
+    return future ? `in ${count} hour${count === 1 ? "" : "s"}` : `${count} hour${count === 1 ? "" : "s"} ago`;
+  }
+
+  const count = Math.max(1, Math.floor(absoluteMs / day));
+  return future ? `in ${count} day${count === 1 ? "" : "s"}` : `${count} day${count === 1 ? "" : "s"} ago`;
+};
+
+const statusStyle = (status) => {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "hired") return "bg-emerald-100 text-emerald-700";
+  if (normalized === "declined") return "bg-red-100 text-red-700";
+  if (normalized === "for interview") return "bg-blue-100 text-blue-700";
+  if (normalized === "withdrawn" || normalized === "cancelled") return "bg-gray-100 text-gray-600";
+  if (normalized === "vacancy full") return "bg-amber-100 text-amber-700";
+  return "bg-yellow-100 text-yellow-700";
+};
+
+const statusLabel = (status) => {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (!normalized) return "Pending";
+  if (normalized === "for interview") return "For Interview";
+  if (normalized === "vacancy full") return "Vacancy Full";
+  return normalized.replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const levelStyle = (level) => {
+  if (level === "Legend") return "bg-amber-100 text-amber-800";
+  if (level === "Pro") return "bg-purple-100 text-purple-700";
+  if (level === "Expert") return "bg-blue-100 text-blue-700";
+  if (level === "Intermediate") return "bg-cyan-100 text-cyan-700";
+  return "bg-[#f3f4f6] text-[#4b5563]";
+};
+
+const resolveApplicantImage = (user) => {
+  const image = String(user?.profileImage || "").trim();
+  if (!image) return "/images/profile.png";
+  if (/^(https?:|data:|blob:)/i.test(image)) return image;
+  return `${API_HOST}${image.startsWith("/") ? "" : "/"}${image}`;
+};
+
 const AdminJobApplicants = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -858,46 +1125,39 @@ const AdminJobApplicants = () => {
   const [job, setJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const [search, setSearch] = useState('');
-  const [campusFilter, setCampusFilter] = useState('all');
-  const [courseFilter, setCourseFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
-
-  const [customDateFrom, setCustomDateFrom] = useState('');
-  const [customDateTo, setCustomDateTo] = useState('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [levelFilter, setLevelFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [customDateFrom, setCustomDateFrom] = useState("");
+  const [customDateTo, setCustomDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
   const backPath = location.state?.backPath || `/admin/jobs/${jobId}`;
-  const backLabel = location.state?.backLabel || 'Job Details';
+  const backLabel = location.state?.backLabel || "Back to job details";
 
   const fetchApplicants = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
-      const [jobResponse, applicationsResponse] = await Promise.all([
-        api.get(`/jobs/${jobId}`),
-        api.get(`/applications/job/${jobId}`),
-      ]);
-
-      setJob(jobResponse.data?.job || null);
+      const response = await api.get(`/applications/job/${jobId}`);
+      setJob(response.data?.job || null);
       setApplicants(
-        Array.isArray(applicationsResponse.data?.applications)
-          ? applicationsResponse.data.applications
+        Array.isArray(response.data?.applications)
+          ? response.data.applications
           : []
       );
     } catch (err) {
       if (err.response?.status === 404) {
-        setError('Job or applicant list not found.');
+        setError("Job or applicant list not found.");
       } else if (err.request) {
-        setError('Cannot connect to the server. Please check your connection.');
+        setError("Cannot connect to the server. Please check your connection.");
       } else {
-        setError('Unable to load the applicant list right now.');
+        setError("Unable to load the applicant list right now.");
       }
     } finally {
       setLoading(false);
@@ -908,130 +1168,141 @@ const AdminJobApplicants = () => {
     fetchApplicants();
   }, [fetchApplicants]);
 
+  const applicantCards = useMemo(
+    () =>
+      applicants.map((application) => {
+        const user = application?.jobseeker || {};
+        const profile = user?.jobSeekerProfile || {};
+        const work = Array.isArray(profile.workExperiences)
+          ? profile.workExperiences
+          : [];
+        const education = Array.isArray(profile.educationEntries)
+          ? profile.educationEntries
+          : [];
+        const skills = [
+          ...parseSkills(profile.technicalSkills),
+          ...parseSkills(profile.softSkills),
+        ];
 
-  const campusOptions = useMemo(
-    () => uniqueNormalizedOptions(applicants.map(getApplicantCampus), normalizeCampusValue),
-    [applicants]
-  );
+        const level = calculateJobSeekerLevel({
+          skills,
+          certifications: Array.isArray(profile.certifications)
+            ? profile.certifications
+            : [],
+          projects: Array.isArray(profile.projects) ? profile.projects : [],
+          seminars: Array.isArray(profile.seminars) ? profile.seminars : [],
+          awards: Array.isArray(profile.awards) ? profile.awards : [],
+          workExperiences: work,
+        });
 
-  const courseOptions = useMemo(
-    () => uniqueNormalizedOptions(applicants.map(getApplicantCourse), normalizeCourseValue),
-    [applicants]
+        return {
+          application,
+          user,
+          profile,
+          level,
+          matchScore: calculateApplicationMatch({
+            job: job || {},
+            profile,
+            skills,
+            work,
+            education,
+          }),
+        };
+      }),
+    [applicants, job]
   );
 
   const statusOptions = useMemo(
     () =>
-      [...new Set(
-        applicants
-          .map((application) => String(application?.status || '').trim().toLowerCase())
-          .filter(Boolean)
-      )].sort((a, b) => a.localeCompare(b)),
-    [applicants]
+      [
+        ...new Set(
+          applicantCards
+            .map(({ application }) =>
+              String(application?.status || "").trim().toLowerCase()
+            )
+            .filter(Boolean)
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [applicantCards]
   );
 
   const filteredApplicants = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-
     const dateRange =
-      dateFilter === 'custom'
+      dateFilter === "custom"
         ? { from: customDateFrom, to: customDateTo }
         : getPresetDateRange(dateFilter);
 
-    const filtered = applicants.filter((application) => {
-      const name = getApplicantName(application).toLowerCase();
-      const email = getApplicantEmail(application).toLowerCase();
-      const campus = getApplicantCampus(application);
-      const course = getApplicantCourse(application);
-      const status = String(application?.status || '').trim().toLowerCase();
+    return applicantCards.filter(({ application, user, profile, level }) => {
+      const name =
+        user.fullName ||
+        [user.firstName, user.middleName, user.lastName, user.extensionName]
+          .filter(Boolean)
+          .join(" ");
 
-      const matchesSearch =
-        !normalizedSearch ||
-        name.includes(normalizedSearch) ||
-        email.includes(normalizedSearch);
+      const searchableText = [
+        name,
+        user.email,
+        profile.phoneNumber,
+        profile.contactNumber,
+        profile.mobileNumber,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-      if (normalizedSearch) return matchesSearch;
-
-      const matchesCampus =
-        campusFilter === 'all' ||
-        normalizeFilterKey(campus) === normalizeFilterKey(campusFilter);
-
-      const matchesCourse =
-        courseFilter === 'all' ||
-        normalizeFilterKey(course) === normalizeFilterKey(courseFilter);
-
-      const matchesStatus =
-        statusFilter === 'all' || status === statusFilter.toLowerCase();
-
-      const matchesDate =
-        dateFilter === 'all' ||
-        isDateWithinRange(getApplicationDate(application), dateRange.from, dateRange.to);
-
-      return matchesCampus && matchesCourse && matchesStatus && matchesDate;
-    });
-
-    return [...filtered].sort((first, second) => {
-      if (sortBy === 'oldest') {
-        return new Date(getApplicationDate(first) || 0) - new Date(getApplicationDate(second) || 0);
+      if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
+        return false;
       }
 
-      if (sortBy === 'nameAsc') {
-        return getApplicantName(first).localeCompare(getApplicantName(second));
+      if (normalizedSearch) return true;
+
+      if (statusFilter !== "all") {
+        const status = String(application?.status || "").toLowerCase();
+        if (status !== statusFilter.toLowerCase()) return false;
       }
 
-      if (sortBy === 'nameDesc') {
-        return getApplicantName(second).localeCompare(getApplicantName(first));
+      if (levelFilter !== "all" && level !== levelFilter) {
+        return false;
       }
 
-      return new Date(getApplicationDate(second) || 0) - new Date(getApplicationDate(first) || 0);
+      if (
+        dateFilter !== "all" &&
+        !isDateWithinRange(
+          getApplicationDate(application),
+          dateRange.from,
+          dateRange.to
+        )
+      ) {
+        return false;
+      }
+
+      return true;
     });
   }, [
-    applicants,
-    campusFilter,
-    courseFilter,
+    applicantCards,
     customDateFrom,
     customDateTo,
     dateFilter,
+    levelFilter,
     search,
-    sortBy,
     statusFilter,
   ]);
 
-  const hasActiveFilters =
-    search.trim() ||
-    campusFilter !== 'all' ||
-    courseFilter !== 'all' ||
-    statusFilter !== 'all' ||
-    dateFilter !== 'all' ||
-    sortBy !== 'newest';
-
-  const clearFilters = () => {
-    setSearch('');
-    setCampusFilter('all');
-    setCourseFilter('all');
-    setStatusFilter('all');
-    setDateFilter('all');
-    setSortBy('newest');
-    setCustomDateFrom('');
-    setCustomDateTo('');
-    setCurrentPage(1);
-  };
-
-
-
-
-  const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(filteredApplicants.length / pageSize));
+  const totalPages =
+    pageSize === "all"
+      ? 1
+      : Math.max(1, Math.ceil(filteredApplicants.length / Number(pageSize)));
 
   useEffect(() => {
     setCurrentPage(1);
   }, [
     search,
-    campusFilter,
-    courseFilter,
     statusFilter,
+    levelFilter,
     dateFilter,
     customDateFrom,
     customDateTo,
-    sortBy,
   ]);
 
   useEffect(() => {
@@ -1039,287 +1310,315 @@ const AdminJobApplicants = () => {
   }, [currentPage, totalPages]);
 
   const paginatedApplicants = useMemo(() => {
-    if (pageSize === 'all') return filteredApplicants;
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredApplicants.slice(startIndex, startIndex + pageSize);
+    if (pageSize === "all") return filteredApplicants;
+    const startIndex = (currentPage - 1) * Number(pageSize);
+    return filteredApplicants.slice(
+      startIndex,
+      startIndex + Number(pageSize)
+    );
   }, [currentPage, filteredApplicants, pageSize]);
+
+  const openPositions = Math.max(
+    0,
+    Number(job?.vacancies || 0) -
+      applicants.filter(
+        (application) =>
+          String(application?.status || "").toLowerCase() === "hired"
+      ).length
+  );
+
+  const handleViewProfile = (application) => {
+    const applicantUserId = getApplicantUserId(application);
+    if (!applicantUserId) return;
+
+    navigate(`/admin/users/${applicantUserId}?tab=resume`, {
+      state: {
+        backPath: `/admin/jobs/${jobId}/applicants`,
+        backLabel: "Applicant List",
+      },
+    });
+  };
 
   return (
     <AdminLayout>
       <div className={UI.page}>
-        <div className={UI.container}>
+        <div className="mx-auto max-w-7xl px-1 py-8">
           <button
             type="button"
             onClick={() => navigate(backPath)}
-            className={`mb-5 inline-flex items-center justify-center gap-2 rounded-lg border border-[#d7e6f5] bg-white px-4 py-2 text-sm font-semibold text-[#111827] transition hover:bg-[#eef5fc] hover:text-[#2e66a6] ${UI.ring}`}
+            className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm transition hover:bg-gray-50 ${UI.ring}`}
           >
             <SvgIcon name="arrowLeft" className="h-4 w-4" />
             {backLabel}
           </button>
 
-          <div className={`${UI.card} overflow-visible`}>
-            <div className="flex flex-col gap-3 border-b border-[#e5e7eb] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <SvgIcon name="users" className="h-5 w-5 text-[#4b5563]" />
-                  <h1 className="text-lg font-bold text-[#111827]">
-                    Applicant List
-                  </h1>
-                </div>
-                <p className="mt-1 text-sm text-[#6b7280]">
-                  {job?.title || location.state?.jobTitle || 'Selected Job'}
-                </p>
-              </div>
-
-         
-            </div>
-
-            {!loading && !error && (
-              <div className="px-5 py-5 sm:px-6">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(220px,1.45fr)_repeat(3,minmax(125px,0.72fr))_minmax(175px,0.95fr)_minmax(175px,0.95fr)_auto] xl:items-center">
-                  <label className="relative block">
-                    <span className="sr-only">Search applicants</span>
-                    <SvgIcon
-                      name="search"
-                      className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      type="search"
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search name or email"
-                      className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-black outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    />
-                  </label>
-
-                  <label className="relative block">
-                    <span className="sr-only">Filter by campus</span>
-                    <select
-                      value={campusFilter}
-                      onChange={(event) => setCampusFilter(event.target.value)}
-                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    >
-                      <option value="all">All Campus</option>
-                      {campusOptions.map((campus) => (
-                        <option key={campus} value={campus}>
-                          {campus}
-                        </option>
-                      ))}
-                    </select>
-                    <SvgIcon
-                      name="chevron"
-                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
-                    />
-                  </label>
-
-                  <label className="relative block">
-                    <span className="sr-only">Filter by course</span>
-                    <select
-                      value={courseFilter}
-                      onChange={(event) => setCourseFilter(event.target.value)}
-                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    >
-                      <option value="all">All Course</option>
-                      {courseOptions.map((course) => (
-                        <option key={course} value={course}>
-                          {course}
-                        </option>
-                      ))}
-                    </select>
-                    <SvgIcon
-                      name="chevron"
-                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
-                    />
-                  </label>
-
-                  <label className="relative block">
-                    <span className="sr-only">Filter by status</span>
-                    <select
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
-                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    >
-                      <option value="all">All Status</option>
-                      {statusOptions.map((status) => (
-                        <option key={status} value={status}>
-                          {getApplicantStatusMeta(status).label}
-                        </option>
-                      ))}
-                    </select>
-                    <SvgIcon
-                      name="chevron"
-                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
-                    />
-                  </label>
-
-                  <DateFilterDropdown
-                    value={dateFilter}
-                    dateFrom={customDateFrom}
-                    dateTo={customDateTo}
-                    onChange={(next) => {
-                      setDateFilter(next.date);
-                      setCustomDateFrom(next.dateFrom);
-                      setCustomDateTo(next.dateTo);
-                      setCurrentPage(1);
-                    }}
-                  />
-
-                  <label className="relative block">
-                    <span className="sr-only">Sort applicants</span>
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-500">
-                      Sort by
-                    </span>
-                    <select
-                      value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
-                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white pl-[68px] pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    >
-                      {SORT_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <SvgIcon
-                      name="chevron"
-                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
-                    />
-                  </label>
-
-                  {hasActiveFilters ? (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:col-span-2 lg:col-span-1 xl:col-span-1"
-                    >
-                      <SvgIcon name="refresh" className="h-4 w-4" />
-                      Clear
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            )}
+          <div className="mt-7">
+            <p className="text-sm font-bold uppercase tracking-wide text-[#2e66a6]">
+              Applicants
+            </p>
+            <h1 className="mt-1 text-3xl font-bold text-[#111827]">
+              {job?.title || location.state?.jobTitle || "Job Applicants"}
+            </h1>
+            <p className="mt-2 text-lg text-[#6b7280]">
+              {applicants.length} candidate{applicants.length === 1 ? "" : "s"} applied
+              {" · "}
+              {openPositions} open position{openPositions === 1 ? "" : "s"}
+            </p>
           </div>
 
-          <div className={`${UI.card} mt-5 overflow-hidden`}>
-            {loading ? null : error ? (
-              <div className="px-6 py-16 text-center">
-                <p className="text-sm font-semibold text-red-600">{error}</p>
-                <button
-                  type="button"
-                  onClick={fetchApplicants}
-                  className={`mt-4 rounded-lg border border-[#d7e6f5] bg-white px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-[#eef5fc] ${UI.ring}`}
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-[#e5e7eb] text-left text-xs">
-                    <thead className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-widest text-[#6b7280]">
-                      <tr>
-                        <th className="px-5 py-4">Date Applied</th>
-                        <th className="px-5 py-4">Applicant</th>
-                        <th className="px-5 py-4">Campus</th>
-                        <th className="px-5 py-4">Course</th>
-                        <th className="px-5 py-4">Jobseeker Level</th>
-                        <th className="px-5 py-4">Status</th>
-                        <th className="px-5 py-4 text-center">Actions</th>
-                      </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-[#eef0f4] bg-white">
-                      {paginatedApplicants.length > 0 ? (
-                        paginatedApplicants.map((application) => {
-                          const statusMeta = getApplicantStatusMeta(
-                            application.status
-                          );
-                          const applicantUserId = getApplicantUserId(application);
-
-                          return (
-                            <tr
-                              key={application._id}
-                              className="text-[#374151] transition hover:bg-[#f8fafc]"
-                            >
-                              <td className="whitespace-nowrap px-5 py-4 font-medium text-[#4b5563]">
-                                {formatFullDate(
-                                  getApplicationDate(application)
-                                )}
-                              </td>
-                              <td className="min-w-[220px] px-5 py-4">
-                                <p className="font-semibold text-[#111827]">
-                                  {getApplicantName(application)}
-                                </p>
-                                <p className="mt-1 break-all text-[11px] text-[#6b7280]">
-                                  {getApplicantEmail(application)}
-                                </p>
-                              </td>
-                              <td className="min-w-[130px] px-5 py-4">
-                                {getApplicantCampus(application)}
-                              </td>
-                              <td className="min-w-[180px] px-5 py-4">
-                                {getApplicantCourse(application)}
-                              </td>
-                              <td className="min-w-[170px] px-5 py-4">
-                                {getJobseekerLevel(application)}
-                              </td>
-                              <td className="whitespace-nowrap px-5 py-4">
-                                <span
-                                  className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase ${statusMeta.className}`}
-                                >
-                                  {statusMeta.label}
-                                </span>
-                              </td>
-                              <td className="whitespace-nowrap px-5 py-4 text-center">
-                                <button
-                                  type="button"
-                                  disabled={!applicantUserId}
-                                  onClick={() => {
-                                    if (!applicantUserId) return;
-                                    navigate(`/admin/users/${applicantUserId}?tab=resume`, {
-                                      state: {
-                                        backPath: `/admin/jobs/${jobId}/applicants`,
-                                        backLabel: 'Applicant List',
-                                      },
-                                    });
-                                  }}
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#dfe5ec] bg-white text-[#4b5563] transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-                                  title="View applicant resume"
-                                  aria-label={`View ${getApplicantName(application)} resume`}
-                                >
-                                  <SvgIcon name="eye" className="h-4 w-4" />
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan="7"
-                            className="px-5 py-14 text-center text-sm text-[#6b7280]"
-                          >
-                            {applicants.length
-                              ? 'No applicants match the selected filters.'
-                              : 'No applicants yet.'}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={filteredApplicants.length}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
+          <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-5 shadow-sm">
+            <div className="grid gap-3 lg:grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr]">
+              <label className="relative block">
+                <span className="sr-only">Search applicants</span>
+                <SvgIcon
+                  name="search"
+                  className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
                 />
-              </>
-            )}
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search applicant name, email..."
+                  className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                />
+              </label>
+
+              <label className="relative block">
+                <span className="sr-only">Filter by status</span>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                >
+                  <option value="all">All Status</option>
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {statusLabel(status)}
+                    </option>
+                  ))}
+                </select>
+                <SvgIcon
+                  name="chevron"
+                  className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                />
+              </label>
+
+              <label className="relative block">
+                <span className="sr-only">Filter by jobseeker level</span>
+                <select
+                  value={levelFilter}
+                  onChange={(event) => {
+                    setLevelFilter(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                >
+                  <option value="all">All Job Seeker Level</option>
+                  <option value="First Time Job Seeker">First Time Job Seeker</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Expert">Expert</option>
+                  <option value="Pro">Pro</option>
+                  <option value="Legend">Legend</option>
+                </select>
+                <SvgIcon
+                  name="chevron"
+                  className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                />
+              </label>
+
+              <DateFilterDropdown
+                value={dateFilter}
+                dateFrom={customDateFrom}
+                dateTo={customDateTo}
+                onChange={(next) => {
+                  setDateFilter(next.date);
+                  setCustomDateFrom(next.dateFrom);
+                  setCustomDateTo(next.dateTo);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           </div>
+
+          {loading ? (
+            <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center text-[#6b7280] shadow-sm">
+              Loading applicants...
+            </div>
+          ) : error ? (
+            <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center shadow-sm">
+              <p className="text-sm font-semibold text-red-600">{error}</p>
+              <button
+                type="button"
+                onClick={fetchApplicants}
+                className={`mt-4 rounded-xl border border-[#d7e6f5] bg-white px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-[#eef5fc] ${UI.ring}`}
+              >
+                Retry
+              </button>
+            </div>
+          ) : paginatedApplicants.length > 0 ? (
+            <>
+              <div className="mt-8 space-y-5">
+                {paginatedApplicants.map(
+                  ({ application, user, profile, level, matchScore }) => {
+                    const name =
+                      user.fullName ||
+                      [
+                        user.firstName,
+                        user.middleName,
+                        user.lastName,
+                        user.extensionName,
+                      ]
+                        .filter(Boolean)
+                        .join(" ") ||
+                      "Applicant";
+
+                    const phone =
+                      profile.phoneNumber ||
+                      profile.contactNumber ||
+                      profile.mobileNumber ||
+                      "Not provided";
+
+                    const applicantUserId = getApplicantUserId(application);
+
+                    return (
+                      <article
+                        key={application._id}
+                        className="rounded-3xl border border-[#e3e5ef] bg-white p-6 shadow-sm"
+                      >
+                        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                          <div className="flex min-w-0 items-center gap-5">
+                            <img
+                              src={resolveApplicantImage(user)}
+                              alt={name}
+                              className="h-20 w-20 shrink-0 rounded-full object-cover"
+                              onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = "/images/profile.png";
+                              }}
+                            />
+
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-3">
+                                <h2 className="text-xl font-bold text-[#111827]">
+                                  {name}
+                                </h2>
+
+                                <span
+                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                    application.alreadyEmployed
+                                      ? "bg-amber-100 text-amber-800"
+                                      : statusStyle(application.status)
+                                  }`}
+                                >
+                                  {application.alreadyEmployed
+                                    ? "Already Employed"
+                                    : statusLabel(application.status)}
+                                </span>
+                              </div>
+
+                              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <SvgIcon name="mail" className="h-4 w-4" />
+                                  {user.email || "Not provided"}
+                                </span>
+                                <span className="hidden text-[#c2c5ce] sm:inline">
+                                  |
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <SvgIcon name="phone" className="h-4 w-4" />
+                                  {phone}
+                                </span>
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                                <span
+                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(
+                                    level
+                                  )}`}
+                                >
+                                  ★ {level}
+                                </span>
+
+                                <span className="inline-flex items-center gap-1.5 text-[#7b8190]">
+                                  <SvgIcon name="calendar" className="h-4 w-4" />
+                                  Applied{" "}
+                                  {formatRelativeTime(
+                                    application.appliedAt ||
+                                      application.createdAt
+                                  )}
+                                </span>
+
+                                {application.applicationHistorySummary ? (
+                                  <span className="inline-flex overflow-hidden rounded-full border border-[#dbe3ee] bg-white text-xs font-semibold text-[#5f6b7a]">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1">
+                                      Previously Hired:
+                                      <span className="font-bold text-[#374151]">
+                                        {application.applicationHistorySummary
+                                          ?.hired ?? 0}
+                                      </span>
+                                    </span>
+                                    <span
+                                      className="h-auto w-px bg-[#dbe3ee]"
+                                      aria-hidden="true"
+                                    />
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1">
+                                      Total Withdrawals:
+                                      <span className="font-bold text-[#374151]">
+                                        {application.applicationHistorySummary
+                                          ?.withdrawn ?? 0}
+                                      </span>
+                                    </span>
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
+                            <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#eaf0ff] px-5 py-2 text-sm font-bold text-[#2e66a6]">
+                              <SvgIcon name="sparkle" className="h-4 w-4" />
+                              {matchScore}% match
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={!applicantUserId}
+                              onClick={() => handleViewProfile(application)}
+                              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#25578f] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              View profile
+                              <SvgIcon name="arrow" className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  }
+                )}
+              </div>
+
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredApplicants.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                ariaLabel="Admin job applicants pagination"
+              />
+            </>
+          ) : (
+            <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center text-[#6b7280] shadow-sm">
+              {applicants.length
+                ? "No applicants found for the selected filters."
+                : "No applicants yet."}
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>
