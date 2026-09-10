@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
+import CenteredIndicator from "../../components/shared/CenteredIndicator";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -1165,10 +1166,7 @@ const JobseekerVerificationDetails = () => {
       });
 
       if (res.data?.success) {
-        setSuccess(
-          res.data?.message ||
-            "Jobseeker placed on hold and resubmission request sent successfully.",
-        );
+        setSuccess("Jobseeker placed on hold successfully.");
         await fetchJobseekerDetails();
         resetHoldModal();
       } else {
@@ -1326,6 +1324,13 @@ const JobseekerVerificationDetails = () => {
     (docType) => Boolean(documentDetails[docType.key]?.url),
   );
 
+  const requiredCredentialKeys = ["cv", "tor", "diploma", "validId"];
+  const allRequiredCredentialsApproved = requiredCredentialKeys.every((docType) => {
+    const document = documentDetails[docType] || {};
+    const status = String(document.status || "").toLowerCase();
+    return Boolean(document.url) && (document.checked === true || status === "approved");
+  });
+
   const overallStatus = verificationSummary.overallStatus || "not_submitted";
   const isApproved = overallStatus === "verified";
   const isRejected = overallStatus === "rejected";
@@ -1400,11 +1405,15 @@ const JobseekerVerificationDetails = () => {
           </Alert>
         )}
 
-        {success && (
-          <Alert type="success" onClose={() => setSuccess("")}>
-            {success}
-          </Alert>
-        )}
+        {success ? (
+          <CenteredIndicator
+            type="success"
+            title={success}
+            message={success}
+            hideMessage
+            onClose={() => setSuccess("")}
+          />
+        ) : null}
 
         <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1425,7 +1434,7 @@ const JobseekerVerificationDetails = () => {
                 <button
                   type="button"
                   onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
-                  disabled={actionLoading}
+                  disabled={actionLoading || !allRequiredCredentialsApproved}
                   className={cn(
                     "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
                     UI.ring,
@@ -1495,7 +1504,7 @@ const JobseekerVerificationDetails = () => {
                   <button
                     type="button"
                     onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
-                    disabled={actionLoading}
+                    disabled={actionLoading || !allRequiredCredentialsApproved}
                     className={cn(
                       "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50",
                       UI.ring,

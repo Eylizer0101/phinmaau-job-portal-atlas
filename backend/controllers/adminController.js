@@ -2020,16 +2020,11 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
 
     if (overallStatus === 'verified') {
       const docs = employer?.employerProfile?.verificationDocs || {};
-      const hasBusinessReg =
-        docs?.secRegistration?.url ||
-        docs?.birRegistration?.url ||
-        docs?.dtiRegistration?.url;
-      const hasCityPermit = docs?.cityPermit?.url;
 
-      if (!hasBusinessReg || !hasCityPermit) {
+      if (!areAllEmployerCredentialsApproved(docs)) {
         return res.status(400).json({
           success: false,
-          message: 'Documents incomplete. Business Registration (SEC/BIR/DTI) and City Permit are required.'
+          message: 'Cannot approve employer until all required company credentials are submitted and approved.'
         });
       }
     }
@@ -2713,11 +2708,22 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     const prevStatus = jobseeker?.jobSeekerProfile?.verificationDocs?.overallStatus || 'not_submitted';
 
     const verificationStatus = getJobseekerVerificationStatus(jobseeker);
-    if (verificationStatus.submittedCount === 0 && overallStatus === 'verified') {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot verify jobseeker with no uploaded documents'
+    if (overallStatus === 'verified') {
+      const verificationDocs = jobseeker?.jobSeekerProfile?.verificationDocs || {};
+      const allRequiredCredentialsApproved = JOBSEEKER_REQUIRED_DOC_TYPES.every((docType) => {
+        const document = verificationDocs?.[docType];
+        return Boolean(
+          document?.url &&
+          (document?.checked === true || String(document?.status || '').toLowerCase() === 'approved')
+        );
       });
+
+      if (!allRequiredCredentialsApproved) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot approve jobseeker until all required credentials are submitted and approved.'
+        });
+      }
     }
 
     if (!jobseeker.jobSeekerProfile) jobseeker.jobSeekerProfile = {};
@@ -3083,21 +3089,15 @@ const markVerificationDocumentChecked = async (req, res, role) => {
         user.isVerified = true;
         await user.save();
       } else {
-        const automaticApproval = await automaticallyApproveJobseekerAccount(
-          user,
-          req.user?._id || req.userId || null
-        );
-        accountAutoApproved = automaticApproval.approved;
-        if (!automaticApproval.approved) {
-          docs.overallStatus = getJobseekerCredentialReviewStatus(docs);
-          await user.save();
-        }
+        const credentialReviewStatus = getJobseekerCredentialReviewStatus(docs);
+        docs.overallStatus = credentialReviewStatus === 'verified' ? 'pending' : credentialReviewStatus;
+        user.jobSeekerProfile.verificationStatus = docs.overallStatus;
+        await user.save();
       }
-    } else if (areAllEmployerCredentialsApproved(docs)) {
-      const automaticApproval = await automaticallyApproveEmployerAccount(user);
-      accountAutoApproved = automaticApproval.approved;
-      if (!automaticApproval.approved) await user.save();
     } else {
+      if (areAllEmployerCredentialsApproved(docs) && docs.overallStatus !== 'verified') {
+        docs.overallStatus = 'pending';
+      }
       await user.save();
     }
 
@@ -3107,13 +3107,9 @@ const markVerificationDocumentChecked = async (req, res, role) => {
 
     return res.status(200).json({
       success: true,
-      message: accountAutoApproved
-        ? role === 'jobseeker'
-          ? 'All required credentials have been approved. The Job Seeker account has been verified automatically.'
-          : 'All company credentials have been approved. The Employer account has been approved automatically.'
-        : role === 'jobseeker'
-          ? `${JOBSEEKER_DOC_LABELS[docType] || 'Credential'} approved successfully.`
-          : `${EMPLOYER_DOC_LABELS[docType] || 'Company requirement'} approved successfully.`,
+      message: role === 'jobseeker'
+        ? `${JOBSEEKER_DOC_LABELS[docType] || 'Credential'} approved successfully.`
+        : `${EMPLOYER_DOC_LABELS[docType] || 'Company requirement'} approved successfully.`,
       document: { status: document.status, checked: true, checkedAt: document.checkedAt, checkedBy: document.checkedBy },
       accountAutoApproved,
       overallStatus: docs.overallStatus,

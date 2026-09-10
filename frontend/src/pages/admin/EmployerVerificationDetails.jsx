@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
+import CenteredIndicator from "../../components/shared/CenteredIndicator";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -680,20 +681,28 @@ const EmployerVerificationDetails = () => {
   const isRejected = normalizeStatus(overallStatus) === "rejected";
   const canShowActionButtons = !isVerified && !isRejected;
 
-  const docsComplete = useMemo(() => {
-    const hasBusinessReg = !!(docs?.secRegistration?.url || docs?.birRegistration?.url || docs?.dtiRegistration?.url);
-    const hasCityPermit = !!docs?.cityPermit?.url;
-    return hasBusinessReg && hasCityPermit;
-  }, [docs]);
+  const requiredEmployerCredentialKeys = [
+    "secRegistration",
+    "birRegistration",
+    "dtiRegistration",
+    "cityPermit",
+    "businessPermit",
+  ];
+
+  const docsComplete = useMemo(
+    () =>
+      requiredEmployerCredentialKeys.every((docType) => {
+        const document = docs?.[docType] || {};
+        const status = String(document.status || "").toLowerCase();
+        return Boolean(document.url) && (document.checked === true || status === "approved");
+      }),
+    [docs],
+  );
 
   const missingDocsMessage = useMemo(() => {
-    const hasBusinessReg = !!(docs?.secRegistration?.url || docs?.birRegistration?.url || docs?.dtiRegistration?.url);
-    const hasCityPermit = !!docs?.cityPermit?.url;
-    if (!hasBusinessReg && !hasCityPermit) return "Missing: Business Registration (SEC/BIR/DTI) + City Permit";
-    if (!hasBusinessReg) return "Missing: Business Registration (SEC, BIR, or DTI)";
-    if (!hasCityPermit) return "Missing: City/Municipality Permit";
-    return "Documents complete";
-  }, [docs]);
+    if (docsComplete) return "All required credentials are approved";
+    return "All required company credentials must be submitted and approved first.";
+  }, [docsComplete]);
 
   const resetHoldModal = () => {
     setShowHoldModal(false);
@@ -745,7 +754,11 @@ const EmployerVerificationDetails = () => {
       });
 
       if (res.data?.success) {
-        setSuccess(res.data.message || "Updated successfully.");
+        setSuccess(
+          normalizeStatus(newStatus) === "verified"
+            ? "Employer approved successfully."
+            : res.data.message || "Employer updated successfully."
+        );
         setApprovalPassword("");
         await fetchDetails();
       } else {
@@ -775,7 +788,7 @@ const EmployerVerificationDetails = () => {
       });
 
       if (res.data?.success) {
-        setSuccess(res.data?.message || "Employer declined successfully.");
+        setSuccess("Employer declined successfully.");
         await fetchDetails();
         resetRejectModal();
       } else {
@@ -815,7 +828,7 @@ const EmployerVerificationDetails = () => {
       });
 
       if (res.data?.success) {
-        setSuccess(res.data?.message || "Employer placed on HOLD and resubmit email sent successfully.");
+        setSuccess("Employer placed on hold successfully.");
         await fetchDetails();
         resetHoldModal();
       } else {
@@ -1125,11 +1138,15 @@ const EmployerVerificationDetails = () => {
           </Alert>
         )}
 
-        {success && (
-          <Alert type="success" onClose={() => setSuccess("")}>
-            {success}
-          </Alert>
-        )}
+        {success ? (
+          <CenteredIndicator
+            type="success"
+            title={success}
+            message={success}
+            hideMessage
+            onClose={() => setSuccess("")}
+          />
+        ) : null}
 
         <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">

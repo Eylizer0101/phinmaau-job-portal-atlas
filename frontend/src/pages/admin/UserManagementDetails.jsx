@@ -299,9 +299,32 @@ const JobSeekerLevelBadgeCard = ({
 
 const TABS = [
   { key: "resume", label: "Resume", icon: "document" },
+  { key: "credentials", label: "Credentials", icon: "document" },
   { key: "activity", label: "Activity", icon: "clock" },
   { key: "applications", label: "Application History", icon: "history" },
 ];
+
+const JOBSEEKER_CREDENTIAL_LABELS = {
+  validId: "Valid ID",
+  cv: "Resume",
+  diploma: "Diploma",
+  tor: "TOR",
+  sss: "SSS",
+  philhealth: "PhilHealth",
+  pagibig: "Pag-IBIG",
+  tin: "TIN",
+};
+
+const JOBSEEKER_CREDENTIAL_DESCRIPTIONS = {
+  validId: "Government-issued or accepted valid identification",
+  cv: "Curriculum Vitae / Resume",
+  diploma: "Diploma",
+  tor: "Transcript of Records",
+  sss: "SSS credential",
+  philhealth: "PhilHealth credential",
+  pagibig: "Pag-IBIG credential",
+  tin: "TIN credential",
+};
 
 const APPLICATIONS_PER_PAGE = 5;
 
@@ -818,7 +841,7 @@ const UserManagementDetails = () => {
     [
       ["Preferred Language", profile.preferredLanguage],
       ["Educational Attainment", profile.educationalAttainment],
-      ["Field of Study", profile.studyField || profile.course],
+      ["Field of Study", profile.studyField],
       [
         "Salary",
         [profile.minimumSalary, profile.maximumSalary]
@@ -838,7 +861,7 @@ const UserManagementDetails = () => {
       ["Weight", profile.weight],
       ["Gender", profile.gender],
       ["Civil Status", profile.civilStatus],
-      ["Birthday", formatDate(profile.birthday)],
+      ["Birthday", profile.birthday ? formatDate(profile.birthday) : ""],
     ],
   ].map((column) =>
     column.filter(([, value]) => String(value || "").trim())
@@ -1749,6 +1772,53 @@ const UserManagementDetails = () => {
       return result;
     }, {});
 
+    const JobseekerCredentials = () => {
+      const verificationDocs = profile?.verificationDocs || {};
+      const credentialItems = Object.entries(JOBSEEKER_CREDENTIAL_LABELS).map(([key, label]) => ({
+        key,
+        label,
+        description: JOBSEEKER_CREDENTIAL_DESCRIPTIONS[key],
+        verification: verificationDocs[key] || {},
+      }));
+
+      return (
+        <section className="rounded-[18px] border border-[#d1d5db] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.05)] sm:p-7">
+          <h2 className="text-[30px] font-semibold text-black">Jobseeker Credentials</h2>
+          <p className="mt-1 text-[13px] text-[#6b7280]">Submitted verification credentials</p>
+
+          <div className="mt-5 space-y-3">
+            {credentialItems.map((item) => {
+              const hasFile = Boolean(item.verification?.url || item.verification?.fileUrl);
+              return (
+                <div key={item.key} className="flex min-h-[90px] items-center gap-4 rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] px-5 py-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
+                    <Icon name="document" className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-black">{item.label}</p>
+                    <p className="mt-1 text-xs text-[#6b7280]">{item.description}</p>
+                  </div>
+                  {hasFile ? (
+                    <button
+                      type="button"
+                      onClick={() => handleViewCredential(item.key)}
+                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                      title={`View ${item.label}`}
+                      aria-label={`View ${item.label}`}
+                    >
+                      <Icon name="eye" className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <span className="text-xs font-medium text-[#6b7280]">Not submitted</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      );
+    };
+
     const EmployerEmptyState = ({ icon = "image", title, subtitle }) => (
       <div className="mt-6 flex min-h-[260px] flex-col items-center justify-center rounded-[22px] border border-[#e6edf5] bg-[#fdfefe] px-6 py-12 text-center">
         <div className="mb-4 text-black/45">
@@ -2520,6 +2590,7 @@ const UserManagementDetails = () => {
 
   const activeContent = {
     resume: <ResumePreview />,
+    credentials: <JobseekerCredentials />,
     activity: <ActivityTimeline />,
     applications: <ApplicationHistory />,
   }[activeTab];
@@ -2542,6 +2613,39 @@ const UserManagementDetails = () => {
           <HeaderProfile />
 
           <div>{activeContent}</div>
+
+          {credentialAccess.isOpen ? (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="admin-jobseeker-credential-password-title">
+              <div className="w-full max-w-md overflow-hidden rounded-[22px] border border-gray-100 bg-white shadow-2xl">
+                <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+                  <div>
+                    <h3 id="admin-jobseeker-credential-password-title" className="text-xl font-bold text-gray-900">Enter Password</h3>
+                    <p className="mt-1 text-sm leading-5 text-gray-500">Enter your admin password before viewing this credential.</p>
+                  </div>
+                  <button type="button" onClick={closeCredentialAccess} disabled={credentialAccess.verifying} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-500 hover:bg-gray-50 disabled:opacity-60" aria-label="Close password modal">×</button>
+                </div>
+
+                <form onSubmit={submitCredentialAccess} className="space-y-4 px-6 py-6">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">Password</label>
+                    <div className="relative">
+                      <input type={showCredentialPassword ? "text" : "password"} value={credentialAccess.password} onChange={(event) => setCredentialAccess((current) => ({ ...current, password: event.target.value, error: "" }))} placeholder="Enter your password" autoFocus disabled={credentialAccess.verifying} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 pr-12 text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-gray-50" />
+                      <button type="button" onClick={() => setShowCredentialPassword((visible) => !visible)} disabled={credentialAccess.verifying} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 hover:text-[#2e66a6] disabled:opacity-60" aria-label={showCredentialPassword ? "Hide password" : "Show password"}>
+                        {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {credentialAccess.error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{credentialAccess.error}</div> : null}
+
+                  <div className="flex justify-end gap-3 pt-1">
+                    <button type="button" onClick={closeCredentialAccess} disabled={credentialAccess.verifying} className="h-11 rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">Cancel</button>
+                    <button type="submit" disabled={credentialAccess.verifying} className="h-11 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white hover:bg-[#285c96] disabled:opacity-60">{credentialAccess.verifying ? "Confirming..." : "Confirm"}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </AdminLayout>
