@@ -851,6 +851,7 @@ const HiredApplicants = () => {
     setCustomDateFrom('');
     setCustomDateTo('');
     setSortBy('recent');
+    setCurrentPage(1);
   };
 
   const jobOptions = useMemo(() => {
@@ -1068,7 +1069,10 @@ const selectBase =
                   <input
                     id="hiredSearch"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className={inputBase}
                     placeholder="Search applicant, email, job title..."
                     disabled={loading}
@@ -1078,7 +1082,10 @@ const selectBase =
                   {query && (
                     <button
                       type="button"
-                      onClick={() => setQuery('')}
+                      onClick={() => {
+                        setQuery('');
+                        setCurrentPage(1);
+                      }}
                       className="absolute right-3 top-3.5 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                       aria-label="Clear search"
                     >
@@ -1095,7 +1102,10 @@ const selectBase =
                 <select
                   id="jobFilter"
                   value={selectedJob}
-                  onChange={(e) => setSelectedJob(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedJob(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className={selectBase}
                   disabled={jobsLoading}
                 >
@@ -1149,7 +1159,10 @@ const selectBase =
                   id="sortFilter"
                   label="Sort By"
                   value={sortBy}
-                  onChange={setSortBy}
+                  onChange={(value) => {
+                    setSortBy(value);
+                    setCurrentPage(1);
+                  }}
                   options={sortOptions}
                   disabled={loading}
                 />
@@ -1172,7 +1185,7 @@ const selectBase =
         </div>
 
         {/* Table */}
-        <div className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
+        <div className="overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           {loading ? (
             <div className="py-14 text-center" role="status" aria-live="polite">
               <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1188,7 +1201,7 @@ const selectBase =
               {/* Desktop */}
               <div className="hidden overflow-x-auto md:block">
                 <table className="min-w-full">
-                  <thead className="border-b border-gray-200 bg-[#fafafa]">
+                  <thead className="sticky top-0 z-20 border-b border-gray-200 bg-[#fafafa]">
                     <tr>
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Applied Date
@@ -1454,7 +1467,17 @@ const selectBase =
                 })}
               </div>
 
-              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Hired applicants pagination" />
+              {totalItems >= 10 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  ariaLabel="Hired applicants pagination"
+                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                />
+              ) : null}
 
             </>
           )}
