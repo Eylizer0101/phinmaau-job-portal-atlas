@@ -1548,7 +1548,7 @@ const UserManagementDetails = () => {
 
   const ApplicationHistory = () => (
     <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start">
+      <div className="grid gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start sm:gap-x-10">
         <div>
           <h2 className="text-lg font-bold text-black">Application History</h2>
           <p className="mt-1 text-xs text-gray-500">Track where this user has applied and their progress.</p>

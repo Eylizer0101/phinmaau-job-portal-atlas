@@ -620,7 +620,7 @@ const AdminUserApplicationHistory = () => {
           </button>
 
           <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start">
+            <div className="grid gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start sm:gap-x-10">
               <div>
                 <h1 className="text-2xl font-bold text-black sm:text-3xl">
                   Full Application History
