@@ -1751,7 +1751,7 @@ const UserManagement = () => {
               </div>
             ) : (
               <>
-                <div className="hidden h-[432px] overflow-x-auto overflow-y-auto overscroll-contain md:block">
+                <div className="hidden h-[432px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
@@ -1877,7 +1877,7 @@ const UserManagement = () => {
                   </table>
                 </div>
 
-                <div className="max-h-[430px] space-y-4 overflow-y-auto overscroll-contain md:hidden">
+                <div className="max-h-[430px] space-y-4 overflow-y-auto overscroll-auto md:hidden">
                   {filteredUsers.map((user) => {
                     const roleInfo = getRolePill(user.role);
                     const isLoading = userActionLoading[user.key];
