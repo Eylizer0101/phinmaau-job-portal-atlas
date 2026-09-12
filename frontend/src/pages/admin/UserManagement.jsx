@@ -1733,8 +1733,18 @@ const UserManagement = () => {
           </div>
         </div>
 
-        <div className="flex h-[calc(100vh-285px)] min-h-[450px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-          <div className="flex min-h-0 flex-1 flex-col px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
+        <div
+          className={cn(
+            "flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]",
+            pageSize === 10 ? "h-auto" : "h-[calc(100vh-285px)] min-h-[450px]"
+          )}
+        >
+          <div
+            className={cn(
+              "flex flex-col px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0",
+              pageSize === 10 ? "" : "min-h-0 flex-1"
+            )}
+          >
 
             {loading && users.length === 0 ? null : filteredUsers.length === 0 ? (
               <div className="py-14 text-center">
@@ -1752,7 +1762,12 @@ const UserManagement = () => {
             ) : (
               <>
                 <div
-                  className="hidden min-h-0 flex-1 overflow-x-auto overflow-y-scroll overscroll-contain md:block"
+                  className={cn(
+                    "hidden overflow-x-auto md:block",
+                    pageSize === 10
+                      ? "overflow-y-visible"
+                      : "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+                  )}
                 >
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
@@ -1879,7 +1894,14 @@ const UserManagement = () => {
                   </table>
                 </div>
 
-                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain md:hidden">
+                <div
+                  className={cn(
+                    "space-y-4 md:hidden",
+                    pageSize === 10
+                      ? ""
+                      : "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+                  )}
+                >
                   {filteredUsers.map((user) => {
                     const roleInfo = getRolePill(user.role);
                     const isLoading = userActionLoading[user.key];
@@ -1991,7 +2013,11 @@ const UserManagement = () => {
                   pageSize={pageSize}
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
-                  className={`sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5 ${totalUsers <= 10 ? '[&_nav]:hidden' : ''}`}
+                  className={cn(
+                    "-mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5",
+                    pageSize === 10 ? "" : "sticky bottom-0 z-20",
+                    totalUsers <= 10 ? "[&_nav]:hidden" : ""
+                  )}
                 />
               </>
             )}
