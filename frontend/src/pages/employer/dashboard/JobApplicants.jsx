@@ -634,7 +634,7 @@ const JobApplicants = () => {
           <div className="mt-8 rounded-3xl bg-white p-12 text-center text-red-600">{error}</div>
         ) : paginatedApplicants.length ? (
           <>
-            <div className="mt-8 space-y-5">
+            <div className="mt-8 max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
               {paginatedApplicants.map(({ application, user, profile, level, matchScore }) => {
                 const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ') || 'Applicant';
                 const image = user.profileImage ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`) : '';
@@ -675,7 +675,16 @@ const JobApplicants = () => {
                 );
               })}
             </div>
-            <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Job applicants pagination" />
+            {totalItems >= 10 ? (
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                ariaLabel="Job applicants pagination"
+              />
+            ) : null}
           </>
         ) : (
           <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">No applicants found for the selected filters.</div>

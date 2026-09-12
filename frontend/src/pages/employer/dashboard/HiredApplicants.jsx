@@ -1186,9 +1186,9 @@ const selectBase =
           ) : (
             <>
               {/* Desktop */}
-              <div className="hidden overflow-x-auto md:block">
+              <div className="hidden max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
                 <table className="min-w-full">
-                  <thead className="border-b border-gray-200 bg-[#fafafa]">
+                  <thead className="sticky top-0 z-10 border-b border-gray-200 bg-[#fafafa]">
                     <tr>
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Applied Date
@@ -1454,7 +1454,16 @@ const selectBase =
                 })}
               </div>
 
-              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Hired applicants pagination" />
+              {totalItems >= 10 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  ariaLabel="Hired applicants pagination"
+                />
+              ) : null}
 
             </>
           )}

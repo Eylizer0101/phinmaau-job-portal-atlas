@@ -1104,9 +1104,9 @@ const DeclinedApplicants = () => {
               </div>
             ) : (
               <>
-                <div className="hidden overflow-x-auto md:block">
+                <div className="hidden max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="sticky top-0 z-10 bg-gray-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Applied Date
@@ -1296,7 +1296,16 @@ const DeclinedApplicants = () => {
                   })}
                 </div>
 
-              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Declined applicants pagination" />
+              {totalItems >= 10 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  ariaLabel="Declined applicants pagination"
+                />
+              ) : null}
 
               </>
             )}

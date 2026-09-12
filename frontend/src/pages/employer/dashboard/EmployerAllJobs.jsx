@@ -126,7 +126,7 @@ const EmployerAllJobs = () => {
             {loading ? <p className="py-16 text-center text-black/60">Loading job posts...</p> : error ? <p className="py-16 text-center text-red-600">{error}</p> : visibleJobs.length === 0 ? (
               <div className="mt-7 rounded-2xl border border-dashed border-[#d8e2ee] px-6 py-14 text-center text-black/55">{jobs.length ? 'No job posts match your search.' : 'No active job posts yet.'}</div>
             ) : (
-              <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-7 grid max-h-[508px] grid-cols-1 gap-6 overflow-y-auto overscroll-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
                 {visibleJobs.map((job) => (
                   <article key={job._id} className="flex min-h-[315px] flex-col rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)]">
                     <div className="flex items-start gap-4">
@@ -164,7 +164,16 @@ const EmployerAllJobs = () => {
               </div>
             )}
 
-            {!loading && !error ? <Pagination currentPage={safePage} totalItems={filteredJobs.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} ariaLabel="Employer job posts pagination" /> : null}
+            {!loading && !error && filteredJobs.length >= 10 ? (
+              <Pagination
+                currentPage={safePage}
+                totalItems={filteredJobs.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                ariaLabel="Employer job posts pagination"
+              />
+            ) : null}
           </section>
         </div>
       </main>

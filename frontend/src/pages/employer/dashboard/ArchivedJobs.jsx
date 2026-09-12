@@ -1248,7 +1248,7 @@ const ArchivedJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden overflow-x-auto md:block">
+                <div className="hidden max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
                       <col className="w-[13%]" />
@@ -1260,7 +1260,7 @@ const ArchivedJobs = () => {
                       <col className="w-[24%]" />
                     </colgroup>
 
-                    <thead className="bg-gray-50">
+                    <thead className="sticky top-0 z-10 bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Archived
@@ -1420,7 +1420,16 @@ const ArchivedJobs = () => {
                     </tbody>
                   </table>
                 </div>
-                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Archived jobs pagination" />
+                {totalItems >= 10 ? (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={totalItems}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={setPageSize}
+                    ariaLabel="Archived jobs pagination"
+                  />
+                ) : null}
               </>
             )}
           </div>

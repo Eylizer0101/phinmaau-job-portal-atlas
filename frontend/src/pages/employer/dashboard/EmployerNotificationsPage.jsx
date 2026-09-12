@@ -447,7 +447,7 @@ const EmployerNotificationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="max-h-[508px] divide-y divide-gray-100 overflow-y-auto overscroll-auto">
               {paginatedNotifications.map((notification) => (
                 <div
                   key={notification._id}
@@ -557,15 +557,17 @@ const EmployerNotificationsPage = () => {
           )}
         </div>
 
-        <Pagination
-          currentPage={safePage}
-          totalItems={filteredNotifications.length}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
-          ariaLabel="Notification pagination"
-          className="mt-6"
-        />
+        {filteredNotifications.length >= 10 ? (
+          <Pagination
+            currentPage={safePage}
+            totalItems={filteredNotifications.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            ariaLabel="Notification pagination"
+            className="mt-6"
+          />
+        ) : null}
       </div>
       </div>
     </EmployerLayout>
