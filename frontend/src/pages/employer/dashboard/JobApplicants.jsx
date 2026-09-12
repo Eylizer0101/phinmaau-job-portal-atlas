@@ -435,6 +435,10 @@ const JobApplicants = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, levelFilter, sortBy, dateFilter, dateFrom, dateTo]);
+
   const fetchApplicants = useCallback(async () => {
     try {
       setLoading(true);
@@ -675,7 +679,9 @@ const JobApplicants = () => {
                 );
               })}
             </div>
-            <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Job applicants pagination" />
+            {totalItems >= 10 ? (
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Job applicants pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+            ) : null}
           </>
         ) : (
           <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">No applicants found for the selected filters.</div>

@@ -1577,6 +1577,10 @@ const Applicants = () => {
   const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [query, selectedJob, selectedLevel, statusFilter, filterBy, customDateStart, customDateEnd, sortBy]);
+
+  useEffect(() => {
     if (openFilterMenu !== 'sort') return undefined;
 
     const handleOutsideClick = (event) => {
@@ -2350,7 +2354,9 @@ const Applicants = () => {
               })}
             </div>
 
-            <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Applicants pagination" />
+            {totalItems >= 10 ? (
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Applicants pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+            ) : null}
           </>
         ) : (
           <div className="rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center shadow-sm">

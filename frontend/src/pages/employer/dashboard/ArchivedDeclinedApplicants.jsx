@@ -688,6 +688,10 @@ const ArchivedDeclinedApplicants = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, selectedJob, sort, customDateFrom, customDateTo]);
+
   const [restoreTarget, setRestoreTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -1163,7 +1167,7 @@ const ArchivedDeclinedApplicants = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
           <div className="p-6">
             {loading ? (
               <div className="py-14 text-center" role="status" aria-live="polite">
@@ -1179,7 +1183,7 @@ const ArchivedDeclinedApplicants = () => {
               <>
                 <div className="hidden overflow-x-auto md:block">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="sticky top-0 z-20 bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Applied Date
@@ -1367,7 +1371,9 @@ const ArchivedDeclinedApplicants = () => {
                     );
                   })}
                 </div>
-                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Archived declined applicants pagination" />
+                {totalItems >= 10 ? (
+                  <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Archived declined applicants pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+                ) : null}
               </>
             )}
           </div>

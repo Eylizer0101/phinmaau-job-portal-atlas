@@ -497,6 +497,10 @@ const HiredApplicants = () => {
   const [sortBy, setSortBy] = useState('recent');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, selectedJob, employmentFilter, dateFilter, customDateFrom, customDateTo, sortBy]);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
   const [reviewApplication, setReviewApplication] = useState(null);

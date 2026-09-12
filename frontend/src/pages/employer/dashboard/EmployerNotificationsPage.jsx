@@ -57,6 +57,10 @@ const EmployerNotificationsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchQuery]);
+
   const navigate = useNavigate();
 
   const api = axios.create({
@@ -557,15 +561,17 @@ const EmployerNotificationsPage = () => {
           )}
         </div>
 
-        <Pagination
-          currentPage={safePage}
-          totalItems={filteredNotifications.length}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
-          ariaLabel="Notification pagination"
-          className="mt-6"
-        />
+        {filteredNotifications.length >= 10 ? (
+          <Pagination
+            currentPage={safePage}
+            totalItems={filteredNotifications.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            ariaLabel="Notification pagination"
+            className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+          />
+        ) : null}
       </div>
       </div>
     </EmployerLayout>

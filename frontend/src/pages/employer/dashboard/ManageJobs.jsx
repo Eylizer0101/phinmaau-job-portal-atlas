@@ -509,6 +509,10 @@ const ManageJobs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, jobFilter, statusFilter, dateFilter, customDateFrom, customDateTo, sortBy]);
+
   const [badLogos, setBadLogos] = useState({});
   const [counts, setCounts] = useState({
     active: 0,
@@ -1480,7 +1484,7 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
           <div className="p-6">
             {loading ? (
               <div className="py-14 text-center">
@@ -1977,7 +1981,7 @@ const ManageJobs = () => {
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                   ariaLabel="Manage jobs pagination"
-                  className="sticky bottom-0 z-30 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
                 />
               ) : null}
 

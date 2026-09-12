@@ -46,6 +46,10 @@ const EmployerAllJobs = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -164,7 +168,7 @@ const EmployerAllJobs = () => {
               </div>
             )}
 
-            {!loading && !error ? <Pagination currentPage={safePage} totalItems={filteredJobs.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} ariaLabel="Employer job posts pagination" /> : null}
+            {!loading && !error && filteredJobs.length >= 10 ? <Pagination currentPage={safePage} totalItems={filteredJobs.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} ariaLabel="Employer job posts pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" /> : null}
           </section>
         </div>
       </main>

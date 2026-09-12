@@ -540,6 +540,10 @@ const ArchivedJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, jobFilter, sortBy, customDateFrom, customDateTo]);
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState('');
@@ -1120,7 +1124,7 @@ const ArchivedJobs = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
           <div className="p-6">
             {loading ? (
               <div className="py-14 text-center">
@@ -1260,7 +1264,7 @@ const ArchivedJobs = () => {
                       <col className="w-[24%]" />
                     </colgroup>
 
-                    <thead className="bg-gray-50">
+                    <thead className="sticky top-0 z-20 bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Archived
@@ -1420,7 +1424,9 @@ const ArchivedJobs = () => {
                     </tbody>
                   </table>
                 </div>
-                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Archived jobs pagination" />
+                {totalItems >= 10 ? (
+                  <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Archived jobs pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+                ) : null}
               </>
             )}
           </div>

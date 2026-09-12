@@ -56,6 +56,10 @@ const EmployerAllReviews = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -187,7 +191,9 @@ const EmployerAllReviews = () => {
 
             {loading ? <p className="py-16 text-center text-black/60">Loading reviews...</p> : error ? <p className="py-16 text-center text-red-600">{error}</p> : <>
               <div className="mt-7 space-y-5">{visibleReviews.length === 0 ? <div className="rounded-2xl border border-dashed border-[#d8e2ee] px-6 py-14 text-center text-black/55">{reviews.length ? 'No reviews match your search.' : 'No application reviews yet.'}</div> : visibleReviews.map((review, index) => <article key={review._id || `${safePage}-${index}`} className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6"><div className="flex flex-wrap items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><ReviewerAvatar src={resolveReviewerImage(review.reviewerProfileImage || review.profileImage)} name={review.reviewerName || 'Anonymous User'} /><div><h2 className="text-[17px] font-bold text-black">{review.reviewerName || 'Anonymous User'}</h2><p className="mt-1 text-sm text-black/55">{review.roleAppliedFor || 'Role not provided'}{formatTimeAgo(review.createdAt) ? ` · ${formatTimeAgo(review.createdAt)}` : ''}</p></div></div><span className="rounded-full border border-[#dfe7f0] bg-transparent px-3 py-1 text-xs font-semibold text-black/60">{outcomeLabel(review.outcome)}</span></div><p className="mt-5 whitespace-pre-line text-[16px] leading-7 text-black/80">{review.message || 'No written review provided.'}</p><div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric label="First reply" value={review.daysToFirstResponse == null ? 'Not provided' : `${Number(review.daysToFirstResponse) || 0}d`} /><Metric label="Total length" value={review.totalProcessDays == null ? 'Not provided' : `${Number(review.totalProcessDays) || 0}d`} /><Metric label="Process" value={`${Number(review.processRating ?? review.rating) || 0}/5`} /><Metric label="Apply again?" value={typeof review.wouldApplyAgain === 'boolean' ? (review.wouldApplyAgain ? 'Yes' : 'No') : 'Not provided'} /></div></article>)}</div>
-              <Pagination currentPage={safePage} totalItems={filteredReviews.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} ariaLabel="Employer application reviews pagination" />
+              {filteredReviews.length >= 10 ? (
+                <Pagination currentPage={safePage} totalItems={filteredReviews.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} ariaLabel="Employer application reviews pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+              ) : null}
             </>}
           </section>
         </div>
