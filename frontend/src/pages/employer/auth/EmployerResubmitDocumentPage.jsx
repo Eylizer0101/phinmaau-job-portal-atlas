@@ -1,5 +1,5 @@
 // src/pages/employer/auth/EmployerResubmitDocumentPage.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../../services/api";
 
@@ -11,25 +11,55 @@ const docTypeLabels = {
   businessPermit: "Business Permit",
 };
 
+const MAX_CREDENTIAL_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+]);
+
+const validateCredentialFile = (file) => {
+  if (!file) return "Please choose a file to upload.";
+  if (file.size > MAX_CREDENTIAL_SIZE) return "File must not exceed 10MB.";
+
+  const extension = `.${String(file.name || "").split(".").pop()?.toLowerCase() || ""}`;
+  if (
+    !ALLOWED_TYPES.has(String(file.type || "").toLowerCase()) ||
+    ![".pdf", ".jpg", ".jpeg", ".png"].includes(extension)
+  ) {
+    return "Invalid file. Upload PDF, JPG, JPEG, or PNG only.";
+  }
+
+  return "";
+};
+
+const UploadIcon = () => (
+  <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.8}
+      d="M7 16a4 4 0 01-.88-7.903A5.5 5.5 0 0116.5 6.5a4.5 4.5 0 01.5 8.972M12 12v8m0-8-3 3m3-3 3 3"
+    />
+  </svg>
+);
+
 const EmployerResubmitDocumentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
-
-  const fileInputRef = useRef(null);
+  const inputRefs = useRef({});
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
   const [tokenValid, setTokenValid] = useState(false);
-  const [docType, setDocType] = useState("");
+  const [docTypes, setDocTypes] = useState([]);
   const [reasonMessage, setReasonMessage] = useState("");
-
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState({});
+  const [dragActive, setDragActive] = useState({});
 
   useEffect(() => {
     const validateToken = async () => {
@@ -43,13 +73,17 @@ const EmployerResubmitDocumentPage = () => {
         setLoading(true);
         setError("");
 
-        const res = await api.get(`/auth/employer/resubmit-document/validate`, {
+        const res = await api.get("/auth/resubmit-document/validate", {
           params: { token },
         });
 
-        if (res.data?.success) {
+        if (res.data?.success && res.data?.accountType === "employer") {
+          const requested = Array.isArray(res.data.docTypes) && res.data.docTypes.length
+            ? res.data.docTypes
+            : [res.data.docType].filter(Boolean);
+
           setTokenValid(true);
-          setDocType(res.data.docType || "");
+          setDocTypes(requested);
           setReasonMessage(res.data.reasonMessage || "");
         } else {
           setTokenValid(false);
@@ -66,35 +100,19 @@ const EmployerResubmitDocumentPage = () => {
     validateToken();
   }, [token]);
 
-  const acceptedLabel = useMemo(() => {
-    return docTypeLabels[docType] || docType || "document";
-  }, [docType]);
-
-  const handleChooseFile = () => {
-    if (!tokenValid || submitting) return;
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelected = (file) => {
+  const handleFileSelected = (docType, file) => {
     if (!file) return;
-    setSelectedFile(file);
+
+    const validationMessage = validateCredentialFile(file);
+    if (validationMessage) {
+      setSelectedFiles((prev) => ({ ...prev, [docType]: null }));
+      setError(`${docTypeLabels[docType] || docType}: ${validationMessage}`);
+      return;
+    }
+
+    setSelectedFiles((prev) => ({ ...prev, [docType]: file }));
     setError("");
-  };
-
-  const onInputChange = (e) => {
-    const file = e.target.files?.[0];
-    handleFileSelected(file);
-  };
-
-  const onDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (submitting || !tokenValid) return;
-
-    const file = e.dataTransfer.files?.[0];
-    handleFileSelected(file);
+    setSuccess("");
   };
 
   const handleSubmit = async () => {
@@ -103,13 +121,13 @@ const EmployerResubmitDocumentPage = () => {
       return;
     }
 
-    if (!docType) {
-      setError("Missing document type for resubmission.");
-      return;
-    }
-
-    if (!selectedFile) {
-      setError("Please choose a file to upload.");
+    const missing = docTypes.filter((docType) => !selectedFiles[docType]);
+    if (missing.length) {
+      setError(
+        `Please upload all requested documents: ${missing
+          .map((docType) => docTypeLabels[docType] || docType)
+          .join(", ")}.`,
+      );
       return;
     }
 
@@ -120,30 +138,33 @@ const EmployerResubmitDocumentPage = () => {
 
       const formData = new FormData();
       formData.append("token", token);
-      formData.append("docType", docType);
-      formData.append("document", selectedFile);
 
-      const res = await api.post(`/auth/employer/resubmit-document`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      docTypes.forEach((docType) => {
+        formData.append(docType, selectedFiles[docType]);
+      });
+
+      const res = await api.post("/auth/resubmit-document", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (res.data?.success) {
-        setSuccess(res.data?.message || "Document resubmitted successfully. Redirecting to login...");
+        setSuccess(
+          res.data?.message ||
+            "Requested documents resubmitted successfully. Redirecting to login...",
+        );
         setTimeout(() => {
           navigate("/login", {
             replace: true,
             state: {
-              successMessage: "Your employer document was resubmitted successfully.",
+              successMessage: "Your requested employer credentials were resubmitted successfully.",
             },
           });
         }, 1500);
       } else {
-        setError("Failed to resubmit document.");
+        setError("Failed to resubmit documents.");
       }
     } catch (e) {
-      setError(e.response?.data?.message || "Failed to resubmit document.");
+      setError(e.response?.data?.message || "Failed to resubmit documents.");
     } finally {
       setSubmitting(false);
     }
@@ -152,144 +173,141 @@ const EmployerResubmitDocumentPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-[32px] bg-white border border-[#D9E2EC] shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-8 text-center">
-          <div className="mx-auto h-10 w-10 border-4 border-[#D9E2EC] border-t-[#2e66a6] rounded-full animate-spin" />
-          <p className="mt-4 text-sm text-black/70">Validating resubmit link...</p>
+        <div className="w-full max-w-md rounded-[32px] bg-white border border-[#D9E2EC] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#D9E2EC] border-t-[#2e66a6]" />
+          <p className="mt-4 text-sm text-gray-600">Checking resubmit link...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4">
-      <div className="w-full max-w-[520px] rounded-[32px] bg-white border border-[#D9E2EC] shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-6 sm:p-8">
-        <div className="flex justify-center">
-          <div className="h-14 w-14 rounded-full bg-[#F5F7FA] flex items-center justify-center">
-            <svg className="w-7 h-7 text-[#2e66a6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 11c0-1.657 1.343-3 3-3h1V7a4 4 0 10-8 0v1h1c1.657 0 3 1.343 3 3z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 10h12v8a2 2 0 01-2 2H8a2 2 0 01-2-2v-8z" />
+    <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-2xl rounded-[32px] border border-[#D9E2EC] bg-white p-6 sm:p-8 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+        <div className="text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F4F7FB] text-[#2e66a6]">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 11V7a3 3 0 116 0v4m-8 0h10l1 10H6l1-10z" />
             </svg>
           </div>
+          <h1 className="mt-5 text-2xl sm:text-3xl font-bold text-black">
+            Resubmit Documents
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">
+            Upload the correct file for each business credential requested by the Admin.
+          </p>
         </div>
 
-        <h1 className="mt-6 text-center text-3xl font-bold text-black">Resubmit Employer Document</h1>
+        {reasonMessage ? (
+          <div className="mt-6 rounded-2xl border border-[#F3D39A] bg-[#FFF7E9] px-5 py-4 text-[#8A5700]">
+            <p className="text-sm font-semibold">Admin message</p>
+            <p className="mt-1 text-sm leading-6">{reasonMessage}</p>
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        {success ? (
+          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {success}
+          </div>
+        ) : null}
 
         {tokenValid ? (
-          <>
-            <div className="mt-6 rounded-2xl border border-[#F5D7A1] bg-[#FFF4E5] overflow-hidden">
-              <div className="flex">
-                <div className="w-1.5 bg-[#8A5A00]" />
-                <div className="flex-1 px-4 py-4">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-[#8A5A00] mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z" />
-                    </svg>
+          <div className="mt-6 space-y-4">
+            {docTypes.map((docType, index) => {
+              const file = selectedFiles[docType];
+              const isActive = Boolean(dragActive[docType]);
 
-                    <div className="text-sm text-[#6B4B00] leading-7">
-                      <p className="font-semibold">Document to resubmit: {acceptedLabel}</p>
-                      <p className="mt-1">{reasonMessage || "Please upload a clearer and valid document to continue."}</p>
+              return (
+                <div
+                  key={docType}
+                  className="rounded-2xl border border-[#D9E2EC] bg-white p-4 sm:p-5"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EEF4FB] text-sm font-bold text-[#2e66a6]">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-black">
+                        {docTypeLabels[docType] || docType}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        PDF, JPG, JPEG or PNG · maximum 10MB
+                      </p>
                     </div>
                   </div>
+
+                  <input
+                    ref={(node) => {
+                      inputRefs.current[docType] = node;
+                    }}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    className="hidden"
+                    onChange={(event) =>
+                      handleFileSelected(docType, event.target.files?.[0])
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => inputRefs.current[docType]?.click()}
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      setDragActive((prev) => ({ ...prev, [docType]: true }));
+                    }}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDragLeave={(event) => {
+                      event.preventDefault();
+                      setDragActive((prev) => ({ ...prev, [docType]: false }));
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      setDragActive((prev) => ({ ...prev, [docType]: false }));
+                      handleFileSelected(docType, event.dataTransfer.files?.[0]);
+                    }}
+                    className={`mt-4 flex min-h-[130px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-5 transition ${
+                      isActive
+                        ? "border-[#2e66a6] bg-[#EEF4FB]"
+                        : file
+                          ? "border-emerald-300 bg-emerald-50/40"
+                          : "border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#2e66a6]"
+                    }`}
+                  >
+                    <span className={file ? "text-emerald-600" : "text-gray-500"}>
+                      <UploadIcon />
+                    </span>
+                    <span className="mt-2 text-sm font-semibold text-[#2e66a6]">
+                      {file ? "Change File" : `Upload ${docTypeLabels[docType] || docType}`}
+                    </span>
+                    <span className="mt-1 max-w-full truncate text-xs text-gray-500">
+                      {file ? file.name : "Click or drag and drop the correct credential here"}
+                    </span>
+                  </button>
                 </div>
-              </div>
-            </div>
+              );
+            })}
 
-            <div
-              className={`mt-8 rounded-[24px] border-2 border-dashed px-6 py-10 text-center transition ${
-                dragActive
-                  ? "border-[#2e66a6] bg-[#EEF4FB]"
-                  : "border-[#D9E2EC] bg-[#F8FAFD]"
-              }`}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!submitting) setDragActive(true);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!submitting) setDragActive(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDragActive(false);
-              }}
-              onDrop={onDrop}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                submitting ||
+                !docTypes.length ||
+                docTypes.some((docType) => !selectedFiles[docType])
+              }
+              className="mt-2 w-full rounded-xl bg-[#2e66a6] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={onInputChange}
-                disabled={submitting}
-              />
-
-              <div className="flex justify-center">
-                <svg className="w-12 h-12 text-[#4B5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 16V8m0 0l-3 3m3-3l3 3" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16.5A2.5 2.5 0 016.5 14H7a5 5 0 119.8 1.5H18a2 2 0 012 2v.5A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-1z" />
-                </svg>
-              </div>
-
-              <p className="mt-4 text-base text-black/70">Drag and Drop</p>
-
-              <button
-                type="button"
-                onClick={handleChooseFile}
-                disabled={submitting}
-                className="mt-2 text-xl font-bold text-[#0B57D0] hover:underline disabled:opacity-60"
-              >
-                Choose a clearer file
-              </button>
-
-              {selectedFile && (
-                <p className="mt-4 text-sm text-black font-medium break-all">
-                  Selected: {selectedFile.name}
-                </p>
-              )}
-            </div>
-
-            {error && (
-              <div className="mt-5 rounded-2xl border border-[#F3D1D1] bg-[#FDF2F2] px-4 py-3 text-sm font-medium text-[#7A271A]">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="mt-5 rounded-2xl border border-[#C9DAF0] bg-[#EEF4FB] px-4 py-3 text-sm font-medium text-[#2e66a6]">
-                {success}
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-center">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting || !selectedFile}
-                className="inline-flex items-center justify-center rounded-2xl bg-[#0B57D0] px-6 py-3 text-white text-xl font-bold hover:bg-[#0949AE] disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {submitting ? "Submitting..." : "Submit New Document"}
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="mt-6 rounded-2xl border border-[#F3D1D1] bg-[#FDF2F2] px-4 py-4 text-sm font-medium text-[#7A271A]">
-              {error || "This resubmit link is invalid, expired, or already used."}
-            </div>
-
-            <div className="mt-6 flex justify-center">
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="inline-flex items-center justify-center rounded-2xl bg-[#2e66a6] px-6 py-3 text-white text-sm font-semibold hover:bg-[#255587]"
-              >
-                Go to Login
-              </button>
-            </div>
-          </>
-        )}
+              {submitting ? "Submitting..." : "Submit All Documents"}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -84,7 +84,7 @@ router.post('/reset-password', passwordRecoveryLimiter, authController.resetPass
 router.get('/resubmit-document/validate', authController.validateResubmitDocumentToken);
 router.post(
   '/resubmit-document',
-  upload.uploadAlumniResubmit.single('document'),
+  upload.handleResubmitDocumentUploads,
   authController.resubmitDocument
 );
 

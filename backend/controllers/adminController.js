@@ -2144,12 +2144,18 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
 // HOLD employer verification and send resubmit email
 exports.holdEmployerVerification = async (req, res) => {
   try {
-    const { docType, reasonMessage } = req.body;
+    const { docType, docTypes, reasonMessage } = req.body;
 
-    if (!EMPLOYER_DOC_TYPES.includes(String(docType || ''))) {
+    const requestedDocTypes = [...new Set(
+      (Array.isArray(docTypes) && docTypes.length ? docTypes : [docType])
+        .map((value) => String(value || '').trim())
+        .filter((value) => EMPLOYER_DOC_TYPES.includes(value))
+    )];
+
+    if (!requestedDocTypes.length) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid document type selected for resubmission'
+        message: 'Please select at least one valid document for resubmission'
       });
     }
 
@@ -2173,57 +2179,75 @@ exports.holdEmployerVerification = async (req, res) => {
       employer.employerProfile.verificationDocs = {};
     }
 
+    const verificationDocs = employer.employerProfile.verificationDocs;
+    const invalidRequestedDoc = requestedDocTypes.find((key) => !verificationDocs?.[key]?.url);
+
+    if (invalidRequestedDoc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Only submitted credentials can be requested for resubmission.'
+      });
+    }
+
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = User.hashToken(rawToken);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 48);
 
-    employer.employerProfile.verificationDocs.overallStatus = 'hold';
-    employer.employerProfile.verificationDocs.remarks = String(reasonMessage).trim();
-    employer.employerProfile.verificationDocs.rejectionReasons = [];
-    employer.employerProfile.verificationDocs.rejectionMessage = '';
-    employer.employerProfile.verificationDocs.rejectedAt = null;
+    verificationDocs.overallStatus = 'hold';
+    verificationDocs.remarks = String(reasonMessage).trim();
+    verificationDocs.rejectionReasons = [];
+    verificationDocs.rejectionMessage = '';
+    verificationDocs.rejectedAt = null;
 
-    if (!employer.employerProfile.verificationDocs[docType]) {
-      employer.employerProfile.verificationDocs[docType] = {};
-    }
+    requestedDocTypes.forEach((key) => {
+      if (!verificationDocs[key]) verificationDocs[key] = {};
+      verificationDocs[key].status = 'hold';
+      verificationDocs[key].checked = false;
+      verificationDocs[key].checkedAt = null;
+      verificationDocs[key].checkedBy = null;
+    });
 
-    employer.employerProfile.verificationDocs[docType].status = 'hold';
-    employer.employerProfile.verificationDocs.resubmitRequest = {
+    verificationDocs.resubmitRequest = {
       tokenHash,
-      docType,
+      docType: requestedDocTypes[0],
+      docTypes: requestedDocTypes,
       reasonMessage: String(reasonMessage).trim(),
       requestedAt: now,
       expiresAt,
       usedAt: null,
-      requestedBy: req.user?._id || null,
+      requestedBy: req.user?._id || req.userId || null,
     };
 
+    employer.employerProfile.verificationDocs = verificationDocs;
     await employer.save();
 
     const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
-    const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
+    const resubmitUrl = `${frontendUrl}/employer/resubmit-document?token=${rawToken}`;
+    const docLabels = requestedDocTypes.map((key) => EMPLOYER_DOC_LABELS[key] || key);
 
     sendResubmitDocumentEmail({
       to: employer.email,
       fullName: employer.fullName || employer.email,
-      docLabel: EMPLOYER_DOC_LABELS[docType] || docType,
+      docLabel: docLabels[0],
+      docLabels,
       reasonMessage: String(reasonMessage).trim(),
       resubmitUrl,
     }).catch((emailError) => {
       console.error('Failed to send employer resubmit email:', emailError);
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Employer placed on HOLD and resubmit email sent successfully.',
       employer: {
         _id: employer._id,
         email: employer.email,
-        overallStatus: employer.employerProfile.verificationDocs.overallStatus,
-        remarks: employer.employerProfile.verificationDocs.remarks || '',
+        overallStatus: verificationDocs.overallStatus,
+        remarks: verificationDocs.remarks || '',
         resubmitRequest: {
-          docType,
+          docType: requestedDocTypes[0],
+          docTypes: requestedDocTypes,
           reasonMessage: String(reasonMessage).trim(),
           requestedAt: now,
           expiresAt,
@@ -2232,7 +2256,7 @@ exports.holdEmployerVerification = async (req, res) => {
     });
   } catch (error) {
     console.error('Error placing employer on hold:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Server error placing employer on HOLD'
     });
@@ -2882,12 +2906,18 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
 // HOLD jobseeker verification and send resubmit email
 exports.holdJobseekerVerification = async (req, res) => {
   try {
-    const { docType, reasonMessage } = req.body;
+    const { docType, docTypes, reasonMessage } = req.body;
 
-    if (!JOBSEEKER_DOC_TYPES.includes(String(docType || ''))) {
+    const requestedDocTypes = [...new Set(
+      (Array.isArray(docTypes) && docTypes.length ? docTypes : [docType])
+        .map((value) => String(value || '').trim())
+        .filter((value) => JOBSEEKER_DOC_TYPES.includes(value))
+    )];
+
+    if (!requestedDocTypes.length) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid document type selected for resubmission'
+        message: 'Please select at least one valid document for resubmission'
       });
     }
 
@@ -2911,84 +2941,100 @@ exports.holdJobseekerVerification = async (req, res) => {
       jobseeker.jobSeekerProfile.verificationDocs = {};
     }
 
-    const targetDocument = jobseeker.jobSeekerProfile.verificationDocs[docType];
-    if (!targetDocument?.url) {
-      return res.status(400).json({ success: false, message: 'Only submitted credentials can be requested for resubmission.' });
-    }
-    if (!['pending', 'submitted', 'hold'].includes(String(targetDocument.status || '').toLowerCase())) {
-      return res.status(400).json({ success: false, message: 'Only pending credentials can be requested for resubmission.' });
+    const verificationDocs = jobseeker.jobSeekerProfile.verificationDocs;
+
+    const invalidRequestedDoc = requestedDocTypes.find((key) => {
+      const targetDocument = verificationDocs?.[key];
+      return (
+        !targetDocument?.url ||
+        !['pending', 'submitted', 'hold'].includes(String(targetDocument.status || '').toLowerCase())
+      );
+    });
+
+    if (invalidRequestedDoc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Only submitted pending credentials can be requested for resubmission.'
+      });
     }
 
     const wasAccountVerified = isApprovedJobseekerAccount(jobseeker);
-
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = User.hashToken(rawToken);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 48);
 
-    jobseeker.jobSeekerProfile.verificationDocs.overallStatus = 'hold';
-    jobseeker.jobSeekerProfile.verificationDocs.adminRemarks = String(reasonMessage).trim();
+    verificationDocs.overallStatus = 'hold';
+    verificationDocs.adminRemarks = String(reasonMessage).trim();
+
     if (!wasAccountVerified) {
-      jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = null;
-      jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = null;
-    }
-    jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = [];
-    jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = '';
-    jobseeker.jobSeekerProfile.verificationDocs.rejectedAt = null;
-
-    if (!jobseeker.jobSeekerProfile.verificationDocs[docType]) {
-      jobseeker.jobSeekerProfile.verificationDocs[docType] = {};
+      verificationDocs.verifiedBy = null;
+      verificationDocs.verifiedAt = null;
     }
 
-    jobseeker.jobSeekerProfile.verificationDocs[docType].status = 'hold';
-    jobseeker.jobSeekerProfile.verificationDocs[docType].checked = false;
-    jobseeker.jobSeekerProfile.verificationDocs[docType].checkedAt = null;
-    jobseeker.jobSeekerProfile.verificationDocs[docType].checkedBy = null;
-    jobseeker.jobSeekerProfile.verificationDocs.resubmitRequest = {
+    verificationDocs.rejectionReasons = [];
+    verificationDocs.rejectionMessage = '';
+    verificationDocs.rejectedAt = null;
+
+    requestedDocTypes.forEach((key) => {
+      if (!verificationDocs[key]) verificationDocs[key] = {};
+      verificationDocs[key].status = 'hold';
+      verificationDocs[key].checked = false;
+      verificationDocs[key].checkedAt = null;
+      verificationDocs[key].checkedBy = null;
+    });
+
+    verificationDocs.resubmitRequest = {
       tokenHash,
-      docType,
+      docType: requestedDocTypes[0],
+      docTypes: requestedDocTypes,
       reasonMessage: String(reasonMessage).trim(),
       requestedAt: now,
       expiresAt,
       usedAt: null,
-      requestedBy: req.user?._id || null,
+      requestedBy: req.user?._id || req.userId || null,
     };
 
     jobseeker.jobSeekerProfile.verificationStatus = wasAccountVerified ? 'verified' : 'hold';
-
+    jobseeker.jobSeekerProfile.verificationDocs = verificationDocs;
     await jobseeker.save();
 
-    await createJobseekerCredentialNotification({
-      user: jobseeker,
-      docType,
-      action: 'action_needed',
-      feedback: String(reasonMessage).trim(),
-    });
+    for (const requestedDocType of requestedDocTypes) {
+      await createJobseekerCredentialNotification({
+        user: jobseeker,
+        docType: requestedDocType,
+        action: 'action_needed',
+        feedback: String(reasonMessage).trim(),
+      });
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
     const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
+    const docLabels = requestedDocTypes.map((key) => JOBSEEKER_DOC_LABELS[key] || key);
 
     sendResubmitDocumentEmail({
       to: jobseeker.email,
       fullName: jobseeker.fullName || jobseeker.email,
-      docLabel: JOBSEEKER_DOC_LABELS[docType] || docType,
+      docLabel: docLabels[0],
+      docLabels,
       reasonMessage: String(reasonMessage).trim(),
       resubmitUrl,
     }).catch((emailError) => {
       console.error('Failed to send jobseeker resubmit email:', emailError);
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Jobseeker placed on HOLD and resubmit email sent successfully.',
       jobseeker: {
         _id: jobseeker._id,
         email: jobseeker.email,
         verificationStatus: jobseeker.jobSeekerProfile.verificationStatus,
-        overallStatus: jobseeker.jobSeekerProfile.verificationDocs.overallStatus,
-        adminRemarks: jobseeker.jobSeekerProfile.verificationDocs.adminRemarks || '',
+        overallStatus: verificationDocs.overallStatus,
+        adminRemarks: verificationDocs.adminRemarks || '',
         resubmitRequest: {
-          docType,
+          docType: requestedDocTypes[0],
+          docTypes: requestedDocTypes,
           reasonMessage: String(reasonMessage).trim(),
           requestedAt: now,
           expiresAt,
@@ -2997,7 +3043,7 @@ exports.holdJobseekerVerification = async (req, res) => {
     });
   } catch (error) {
     console.error('Error placing jobseeker on hold:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Server error placing jobseeker on HOLD'
     });

@@ -1088,7 +1088,11 @@ const JobseekerVerificationDetails = () => {
   };
 
   const toggleHoldDocType = (docKey) => {
-    setHoldDocTypes((prev) => (prev.includes(docKey) ? [] : [docKey]));
+    setHoldDocTypes((prev) =>
+      prev.includes(docKey)
+        ? prev.filter((item) => item !== docKey)
+        : [...prev, docKey]
+    );
   };
 
   const handleStatusUpdate = async (

@@ -382,16 +382,24 @@ const alumniVerificationStorage = createCloudinaryStorage({
 
 const alumniResubmitStorage = createCloudinaryStorage({
   resourceType: 'raw',
-  bufferValidator: validateJobseekerCredentialBuffer,
+  bufferValidator: (file) => {
+    const config = getResubmitDocConfig(file.fieldname);
+    if (config?.kind === 'employer') return validateEmployerCredentialBuffer(file);
+    return validateJobseekerCredentialBuffer(file);
+  },
   sanitizeFileName: true,
-  folderResolver: (req) => {
-    const docType = String(req.body?.docType || '').trim();
+  folderResolver: (req, file) => {
+    const fieldDocType = String(file.fieldname || '').trim();
+    const fallbackDocType = String(req.body?.docType || '').trim();
+    const docType = fieldDocType === 'document' ? fallbackDocType : fieldDocType;
     const config = getResubmitDocConfig(docType);
     if (!config) throw new Error('Invalid document type');
     return config.folder;
   },
   publicIdResolver: (req, file) => {
-    const docType = String(req.body?.docType || '').trim();
+    const fieldDocType = String(file.fieldname || '').trim();
+    const fallbackDocType = String(req.body?.docType || '').trim();
+    const docType = fieldDocType === 'document' ? fallbackDocType : fieldDocType;
     const config = getResubmitDocConfig(docType);
     if (!config) throw new Error('Invalid document type');
     return createUniquePublicId(`resubmit-${config.docType}`, file);
@@ -582,6 +590,27 @@ const uploadAlumniResubmit = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
+const resubmitDocumentFields = [
+  ...ALLOWED_ALUMNI_DOC_TYPES.map((name) => ({ name, maxCount: 1 })),
+  ...ALLOWED_EMPLOYER_DOC_TYPES.map((name) => ({ name, maxCount: 1 })),
+  { name: 'document', maxCount: 1 },
+];
+
+const resubmitDocumentUpload = uploadAlumniResubmit.fields(resubmitDocumentFields);
+
+const handleResubmitDocumentUploads = (req, res, next) => {
+  resubmitDocumentUpload(req, res, (error) => {
+    if (!error) return next();
+
+    const isFileSizeError = error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
+    const message = isFileSizeError
+      ? 'Each credential file must be 10MB or smaller.'
+      : (error.message || 'Invalid credential file.');
+
+    return res.status(400).json({ success: false, message });
+  });
+};
+
 const registerFileFilter = (req, file, cb) => {
   if (file.fieldname === 'profileImage') {
     return imageFileFilter(req, file, cb);
@@ -688,6 +717,7 @@ module.exports = {
   uploadCommunityMedia,
   uploadAlumniVerification,
   uploadAlumniResubmit,
+  handleResubmitDocumentUploads,
   uploadEmployerVerification,
   uploadRegisterDocs,
   handleJobseekerRegisterUploads,

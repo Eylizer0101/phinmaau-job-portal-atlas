@@ -3717,12 +3717,19 @@ exports.validateResubmitDocumentToken = async (req, res) => {
 
     const { accountType, resubmitRequest, labels } = found;
 
-    const docType = String(resubmitRequest.docType || '').trim();
+    const requestedDocTypes = [...new Set(
+      (Array.isArray(resubmitRequest.docTypes) && resubmitRequest.docTypes.length
+        ? resubmitRequest.docTypes
+        : [resubmitRequest.docType])
+        .map((value) => String(value || '').trim())
+        .filter((value) => labels[value])
+    )];
+
     const reasonMessage = String(resubmitRequest.reasonMessage || '').trim();
     const expiresAt = resubmitRequest.expiresAt ? new Date(resubmitRequest.expiresAt) : null;
     const usedAt = resubmitRequest.usedAt ? new Date(resubmitRequest.usedAt) : null;
 
-    if (!docType || !labels[docType]) {
+    if (!requestedDocTypes.length) {
       return res.status(400).json({
         success: false,
         message: 'This resubmit link is invalid or expired.',
@@ -3746,8 +3753,13 @@ exports.validateResubmitDocumentToken = async (req, res) => {
     return res.status(200).json({
       success: true,
       accountType,
-      docType,
-      docLabel: labels[docType] || docType,
+      docType: requestedDocTypes[0],
+      docTypes: requestedDocTypes,
+      docLabel: labels[requestedDocTypes[0]] || requestedDocTypes[0],
+      docLabels: requestedDocTypes.map((docType) => ({
+        docType,
+        label: labels[docType] || docType,
+      })),
       reasonMessage,
       expiresAt,
     });
@@ -3774,13 +3786,6 @@ exports.resubmitDocument = async (req, res) => {
       });
     }
 
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please choose a file to upload.',
-      });
-    }
-
     const tokenHash = hashToken(token);
     const found = await findResubmitRequestByToken(tokenHash);
 
@@ -3793,11 +3798,18 @@ exports.resubmitDocument = async (req, res) => {
 
     const { accountType, user, resubmitRequest, labels } = found;
 
-    const docType = String(resubmitRequest.docType || '').trim();
+    const requestedDocTypes = [...new Set(
+      (Array.isArray(resubmitRequest.docTypes) && resubmitRequest.docTypes.length
+        ? resubmitRequest.docTypes
+        : [resubmitRequest.docType])
+        .map((value) => String(value || '').trim())
+        .filter((value) => labels[value])
+    )];
+
     const expiresAt = resubmitRequest.expiresAt ? new Date(resubmitRequest.expiresAt) : null;
     const usedAt = resubmitRequest.usedAt ? new Date(resubmitRequest.usedAt) : null;
 
-    if (!docType || !labels[docType]) {
+    if (!requestedDocTypes.length) {
       return res.status(400).json({
         success: false,
         message: 'This resubmit link is invalid or expired.',
@@ -3818,25 +3830,71 @@ exports.resubmitDocument = async (req, res) => {
       });
     }
 
+    const uploadedFiles = req.files && typeof req.files === 'object' ? req.files : {};
+    const resolvedFiles = {};
+
+    for (const [fieldName, fileList] of Object.entries(uploadedFiles)) {
+      const file = Array.isArray(fileList) ? fileList[0] : null;
+      if (!file) continue;
+
+      const resolvedDocType = fieldName === 'document'
+        ? String(req.body?.docType || '').trim()
+        : String(fieldName || '').trim();
+
+      if (!requestedDocTypes.includes(resolvedDocType)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Only documents requested by the Admin can be resubmitted.',
+        });
+      }
+
+      resolvedFiles[resolvedDocType] = file;
+    }
+
+    const missingDocTypes = requestedDocTypes.filter((docType) => !resolvedFiles[docType]);
+
+    if (missingDocTypes.length) {
+      return res.status(400).json({
+        success: false,
+        message: `Please upload all requested documents: ${missingDocTypes
+          .map((docType) => labels[docType] || docType)
+          .join(', ')}.`,
+        missingDocTypes,
+      });
+    }
+
+    const now = new Date();
+
     if (accountType === 'jobseeker') {
       if (!user.jobSeekerProfile) user.jobSeekerProfile = {};
       if (!user.jobSeekerProfile.verificationDocs) user.jobSeekerProfile.verificationDocs = {};
 
       const verificationDocs = user.jobSeekerProfile.verificationDocs;
+      const accountWasVerified = isApprovedJobseekerAccount(user);
 
-      const fileUrl = getUploadedFileUrl(req, req.file, `/uploads/verification/alumni/${docType}/${req.file.filename}`);
+      for (const docType of requestedDocTypes) {
+        const file = resolvedFiles[docType];
+        const fileUrl = getUploadedFileUrl(
+          req,
+          file,
+          `/uploads/verification/alumni/${docType}/${file.filename}`
+        );
 
-      verificationDocs[docType] = {
-        url: fileUrl,
-        status: 'pending',
-        uploadedAt: new Date(),
-        filename: req.file.originalname,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-        publicId: req.file.public_id || req.file.filename || '',
-        resourceType: req.file.resource_type || 'raw',
-        format: req.file.format || '',
-      };
+        verificationDocs[docType] = {
+          url: fileUrl,
+          status: 'pending',
+          uploadedAt: now,
+          filename: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          publicId: file.public_id || file.filename || '',
+          resourceType: file.resource_type || 'raw',
+          format: file.format || '',
+          checked: false,
+          checkedAt: null,
+          checkedBy: null,
+        };
+      }
 
       verificationDocs.overallStatus = 'pending';
       verificationDocs.adminRemarks = '';
@@ -3846,29 +3904,32 @@ exports.resubmitDocument = async (req, res) => {
       }
       verificationDocs.resubmitRequest = {
         ...resubmitRequest,
-        usedAt: new Date(),
+        docType: requestedDocTypes[0],
+        docTypes: requestedDocTypes,
+        usedAt: now,
       };
 
-      const accountWasVerified = isApprovedJobseekerAccount(user);
       user.jobSeekerProfile.verificationDocs = verificationDocs;
       user.jobSeekerProfile.verificationStatus = accountWasVerified ? 'verified' : 'pending';
       if (accountWasVerified) user.isVerified = true;
 
       await user.save();
 
-      await createAdminResubmissionNotifications({
-        subjectUser: user,
-        accountType: 'jobseeker',
-        docType,
-        docLabel: labels[docType],
-      });
+      for (const docType of requestedDocTypes) {
+        await createAdminResubmissionNotifications({
+          subjectUser: user,
+          accountType: 'jobseeker',
+          docType,
+          docLabel: labels[docType],
+        });
+      }
 
       return res.status(200).json({
         success: true,
-        message: 'Document resubmitted successfully. Redirecting to login...',
+        message: 'Requested documents resubmitted successfully. Redirecting to login...',
         accountType: 'jobseeker',
-        docType,
-        docLabel: labels[docType] || docType,
+        docTypes: requestedDocTypes,
+        docLabels: requestedDocTypes.map((docType) => labels[docType] || docType),
       });
     }
 
@@ -3877,53 +3938,67 @@ exports.resubmitDocument = async (req, res) => {
       if (!user.employerProfile.verificationDocs) user.employerProfile.verificationDocs = {};
 
       const verificationDocs = user.employerProfile.verificationDocs;
-      const folder = EMPLOYER_DOC_FOLDERS[docType];
 
-      if (!folder) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid document type for employer resubmission.',
-        });
+      for (const docType of requestedDocTypes) {
+        const folder = EMPLOYER_DOC_FOLDERS[docType];
+
+        if (!folder) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid document type for employer resubmission.',
+          });
+        }
+
+        const file = resolvedFiles[docType];
+        const fileUrl = getUploadedFileUrl(
+          req,
+          file,
+          `/uploads/verification/employer/${folder}/${file.filename}`
+        );
+
+        verificationDocs[docType] = {
+          url: fileUrl,
+          status: 'pending',
+          uploadedAt: now,
+          filename: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          publicId: file.public_id || file.filename || '',
+          resourceType: file.resource_type || 'raw',
+          format: file.format || '',
+          checked: false,
+          checkedAt: null,
+          checkedBy: null,
+        };
       }
-
-      const fileUrl = getUploadedFileUrl(req, req.file, `/uploads/verification/employer/${folder}/${req.file.filename}`);
-
-      verificationDocs[docType] = {
-        url: fileUrl,
-        status: 'pending',
-        uploadedAt: new Date(),
-        filename: req.file.originalname,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-        publicId: req.file.public_id || req.file.filename || '',
-        resourceType: req.file.resource_type || 'raw',
-        format: req.file.format || '',
-      };
 
       verificationDocs.overallStatus = 'pending';
       verificationDocs.remarks = '';
       verificationDocs.resubmitRequest = {
         ...resubmitRequest,
-        usedAt: new Date(),
+        docType: requestedDocTypes[0],
+        docTypes: requestedDocTypes,
+        usedAt: now,
       };
 
       user.employerProfile.verificationDocs = verificationDocs;
-
       await user.save();
 
-      await createAdminResubmissionNotifications({
-        subjectUser: user,
-        accountType: 'employer',
-        docType,
-        docLabel: labels[docType],
-      });
+      for (const docType of requestedDocTypes) {
+        await createAdminResubmissionNotifications({
+          subjectUser: user,
+          accountType: 'employer',
+          docType,
+          docLabel: labels[docType],
+        });
+      }
 
       return res.status(200).json({
         success: true,
-        message: 'Document resubmitted successfully. Redirecting to login...',
+        message: 'Requested documents resubmitted successfully. Redirecting to login...',
         accountType: 'employer',
-        docType,
-        docLabel: labels[docType] || docType,
+        docTypes: requestedDocTypes,
+        docLabels: requestedDocTypes.map((docType) => labels[docType] || docType),
       });
     }
 
@@ -3935,7 +4010,7 @@ exports.resubmitDocument = async (req, res) => {
     console.error('Error resubmitting document:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to resubmit document.',
+      message: error.message || 'Failed to resubmit documents.',
     });
   }
 };
