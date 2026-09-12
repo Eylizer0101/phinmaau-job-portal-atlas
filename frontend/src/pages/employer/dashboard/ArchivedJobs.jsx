@@ -541,9 +541,6 @@ const ArchivedJobs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [q, jobFilter, sortBy, customDateFrom, customDateTo]);
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState('');
