@@ -127,7 +127,7 @@ const EmployerDateFilterDropdown = ({ value, startDate, endDate, disabled, onSel
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[52px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
+        <div className="absolute left-0 top-[52px] z-[100] w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
           <div className="space-y-1">
             {EMPLOYER_DATE_FILTER_OPTIONS.map((option) => (
               <button
@@ -497,10 +497,6 @@ const HiredApplicants = () => {
   const [sortBy, setSortBy] = useState('recent');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, selectedJob, employmentFilter, dateFilter, customDateFrom, customDateTo, sortBy]);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
   const [reviewApplication, setReviewApplication] = useState(null);
@@ -855,7 +851,6 @@ const HiredApplicants = () => {
     setCustomDateFrom('');
     setCustomDateTo('');
     setSortBy('recent');
-    setCurrentPage(1);
   };
 
   const jobOptions = useMemo(() => {
@@ -1058,7 +1053,7 @@ const selectBase =
         <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
 
         {/* Filters */}
-        <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
+        <div className="relative z-[80] mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
           <div className="overflow-visible p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
               <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
@@ -1073,10 +1068,7 @@ const selectBase =
                   <input
                     id="hiredSearch"
                     value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setCurrentPage(1);
-                    }}
+                    onChange={(e) => setQuery(e.target.value)}
                     className={inputBase}
                     placeholder="Search applicant, email, job title..."
                     disabled={loading}
@@ -1086,10 +1078,7 @@ const selectBase =
                   {query && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setQuery('');
-                        setCurrentPage(1);
-                      }}
+                      onClick={() => setQuery('')}
                       className="absolute right-3 top-3.5 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                       aria-label="Clear search"
                     >
@@ -1106,10 +1095,7 @@ const selectBase =
                 <select
                   id="jobFilter"
                   value={selectedJob}
-                  onChange={(e) => {
-                    setSelectedJob(e.target.value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={(e) => setSelectedJob(e.target.value)}
                   className={selectBase}
                   disabled={jobsLoading}
                 >
@@ -1163,10 +1149,7 @@ const selectBase =
                   id="sortFilter"
                   label="Sort By"
                   value={sortBy}
-                  onChange={(value) => {
-                    setSortBy(value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={setSortBy}
                   options={sortOptions}
                   disabled={loading}
                 />
@@ -1189,7 +1172,7 @@ const selectBase =
         </div>
 
         {/* Table */}
-        <div className="relative overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
+        <div className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           {loading ? (
             <div className="py-14 text-center" role="status" aria-live="polite">
               <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1205,7 +1188,7 @@ const selectBase =
               {/* Desktop */}
               <div className="hidden overflow-x-auto md:block">
                 <table className="min-w-full">
-                  <thead className="sticky top-px z-20 border-b border-gray-200 bg-[#fafafa]">
+                  <thead className="border-b border-gray-200 bg-[#fafafa]">
                     <tr>
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Applied Date
@@ -1471,17 +1454,7 @@ const selectBase =
                 })}
               </div>
 
-              {totalItems >= 10 ? (
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={totalItems}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
-                  ariaLabel="Hired applicants pagination"
-                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
-                />
-              ) : null}
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Hired applicants pagination" />
 
             </>
           )}

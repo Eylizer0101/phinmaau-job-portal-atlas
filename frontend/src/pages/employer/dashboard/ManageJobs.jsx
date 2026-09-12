@@ -125,7 +125,7 @@ const EmployerDateFilterDropdown = ({ value, startDate, endDate, disabled, onSel
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[52px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
+        <div className="absolute left-0 top-[52px] z-[100] w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
           <div className="space-y-1">
             {EMPLOYER_DATE_FILTER_OPTIONS.map((option) => (
               <button
@@ -1372,7 +1372,7 @@ const ManageJobs = () => {
         </div>
 
 
-        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative z-[80] mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:items-start">
               <div className="relative min-w-0">

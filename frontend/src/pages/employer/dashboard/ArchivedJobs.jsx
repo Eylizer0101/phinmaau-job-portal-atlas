@@ -541,6 +541,9 @@ const ArchivedJobs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, jobFilter, sortBy, customDateFrom, customDateTo]);
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState('');
@@ -1057,7 +1060,7 @@ const ArchivedJobs = () => {
           <div className="xl:pt-1">{headerRight}</div>
         </div>
 
-        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative z-[80] mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center">
               <div className="relative min-w-0 lg:col-span-6">
