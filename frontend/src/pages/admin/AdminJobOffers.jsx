@@ -673,7 +673,7 @@ const AdminJobOffers = () => {
                   <col className="w-[10%]" />
                   <col className="w-[7%]" />
                 </colgroup>
-                <thead className="sticky top-0 z-10 bg-[#2e66a6]/[0.055]">
+                <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                   <tr>
                     {['Date Posted', 'Company', 'Job Title', 'Vacancy', 'Applicant', 'Status', 'Valid Until', 'Actions'].map((header) => (
                       <th key={header} className={cn('whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600', header === 'Actions' ? 'text-center' : '')}>
