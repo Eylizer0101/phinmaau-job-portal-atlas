@@ -550,7 +550,7 @@ const AdminSystemLogs = () => {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         ariaLabel="Activity logs pagination"
-        className={loading ? 'pointer-events-none opacity-60' : ''}
+        className={`sticky bottom-0 z-20 ${loading ? 'pointer-events-none opacity-60' : ''}`}
       />
     </section>
   </main></AdminLayout>;
