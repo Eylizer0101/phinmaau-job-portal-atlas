@@ -327,7 +327,7 @@ const JOBSEEKER_CREDENTIAL_DESCRIPTIONS = {
   tin: "TIN credential",
 };
 
-const APPLICATIONS_PER_PAGE = 5;
+const APPLICATIONS_PER_PAGE = 10;
 
 const hasMeaningfulObjectValue = (item = {}) =>
   Boolean(
@@ -1506,7 +1506,14 @@ const UserManagementDetails = () => {
       </div>
 
       {activityItems.length ? (
-        <div className={cn("mt-5 flex-1", showAllActivity ? "divide-y divide-[#e5edf5]" : "max-w-4xl space-y-5")}>
+        <div
+          className={cn(
+            "mt-5 flex-1",
+            showAllActivity
+              ? "max-h-[500px] divide-y divide-[#e5edf5] overflow-y-auto overscroll-auto pr-1"
+              : "max-w-4xl space-y-5"
+          )}
+        >
           {visibleActivityItems.map((item) => (
             <article
               key={item.key}
@@ -1531,7 +1538,7 @@ const UserManagementDetails = () => {
           No recent activity is available for this jobseeker.
         </div>
       )}
-      {showAllActivity && activityItems.length ? (
+      {showAllActivity && activityItems.length >= 10 ? (
         <Pagination
           currentPage={activityPage}
           totalItems={activityItems.length}
@@ -1600,12 +1607,27 @@ const UserManagementDetails = () => {
       </div>
 
       {applications.length ? (
-        <div className="mt-5 space-y-3">
-          {paginatedApplications.map((application) => (
-            <ApplicationHistoryCard key={application._id} application={application} onView={() => navigate(`/admin/applications/${application._id}`)} />
-          ))}
-          {applications.length > APPLICATIONS_PER_PAGE ? (
-            <Pagination currentPage={applicationPage} totalItems={applications.length} pageSize={APPLICATIONS_PER_PAGE} onPageChange={setApplicationPage} onPageSizeChange={() => {}} showPageSize={false} className="!static mt-4 px-0" />
+        <div className="mt-5">
+          <div className="max-h-[510px] space-y-3 overflow-y-auto overscroll-auto pr-1">
+            {paginatedApplications.map((application) => (
+              <ApplicationHistoryCard
+                key={application._id}
+                application={application}
+                onView={() => navigate(`/admin/applications/${application._id}`)}
+              />
+            ))}
+          </div>
+
+          {applications.length >= 10 ? (
+            <Pagination
+              currentPage={applicationPage}
+              totalItems={applications.length}
+              pageSize={APPLICATIONS_PER_PAGE}
+              onPageChange={setApplicationPage}
+              onPageSizeChange={() => {}}
+              showPageSize={false}
+              className="!static mt-4 px-0"
+            />
           ) : null}
         </div>
       ) : (
