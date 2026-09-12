@@ -1074,6 +1074,42 @@ const uniqueNormalizedOptions = (values, normalizer = (value) => String(value ||
   return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
 };
 
+const formatUserForTable = (user) => ({
+  key: user._id,
+  id: user._id,
+  email: user.email,
+  name: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'No Name',
+  role: user.role,
+  status: user.status || 'active',
+  isVerified: user.isVerified || false,
+  verificationStatus: user.verificationStatus || (user.isVerified ? 'verified' : 'unverified'),
+  profileImage: user.profileImage,
+  avatarImage: resolveMediaUrl(
+    user.role === 'employer'
+      ? user.employerProfile?.companyLogo || user.profileImage
+      : user.profileImage
+  ),
+  createdAt: user.createdAt,
+  studentId: user.jobSeekerProfile?.studentId,
+  companyName: user.employerProfile?.companyName || '',
+  industry: user.employerProfile?.industry || '',
+  campus: normalizeCampusName(
+    user.jobSeekerProfile?.campus ||
+      user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
+      ''
+  ),
+  course:
+    user.jobSeekerProfile?.course ||
+    user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
+    '',
+  contactNumber:
+    user.role === 'employer'
+      ? user.employerProfile?.mobileNumber || 'Not provided'
+      : user.role === 'jobseeker'
+      ? user.jobSeekerProfile?.phoneNumber || 'Not provided'
+      : 'Not provided'
+});
+
 const UserManagement = () => {
   const navigate = useNavigate();
 
@@ -1115,6 +1151,10 @@ const UserManagement = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
 
+  const pageCacheRef = useRef(new Map());
+  const metadataLoadedRef = useRef(false);
+  const requestSequenceRef = useRef(0);
+
   const [userActionLoading, setUserActionLoading] = useState({});
 
   const [debouncedQuery, cancelQuery] = useDebouncedValue(query, 300);
@@ -1125,105 +1165,128 @@ const UserManagement = () => {
   }, []);
 
   const fetchUsers = useCallback(async () => {
+    const hasSearch = Boolean(debouncedQuery);
+    const baseParams = {
+      limit: pageSize,
+      search: debouncedQuery || undefined,
+      sort,
+      role: !hasSearch && roleFilter !== 'all' ? roleFilter : undefined,
+      campus: !hasSearch && roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
+      course: !hasSearch && roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
+      company: !hasSearch && roleFilter === 'employer' && companyFilter !== 'all' ? companyFilter : undefined,
+      industry: !hasSearch && roleFilter === 'employer' && industryFilter !== 'all' ? industryFilter : undefined,
+      dateFrom: !hasSearch && dateFrom ? dateFrom : undefined,
+      dateTo: !hasSearch && dateTo ? dateTo : undefined
+    };
+
+    const cacheKey = JSON.stringify({ ...baseParams, page: currentPage });
+    const cachedPage = pageCacheRef.current.get(cacheKey);
+
+    if (cachedPage) {
+      setUsers(cachedPage.users);
+      setTotalUsers(cachedPage.totalUsers);
+      setLoading(false);
+      return;
+    }
+
+    const requestId = ++requestSequenceRef.current;
+
     try {
+      // Keep the previous rows visible while switching pages. The loading
+      // flag no longer clears the current rows while the next page is fetched.
       setLoading(true);
       clearMessages();
 
-      const hasSearch = Boolean(debouncedQuery);
-      const params = {
-        page: currentPage,
-        limit: pageSize,
-        search: debouncedQuery || undefined,
-        sort,
-        role: !hasSearch && roleFilter !== 'all' ? roleFilter : undefined,
-        campus: !hasSearch && roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
-        course: !hasSearch && roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
-        company: !hasSearch && roleFilter === 'employer' && companyFilter !== 'all' ? companyFilter : undefined,
-        industry: !hasSearch && roleFilter === 'employer' && industryFilter !== 'all' ? industryFilter : undefined,
-        dateFrom: !hasSearch && dateFrom ? dateFrom : undefined,
-        dateTo: !hasSearch && dateTo ? dateTo : undefined
-      };
+      const response = await api.get('/admin/users', {
+        params: {
+          ...baseParams,
+          page: currentPage,
+          includeMeta: !metadataLoadedRef.current,
+        },
+      });
 
-      const response = await api.get('/admin/users', { params });
+      if (requestId !== requestSequenceRef.current) return;
 
       if (response.data?.success) {
         const formattedUsers = (response.data.users || [])
-          .filter(user => user.role !== 'admin')
-          .map(user => ({
-          key: user._id,
-          id: user._id,
-          email: user.email,
-          name: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'No Name',
-          role: user.role,
-          status: user.status || 'active',
-          isVerified: user.isVerified || false,
-          verificationStatus: user.verificationStatus || (user.isVerified ? 'verified' : 'unverified'),
-          profileImage: user.profileImage,
-          avatarImage: resolveMediaUrl(
-            user.role === 'employer'
-              ? user.employerProfile?.companyLogo || user.profileImage
-              : user.profileImage
-          ),
-          createdAt: user.createdAt,
-          studentId: user.jobSeekerProfile?.studentId,
-          companyName: user.employerProfile?.companyName || '',
-          industry: user.employerProfile?.industry || '',
-          campus: normalizeCampusName(
-            user.jobSeekerProfile?.campus ||
-              user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
-              ''
-          ),
-          course:
-            user.jobSeekerProfile?.course ||
-            user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
-            '',
-          contactNumber:
-            user.role === 'employer'
-              ? user.employerProfile?.mobileNumber || 'Not provided'
-              : user.role === 'jobseeker'
-              ? user.jobSeekerProfile?.phoneNumber || 'Not provided'
-              : 'Not provided'
-        }));
+          .filter((user) => user.role !== 'admin')
+          .map(formatUserForTable);
+
+        const nextTotalUsers =
+          response.data.pagination?.totalItems ||
+          response.data.total ||
+          formattedUsers.length;
+
+        pageCacheRef.current.set(cacheKey, {
+          users: formattedUsers,
+          totalUsers: nextTotalUsers,
+        });
 
         setUsers(formattedUsers);
-        setTotalUsers(response.data.pagination?.totalItems || response.data.total || formattedUsers.length);
+        setTotalUsers(nextTotalUsers);
 
-        setStats(
-          response.data.stats || {
-            total: 0,
-            jobseekers: 0,
-            employers: 0,
-            pending: 0,
-            verified: 0,
-            rejected: 0
+        if (response.data.stats) {
+          setStats(response.data.stats);
+        }
+
+        if (response.data.options) {
+          setFilterOptions(response.data.options);
+        }
+
+        if (response.data.stats || response.data.options) {
+          metadataLoadedRef.current = true;
+        }
+
+        // Prefetch the next page in the background. When the user clicks Next
+        // or the next page number, the cached rows can render immediately.
+        const pagination = response.data.pagination;
+        if (
+          pageSize !== 'all' &&
+          pagination?.hasNextPage &&
+          Number(pagination.page) === Number(currentPage)
+        ) {
+          const nextPage = Number(currentPage) + 1;
+          const nextCacheKey = JSON.stringify({ ...baseParams, page: nextPage });
+
+          if (!pageCacheRef.current.has(nextCacheKey)) {
+            api.get('/admin/users', {
+              params: {
+                ...baseParams,
+                page: nextPage,
+                includeMeta: false,
+              },
+            }).then((prefetchResponse) => {
+              if (!prefetchResponse.data?.success) return;
+
+              const prefetchedUsers = (prefetchResponse.data.users || [])
+                .filter((user) => user.role !== 'admin')
+                .map(formatUserForTable);
+
+              pageCacheRef.current.set(nextCacheKey, {
+                users: prefetchedUsers,
+                totalUsers:
+                  prefetchResponse.data.pagination?.totalItems ||
+                  prefetchResponse.data.total ||
+                  nextTotalUsers,
+              });
+            }).catch(() => {
+              // Prefetch failure should never interrupt the visible page.
+            });
           }
-        );
-        setFilterOptions(
-          response.data.options || {
-            campuses: [],
-            courses: [],
-            companies: [],
-            industries: [],
-          }
-        );
+        }
       } else {
         throw new Error('Invalid response format');
       }
     } catch (err) {
+      if (requestId !== requestSequenceRef.current) return;
+
       console.error('Error fetching users:', err);
       setError(err.response?.data?.message || 'Failed to load users. Please try again.');
-      setUsers([]);
-      setTotalUsers(0);
-      setStats({
-        total: 0,
-        jobseekers: 0,
-        employers: 0,
-        pending: 0,
-        verified: 0,
-        rejected: 0
-      });
+
     } finally {
-      setLoading(false);
+      if (requestId === requestSequenceRef.current) {
+        setLoading(false);
+      }
     }
   }, [
     currentPage,
@@ -1238,6 +1301,21 @@ const UserManagement = () => {
     dateFrom,
     dateTo,
     clearMessages,
+  ]);
+
+  useEffect(() => {
+    pageCacheRef.current.clear();
+  }, [
+    pageSize,
+    roleFilter,
+    campusFilter,
+    courseFilter,
+    companyFilter,
+    industryFilter,
+    debouncedQuery,
+    sort,
+    dateFrom,
+    dateTo,
   ]);
 
   useEffect(() => {

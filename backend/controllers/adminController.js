@@ -1112,6 +1112,7 @@ exports.getAllUsers = async (req, res) => {
     const company = String(req.query.company || '').trim();
     const industry = String(req.query.industry || '').trim();
     const verifiedParam = req.query.verified;
+    const includeMeta = String(req.query.includeMeta || 'true').toLowerCase() !== 'false';
 
     const baseQuery = {
       status: { $ne: 'deleted' },
@@ -1220,105 +1221,143 @@ exports.getAllUsers = async (req, res) => {
       sortOption.createdAt = -1;
     }
 
-    const allUsersForStats = await User.find({
+    const metadataQuery = {
       status: { $ne: 'deleted' },
       $nor: [{ role: 'employer', inactiveBySystem: true }],
-    }).select('-password');
-
-    const stats = allUsersForStats.reduce(
-      (acc, user) => {
-        const userRole = String(user.role || '').toLowerCase();
-
-        acc.total += 1;
-        if (userRole === 'jobseeker') acc.jobseekers += 1;
-        if (userRole === 'employer') acc.employers += 1;
-
-        const employerVerificationStatus = String(user?.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
-        const jobseekerVerificationStatus = String(user?.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
-
-        const verificationStatus =
-          userRole === 'employer'
-            ? employerVerificationStatus
-            : userRole === 'jobseeker'
-            ? jobseekerVerificationStatus
-            : '';
-
-        if (verificationStatus === 'pending') acc.pending += 1;
-        else if (verificationStatus === 'verified') acc.verified += 1;
-        else if (verificationStatus === 'rejected') acc.rejected += 1;
-
-        return acc;
-      },
-      {
-        total: 0,
-        jobseekers: 0,
-        employers: 0,
-        pending: 0,
-        verified: 0,
-        rejected: 0
-      }
-    );
-
-    const uniqueSortedUserOptions = (values = [], normalizer = (value) => String(value || '').trim()) => {
-      const optionMap = new Map();
-      values.forEach((value) => {
-        const normalizedValue = normalizer(value);
-        if (!normalizedValue) return;
-        const key = normalizedValue.toLocaleLowerCase();
-        if (!optionMap.has(key)) optionMap.set(key, normalizedValue);
-      });
-      return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
     };
 
-    const userFilterOptions = {
-      campuses: uniqueSortedUserOptions(
-        allUsersForStats
-          .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
-          .map((user) =>
-            user?.jobSeekerProfile?.campus ||
-            user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
-            ''
-          ),
-        normalizeDashboardCampus
-      ),
-      courses: uniqueSortedUserOptions(
-        allUsersForStats
-          .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
-          .map((user) =>
-            user?.jobSeekerProfile?.course ||
-            user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
-            ''
-          )
-      ),
-      companies: uniqueSortedUserOptions(
-        allUsersForStats
-          .filter((user) => String(user.role || '').toLowerCase() === 'employer')
-          .map((user) => user?.employerProfile?.companyName || '')
-      ),
-      industries: uniqueSortedUserOptions(
-        allUsersForStats
-          .filter((user) => String(user.role || '').toLowerCase() === 'employer')
-          .map((user) => user?.employerProfile?.industry || '')
-      ),
-    };
+    const metadataPromise = includeMeta
+      ? User.find(metadataQuery)
+          .select([
+            'role',
+            'employerProfile.companyName',
+            'employerProfile.industry',
+            'employerProfile.verificationDocs.overallStatus',
+            'jobSeekerProfile.campus',
+            'jobSeekerProfile.course',
+            'jobSeekerProfile.educationEntries.campus',
+            'jobSeekerProfile.educationEntries.course',
+            'jobSeekerProfile.verificationDocs.overallStatus',
+          ].join(' '))
+          .lean()
+      : Promise.resolve(null);
 
-    const totalItems = await User.countDocuments(baseQuery);
-    const totalPages = isAll ? 1 : Math.max(Math.ceil(totalItems / limit), 1);
-    const safePage = isAll ? 1 : Math.min(page, totalPages);
-    const skip = isAll ? 0 : (safePage - 1) * limit;
+    const totalItemsPromise = User.countDocuments(baseQuery);
 
     let usersQuery = User.find(baseQuery)
       .select('-password')
-      .sort(sortOption);
+      .sort(sortOption)
+      .lean();
 
+    const requestedSkip = isAll ? 0 : (page - 1) * limit;
     if (!isAll) {
-      usersQuery = usersQuery.skip(skip).limit(limit);
+      usersQuery = usersQuery.skip(requestedSkip).limit(limit);
     }
 
-    const users = await usersQuery;
+    let [allUsersForStats, totalItems, users] = await Promise.all([
+      metadataPromise,
+      totalItemsPromise,
+      usersQuery,
+    ]);
+
+    const totalPages = isAll ? 1 : Math.max(Math.ceil(totalItems / limit), 1);
+    const safePage = isAll ? 1 : Math.min(page, totalPages);
+
+    // If the requested page became out of range after a delete/filter change,
+    // fetch the last valid page once instead of returning an empty table.
+    if (!isAll && safePage !== page) {
+      users = await User.find(baseQuery)
+        .select('-password')
+        .sort(sortOption)
+        .skip((safePage - 1) * limit)
+        .limit(limit)
+        .lean();
+    }
+
+    let stats;
+    let userFilterOptions;
+
+    if (includeMeta && Array.isArray(allUsersForStats)) {
+      stats = allUsersForStats.reduce(
+        (acc, user) => {
+          const userRole = String(user.role || '').toLowerCase();
+
+          acc.total += 1;
+          if (userRole === 'jobseeker') acc.jobseekers += 1;
+          if (userRole === 'employer') acc.employers += 1;
+
+          const employerVerificationStatus = String(user?.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
+          const jobseekerVerificationStatus = String(user?.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
+
+          const verificationStatus =
+            userRole === 'employer'
+              ? employerVerificationStatus
+              : userRole === 'jobseeker'
+              ? jobseekerVerificationStatus
+              : '';
+
+          if (verificationStatus === 'pending') acc.pending += 1;
+          else if (verificationStatus === 'verified') acc.verified += 1;
+          else if (verificationStatus === 'rejected') acc.rejected += 1;
+
+          return acc;
+        },
+        {
+          total: 0,
+          jobseekers: 0,
+          employers: 0,
+          pending: 0,
+          verified: 0,
+          rejected: 0
+        }
+      );
+
+      const uniqueSortedUserOptions = (values = [], normalizer = (value) => String(value || '').trim()) => {
+        const optionMap = new Map();
+        values.forEach((value) => {
+          const normalizedValue = normalizer(value);
+          if (!normalizedValue) return;
+          const key = normalizedValue.toLocaleLowerCase();
+          if (!optionMap.has(key)) optionMap.set(key, normalizedValue);
+        });
+        return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
+      };
+
+      userFilterOptions = {
+        campuses: uniqueSortedUserOptions(
+          allUsersForStats
+            .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
+            .map((user) =>
+              user?.jobSeekerProfile?.campus ||
+              user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
+              ''
+            ),
+          normalizeDashboardCampus
+        ),
+        courses: uniqueSortedUserOptions(
+          allUsersForStats
+            .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
+            .map((user) =>
+              user?.jobSeekerProfile?.course ||
+              user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
+              ''
+            )
+        ),
+        companies: uniqueSortedUserOptions(
+          allUsersForStats
+            .filter((user) => String(user.role || '').toLowerCase() === 'employer')
+            .map((user) => user?.employerProfile?.companyName || '')
+        ),
+        industries: uniqueSortedUserOptions(
+          allUsersForStats
+            .filter((user) => String(user.role || '').toLowerCase() === 'employer')
+            .map((user) => user?.employerProfile?.industry || '')
+        ),
+      };
+    }
 
     const normalizedUsers = users.map((user) => {
-      const userObject = user.toObject ? user.toObject() : user;
+      const userObject = user;
       const userRole = String(userObject.role || '').toLowerCase();
       const employerVerificationStatus = String(userObject?.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
       const jobseekerVerificationStatus = String(userObject?.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
@@ -1350,8 +1389,7 @@ exports.getAllUsers = async (req, res) => {
     res.status(200).json({
       success: true,
       users: normalizedUsers,
-      stats,
-      options: userFilterOptions,
+      ...(includeMeta ? { stats, options: userFilterOptions } : {}),
       total: totalItems,
       pagination: {
         page: safePage,
