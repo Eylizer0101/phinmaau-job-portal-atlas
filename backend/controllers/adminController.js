@@ -1096,7 +1096,11 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const rawLimit = String(req.query.limit || '10').trim().toLowerCase();
+    const isAll = rawLimit === 'all';
+    const limit = isAll
+      ? null
+      : Math.min(Math.max(parseInt(rawLimit, 10) || 10, 1), 100);
 
     const status = String(req.query.status || '').trim().toLowerCase();
     const role = String(req.query.role || '').trim().toLowerCase();
@@ -1299,15 +1303,19 @@ exports.getAllUsers = async (req, res) => {
     };
 
     const totalItems = await User.countDocuments(baseQuery);
-    const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
-    const safePage = Math.min(page, totalPages);
-    const skip = (safePage - 1) * limit;
+    const totalPages = isAll ? 1 : Math.max(Math.ceil(totalItems / limit), 1);
+    const safePage = isAll ? 1 : Math.min(page, totalPages);
+    const skip = isAll ? 0 : (safePage - 1) * limit;
 
-    const users = await User.find(baseQuery)
+    let usersQuery = User.find(baseQuery)
       .select('-password')
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limit);
+      .sort(sortOption);
+
+    if (!isAll) {
+      usersQuery = usersQuery.skip(skip).limit(limit);
+    }
+
+    const users = await usersQuery;
 
     const normalizedUsers = users.map((user) => {
       const userObject = user.toObject ? user.toObject() : user;
@@ -1347,7 +1355,7 @@ exports.getAllUsers = async (req, res) => {
       total: totalItems,
       pagination: {
         page: safePage,
-        limit,
+        limit: isAll ? 'all' : limit,
         totalItems,
         totalPages,
         hasPrevPage: safePage > 1,

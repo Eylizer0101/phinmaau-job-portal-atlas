@@ -1115,10 +1115,6 @@ const UserManagement = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
 
-  const desktopTableMinHeight = pageSize === 'all'
-    ? undefined
-    : `${54 + (Number(pageSize) * 66)}px`;
-
   const [userActionLoading, setUserActionLoading] = useState({});
 
   const [debouncedQuery, cancelQuery] = useDebouncedValue(query, 300);
@@ -1136,7 +1132,7 @@ const UserManagement = () => {
       const hasSearch = Boolean(debouncedQuery);
       const params = {
         page: currentPage,
-        limit: pageSize === 'all' ? 100000 : pageSize,
+        limit: pageSize,
         search: debouncedQuery || undefined,
         sort,
         role: !hasSearch && roleFilter !== 'all' ? roleFilter : undefined,
@@ -1566,7 +1562,10 @@ const UserManagement = () => {
                 <input
                   id="userSearch"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className={inputBase}
                   placeholder="Search name, email, company, or student ID"
                   disabled={loading}
@@ -1575,7 +1574,10 @@ const UserManagement = () => {
                 {query && (
                   <button
                     type="button"
-                    onClick={() => setQuery('')}
+                    onClick={() => {
+                      setQuery('');
+                      setCurrentPage(1);
+                    }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                     aria-label="Clear search"
                   >
@@ -1690,7 +1692,10 @@ const UserManagement = () => {
               {roleFilter === 'all' && (
                 <select
                   value={sort}
-                  onChange={(e) => setSort(e.target.value)}
+                  onChange={(e) => {
+                    setSort(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className={selectBase}
                   disabled={loading}
                   aria-label="Sort users"
@@ -1728,8 +1733,8 @@ const UserManagement = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-          <div className="p-4 sm:p-6">
+        <div className="flex h-[calc(100vh-310px)] min-h-[430px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+          <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
 
             {loading && users.length === 0 ? null : filteredUsers.length === 0 ? (
               <div className="py-14 text-center">
@@ -1747,11 +1752,10 @@ const UserManagement = () => {
             ) : (
               <>
                 <div
-                  className="hidden md:block overflow-x-auto"
-                  style={{ minHeight: desktopTableMinHeight }}
+                  className="hidden min-h-0 flex-1 overflow-auto md:block"
                 >
                   <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-[#2e66a6]/[0.055]">
+                    <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Registered
@@ -1875,7 +1879,7 @@ const UserManagement = () => {
                   </table>
                 </div>
 
-                <div className="space-y-4 md:hidden">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto md:hidden">
                   {filteredUsers.map((user) => {
                     const roleInfo = getRolePill(user.role);
                     const isLoading = userActionLoading[user.key];
@@ -1987,6 +1991,7 @@ const UserManagement = () => {
                   pageSize={pageSize}
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
+                  className={`mt-3 shrink-0 ${totalUsers <= 10 ? '[&_nav]:hidden' : ''}`}
                 />
               </>
             )}
