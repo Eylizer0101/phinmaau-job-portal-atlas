@@ -1003,7 +1003,7 @@ const JobseekerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden max-h-[calc(100vh-430px)] overflow-x-auto overflow-y-auto lg:block">
                   <table className="w-full min-w-[1000px]">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
@@ -1105,7 +1105,7 @@ const JobseekerVerification = () => {
                   </table>
                 </div>
 
-                <div className="space-y-3 p-4 lg:hidden">
+                <div className="max-h-[calc(100vh-430px)] space-y-3 overflow-y-auto p-4 lg:hidden">
                   {visibleRows.map((item) => {
                     const fullName = item.fullName || "No Name";
                     const email = item.email || "—";
@@ -1182,6 +1182,7 @@ const JobseekerVerification = () => {
                   pageSize={filters.limit}
                   onPageChange={(page) => onChangeFilter("page", page)}
                   onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
+                className="sticky bottom-0 z-20"
                 />
               </>
             )}
