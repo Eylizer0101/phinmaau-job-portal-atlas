@@ -538,6 +538,14 @@ const ArchivedJobs = () => {
   const navigate = useNavigate();
 
   const [jobs, setJobs] = useState([]);
+
+  const [jobFilter, setJobFilter] = useState('all');
+  const [q, setQ] = useState('');
+  const [sortBy, setSortBy] = useState('all');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
+  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -547,13 +555,6 @@ const ArchivedJobs = () => {
   const [success, setSuccess] = useState('');
 
   const [action, setAction] = useState({ type: '', jobId: '' });
-
-  const [jobFilter, setJobFilter] = useState('all');
-  const [q, setQ] = useState('');
-  const [sortBy, setSortBy] = useState('all');
-  const [customDateFrom, setCustomDateFrom] = useState('');
-  const [customDateTo, setCustomDateTo] = useState('');
-  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
 
   const [badLogos, setBadLogos] = useState({});
   const [counts, setCounts] = useState({
@@ -567,6 +568,10 @@ const ArchivedJobs = () => {
 
   const modalRef = useRef(null);
   const cancelBtnRef = useRef(null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, jobFilter, sortBy, customDateFrom, customDateTo, pageSize]);
 
   const fetchJobs = async () => {
     try {
@@ -1017,7 +1022,6 @@ const ArchivedJobs = () => {
     return filteredJobs.slice(start, start + numericPageSize);
   }, [filteredJobs, currentPage, numericPageSize, pageSize]);
 
-  useEffect(() => setCurrentPage(1), [q, jobFilter, sortBy, customDateFrom, customDateTo, pageSize]);
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
