@@ -502,7 +502,7 @@ const AdminSystemLogs = () => {
   }, [search, filters.role, filters.date, filters.dateFrom, filters.dateTo, page, pageSize]);
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
-  return <AdminLayout><main className="mx-auto flex w-full max-w-[1480px] flex-col px-1 py-7 sm:py-8 md:h-[calc(100vh-3rem)] md:min-h-0 md:overflow-hidden">
+  return <AdminLayout><main className="mx-auto flex w-full max-w-[1480px] flex-col px-1 py-7 sm:py-8 md:h-[calc(100vh-3rem)] md:min-h-0 md:overflow-hidden md:pb-2 md:pt-8">
     <header className="mb-5"><h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Activity Logs</h1>
       <p className="mt-1.5 text-sm text-slate-500">Monitor the important activities performed by Jobseekers and Employers.</p></header>
     <section className="relative z-30 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
