@@ -2500,11 +2500,9 @@ const ApplicationDetails = () => {
   const isAlreadyEmployed = Boolean(application.alreadyEmployed);
   const visibleStatusLabel = isAlreadyEmployed
     ? 'Already Employed'
-    : currentStatus === 'pending' && application.isViewedByEmployer
-      ? 'Pending – Under Review'
-      : currentStatus === 'withdrawn'
-        ? 'Withdrawn'
-        : currentStatus;
+    : currentStatus === 'withdrawn'
+      ? 'Withdrawn'
+      : currentStatus;
   const image = user.profileImage ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`) : '';
   const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
   const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
