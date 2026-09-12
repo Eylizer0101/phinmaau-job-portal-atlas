@@ -1339,7 +1339,7 @@ const ManageJobs = () => {
 
   return (
     <EmployerLayout>
-      <div className="mx-auto max-w-7xl px-1 pt-8 pb-0">
+      <div className="mx-auto max-w-7xl px-1 py-8 md:flex md:h-[calc(100vh-3rem)] md:flex-col md:overflow-hidden">
         <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Manage Jobs</h1>
@@ -1467,8 +1467,8 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="p-6">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm md:flex md:min-h-0 md:flex-1 md:flex-col">
+          <div className="p-6 md:flex md:min-h-0 md:flex-1 md:flex-col">
             {loading ? (
               <div className="py-14 text-center">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1684,7 +1684,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
+                <div className="hidden max-h-[508px] min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
