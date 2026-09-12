@@ -2226,7 +2226,7 @@ const Applicants = () => {
           </div>
         ) : paginatedApplications.length ? (
           <>
-            <div className="max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
+            <div className="max-h-[660px] space-y-5 overflow-y-auto overscroll-auto pr-1">
               {paginatedApplications.map((app) => {
                 const user = app.jobseeker || {};
                 const profile = user.jobSeekerProfile || {};
