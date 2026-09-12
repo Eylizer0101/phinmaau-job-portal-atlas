@@ -865,7 +865,7 @@ const EmployerLayout = ({ children }) => {
   const logoSrc = "/images/phinma-logo.png";
 
   return (
-    <div className="bg-gray-50" style={layoutVars}>
+    <div className="min-h-screen bg-gray-50" style={layoutVars}>
       {/* Skip link */}
       <a
         href="#main-content"
