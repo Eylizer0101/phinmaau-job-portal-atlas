@@ -35,7 +35,6 @@ const Pagination = ({
   const numericPageSize = isAll ? Math.max(totalItems, 1) : Number(pageSize);
   const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalItems / numericPageSize));
   const safePage = Math.min(Math.max(Number(currentPage) || 1, 1), totalPages);
-  const showPaginationControls = isAll || totalItems > numericPageSize;
   const paginationItems = useMemo(
     () => buildPaginationItems(safePage, totalPages),
     [safePage, totalPages]
@@ -87,7 +86,7 @@ const Pagination = ({
           </select>
         </label> : null}
 
-        {showPaginationControls ? <nav
+        <nav
           className="inline-flex min-h-9 items-center bg-white"
           aria-label={ariaLabel}
         >
@@ -160,7 +159,7 @@ const Pagination = ({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                           </svg>
           </button>
-        </nav> : null}
+        </nav>
       </div>
     </div>
   );
