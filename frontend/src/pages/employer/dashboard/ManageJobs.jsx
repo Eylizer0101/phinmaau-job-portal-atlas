@@ -1297,6 +1297,7 @@ const ManageJobs = () => {
     setCustomDateTo('');
     setQ('');
     setSortBy('');
+    setCurrentPage(1);
   };
 
   useEffect(() => {
@@ -1339,8 +1340,8 @@ const ManageJobs = () => {
 
   return (
     <EmployerLayout>
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col overflow-hidden px-1 py-8 md:min-h-0">
-        <div className="mb-6 shrink-0 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
+      <div className="mx-auto max-w-7xl px-1 py-8">
+        <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Manage Jobs</h1>
             <p className="mt-1 text-sm text-gray-600">View, edit, and manage your job postings</p>
@@ -1367,7 +1368,7 @@ const ManageJobs = () => {
         </div>
 
 
-        <div className="relative z-20 mb-6 shrink-0 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:items-start">
               <div className="relative min-w-0">
@@ -1381,7 +1382,10 @@ const ManageJobs = () => {
                 </svg>
                 <input
                   value={q}
-                  onChange={(e) => setQ(e.target.value)}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="Search job title, company, location, status…"
                   className="w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 />
@@ -1397,7 +1401,10 @@ const ManageJobs = () => {
               >
                 <select
                   value={jobFilter}
-                  onChange={(e) => setJobFilter(e.target.value)}
+                  onChange={(e) => {
+                    setJobFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <option value="all">All Job Title</option>
@@ -1410,7 +1417,10 @@ const ManageJobs = () => {
 
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <option value="all">All Status</option>
@@ -1439,7 +1449,10 @@ const ManageJobs = () => {
 
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <option value="" disabled>Sort By</option>
@@ -1467,8 +1480,8 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex min-h-0 flex-1 flex-col p-6">
+        <div className="overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="p-6">
             {loading ? (
               <div className="py-14 text-center">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1684,7 +1697,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden min-h-0 flex-1 max-h-[508px] overflow-x-auto overflow-y-auto overscroll-contain md:block">
+                <div className="hidden max-h-[812px] overflow-x-auto overflow-y-auto overscroll-contain md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
@@ -1697,7 +1710,7 @@ const ManageJobs = () => {
                       <col className="w-[24%]" />
                     </colgroup>
 
-                    <thead className="sticky top-0 z-10 bg-gray-50">
+                    <thead className="sticky top-0 z-20 bg-gray-50">
                       <tr >
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Posted
@@ -1956,7 +1969,17 @@ const ManageJobs = () => {
                 </div>
               </div>
 
-              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Manage jobs pagination" className="shrink-0" />
+              {totalItems >= 10 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  ariaLabel="Manage jobs pagination"
+                  className="sticky bottom-0 z-30 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                />
+              ) : null}
 
               </>
             )}
