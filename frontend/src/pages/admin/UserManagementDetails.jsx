@@ -41,6 +41,7 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
     arrowLeft: <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />,
     user: <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
     briefcase: <path strokeLinecap="round" strokeLinejoin="round" d="M10 6h4a2 2 0 012 2v1h3a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2h3V8a2 2 0 012-2zm0 3h4V8h-4v1z" />,
+    search: <><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="m20 20-3.5-3.5" /></>,
     contract: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m3 0H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2z" />,
     shield: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
     academic: <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />,
@@ -678,6 +679,16 @@ const UserManagementDetails = () => {
     const startIndex = (applicationPage - 1) * APPLICATIONS_PER_PAGE;
     return applications.slice(startIndex, startIndex + APPLICATIONS_PER_PAGE);
   }, [applications, applicationPage]);
+
+  const isCurrentlyEmployed = useMemo(
+    () =>
+      applications.some(
+        (application) =>
+          String(application?.status || "").toLowerCase() === "hired" &&
+          String(application?.employmentStatus || "active").toLowerCase() !== "inactive"
+      ),
+    [applications]
+  );
 
   const profile = user?.jobSeekerProfile || {};
   const docs = profile.verificationDocs || {};
@@ -1537,36 +1548,52 @@ const UserManagementDetails = () => {
 
   const ApplicationHistory = () => (
     <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start">
         <div>
           <h2 className="text-lg font-bold text-black">Application History</h2>
           <p className="mt-1 text-xs text-gray-500">Track where this user has applied and their progress.</p>
         </div>
-        <div className="text-right">
-         <button
-  type="button"
-  onClick={() =>
-    navigate(`/admin/users/${userId}/application-history`)
-  }
-  className="inline-flex items-center gap-1 text-xs font-semibold text-[#0057d9] hover:underline"
->
-  <span>View full tracking history</span>
 
-  <svg
-    className="h-4 w-4 shrink-0"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-    aria-hidden="true"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      d="M9 5l7 7-7 7"
-    />
-  </svg>
-</button>
+        <div className="inline-flex items-center gap-2 whitespace-nowrap sm:justify-self-end">
+          <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
+            <Icon name={isCurrentlyEmployed ? "search" : "briefcase"} className="h-5 w-5" />
+          </span>
+          <p className="text-left text-sm">
+            <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>
+              {isCurrentlyEmployed ? "Employed" : "Unemployed"}
+            </span>
+            <span className="mx-2 text-gray-300" aria-hidden="true">|</span>
+            <span className="text-gray-500">
+              {isCurrentlyEmployed ? "Currently working in a role" : "Not working at the moment"}
+            </span>
+          </p>
+        </div>
+
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={() =>
+              navigate(`/admin/users/${userId}/application-history`)
+            }
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0057d9] hover:underline"
+          >
+            <span>View full tracking history</span>
+
+            <svg
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
           <p className="mt-1 text-[11px] text-gray-500">{applications.length} Total Applications</p>
         </div>
       </div>

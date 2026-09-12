@@ -474,6 +474,16 @@ const AdminUserApplicationHistory = () => {
     [applications]
   );
 
+  const isCurrentlyEmployed = useMemo(
+    () =>
+      applications.some(
+        (application) =>
+          String(application?.status || "").toLowerCase() === "hired" &&
+          String(application?.employmentStatus || "active").toLowerCase() !== "inactive"
+      ),
+    [applications]
+  );
+
   const filterOptions = useMemo(() => {
     const unique = (values) => [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
     return {
@@ -610,14 +620,34 @@ const AdminUserApplicationHistory = () => {
           </button>
 
           <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div><h1 className="text-2xl font-bold text-black sm:text-3xl">
-                Full Application History
-              </h1>
-              <p className="mt-2 text-sm text-gray-500">
-                Every company this applicant has applied to, with stage-by-stage progress.
-              </p></div>
-              <span className="text-sm font-medium text-gray-500">{applications.length} Applications</span>
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start">
+              <div>
+                <h1 className="text-2xl font-bold text-black sm:text-3xl">
+                  Full Application History
+                </h1>
+                <p className="mt-2 text-sm text-gray-500">
+                  Every company this applicant has applied to, with stage-by-stage progress.
+                </p>
+              </div>
+
+              <div className="inline-flex items-center gap-2 whitespace-nowrap sm:justify-self-end">
+                <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
+                  <Icon name={isCurrentlyEmployed ? "search" : "briefcase"} className="h-5 w-5" />
+                </span>
+                <p className="text-left text-sm">
+                  <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>
+                    {isCurrentlyEmployed ? "Employed" : "Unemployed"}
+                  </span>
+                  <span className="mx-2 text-gray-300" aria-hidden="true">|</span>
+                  <span className="text-gray-500">
+                    {isCurrentlyEmployed ? "Currently working in a role" : "Not working at the moment"}
+                  </span>
+                </p>
+              </div>
+
+              <span className="text-sm font-medium text-gray-500 sm:justify-self-end">
+                {applications.length} Applications
+              </span>
             </div>
 
             <div className="mt-6 rounded-xl border border-[#d8e2ee] bg-[#fbfdff] p-3">
