@@ -2245,7 +2245,7 @@ const selectBase =
               </div>
             ) : (
               <>
-                <div className="hidden max-h-[508px] overflow-y-auto overscroll-auto md:block">
+                <div className="hidden md:block">
                   <table className="w-full table-fixed divide-y divide-gray-200">
                     <colgroup>
                       <col className="w-[12%]" />
@@ -2255,7 +2255,7 @@ const selectBase =
                       <col className="w-[17%]" />
                       <col className="w-[15%]" />
                     </colgroup>
-                    <thead className="sticky top-0 z-10 bg-gray-50">
+                    <thead className="bg-gray-50">
                       <tr>
                         {['Applied Date', 'Applicant', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
@@ -2442,16 +2442,7 @@ const selectBase =
                   })}
                 </div>
 
-              {totalItems >= 10 ? (
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={totalItems}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
-                  ariaLabel="For interview pagination"
-                />
-              ) : null}
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="For interview pagination" />
 
               </>
             )}

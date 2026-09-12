@@ -510,8 +510,6 @@ const EmployerLayout = ({ children }) => {
     []
   );
 
-  const isManageJobsPage = location.pathname.startsWith("/employer/manage-jobs");
-
   const currentLabel = useMemo(() => {
     const all = navSections.flatMap((section) =>
       section.type === "dropdown" ? section.items : [section]
@@ -1094,8 +1092,7 @@ const EmployerLayout = ({ children }) => {
       {/* Main content */}
       <div
         className={[
-          "flex min-h-0 flex-col",
-          isManageJobsPage ? "md:h-screen md:overflow-hidden" : "",
+          "min-h-screen flex flex-col",
           "pl-0",
           "md:pl-[calc(var(--sidebar-w)+(var(--sidebar-gutter)*2))]",
         ].join(" ")}
@@ -1155,13 +1152,7 @@ const EmployerLayout = ({ children }) => {
           </div>
         </header>
 
-        <main
-          id="main-content"
-          className={[
-            "flex-1 p-4 sm:p-6",
-            isManageJobsPage ? "md:flex md:min-h-0 md:flex-col md:overflow-hidden" : "",
-          ].join(" ")}
-        >
+        <main id="main-content" className="flex-1 p-4 sm:p-6">
           {children}
         </main>
       </div>

@@ -1339,8 +1339,8 @@ const ManageJobs = () => {
 
   return (
     <EmployerLayout>
-      <div className="mx-auto flex w-full max-w-7xl flex-col px-1 py-7 sm:py-8 md:min-h-0 md:flex-1 md:overflow-hidden md:pb-2 md:pt-8">
-        <div className="mb-6 shrink-0 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
+      <div className="mx-auto max-w-7xl px-1 py-8">
+        <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Manage Jobs</h1>
             <p className="mt-1 text-sm text-gray-600">View, edit, and manage your job postings</p>
@@ -1367,7 +1367,7 @@ const ManageJobs = () => {
         </div>
 
 
-        <div className="relative z-30 mb-4 shrink-0 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:items-start">
               <div className="relative min-w-0">
@@ -1467,8 +1467,8 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex min-h-0 flex-1 flex-col p-6">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="p-6">
             {loading ? (
               <div className="py-14 text-center">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1495,7 +1495,7 @@ const ManageJobs = () => {
               </div>
             ) : (
               <>
-                <div className="max-h-[506px] space-y-4 overflow-y-auto overscroll-auto pr-1 md:hidden">
+                <div className="space-y-4 md:hidden">
                   {paginatedJobs.map((job) => {
                     const title = safeTitle(job);
                     const busyThisRow = action.jobId === job._id;
@@ -1684,7 +1684,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden min-h-0 flex-1 max-h-[508px] overflow-x-auto overflow-y-auto overscroll-contain md:block">
+                <div className="hidden overflow-x-auto md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
@@ -1697,7 +1697,7 @@ const ManageJobs = () => {
                       <col className="w-[24%]" />
                     </colgroup>
 
-                    <thead className="sticky top-0 z-10 bg-gray-50">
+                    <thead className="bg-gray-50">
                       <tr >
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Posted
@@ -1956,17 +1956,7 @@ const ManageJobs = () => {
                 </div>
               </div>
 
-              {totalItems >= 10 ? (
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={totalItems}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
-                  ariaLabel="Manage jobs pagination"
-                  className="shrink-0"
-                />
-              ) : null}
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Manage jobs pagination" />
 
               </>
             )}
