@@ -1092,7 +1092,7 @@ const EmployerLayout = ({ children }) => {
       {/* Main content */}
       <div
         className={[
-          "min-h-screen flex flex-col",
+          "flex min-h-0 flex-col",
           "pl-0",
           "md:pl-[calc(var(--sidebar-w)+(var(--sidebar-gutter)*2))]",
         ].join(" ")}
