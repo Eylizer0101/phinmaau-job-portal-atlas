@@ -228,7 +228,7 @@ const AdminEmployerReviews = () => {
                 {!reviews.length ? <p className="mt-1 text-sm text-black/50">Candidate feedback will appear here once submitted.</p> : null}
               </div>
             ) : (
-              <div className="mt-8 max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
+              <div className="mt-8 max-max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
                 {paginatedReviews.map((review, index) => (
                   <article
                     key={review?._id || index}
@@ -273,15 +273,17 @@ const AdminEmployerReviews = () => {
                     </div>
                   </article>
                 ))}
-                <Pagination
-                  currentPage={safePage}
-                  totalItems={filteredReviews.length}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
-                
-                className="sticky bottom-0 z-20 shrink-0"
-              />
+                {Number(filteredReviews.length) >= 10 ? (
+                  <Pagination
+                    currentPage={safePage}
+                    totalItems={filteredReviews.length}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={setPageSize}
+                  
+                  className="sticky bottom-0 z-20 shrink-0"
+                                />
+                ) : null}
               </div>
             )}
           </section>

@@ -1349,7 +1349,7 @@ const AdminArchiveDetails = () => {
             />
           </div>
 
-          <div className="h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
+          <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
             <div className="min-w-[1000px]">
               <div className="sticky top-0 z-10 grid grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 <span>Job Title</span>
@@ -1420,15 +1420,17 @@ const AdminArchiveDetails = () => {
             </div>
           </div>
 
-          <Pagination
-            currentPage={safePage}
-            totalItems={visibleRecords.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-          
-                className="sticky bottom-0 z-20 shrink-0"
-              />
+          {Number(visibleRecords.length) >= 10 ? (
+            <Pagination
+              currentPage={safePage}
+              totalItems={visibleRecords.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            
+                  className="sticky bottom-0 z-20 shrink-0"
+                />
+          ) : null}
         </section>
       </main>
 

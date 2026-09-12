@@ -1022,17 +1022,17 @@ const JobseekerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden h-[508px] overflow-auto overscroll-auto lg:block">
+                <div className="hidden max-h-[508px] overflow-auto overscroll-auto lg:block">
                   <table className="w-full min-w-[1000px]">
-                    <thead className="sticky top-0 z-10 border-b border-gray-100 bg-slate-50">
+                    <thead className="sticky top-0 z-20 border-b border-gray-200 bg-[#f8fafc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Campus</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Course</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
-                        {archiveMode ? <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Declined</th> : null}
-                        <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
+                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Date Registered</th>
+                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Name</th>
+                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Campus</th>
+                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Course</th>
+                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Status</th>
+                        {archiveMode ? <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Date Declined</th> : null}
+                        <th className="bg-[#f8fafc] px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Actions</th>
                       </tr>
                     </thead>
 
@@ -1194,15 +1194,17 @@ const JobseekerVerification = () => {
                     );
                   })}
                 </div>
-                <Pagination
-                  currentPage={filters.page}
-                  totalItems={pagination.totalItems}
-                  pageSize={filters.limit}
-                  onPageChange={(page) => onChangeFilter("page", page)}
-                  onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
-                  ariaLabel="Jobseeker verification pagination"
-                  className="sticky bottom-0 z-20 shrink-0"
-                  />
+                {Number(pagination.totalItems) >= 10 ? (
+                  <Pagination
+                    currentPage={filters.page}
+                    totalItems={pagination.totalItems}
+                    pageSize={filters.limit}
+                    onPageChange={(page) => onChangeFilter("page", page)}
+                    onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
+                    ariaLabel="Jobseeker verification pagination"
+                    className="sticky bottom-0 z-20 shrink-0"
+                    />
+                ) : null}
               </>
             )}
           </div>

@@ -765,7 +765,7 @@ const AdminArchive = () => {
         </section>
 
         <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-          <div className="h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
+          <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
             <div className="min-w-[980px]">
               <div className="sticky top-0 z-10 grid grid-cols-[1.35fr_1.1fr_1.1fr_1.3fr_0.55fr] gap-4 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 <span>Name</span>
@@ -850,15 +850,17 @@ const AdminArchive = () => {
             </div>
           </div>
 
-          <Pagination
-            currentPage={safePage}
-            totalItems={archiveGroups.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-          
-                className="sticky bottom-0 z-20 shrink-0"
-              />
+          {Number(archiveGroups.length) >= 10 ? (
+            <Pagination
+              currentPage={safePage}
+              totalItems={archiveGroups.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            
+                  className="sticky bottom-0 z-20 shrink-0"
+                />
+          ) : null}
         </section>
       </main>
 

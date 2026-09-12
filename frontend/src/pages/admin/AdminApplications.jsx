@@ -891,7 +891,7 @@ const AdminApplications = () => {
             <div className="p-6 text-sm font-semibold text-red-600">{error}</div>
           ) : (
             <>
-              <div className="h-[508px] max-w-full overflow-x-auto overflow-y-auto overscroll-auto lg:overflow-x-hidden">
+              <div className="max-h-[508px] max-w-full overflow-x-auto overflow-y-auto overscroll-auto lg:overflow-x-hidden">
                 <table className="w-full min-w-[900px] table-fixed divide-y divide-slate-200 text-left lg:min-w-0">
                   <colgroup>
                     <col className="w-[27%]" />
@@ -1023,15 +1023,17 @@ const AdminApplications = () => {
                 </table>
               </div>
 
-              <Pagination
-                currentPage={currentPage}
-                totalItems={filteredApplications.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                onPageSizeChange={setPageSize}
-              
-                className="sticky bottom-0 z-20 shrink-0"
-              />
+              {Number(filteredApplications.length) >= 10 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredApplications.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                
+                  className="sticky bottom-0 z-20 shrink-0"
+                />
+              ) : null}
             </>
           )}
         </div>

@@ -661,7 +661,7 @@ const AdminJobOffers = () => {
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-            <div className="h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
+            <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
               <table className="w-full min-w-[1060px] table-fixed divide-y divide-slate-200">
                 <colgroup>
                   <col className="w-[11%]" />
@@ -765,15 +765,17 @@ const AdminJobOffers = () => {
               </table>
             </div>
 
-            <Pagination
-              currentPage={page}
-              totalItems={total}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-            
-                className="sticky bottom-0 z-20 shrink-0"
-              />
+            {Number(total) >= 10 ? (
+              <Pagination
+                currentPage={page}
+                totalItems={total}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              
+                  className="sticky bottom-0 z-20 shrink-0"
+                />
+            ) : null}
           </section>
         </div>
       </div>

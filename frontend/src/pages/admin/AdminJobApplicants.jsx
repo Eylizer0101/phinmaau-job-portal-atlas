@@ -1463,7 +1463,7 @@ const AdminJobApplicants = () => {
             </div>
           ) : paginatedApplicants.length > 0 ? (
             <>
-              <div className="mt-8 max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
+              <div className="mt-8 max-max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
                 {paginatedApplicants.map(
                   ({ application, user, profile, level, matchScore }) => {
                     const name =
@@ -1603,16 +1603,18 @@ const AdminJobApplicants = () => {
                 )}
               </div>
 
-              <Pagination
-                currentPage={currentPage}
-                totalItems={filteredApplicants.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                onPageSizeChange={setPageSize}
-                ariaLabel="Admin job applicants pagination"
-              
-                className="sticky bottom-0 z-20 shrink-0"
-              />
+              {Number(filteredApplicants.length) >= 10 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredApplicants.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  ariaLabel="Admin job applicants pagination"
+                
+                  className="sticky bottom-0 z-20 shrink-0"
+                />
+              ) : null}
             </>
           ) : (
             <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center text-[#6b7280] shadow-sm">

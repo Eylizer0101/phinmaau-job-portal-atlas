@@ -1823,7 +1823,7 @@ const UserManagement = () => {
               </div>
             ) : (
               <>
-                <div className="hidden h-[508px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
+                <div className="hidden max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
@@ -2055,14 +2055,16 @@ const UserManagement = () => {
                   })}
                 </div>
 
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={totalUsers}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
-                  className="sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5"
-                />
+                {Number(totalUsers) >= 10 ? (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={totalUsers}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={setPageSize}
+                    className="sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5"
+                  />
+                ) : null}
               </>
             )}
           </div>

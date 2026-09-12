@@ -1186,7 +1186,7 @@ const EmployerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden h-[508px] overflow-x-hidden overflow-y-auto overscroll-auto lg:block">
+                <div className="hidden max-h-[508px] overflow-x-hidden overflow-y-auto overscroll-auto lg:block">
                   <table className="w-full table-fixed">
                     <thead className="sticky top-0 z-10 bg-slate-50 border-b border-gray-100">
                       <tr>
@@ -1377,15 +1377,17 @@ const EmployerVerification = () => {
                   })}
                 </div>
 
-                <Pagination
-                  currentPage={filters.page}
-                  totalItems={pagination.totalItems}
-                  pageSize={filters.limit}
-                  onPageChange={(page) => onChangeFilter("page", page)}
-                  onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
-                
-                className="sticky bottom-0 z-20 shrink-0"
-              />
+                {Number(pagination.totalItems) >= 10 ? (
+                  <Pagination
+                    currentPage={filters.page}
+                    totalItems={pagination.totalItems}
+                    pageSize={filters.limit}
+                    onPageChange={(page) => onChangeFilter("page", page)}
+                    onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
+                  
+                  className="sticky bottom-0 z-20 shrink-0"
+                                />
+                ) : null}
               </>
             )}
           </div>
