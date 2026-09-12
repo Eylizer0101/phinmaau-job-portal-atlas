@@ -1519,7 +1519,12 @@ const UserManagementDetails = () => {
               key={item.key}
               className={cn("relative pl-5", showAllActivity ? "py-4" : "border-l border-[#d8e2ee] pb-1 last:border-l-transparent")}
             >
-              <span className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-[#3875ff]" />
+              <span
+                className={cn(
+                  "absolute h-2.5 w-2.5 rounded-full bg-[#3875ff]",
+                  showAllActivity ? "left-0 top-5" : "-left-[5px] top-1"
+                )}
+              />
 
               <p className="text-xs font-medium text-gray-500">
                 {formatActivityDateTime(item.occurredAt)}
