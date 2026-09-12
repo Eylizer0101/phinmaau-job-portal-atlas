@@ -2908,14 +2908,7 @@ const ApplicationDetails = () => {
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
             <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
 
-            {currentStatus === 'withdrawn' ? (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                <p className="text-sm font-semibold text-red-700">Withdrawn by Jobseeker</p>
-                <p className="mt-1 text-xs leading-5 text-red-600">
-                  The jobseeker permanently withdrew this application{application.withdrawnAt ? ` on ${formatDate(application.withdrawnAt)}` : ''}. It remains available as an application record, but hiring actions are disabled.
-                </p>
-              </div>
-            ) : null}
+        
 
             <div className="mt-5 border-b border-gray-200 pb-5">
               <div className="flex items-center justify-between gap-4">
