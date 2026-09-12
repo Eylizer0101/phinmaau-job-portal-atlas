@@ -1459,6 +1459,7 @@ const UserManagementDetails = () => {
   onClick={() => {
     setShowAllActivity((value) => !value);
     setActivityPage(1);
+    setActivityPageSize(10);
   }}
   className="inline-flex items-center gap-1 text-xs font-semibold text-[#174b91] hover:underline"
 >
