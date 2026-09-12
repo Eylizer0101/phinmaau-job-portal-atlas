@@ -1339,7 +1339,7 @@ const ManageJobs = () => {
 
   return (
     <EmployerLayout>
-      <div className="mx-auto max-w-7xl px-1 py-8">
+      <div className="mx-auto max-w-7xl px-1 pt-8 pb-0">
         <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Manage Jobs</h1>

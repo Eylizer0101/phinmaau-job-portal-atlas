@@ -1152,7 +1152,7 @@ const EmployerLayout = ({ children }) => {
           </div>
         </header>
 
-        <main id="main-content" className="p-4 sm:p-6">
+        <main id="main-content" className="px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
           {children}
         </main>
       </div>
