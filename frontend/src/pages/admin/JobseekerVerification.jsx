@@ -1024,15 +1024,15 @@ const JobseekerVerification = () => {
               <>
                 <div className="hidden max-h-[508px] overflow-auto overscroll-auto lg:block">
                   <table className="w-full min-w-[1000px]">
-                    <thead className="sticky top-0 z-20 border-b border-gray-200 bg-[#f8fafc] shadow-[0_1px_0_rgba(226,232,240,1)]">
+                    <thead className="border-b border-gray-100 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
-                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Date Registered</th>
-                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Name</th>
-                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Campus</th>
-                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Course</th>
-                        <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Status</th>
-                        {archiveMode ? <th className="bg-[#f8fafc] px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Date Declined</th> : null}
-                        <th className="bg-[#f8fafc] px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Actions</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Campus</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Course</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                        {archiveMode ? <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Declined</th> : null}
+                        <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
                       </tr>
                     </thead>
 
@@ -1124,7 +1124,7 @@ const JobseekerVerification = () => {
                   </table>
                 </div>
 
-                <div className="max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
+                <div className="max-max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
                   {visibleRows.map((item) => {
                     const fullName = item.fullName || "No Name";
                     const email = item.email || "—";

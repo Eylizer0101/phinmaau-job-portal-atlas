@@ -799,7 +799,7 @@ const AdminEmployerPostingHistory = () => {
                       <col className="w-[17%]" />
                       <col className="w-[13%]" />
                     </colgroup>
-                    <thead className="border-y border-[#e5e7eb] bg-[#f8fafc] text-xs font-semibold uppercase tracking-wide text-black/60">
+                    <thead className="border-y border-[#e5e7eb] text-xs font-semibold uppercase tracking-wide text-black/60 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
                         <th className="px-3 py-4">Date Posted</th>
                         <th className="px-3 py-4">Job Title</th>

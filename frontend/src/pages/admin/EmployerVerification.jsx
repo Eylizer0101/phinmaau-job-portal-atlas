@@ -1188,7 +1188,7 @@ const EmployerVerification = () => {
               <>
                 <div className="hidden max-h-[508px] overflow-x-hidden overflow-y-auto overscroll-auto lg:block">
                   <table className="w-full table-fixed">
-                    <thead className="sticky top-0 z-10 bg-slate-50 border-b border-gray-100">
+                    <thead className="border-b border-gray-100 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
                         <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="w-[24%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
@@ -1297,7 +1297,7 @@ const EmployerVerification = () => {
                   </table>
                 </div>
 
-                <div className="max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
+                <div className="max-max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
                   {mobileRows.map((item) => {
                     const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
                     const companyEmail = item.businessEmail || item.email || "—";

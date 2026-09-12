@@ -902,7 +902,7 @@ const AdminApplications = () => {
                     <col className="w-[9%]" />
                     <col className="w-[6%]" />
                   </colgroup>
-                  <thead className="sticky top-0 z-10 bg-[#2e66a6]/[0.055]">
+                  <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                     <tr>
                       {[
                         'Applicant',

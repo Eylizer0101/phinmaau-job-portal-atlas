@@ -1949,7 +1949,7 @@ const UserManagement = () => {
                   </table>
                 </div>
 
-                <div className="max-h-[506px] space-y-4 overflow-y-auto overscroll-auto md:hidden">
+                <div className="max-max-h-[506px] space-y-4 overflow-y-auto overscroll-auto md:hidden">
                   {filteredUsers.map((user) => {
                     const roleInfo = getRolePill(user.role);
                     const isLoading = userActionLoading[user.key];
