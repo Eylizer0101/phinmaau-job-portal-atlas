@@ -676,10 +676,17 @@ const MainFooter = () => {
 
 const JobOffers = () => {
   const navigate = useNavigate();
+  const savedFilterState = useMemo(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('agapay:public:job-offers-filters') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
 
   const [allJobs, setAllJobs] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [visibleJobCount, setVisibleJobCount] = useState(16);
+  const [visibleJobCount, setVisibleJobCount] = useState(() => Number(savedFilterState.visibleJobCount) || 16);
   const [loadingMoreJobs, setLoadingMoreJobs] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -690,25 +697,58 @@ const JobOffers = () => {
 
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => String(savedFilterState.search || ""));
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [selectedLocations, setSelectedLocations] = useState([]);
-  const [selectedJobTitles, setSelectedJobTitles] = useState([]);
-  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
-  const [selectedEducationLevels, setSelectedEducationLevels] = useState([]);
-  const [selectedCompanies, setSelectedCompanies] = useState([]);
-  const [selectedWorkModes, setSelectedWorkModes] = useState([]);
+  const [selectedLocations, setSelectedLocations] = useState(() => Array.isArray(savedFilterState.selectedLocations) ? savedFilterState.selectedLocations : []);
+  const [selectedJobTitles, setSelectedJobTitles] = useState(() => Array.isArray(savedFilterState.selectedJobTitles) ? savedFilterState.selectedJobTitles : []);
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState(() => Array.isArray(savedFilterState.selectedEmploymentTypes) ? savedFilterState.selectedEmploymentTypes : []);
+  const [selectedEducationLevels, setSelectedEducationLevels] = useState(() => Array.isArray(savedFilterState.selectedEducationLevels) ? savedFilterState.selectedEducationLevels : []);
+  const [selectedCompanies, setSelectedCompanies] = useState(() => Array.isArray(savedFilterState.selectedCompanies) ? savedFilterState.selectedCompanies : []);
+  const [selectedWorkModes, setSelectedWorkModes] = useState(() => Array.isArray(savedFilterState.selectedWorkModes) ? savedFilterState.selectedWorkModes : []);
 
-  const [salaryMinInput, setSalaryMinInput] = useState("");
+  const [salaryMinInput, setSalaryMinInput] = useState(() => String(savedFilterState.salaryMinInput || ""));
 
-  const [sortBy, setSortBy] = useState("");
+  const [sortBy, setSortBy] = useState(() => String(savedFilterState.sortBy || ""));
 
-  const [freshGraduate, setFreshGraduate] = useState(false);
-  const [noExperience, setNoExperience] = useState(false);
+  const [freshGraduate, setFreshGraduate] = useState(() => Boolean(savedFilterState.freshGraduate));
+  const [noExperience, setNoExperience] = useState(() => Boolean(savedFilterState.noExperience));
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const filterBoxRef = useRef(null);
+
+  useEffect(() => {
+    sessionStorage.setItem(
+      'agapay:public:job-offers-filters',
+      JSON.stringify({
+        search,
+        selectedLocations,
+        selectedJobTitles,
+        selectedEmploymentTypes,
+        selectedEducationLevels,
+        selectedCompanies,
+        selectedWorkModes,
+        salaryMinInput,
+        sortBy,
+        freshGraduate,
+        noExperience,
+        visibleJobCount,
+      })
+    );
+  }, [
+    search,
+    selectedLocations,
+    selectedJobTitles,
+    selectedEmploymentTypes,
+    selectedEducationLevels,
+    selectedCompanies,
+    selectedWorkModes,
+    salaryMinInput,
+    sortBy,
+    freshGraduate,
+    noExperience,
+    visibleJobCount,
+  ]);
 
   const getStoredUser = () => {
     try {

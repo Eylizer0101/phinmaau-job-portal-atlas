@@ -144,6 +144,15 @@ const applicationSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
+    withdrawnAt: {
+        type: Date,
+        default: null
+    },
+    withdrawnBy: {
+        type: String,
+        enum: ['jobseeker', ''],
+        default: ''
+    },
     coverLetter: {
         type: String,
         default: ''

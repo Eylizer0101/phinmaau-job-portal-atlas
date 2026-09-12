@@ -2498,7 +2498,13 @@ const ApplicationDetails = () => {
   const isActiveHiredEmployment = currentStatus === 'hired' && employmentStatus === 'active';
   const hasPendingEmploymentRequest = isActiveHiredEmployment && employmentRequestStatus === 'pending';
   const isAlreadyEmployed = Boolean(application.alreadyEmployed);
-  const visibleStatusLabel = isAlreadyEmployed ? 'Already Employed' : currentStatus;
+  const visibleStatusLabel = isAlreadyEmployed
+    ? 'Already Employed'
+    : currentStatus === 'pending' && application.isViewedByEmployer
+      ? 'Pending – Under Review'
+      : currentStatus === 'withdrawn'
+        ? 'Withdrawn'
+        : currentStatus;
   const image = user.profileImage ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`) : '';
   const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
   const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
@@ -2877,6 +2883,12 @@ const ApplicationDetails = () => {
             <h2 className="text-lg font-bold">Employer Actions</h2>
             {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}
             <div className="mt-5 space-y-3">
+              {currentStatus === 'withdrawn' ? (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
+                  This application was withdrawn by the jobseeker. All employer hiring actions are disabled for this application.
+                </div>
+              ) : (
+                <>
               {!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
               {!isAlreadyEmployed && isFromForInterviewPage && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
               {!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}
@@ -2891,10 +2903,21 @@ const ApplicationDetails = () => {
                 </button>
               ) : null}
               {(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}
+                </>
+              )}
             </div>
           </div>
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
             <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
+
+            {currentStatus === 'withdrawn' ? (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm font-semibold text-red-700">Withdrawn by Jobseeker</p>
+                <p className="mt-1 text-xs leading-5 text-red-600">
+                  The jobseeker permanently withdrew this application{application.withdrawnAt ? ` on ${formatDate(application.withdrawnAt)}` : ''}. It remains available as an application record, but hiring actions are disabled.
+                </p>
+              </div>
+            ) : null}
 
             <div className="mt-5 border-b border-gray-200 pb-5">
               <div className="flex items-center justify-between gap-4">

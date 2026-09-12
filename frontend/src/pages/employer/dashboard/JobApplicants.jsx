@@ -194,8 +194,9 @@ const statusStyle = (status) => {
   return 'bg-[#eef2ff] text-[#4056a1]';
 };
 
-const statusLabel = (status) => {
+const statusLabel = (status, isViewedByEmployer = false) => {
   const normalized = String(status || 'pending').toLowerCase();
+  if (normalized === 'pending') return isViewedByEmployer ? 'Pending – Under Review' : 'Pending';
   if (normalized === 'for interview') return 'For Interview';
   if (normalized === 'vacancy full') return 'Vacancy Full';
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
@@ -474,7 +475,6 @@ const JobApplicants = () => {
     const query = searchTerm.trim().toLowerCase();
     const levelOrder = ['First Time Job Seeker', 'Intermediate', 'Expert', 'Pro', 'Legend'];
     const filtered = applicantCards.filter(({ application, user, profile, level }) => {
-      if (['withdrawn', 'cancelled'].includes(String(application.status || '').toLowerCase())) return false;
       const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ');
       const searchableText = [name, user.email, profile.phoneNumber, profile.contactNumber, job?.title].filter(Boolean).join(' ').toLowerCase();
       if (query && !searchableText.includes(query)) return false;
@@ -592,6 +592,7 @@ const JobApplicants = () => {
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="for interview">For Interview</option>
+              <option value="withdrawn">Withdrawn</option>
               <option value="hired">Hired</option>
               <option value="declined">Declined</option>
               <option value="already_employed">Already Employed</option>
@@ -657,7 +658,7 @@ const JobApplicants = () => {
                           }}
                         />
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${application.alreadyEmployed ? 'bg-amber-100 text-amber-800' : statusStyle(application.status)}`}>{application.alreadyEmployed ? 'Already Employed' : statusLabel(application.status)}</span></div>
+                          <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${application.alreadyEmployed ? 'bg-amber-100 text-amber-800' : statusStyle(application.status)}`}>{application.alreadyEmployed ? 'Already Employed' : statusLabel(application.status, application.isViewedByEmployer)}</span></div>
                           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]"><span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span><span className="hidden text-[#c2c5ce] sm:inline">|</span><span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span></div>
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>

@@ -2291,9 +2291,13 @@ const Applicants = () => {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3">
                             <h2 className="text-xl font-bold text-[#111827]">{name}</h2>
-                            {app.alreadyEmployed && (
+                            {app.alreadyEmployed ? (
                               <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                                 Already Employed
+                              </span>
+                            ) : (
+                              <span className="rounded-full border border-[#f1d37a] bg-[#fff7df] px-3 py-1 text-xs font-semibold text-[#b36b00]">
+                                {app.isViewedByEmployer ? 'Pending – Under Review' : 'Pending'}
                               </span>
                             )}
                           </div>

@@ -533,25 +533,32 @@ const JobSearch = () => {
   const navigate = useNavigate();
   const filterBoxRef = useRef(null);
   const toastTimerRef = useRef(null);
+  const savedFilterState = useMemo(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('agapay:jobseeker:job-search-filters') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [visibleJobCount, setVisibleJobCount] = useState(16);
+  const [visibleJobCount, setVisibleJobCount] = useState(() => Number(savedFilterState.visibleJobCount) || 16);
   const [loadingMoreJobs, setLoadingMoreJobs] = useState(false);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [location, setLocation] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => String(savedFilterState.searchTerm || ''));
+  const [location, setLocation] = useState(() => String(savedFilterState.location || ''));
 
-  const [filters, setFilters] = useState({
-    jobType: '',
-    industry: '',
-    workMode: '',
-    minSalary: '',
-    maxSalary: '',
-    experienceLevel: ''
-  });
+  const [filters, setFilters] = useState(() => ({
+    jobType: savedFilterState.filters?.jobType || '',
+    industry: savedFilterState.filters?.industry || '',
+    workMode: savedFilterState.filters?.workMode || '',
+    minSalary: savedFilterState.filters?.minSalary || '',
+    maxSalary: savedFilterState.filters?.maxSalary || '',
+    experienceLevel: savedFilterState.filters?.experienceLevel || ''
+  }));
 
-  const [layoutView, setLayoutView] = useState('grid');
+  const [layoutView, setLayoutView] = useState(() => savedFilterState.layoutView === 'list' ? 'list' : 'grid');
   const [applyingJob, setApplyingJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
@@ -562,21 +569,58 @@ const JobSearch = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const [selectedLocations, setSelectedLocations] = useState([]);
-  const [selectedJobTitles, setSelectedJobTitles] = useState([]);
-  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
-  const [selectedEducationLevels, setSelectedEducationLevels] = useState([]);
-  const [selectedCompanies, setSelectedCompanies] = useState([]);
-  const [salaryMinInput, setSalaryMinInput] = useState('');
-  const [sortBy, setSortBy] = useState('');
+  const [selectedLocations, setSelectedLocations] = useState(() => Array.isArray(savedFilterState.selectedLocations) ? savedFilterState.selectedLocations : []);
+  const [selectedJobTitles, setSelectedJobTitles] = useState(() => Array.isArray(savedFilterState.selectedJobTitles) ? savedFilterState.selectedJobTitles : []);
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState(() => Array.isArray(savedFilterState.selectedEmploymentTypes) ? savedFilterState.selectedEmploymentTypes : []);
+  const [selectedEducationLevels, setSelectedEducationLevels] = useState(() => Array.isArray(savedFilterState.selectedEducationLevels) ? savedFilterState.selectedEducationLevels : []);
+  const [selectedCompanies, setSelectedCompanies] = useState(() => Array.isArray(savedFilterState.selectedCompanies) ? savedFilterState.selectedCompanies : []);
+  const [salaryMinInput, setSalaryMinInput] = useState(() => String(savedFilterState.salaryMinInput || ''));
+  const [sortBy, setSortBy] = useState(() => String(savedFilterState.sortBy || ''));
 
-  const [freshGraduate, setFreshGraduate] = useState(false);
-  const [noExperience, setNoExperience] = useState(false);
+  const [freshGraduate, setFreshGraduate] = useState(() => Boolean(savedFilterState.freshGraduate));
+  const [noExperience, setNoExperience] = useState(() => Boolean(savedFilterState.noExperience));
 
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [savingJobId, setSavingJobId] = useState('');
   const [appliedJobIds, setAppliedJobIds] = useState([]);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  useEffect(() => {
+    sessionStorage.setItem(
+      'agapay:jobseeker:job-search-filters',
+      JSON.stringify({
+        searchTerm,
+        location,
+        filters,
+        layoutView,
+        selectedLocations,
+        selectedJobTitles,
+        selectedEmploymentTypes,
+        selectedEducationLevels,
+        selectedCompanies,
+        salaryMinInput,
+        sortBy,
+        freshGraduate,
+        noExperience,
+        visibleJobCount,
+      })
+    );
+  }, [
+    searchTerm,
+    location,
+    filters,
+    layoutView,
+    selectedLocations,
+    selectedJobTitles,
+    selectedEmploymentTypes,
+    selectedEducationLevels,
+    selectedCompanies,
+    salaryMinInput,
+    sortBy,
+    freshGraduate,
+    noExperience,
+    visibleJobCount,
+  ]);
 
   const COLORS = useMemo(
     () => ({

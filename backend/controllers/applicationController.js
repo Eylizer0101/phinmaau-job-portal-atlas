@@ -1287,16 +1287,34 @@ exports.withdrawMyApplication = async (req, res) => {
 
     const currentStatus = String(application.status || '').toLowerCase();
 
-    if (currentStatus !== 'pending') {
+    if (!['pending', 'for interview'].includes(currentStatus)) {
       return res.status(400).json({
         success: false,
-        message: 'Only pending applications can be withdrawn'
+        message: 'Only Pending or For Interview applications can be withdrawn'
       });
     }
 
-    application.lastActiveStatus = 'pending';
+    const withdrawnAt = new Date();
+    application.lastActiveStatus = currentStatus;
     application.withdrawalCount = Number(application.withdrawalCount || 0) + 1;
     application.status = 'withdrawn';
+    application.withdrawnAt = withdrawnAt;
+    application.withdrawnBy = 'jobseeker';
+
+    if (application.interviewSchedule && currentStatus === 'for interview') {
+      application.interviewSchedule.status = 'cancelled';
+    }
+
+    application.activityHistory.push({
+      type: 'status_changed',
+      title: 'Application withdrawn by jobseeker',
+      description: 'The jobseeker permanently withdrew this application.',
+      fromStatus: currentStatus,
+      toStatus: 'withdrawn',
+      occurredAt: withdrawnAt,
+      performedBy: req.user._id
+    });
+
     await application.save();
 
     const loc = String(application?.job?.location || '').trim();
@@ -1319,105 +1337,14 @@ exports.withdrawMyApplication = async (req, res) => {
   }
 };
 
-// ✅ NEW: JOBSEEKER REACTIVATE OWN APPLICATION
+// Withdrawn applications are permanent and cannot be reactivated.
 exports.reactivateMyApplication = async (req, res) => {
-  try {
-    const { applicationId } = req.params;
-
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only jobseekers can reactivate applications'
-      });
-    }
-
-    const application = await Application.findById(applicationId)
-      .populate({
-        path: 'job',
-        select: 'title companyName location jobType salaryMin salaryMax applicationDeadline companyLogo isActive isPublished status vacancies'
-      })
-      .populate({
-        path: 'jobseeker',
-        select: 'fullName firstName middleName lastName extensionName email profileImage jobSeekerProfile'
-      })
-      .populate({
-        path: 'employer',
-        select: 'fullName employerProfile.companyName employerProfile.companyLogo employerProfile.companyAddress employerProfile.country employerProfile.regionCity'
-      });
-
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        message: 'Application not found'
-      });
-    }
-
-    if (application.jobseeker._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to reactivate this application'
-      });
-    }
-
-    const currentStatus = String(application.status || '').toLowerCase();
-
-    if (currentStatus !== 'withdrawn') {
-      return res.status(400).json({
-        success: false,
-        message: 'Only withdrawn applications can be reactivated'
-      });
-    }
-
-    if (!application.job || normalizeJobStatus(application.job.status) === 'filled') {
-      return res.status(400).json({
-        success: false,
-        message: 'The vacancy is already full.'
-      });
-    }
-
-    if (!application.job.isActive || !application.job.isPublished) {
-      return res.status(400).json({
-        success: false,
-        message: 'This job is no longer accepting applications'
-      });
-    }
-
-    if (await isJobVacancyFull(application.job)) {
-      await closeJobWhenVacancyIsFull(application.job._id);
-      return res.status(400).json({
-        success: false,
-        message: 'The vacancy is already full.'
-      });
-    }
-
-    const restoreStatus = ACTIVE_APPLICATION_STATUSES.includes(String(application.lastActiveStatus || '').toLowerCase())
-      ? String(application.lastActiveStatus).toLowerCase()
-      : 'pending';
-
-    application.status = restoreStatus;
-    application.lastActiveStatus = restoreStatus;
-    await application.save();
-
-    const loc = String(application?.job?.location || '').trim();
-    if (!loc || loc === 'Not specified') {
-      const fallback = buildCompanyLocation(application?.employer?.employerProfile);
-      if (application.job) application.job.location = fallback;
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Application reactivated successfully',
-      application
-    });
-  } catch (error) {
-    console.error('Error reactivating application:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error reactivating application'
-    });
-  }
+  return res.status(400).json({
+    success: false,
+    code: 'WITHDRAWAL_PERMANENT',
+    message: 'Withdrawn applications are permanent and cannot be reactivated or restored.'
+  });
 };
-
 
 exports.getCurrentEmploymentStatus = async (req, res) => {
   try {
@@ -1794,6 +1721,7 @@ exports.getEmployerApplications = async (req, res) => {
       forInterview: applications.filter((app) => app.status === 'for interview').length,
       hired: applications.filter((app) => app.status === 'hired').length,
       declined: applications.filter((app) => app.status === 'declined').length,
+      withdrawn: applications.filter((app) => app.status === 'withdrawn').length,
       new7d: applications.filter((app) => {
         if (!app.appliedAt) return false;
         const now = new Date();
@@ -2373,6 +2301,14 @@ exports.updateInterviewSchedule = async (req, res) => {
       });
     }
 
+    if (String(application.status || '').toLowerCase() === 'withdrawn') {
+      return res.status(400).json({
+        success: false,
+        code: 'APPLICATION_WITHDRAWN',
+        message: 'This application was withdrawn by the jobseeker. Interview actions are disabled.'
+      });
+    }
+
     const parsedScheduledAt = new Date(scheduledAt);
     if (!scheduledAt || Number.isNaN(parsedScheduledAt.getTime())) {
       return res.status(400).json({
@@ -2699,6 +2635,14 @@ exports.updateApplicationHiringStage = async (req, res) => {
       });
     }
 
+    if (String(application.status || '').toLowerCase() === 'withdrawn') {
+      return res.status(400).json({
+        success: false,
+        code: 'APPLICATION_WITHDRAWN',
+        message: 'This application was withdrawn by the jobseeker. Hiring-stage actions are disabled.'
+      });
+    }
+
     if (application.status !== 'for interview') {
       return res.status(400).json({
         success: false,
@@ -2952,6 +2896,14 @@ exports.updateApplicationStatus = async (req, res) => {
 
     const oldStatus = application.status;
     const nextStatus = String(status || '').toLowerCase().trim();
+
+    if (String(oldStatus || '').toLowerCase() === 'withdrawn') {
+      return res.status(400).json({
+        success: false,
+        code: 'APPLICATION_WITHDRAWN',
+        message: 'This application was withdrawn by the jobseeker and can no longer be moved to another hiring status.'
+      });
+    }
 
     if (!VALID_APPLICATION_STATUSES.includes(nextStatus)) {
       return res.status(400).json({

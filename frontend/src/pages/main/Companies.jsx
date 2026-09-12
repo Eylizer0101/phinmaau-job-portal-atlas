@@ -200,19 +200,38 @@ const buildCompanyLocationGroups = (companies, formatLocation, fallbackLocations
 
 const Companies = () => {
   const navigate = useNavigate();
+  const savedFilterState = useMemo(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('agapay:public:companies-filters') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
 
   const [companies, setCompanies] = useState([]);
   const [allCompaniesForFilters, setAllCompaniesForFilters] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [visibleCompanyCount, setVisibleCompanyCount] = useState(16);
+  const [visibleCompanyCount, setVisibleCompanyCount] = useState(() => Number(savedFilterState.visibleCompanyCount) || 16);
   const [loadingMoreCompanies, setLoadingMoreCompanies] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const [jobCountByEmployerId, setJobCountByEmployerId] = useState({});
 
-  const [search, setSearch] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [search, setSearch] = useState(() => String(savedFilterState.search || ""));
+  const [selectedLocation, setSelectedLocation] = useState(() => String(savedFilterState.selectedLocation || ""));
+  const [selectedIndustry, setSelectedIndustry] = useState(() => String(savedFilterState.selectedIndustry || ""));
+
+  useEffect(() => {
+    sessionStorage.setItem(
+      'agapay:public:companies-filters',
+      JSON.stringify({
+        search,
+        selectedLocation,
+        selectedIndustry,
+        visibleCompanyCount,
+      })
+    );
+  }, [search, selectedLocation, selectedIndustry, visibleCompanyCount]);
 
   const [locations, setLocations] = useState([]);
   const [industries, setIndustries] = useState([]);
