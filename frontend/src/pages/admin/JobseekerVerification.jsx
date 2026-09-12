@@ -722,7 +722,7 @@ const JobseekerVerification = () => {
 
         const params = {
           page: filters.page,
-          limit: filters.limit === "all" ? 100000 : filters.limit,
+          limit: filters.limit,
           sort: filters.sort,
         };
 
@@ -860,7 +860,7 @@ const JobseekerVerification = () => {
 
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-7xl px-1 py-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col px-1 py-8 md:h-[calc(100vh-3rem)] md:min-h-0 md:overflow-hidden md:pb-2">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Jobseeker Verification</h1>
@@ -994,8 +994,8 @@ const JobseekerVerification = () => {
           </div>
         </Card>
 
-        <Card className="overflow-hidden" padding={false}>
-          <div className="border-t border-gray-100">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden" padding={false}>
+          <div className="flex min-h-0 flex-1 flex-col border-t border-gray-100">
             {loading ? null : visibleRows.length === 0 ? (
               <div className="py-14 text-center">
                 <h3 className="text-lg font-semibold text-gray-900">No jobseekers found</h3>
@@ -1003,9 +1003,9 @@ const JobseekerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden min-h-0 flex-1 overflow-auto lg:block">
                   <table className="w-full min-w-[1000px]">
-                    <thead className="bg-slate-50 border-b border-gray-100">
+                    <thead className="sticky top-0 z-10 border-b border-gray-100 bg-slate-50">
                       <tr>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
@@ -1105,7 +1105,7 @@ const JobseekerVerification = () => {
                   </table>
                 </div>
 
-                <div className="space-y-3 p-4 lg:hidden">
+                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 lg:hidden">
                   {visibleRows.map((item) => {
                     const fullName = item.fullName || "No Name";
                     const email = item.email || "—";
@@ -1176,13 +1176,17 @@ const JobseekerVerification = () => {
                   })}
                 </div>
 
-                <Pagination
-                  currentPage={filters.page}
-                  totalItems={pagination.totalItems}
-                  pageSize={filters.limit}
-                  onPageChange={(page) => onChangeFilter("page", page)}
-                  onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
-                />
+                {pagination.totalItems > 10 ? (
+                  <Pagination
+                    currentPage={filters.page}
+                    totalItems={pagination.totalItems}
+                    pageSize={filters.limit}
+                    onPageChange={(page) => onChangeFilter("page", page)}
+                    onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
+                    ariaLabel="Jobseeker verification pagination"
+                    className="sticky bottom-0 z-20 shrink-0"
+                  />
+                ) : null}
               </>
             )}
           </div>

@@ -2400,7 +2400,11 @@ exports.getJobseekersForVerification = async (req, res) => {
     const sort = String(req.query.sort || 'newest').trim().toLowerCase();
 
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const limitParam = String(req.query.limit || '10').trim().toLowerCase();
+    const showAll = limitParam === 'all';
+    const limit = showAll
+      ? null
+      : Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 100);
 
     const dateFrom = String(req.query.dateFrom || '').trim();
     const dateTo = String(req.query.dateTo || '').trim();
@@ -2410,9 +2414,9 @@ exports.getJobseekersForVerification = async (req, res) => {
       status: { $ne: 'deleted' },
     };
 
-    if (!search && status && ['not_submitted', 'pending', 'verified', 'rejected', 'hold'].includes(status)) {
+    if (status && ['not_submitted', 'pending', 'verified', 'rejected', 'hold'].includes(status)) {
       query['jobSeekerProfile.verificationDocs.overallStatus'] = status;
-    } else if (!search) {
+    } else {
       query['jobSeekerProfile.verificationDocs.overallStatus'] = { $nin: ['verified', 'rejected'] };
     }
 
@@ -2527,11 +2531,11 @@ exports.getJobseekersForVerification = async (req, res) => {
     });
 
     const totalItems = filtered.length;
-    const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
-    const safePage = Math.min(page, totalPages);
-    const skip = (safePage - 1) * limit;
+    const totalPages = showAll ? 1 : Math.max(Math.ceil(totalItems / limit), 1);
+    const safePage = showAll ? 1 : Math.min(page, totalPages);
+    const skip = showAll ? 0 : (safePage - 1) * limit;
 
-    const paginated = filtered.slice(skip, skip + limit);
+    const paginated = showAll ? filtered : filtered.slice(skip, skip + limit);
 
     res.status(200).json({
       success: true,
@@ -2551,7 +2555,7 @@ exports.getJobseekersForVerification = async (req, res) => {
       },
       pagination: {
         page: safePage,
-        limit,
+        limit: showAll ? 'all' : limit,
         totalItems,
         totalPages,
         hasPrevPage: safePage > 1,
