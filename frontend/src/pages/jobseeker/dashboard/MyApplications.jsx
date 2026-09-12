@@ -498,7 +498,7 @@ const MyApplications = () => {
 
     if (statusValue === 'pending') {
       return {
-        text: 'Pending',
+        text: application?.isViewedByEmployer ? 'Pending – Under Review' : 'Pending',
         badgeClass: 'text-amber-700',
       };
     }
