@@ -591,7 +591,7 @@ const NotificationsPage = () => {
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
             ariaLabel="Notification pagination"
-            className="fixed bottom-[64px] left-1/2 z-30 w-[calc(100%-2rem)] max-w-7xl -translate-x-1/2 md:bottom-0 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+            className="fixed bottom-[64px] left-1/2 z-30 w-[calc(100%-2rem)] -translate-x-1/2 sm:w-[calc(100%-3rem)] md:bottom-0 lg:w-[calc(100%-4rem)] lg:max-w-[1216px] !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
           />
         ) : null}
       </div>
