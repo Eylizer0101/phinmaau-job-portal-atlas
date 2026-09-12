@@ -1159,6 +1159,10 @@ const UserManagement = () => {
 
   const [debouncedQuery, cancelQuery] = useDebouncedValue(query, 300);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
+
   const clearMessages = useCallback(() => {
     setError('');
     setSuccess('');
@@ -1436,16 +1440,6 @@ const UserManagement = () => {
 
     if (!debouncedQuery && roleFilter === 'employer' && industryFilter !== 'all') {
       filtered = filtered.filter((user) => user.industry === industryFilter);
-    }
-
-    if (debouncedQuery) {
-      const q = debouncedQuery.toLowerCase();
-      filtered = filtered.filter(user =>
-        user.email?.toLowerCase().includes(q) ||
-        user.name?.toLowerCase().includes(q) ||
-        user.companyName?.toLowerCase().includes(q) ||
-        user.studentId?.toLowerCase().includes(q)
-      );
     }
 
     if (!debouncedQuery && (dateFrom || dateTo)) {
@@ -2069,7 +2063,7 @@ const UserManagement = () => {
                   onPageSizeChange={setPageSize}
                   className={cn(
                     "sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5",
-                    totalUsers <= 10 ? "[&_nav]:hidden" : ""
+                    pageSize === 'all' || totalUsers <= Number(pageSize) ? "[&_nav]:hidden" : ""
                   )}
                 />
               </>
