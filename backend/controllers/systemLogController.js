@@ -158,6 +158,7 @@ const normalizeLog = (log = {}) => ({
 
 exports.getSystemLogs = async (req, res) => {
   try {
+    const includeMeta = String(req.query.includeMeta || 'true').toLowerCase() !== 'false';
     const requestedLimit = String(req.query.limit || '').trim().toLowerCase();
     const showAll = requestedLimit === 'all';
     const page = showAll ? 1 : Math.max(1, Number.parseInt(req.query.page, 10) || 1);
@@ -167,56 +168,18 @@ exports.getSystemLogs = async (req, res) => {
     const skip = showAll ? 0 : (page - 1) * limit;
     const query = buildQuery(req.query);
     const sort = getSort(req.query.sort);
-    const startOfToday = toStartOfDay(new Date());
-    const endOfToday = toEndOfDay(new Date());
 
     let logsQuery = SystemLog.find(query).sort(sort);
     if (!showAll) logsQuery = logsQuery.skip(skip).limit(limit);
 
-    const [logs, total, statusSummary, todayCount, actions, modules] = await Promise.all([
+    const [logs, total] = await Promise.all([
       logsQuery.lean(),
       SystemLog.countDocuments(query),
-      SystemLog.aggregate([
-        { $match: query },
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
-          },
-        },
-      ]),
-      SystemLog.countDocuments({
-        ...query,
-        createdAt: {
-          ...(query.createdAt || {}),
-          $gte: query.createdAt?.$gte && query.createdAt.$gte > startOfToday
-            ? query.createdAt.$gte
-            : startOfToday,
-          $lte: query.createdAt?.$lte && query.createdAt.$lte < endOfToday
-            ? query.createdAt.$lte
-            : endOfToday,
-        },
-      }),
-      SystemLog.aggregate([
-        {
-          $group: {
-            _id: '$action',
-            label: { $first: '$actionLabel' },
-            count: { $sum: 1 },
-          },
-        },
-        { $sort: { label: 1 } },
-      ]),
-      SystemLog.distinct('module'),
     ]);
 
-    const summaryMap = statusSummary.reduce((map, item) => {
-      map[item._id] = item.count;
-      return map;
-    }, {});
     const pageCount = showAll ? 1 : Math.max(1, Math.ceil(total / limit));
 
-    return res.json({
+    const response = {
       success: true,
       data: logs.map(normalizeLog),
       pagination: {
@@ -227,22 +190,71 @@ exports.getSystemLogs = async (req, res) => {
         hasPreviousPage: page > 1,
         hasNextPage: page < pageCount,
       },
-      summary: {
+    };
+
+    if (includeMeta) {
+      const startOfToday = toStartOfDay(new Date());
+      const endOfToday = toEndOfDay(new Date());
+
+      const [statusSummary, todayCount, actions, modules] = await Promise.all([
+        SystemLog.aggregate([
+          { $match: query },
+          {
+            $group: {
+              _id: '$status',
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        SystemLog.countDocuments({
+          ...query,
+          createdAt: {
+            ...(query.createdAt || {}),
+            $gte: query.createdAt?.$gte && query.createdAt.$gte > startOfToday
+              ? query.createdAt.$gte
+              : startOfToday,
+            $lte: query.createdAt?.$lte && query.createdAt.$lte < endOfToday
+              ? query.createdAt.$lte
+              : endOfToday,
+          },
+        }),
+        SystemLog.aggregate([
+          {
+            $group: {
+              _id: '$action',
+              label: { $first: '$actionLabel' },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { label: 1 } },
+        ]),
+        SystemLog.distinct('module'),
+      ]);
+
+      const summaryMap = statusSummary.reduce((map, item) => {
+        map[item._id] = item.count;
+        return map;
+      }, {});
+
+      response.summary = {
         total,
         success: summaryMap.success || 0,
         failed: summaryMap.failed || 0,
         warning: summaryMap.warning || 0,
         today: todayCount,
-      },
-      filterOptions: {
+      };
+
+      response.filterOptions = {
         roles: ['employer', 'jobseeker'],
         statuses: ['success', 'failed', 'warning'],
         actions: actions
           .filter((item) => item._id)
           .map((item) => ({ value: item._id, label: item.label || item._id, count: item.count })),
         modules: modules.filter(Boolean).sort((a, b) => a.localeCompare(b)),
-      },
-    });
+      };
+    }
+
+    return res.json(response);
   } catch (error) {
     console.error('Error fetching system logs:', error);
     return res.status(500).json({

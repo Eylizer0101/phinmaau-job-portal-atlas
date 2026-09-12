@@ -705,7 +705,7 @@ const AdminUserApplicationHistory = () => {
             </div>
 
             {filteredApplications.length ? (
-              <div className="mt-5 flex-1 space-y-4">
+              <div className="mt-5 max-h-[508px] flex-1 space-y-4 overflow-y-auto overscroll-auto pr-1">
                 {paginatedApplications.map(({ application }) => (
                   <ApplicationHistoryCard
                     key={application._id}
@@ -730,7 +730,9 @@ const AdminUserApplicationHistory = () => {
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
-            />
+            
+                className="sticky bottom-0 z-20 shrink-0"
+              />
           </section>
         </div>
       </div>

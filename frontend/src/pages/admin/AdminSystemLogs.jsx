@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
@@ -471,38 +471,70 @@ const AdminSystemLogs = () => {
     dateTo: '',
   });
   const [search, setSearch] = useState('');
+  const pageCacheRef = useRef(new Map());
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(filters.search.trim()), 300);
     return () => window.clearTimeout(timer);
   }, [filters.search]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   const updateFilter = (key, value) => { setFilters((old) => ({ ...old, [key]: value })); setPage(1); };
   const loadLogs = useCallback(async () => {
     try {
       setLoading(true); setError('');
       const hasSearch = Boolean(search);
-      const response = await api.get('/admin/system-logs', {
-        params: {
-          q: search,
-          role: hasSearch ? 'all' : filters.role,
-          date: hasSearch ? 'all' : filters.date,
-          dateFrom: hasSearch ? '' : filters.dateFrom,
-          dateTo: hasSearch ? '' : filters.dateTo,
-          page,
-          limit: pageSize === 'all' ? 'all' : pageSize,
-        },
-      });
+      const params = {
+        q: search,
+        role: hasSearch ? 'all' : filters.role,
+        date: hasSearch ? 'all' : filters.date,
+        dateFrom: hasSearch ? '' : filters.dateFrom,
+        dateTo: hasSearch ? '' : filters.dateTo,
+        page,
+        limit: pageSize === 'all' ? 'all' : pageSize,
+        includeMeta: false,
+      };
+      const cacheKey = JSON.stringify(params);
+      const cachedPage = pageCacheRef.current.get(cacheKey);
+      if (cachedPage) {
+        setLogs(cachedPage.logs);
+        setPagination(cachedPage.pagination);
+        setLoading(false);
+        return;
+      }
+
+      const response = await api.get('/admin/system-logs', { params });
       if (!response.data?.success) throw new Error(response.data?.message || 'Unable to load activity logs.');
-      setLogs(response.data.data || []);
-      setPagination(response.data.pagination || { page: 1, pageCount: 1, total: 0 });
+      const nextLogs = response.data.data || [];
+      const nextPagination = response.data.pagination || { page: 1, pageCount: 1, total: 0 };
+      setLogs(nextLogs);
+      setPagination(nextPagination);
+      pageCacheRef.current.set(cacheKey, { logs: nextLogs, pagination: nextPagination });
+
+      if (pageSize !== 'all' && nextPagination.hasNextPage) {
+        const nextPage = Number(nextPagination.page || page) + 1;
+        const nextParams = { ...params, page: nextPage };
+        const nextKey = JSON.stringify(nextParams);
+        if (!pageCacheRef.current.has(nextKey)) {
+          api.get('/admin/system-logs', { params: nextParams }).then((prefetch) => {
+            if (!prefetch.data?.success) return;
+            pageCacheRef.current.set(nextKey, {
+              logs: prefetch.data.data || [],
+              pagination: prefetch.data.pagination || nextPagination,
+            });
+          }).catch(() => {});
+        }
+      }
     } catch (requestError) {
       setLogs([]); setError(requestError.response?.data?.message || requestError.message || 'Failed to load activity logs.');
     } finally { setLoading(false); }
   }, [search, filters.role, filters.date, filters.dateFrom, filters.dateTo, page, pageSize]);
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
-  return <AdminLayout><main className="mx-auto flex w-full max-w-[1480px] flex-col px-1 py-7 sm:py-8 md:h-[calc(100vh-3rem)] md:min-h-0 md:overflow-hidden md:pb-2 md:pt-8">
+  return <AdminLayout><main className="mx-auto flex w-full max-w-[1480px] flex-col px-1 py-7 sm:py-8 md:min-h-0 md:pb-2 md:pt-8">
     <header className="mb-5"><h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Activity Logs</h1>
       <p className="mt-1.5 text-sm text-slate-500">Monitor the important activities performed by Jobseekers and Employers.</p></header>
     <section className="relative z-30 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
@@ -527,7 +559,7 @@ const AdminSystemLogs = () => {
         <div className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] gap-5 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
           <span>Date & Time</span><span>Performed By</span><span>Role</span><span>Action</span>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="h-[508px] overflow-y-auto overscroll-auto">
         {loading ? null
           : error ? <div className="p-16 text-center"><p className="font-bold text-rose-600">{error}</p><button type="button" onClick={loadLogs} className="mt-4 rounded-xl bg-[#212C61] px-4 py-2 text-sm font-bold text-white">Retry</button></div>
           : logs.length === 0 ? <div className="flex min-h-[300px] flex-col items-center justify-center text-center"><Icon name="activity" className="h-8 w-8 text-[#212C61]" /><h2 className="mt-3 font-bold text-slate-900">No activity logs found</h2><p className="mt-1 text-sm text-slate-500">Jobseeker and Employer activities will appear here.</p></div>

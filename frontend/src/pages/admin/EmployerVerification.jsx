@@ -801,6 +801,8 @@ const EmployerVerification = () => {
   });
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const pageCacheRef = useRef(new Map());
+
   const [searchDraft, setSearchDraft] = useState("");
 
   const [pagination, setPagination] = useState({
@@ -851,8 +853,9 @@ const EmployerVerification = () => {
 
         const params = {
           page: filters.page,
-          limit: filters.limit === "all" ? 100000 : filters.limit,
+          limit: filters.limit,
           sort: filters.sort,
+          includeMeta: filters.page === 1,
         };
 
         const hasSearch = Boolean(filters.search);
@@ -864,6 +867,16 @@ const EmployerVerification = () => {
         if (!hasSearch && filters.dateFrom) params.dateFrom = filters.dateFrom;
         if (!hasSearch && filters.dateTo) params.dateTo = filters.dateTo;
 
+        const cacheKey = JSON.stringify({ ...params, includeMeta: undefined });
+        const cachedPage = pageCacheRef.current.get(cacheKey);
+        if (cachedPage && !silent) {
+          setRows(cachedPage.rows);
+          setPagination(cachedPage.pagination);
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+
         const res = await api.get("/admin/employers/verification", { params });
         const payload = res?.data || {};
 
@@ -872,23 +885,8 @@ const EmployerVerification = () => {
         }
 
         setRows(payload.employers || []);
-        setStats(
-          payload.stats || {
-            total: 0,
-            pending: 0,
-            verified: 0,
-            rejected: 0,
-            hold: 0,
-            unverified: 0,
-          }
-        );
-        setFilterOptions(
-          payload.filters || {
-            companies: [],
-            industries: [],
-            statuses: [],
-          }
-        );
+        if (payload.stats) setStats(payload.stats);
+        if (payload.filters) setFilterOptions(payload.filters);
         setPagination(
           payload.pagination || {
             page: 1,
@@ -899,6 +897,27 @@ const EmployerVerification = () => {
             hasNextPage: false,
           }
         );
+        const nextPagination = payload.pagination || {
+          page: 1, limit: 10, totalItems: 0, totalPages: 1, hasPrevPage: false, hasNextPage: false
+        };
+        const nextRows = payload.employers || [];
+        pageCacheRef.current.set(cacheKey, { rows: nextRows, pagination: nextPagination });
+
+        if (filters.limit !== "all" && nextPagination.hasNextPage) {
+          const nextPage = Number(nextPagination.page || filters.page) + 1;
+          const nextParams = { ...params, page: nextPage, includeMeta: false };
+          const nextKey = JSON.stringify({ ...nextParams, includeMeta: undefined });
+          if (!pageCacheRef.current.has(nextKey)) {
+            api.get("/admin/employers/verification", { params: nextParams }).then((prefetch) => {
+              const data = prefetch?.data || {};
+              if (!data.success) return;
+              pageCacheRef.current.set(nextKey, {
+                rows: data.employers || [],
+                pagination: data.pagination || nextPagination,
+              });
+            }).catch(() => {});
+          }
+        }
       } catch (err) {
         setRows([]);
         setError(err?.response?.data?.message || err.message || "Failed to load employers.");
@@ -1167,9 +1186,9 @@ const EmployerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden lg:block overflow-x-hidden">
+                <div className="hidden h-[508px] overflow-x-hidden overflow-y-auto overscroll-auto lg:block">
                   <table className="w-full table-fixed">
-                    <thead className="bg-slate-50 border-b border-gray-100">
+                    <thead className="sticky top-0 z-10 bg-slate-50 border-b border-gray-100">
                       <tr>
                         <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="w-[24%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
@@ -1278,7 +1297,7 @@ const EmployerVerification = () => {
                   </table>
                 </div>
 
-                <div className="space-y-3 p-4 lg:hidden">
+                <div className="max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
                   {mobileRows.map((item) => {
                     const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
                     const companyEmail = item.businessEmail || item.email || "—";
@@ -1364,7 +1383,9 @@ const EmployerVerification = () => {
                   pageSize={filters.limit}
                   onPageChange={(page) => onChangeFilter("page", page)}
                   onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
-                />
+                
+                className="sticky bottom-0 z-20 shrink-0"
+              />
               </>
             )}
           </div>

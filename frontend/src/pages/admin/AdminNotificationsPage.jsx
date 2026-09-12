@@ -308,7 +308,7 @@ const AdminNotificationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="max-h-[508px] divide-y divide-gray-100 overflow-y-auto overscroll-auto">
               {paginatedNotifications.map((notification) => (
                 <div
                   key={notification._id}
@@ -358,7 +358,9 @@ const AdminNotificationsPage = () => {
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
               ariaLabel="Admin notifications pagination"
-            />
+            
+                className="sticky bottom-0 z-20 shrink-0"
+              />
           ) : null}
         </div>
       </div>

@@ -1463,7 +1463,7 @@ const AdminJobApplicants = () => {
             </div>
           ) : paginatedApplicants.length > 0 ? (
             <>
-              <div className="mt-8 space-y-5">
+              <div className="mt-8 max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
                 {paginatedApplicants.map(
                   ({ application, user, profile, level, matchScore }) => {
                     const name =
@@ -1610,6 +1610,8 @@ const AdminJobApplicants = () => {
                 onPageChange={setCurrentPage}
                 onPageSizeChange={setPageSize}
                 ariaLabel="Admin job applicants pagination"
+              
+                className="sticky bottom-0 z-20 shrink-0"
               />
             </>
           ) : (

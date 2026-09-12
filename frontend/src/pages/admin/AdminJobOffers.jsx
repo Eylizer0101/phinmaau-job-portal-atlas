@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
@@ -511,6 +511,7 @@ const AdminJobOffers = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const pageCacheRef = useRef(new Map());
   const [filters, setFilters] = useState({
     search: '',
     status: 'All Status',
@@ -529,7 +530,7 @@ const AdminJobOffers = () => {
       const hasSearch = Boolean(filters.search.trim());
       const params = {
         page,
-        limit: pageSize === 'all' ? 100000 : pageSize,
+        limit: pageSize === 'all' ? 'all' : pageSize,
         search: filters.search,
         status: !hasSearch && filters.status !== 'All Status' ? filters.status.toLowerCase() : '',
         company: !hasSearch && filters.company !== 'All Company' ? filters.company : '',
@@ -538,12 +539,41 @@ const AdminJobOffers = () => {
         date: hasSearch ? 'all' : filters.date,
         dateFrom: hasSearch ? '' : filters.dateFrom,
         dateTo: hasSearch ? '' : filters.dateTo,
+        includeMeta: page === 1,
       };
+      const cacheKey = JSON.stringify({ ...params, includeMeta: undefined });
+      const cachedPage = pageCacheRef.current.get(cacheKey);
+      if (cachedPage) {
+        setJobs(cachedPage.jobs);
+        setTotal(cachedPage.total);
+        setLoading(false);
+        return;
+      }
+
       const response = await api.get('/admin/job-offers', { params });
-      setJobs(Array.isArray(response.data?.jobs) ? response.data.jobs : []);
-      setStats(response.data?.stats || { totalJobs: 0, active: 0, closed: 0, expired: 0 });
-      setOptions(response.data?.options || { companies: [], industries: [], jobTitles: [] });
-      setTotal(response.data?.pagination?.total || 0);
+      const nextJobs = Array.isArray(response.data?.jobs) ? response.data.jobs : [];
+      const nextTotal = response.data?.pagination?.total || 0;
+      setJobs(nextJobs);
+      if (response.data?.stats) setStats(response.data.stats);
+      if (response.data?.options) setOptions(response.data.options);
+      setTotal(nextTotal);
+      pageCacheRef.current.set(cacheKey, { jobs: nextJobs, total: nextTotal });
+
+      const pagination = response.data?.pagination;
+      if (pageSize !== 'all' && pagination?.hasNextPage) {
+        const nextPage = Number(pagination.page || page) + 1;
+        const nextParams = { ...params, page: nextPage, includeMeta: false };
+        const nextKey = JSON.stringify({ ...nextParams, includeMeta: undefined });
+        if (!pageCacheRef.current.has(nextKey)) {
+          api.get('/admin/job-offers', { params: nextParams }).then((prefetch) => {
+            if (!prefetch.data?.success) return;
+            pageCacheRef.current.set(nextKey, {
+              jobs: Array.isArray(prefetch.data.jobs) ? prefetch.data.jobs : [],
+              total: prefetch.data?.pagination?.total || nextTotal,
+            });
+          }).catch(() => {});
+        }
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to load job offers.');
       setJobs([]);
@@ -631,7 +661,7 @@ const AdminJobOffers = () => {
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-            <div className="overflow-x-auto">
+            <div className="h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
               <table className="w-full min-w-[1060px] table-fixed divide-y divide-slate-200">
                 <colgroup>
                   <col className="w-[11%]" />
@@ -643,7 +673,7 @@ const AdminJobOffers = () => {
                   <col className="w-[10%]" />
                   <col className="w-[7%]" />
                 </colgroup>
-                <thead className="bg-[#2e66a6]/[0.055]">
+                <thead className="sticky top-0 z-10 bg-[#2e66a6]/[0.055]">
                   <tr>
                     {['Date Posted', 'Company', 'Job Title', 'Vacancy', 'Applicant', 'Status', 'Valid Until', 'Actions'].map((header) => (
                       <th key={header} className={cn('whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600', header === 'Actions' ? 'text-center' : '')}>
@@ -741,7 +771,9 @@ const AdminJobOffers = () => {
               pageSize={pageSize}
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
-            />
+            
+                className="sticky bottom-0 z-20 shrink-0"
+              />
           </section>
         </div>
       </div>

@@ -675,6 +675,8 @@ const JobseekerVerification = () => {
   });
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const pageCacheRef = useRef(new Map());
+
   const [searchDraft, setSearchDraft] = useState("");
 
   const [pagination, setPagination] = useState({
@@ -724,6 +726,7 @@ const JobseekerVerification = () => {
           page: filters.page,
           limit: filters.limit,
           sort: filters.sort,
+          includeMeta: filters.page === 1,
         };
 
         const hasSearch = Boolean(filters.search);
@@ -735,6 +738,16 @@ const JobseekerVerification = () => {
         if (!hasSearch && filters.dateFrom) params.dateFrom = filters.dateFrom;
         if (!hasSearch && filters.dateTo) params.dateTo = filters.dateTo;
 
+        const cacheKey = JSON.stringify({ ...params, includeMeta: undefined });
+        const cachedPage = pageCacheRef.current.get(cacheKey);
+        if (cachedPage && !silent) {
+          setRows(cachedPage.rows);
+          setPagination(cachedPage.pagination);
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+
         const res = await api.get("/admin/jobseekers/verification", { params });
         const payload = res?.data || {};
 
@@ -743,23 +756,8 @@ const JobseekerVerification = () => {
         }
 
         setRows(payload.jobseekers || []);
-        setStats(
-          payload.stats || {
-            total: 0,
-            pending: 0,
-            verified: 0,
-            rejected: 0,
-            hold: 0,
-            notSubmitted: 0,
-          }
-        );
-        setFilterOptions(
-          payload.filters || {
-            campuses: [],
-            courses: [],
-            statuses: [],
-          }
-        );
+        if (payload.stats) setStats(payload.stats);
+        if (payload.filters) setFilterOptions(payload.filters);
         setPagination(
           payload.pagination || {
             page: 1,
@@ -770,6 +768,27 @@ const JobseekerVerification = () => {
             hasNextPage: false,
           }
         );
+        const nextPagination = payload.pagination || {
+          page: 1, limit: 10, totalItems: 0, totalPages: 1, hasPrevPage: false, hasNextPage: false
+        };
+        const nextRows = payload.jobseekers || [];
+        pageCacheRef.current.set(cacheKey, { rows: nextRows, pagination: nextPagination });
+
+        if (filters.limit !== "all" && nextPagination.hasNextPage) {
+          const nextPage = Number(nextPagination.page || filters.page) + 1;
+          const nextParams = { ...params, page: nextPage, includeMeta: false };
+          const nextKey = JSON.stringify({ ...nextParams, includeMeta: undefined });
+          if (!pageCacheRef.current.has(nextKey)) {
+            api.get("/admin/jobseekers/verification", { params: nextParams }).then((prefetch) => {
+              const data = prefetch?.data || {};
+              if (!data.success) return;
+              pageCacheRef.current.set(nextKey, {
+                rows: data.jobseekers || [],
+                pagination: data.pagination || nextPagination,
+              });
+            }).catch(() => {});
+          }
+        }
       } catch (err) {
         setRows([]);
         setError(err?.response?.data?.message || err.message || "Failed to load jobseekers.");
@@ -860,7 +879,7 @@ const JobseekerVerification = () => {
 
   return (
     <AdminLayout>
-      <div className="mx-auto flex w-full max-w-7xl flex-col px-1 py-8 md:h-[calc(100vh-3rem)] md:min-h-0 md:overflow-hidden md:pb-2">
+      <div className="mx-auto flex w-full max-w-7xl flex-col px-1 py-8 md:min-h-0 md:pb-2">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Jobseeker Verification</h1>
@@ -1003,7 +1022,7 @@ const JobseekerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden min-h-0 flex-1 overflow-auto lg:block">
+                <div className="hidden h-[508px] overflow-auto overscroll-auto lg:block">
                   <table className="w-full min-w-[1000px]">
                     <thead className="sticky top-0 z-10 border-b border-gray-100 bg-slate-50">
                       <tr>
@@ -1105,7 +1124,7 @@ const JobseekerVerification = () => {
                   </table>
                 </div>
 
-                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 lg:hidden">
+                <div className="max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
                   {visibleRows.map((item) => {
                     const fullName = item.fullName || "No Name";
                     const email = item.email || "—";
@@ -1175,18 +1194,15 @@ const JobseekerVerification = () => {
                     );
                   })}
                 </div>
-
-                {pagination.totalItems > 10 ? (
-                  <Pagination
-                    currentPage={filters.page}
-                    totalItems={pagination.totalItems}
-                    pageSize={filters.limit}
-                    onPageChange={(page) => onChangeFilter("page", page)}
-                    onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
-                    ariaLabel="Jobseeker verification pagination"
-                    className="sticky bottom-0 z-20 shrink-0"
+                <Pagination
+                  currentPage={filters.page}
+                  totalItems={pagination.totalItems}
+                  pageSize={filters.limit}
+                  onPageChange={(page) => onChangeFilter("page", page)}
+                  onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
+                  ariaLabel="Jobseeker verification pagination"
+                  className="sticky bottom-0 z-20 shrink-0"
                   />
-                ) : null}
               </>
             )}
           </div>

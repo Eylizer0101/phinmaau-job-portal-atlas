@@ -891,7 +891,7 @@ const AdminApplications = () => {
             <div className="p-6 text-sm font-semibold text-red-600">{error}</div>
           ) : (
             <>
-              <div className="max-w-full overflow-x-auto lg:overflow-x-hidden">
+              <div className="h-[508px] max-w-full overflow-x-auto overflow-y-auto overscroll-auto lg:overflow-x-hidden">
                 <table className="w-full min-w-[900px] table-fixed divide-y divide-slate-200 text-left lg:min-w-0">
                   <colgroup>
                     <col className="w-[27%]" />
@@ -902,7 +902,7 @@ const AdminApplications = () => {
                     <col className="w-[9%]" />
                     <col className="w-[6%]" />
                   </colgroup>
-                  <thead className="bg-[#2e66a6]/[0.055]">
+                  <thead className="sticky top-0 z-10 bg-[#2e66a6]/[0.055]">
                     <tr>
                       {[
                         'Applicant',
@@ -1029,6 +1029,8 @@ const AdminApplications = () => {
                 pageSize={pageSize}
                 onPageChange={setCurrentPage}
                 onPageSizeChange={setPageSize}
+              
+                className="sticky bottom-0 z-20 shrink-0"
               />
             </>
           )}

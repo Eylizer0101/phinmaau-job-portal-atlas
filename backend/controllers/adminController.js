@@ -1815,8 +1815,11 @@ exports.getEmployersForVerification = async (req, res) => {
     const address = String(req.query.address || '').trim();
     const sort = String(req.query.sort || 'newest').trim().toLowerCase();
 
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const rawLimit = String(req.query.limit || '10').trim().toLowerCase();
+    const showAll = rawLimit === 'all';
+    const page = showAll ? 1 : Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = showAll ? null : Math.min(Math.max(parseInt(rawLimit, 10) || 10, 1), 100);
+    const includeMeta = String(req.query.includeMeta || 'true').toLowerCase() !== 'false';
 
     const dateFrom = String(req.query.dateFrom || '').trim();
     const dateTo = String(req.query.dateTo || '').trim();
@@ -1951,30 +1954,32 @@ exports.getEmployersForVerification = async (req, res) => {
     });
 
     const totalItems = filtered.length;
-    const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
-    const safePage = Math.min(page, totalPages);
-    const skip = (safePage - 1) * limit;
-    const paginated = filtered.slice(skip, skip + limit);
+    const totalPages = showAll ? 1 : Math.max(Math.ceil(totalItems / limit), 1);
+    const safePage = showAll ? 1 : Math.min(page, totalPages);
+    const skip = showAll ? 0 : (safePage - 1) * limit;
+    const paginated = showAll ? filtered : filtered.slice(skip, skip + limit);
 
     res.status(200).json({
       success: true,
       employers: paginated,
-      stats,
-      filters: {
-        companies,
-        industries,
-        addresses,
-        statuses: [
-          { value: 'unverified', label: EMPLOYER_STATUS_LABELS.unverified },
-          { value: 'pending', label: EMPLOYER_STATUS_LABELS.pending },
-          { value: 'hold', label: EMPLOYER_STATUS_LABELS.hold },
-          { value: 'verified', label: EMPLOYER_STATUS_LABELS.verified },
-          { value: 'rejected', label: EMPLOYER_STATUS_LABELS.rejected },
-        ],
-      },
+      ...(includeMeta ? {
+        stats,
+        filters: {
+          companies,
+          industries,
+          addresses,
+          statuses: [
+            { value: 'unverified', label: EMPLOYER_STATUS_LABELS.unverified },
+            { value: 'pending', label: EMPLOYER_STATUS_LABELS.pending },
+            { value: 'hold', label: EMPLOYER_STATUS_LABELS.hold },
+            { value: 'verified', label: EMPLOYER_STATUS_LABELS.verified },
+            { value: 'rejected', label: EMPLOYER_STATUS_LABELS.rejected },
+          ],
+        },
+      } : {}),
       pagination: {
         page: safePage,
-        limit,
+        limit: showAll ? 'all' : limit,
         totalItems,
         totalPages,
         hasPrevPage: safePage > 1,
@@ -2451,6 +2456,7 @@ exports.getJobseekersForVerification = async (req, res) => {
     const limit = showAll
       ? null
       : Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 100);
+    const includeMeta = String(req.query.includeMeta || 'true').toLowerCase() !== 'false';
 
     const dateFrom = String(req.query.dateFrom || '').trim();
     const dateTo = String(req.query.dateTo || '').trim();
@@ -2586,19 +2592,21 @@ exports.getJobseekersForVerification = async (req, res) => {
     res.status(200).json({
       success: true,
       jobseekers: paginated,
-      stats: allStats,
-      filters: {
-        campuses,
-        courses,
-        addresses,
-        statuses: [
-          { value: 'not_submitted', label: JOBSEEKER_STATUS_LABELS.not_submitted },
-          { value: 'pending', label: JOBSEEKER_STATUS_LABELS.pending },
-          { value: 'hold', label: JOBSEEKER_STATUS_LABELS.hold },
-          { value: 'verified', label: JOBSEEKER_STATUS_LABELS.verified },
-          { value: 'rejected', label: JOBSEEKER_STATUS_LABELS.rejected },
-        ],
-      },
+      ...(includeMeta ? {
+        stats: allStats,
+        filters: {
+          campuses,
+          courses,
+          addresses,
+          statuses: [
+            { value: 'not_submitted', label: JOBSEEKER_STATUS_LABELS.not_submitted },
+            { value: 'pending', label: JOBSEEKER_STATUS_LABELS.pending },
+            { value: 'hold', label: JOBSEEKER_STATUS_LABELS.hold },
+            { value: 'verified', label: JOBSEEKER_STATUS_LABELS.verified },
+            { value: 'rejected', label: JOBSEEKER_STATUS_LABELS.rejected },
+          ],
+        },
+      } : {}),
       pagination: {
         page: safePage,
         limit: showAll ? 'all' : limit,
@@ -3366,8 +3374,11 @@ const getAdminJobDateRange = (dateFilter) => {
 
 exports.getAdminJobOffers = async (req, res) => {
   try {
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 4, 1), 100);
+    const rawLimit = String(req.query.limit || '10').trim().toLowerCase();
+    const showAll = rawLimit === 'all';
+    const page = showAll ? 1 : Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = showAll ? null : Math.min(Math.max(parseInt(rawLimit, 10) || 10, 1), 100);
+    const includeMeta = String(req.query.includeMeta || 'true').toLowerCase() !== 'false';
     const search = String(req.query.search || '').trim();
     const status = String(req.query.status || '').trim().toLowerCase();
     const company = String(req.query.company || '').trim();
@@ -3401,10 +3412,12 @@ exports.getAdminJobOffers = async (req, res) => {
         .populate('employer', 'employerProfile.companyLogo employerProfile.industry employerProfile.companyName')
         .sort({ createdAt: -1 })
         .lean(),
-      Job.find({ isArchived: { $ne: true }, isPublished: true })
-        .populate('employer', 'employerProfile.companyLogo employerProfile.industry employerProfile.companyName')
-        .select('title companyName category employer')
-        .lean(),
+      includeMeta
+        ? Job.find({ isArchived: { $ne: true }, isPublished: true })
+            .populate('employer', 'employerProfile.companyLogo employerProfile.industry employerProfile.companyName')
+            .select('title companyName category employer')
+            .lean()
+        : Promise.resolve([]),
     ]);
 
     const allJobIds = allJobs.map((job) => job._id);
@@ -3455,24 +3468,32 @@ exports.getAdminJobOffers = async (req, res) => {
       : transformedJobs;
 
     const total = statusFilteredJobs.length;
-    const paginatedJobs = statusFilteredJobs.slice((page - 1) * limit, page * limit);
+    const totalPages = showAll ? 1 : Math.max(1, Math.ceil(total / limit));
+    const safePage = showAll ? 1 : Math.min(page, totalPages);
+    const paginatedJobs = showAll
+      ? statusFilteredJobs
+      : statusFilteredJobs.slice((safePage - 1) * limit, safePage * limit);
 
     const uniqueSorted = (values) => [...new Set(values.map((v) => String(v || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
     return res.status(200).json({
       success: true,
       jobs: paginatedJobs,
-      stats,
-      options: {
-        companies: uniqueSorted(optionSourceJobs.map((job) => job.companyName)),
-        industries: uniqueSorted(optionSourceJobs.map((job) => job.category)),
-        jobTitles: uniqueSorted(optionSourceJobs.map((job) => job.title)),
-      },
+      ...(includeMeta ? {
+        stats,
+        options: {
+          companies: uniqueSorted(optionSourceJobs.map((job) => job.companyName)),
+          industries: uniqueSorted(optionSourceJobs.map((job) => job.category)),
+          jobTitles: uniqueSorted(optionSourceJobs.map((job) => job.title)),
+        },
+      } : {}),
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: showAll ? 'all' : limit,
         total,
-        totalPages: Math.max(1, Math.ceil(total / limit)),
+        totalPages,
+        hasPrevPage: safePage > 1,
+        hasNextPage: safePage < totalPages,
       },
     });
   } catch (error) {

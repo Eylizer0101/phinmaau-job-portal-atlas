@@ -1349,9 +1349,9 @@ const AdminArchiveDetails = () => {
             />
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
             <div className="min-w-[1000px]">
-              <div className="grid grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+              <div className="sticky top-0 z-10 grid grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 <span>Job Title</span>
                 <span>Archived Type</span>
                 <span>Vacancy</span>
@@ -1426,7 +1426,9 @@ const AdminArchiveDetails = () => {
             pageSize={pageSize}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
-          />
+          
+                className="sticky bottom-0 z-20 shrink-0"
+              />
         </section>
       </main>
 
