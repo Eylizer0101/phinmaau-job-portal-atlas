@@ -490,7 +490,7 @@ const AdminSystemLogs = () => {
           dateFrom: hasSearch ? '' : filters.dateFrom,
           dateTo: hasSearch ? '' : filters.dateTo,
           page,
-          limit: pageSize === 'all' ? 100000 : pageSize,
+          limit: pageSize === 'all' ? 'all' : pageSize,
         },
       });
       if (!response.data?.success) throw new Error(response.data?.message || 'Unable to load activity logs.');
@@ -502,7 +502,7 @@ const AdminSystemLogs = () => {
   }, [search, filters.role, filters.date, filters.dateFrom, filters.dateTo, page, pageSize]);
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
-  return <AdminLayout><main className="mx-auto w-full max-w-[1480px] px-1 py-7 sm:py-8">
+  return <AdminLayout><main className="mx-auto flex w-full max-w-[1480px] flex-col px-1 py-7 sm:py-8 md:h-[calc(100vh-3rem)] md:min-h-0 md:overflow-hidden">
     <header className="mb-5"><h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Activity Logs</h1>
       <p className="mt-1.5 text-sm text-slate-500">Monitor the important activities performed by Jobseekers and Employers.</p></header>
     <section className="relative z-30 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
@@ -522,11 +522,12 @@ const AdminSystemLogs = () => {
         />
       </div>
     </section>
-    <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-      <div className="max-w-full overflow-x-auto lg:overflow-x-hidden"><div className="min-w-[760px] lg:min-w-0">
+    <section className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+      <div className="min-h-0 flex-1 max-w-full overflow-x-auto overflow-y-hidden lg:overflow-x-hidden"><div className="flex h-full min-w-[760px] min-h-0 flex-col lg:min-w-0">
         <div className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] gap-5 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
           <span>Date & Time</span><span>Performed By</span><span>Role</span><span>Action</span>
         </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? null
           : error ? <div className="p-16 text-center"><p className="font-bold text-rose-600">{error}</p><button type="button" onClick={loadLogs} className="mt-4 rounded-xl bg-[#212C61] px-4 py-2 text-sm font-bold text-white">Retry</button></div>
           : logs.length === 0 ? <div className="flex min-h-[300px] flex-col items-center justify-center text-center"><Icon name="activity" className="h-8 w-8 text-[#212C61]" /><h2 className="mt-3 font-bold text-slate-900">No activity logs found</h2><p className="mt-1 text-sm text-slate-500">Jobseeker and Employer activities will appear here.</p></div>
@@ -540,6 +541,7 @@ const AdminSystemLogs = () => {
               <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900" title={getActionCode(log.action)}>{getActionLabel(log.action)}</p><p className="truncate text-[11px] font-medium text-[#212C61]/70">{log.module || 'Activity'}</p></div>
             </div>;
           })}</div>}
+        </div>
       </div></div>
       <Pagination
         currentPage={pagination.page || page}

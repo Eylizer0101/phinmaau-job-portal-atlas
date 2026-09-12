@@ -158,16 +158,23 @@ const normalizeLog = (log = {}) => ({
 
 exports.getSystemLogs = async (req, res) => {
   try {
-    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(100, Math.max(5, Number.parseInt(req.query.limit, 10) || 15));
-    const skip = (page - 1) * limit;
+    const requestedLimit = String(req.query.limit || '').trim().toLowerCase();
+    const showAll = requestedLimit === 'all';
+    const page = showAll ? 1 : Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = showAll
+      ? null
+      : Math.min(100, Math.max(5, Number.parseInt(req.query.limit, 10) || 15));
+    const skip = showAll ? 0 : (page - 1) * limit;
     const query = buildQuery(req.query);
     const sort = getSort(req.query.sort);
     const startOfToday = toStartOfDay(new Date());
     const endOfToday = toEndOfDay(new Date());
 
+    let logsQuery = SystemLog.find(query).sort(sort);
+    if (!showAll) logsQuery = logsQuery.skip(skip).limit(limit);
+
     const [logs, total, statusSummary, todayCount, actions, modules] = await Promise.all([
-      SystemLog.find(query).sort(sort).skip(skip).limit(limit).lean(),
+      logsQuery.lean(),
       SystemLog.countDocuments(query),
       SystemLog.aggregate([
         { $match: query },
@@ -207,14 +214,14 @@ exports.getSystemLogs = async (req, res) => {
       map[item._id] = item.count;
       return map;
     }, {});
-    const pageCount = Math.max(1, Math.ceil(total / limit));
+    const pageCount = showAll ? 1 : Math.max(1, Math.ceil(total / limit));
 
     return res.json({
       success: true,
       data: logs.map(normalizeLog),
       pagination: {
         page,
-        limit,
+        limit: showAll ? 'all' : limit,
         total,
         pageCount,
         hasPreviousPage: page > 1,

@@ -46,7 +46,6 @@ const Pagination = ({
       ? totalItems
       : Math.min(safePage * numericPageSize, totalItems);
 
-  if (totalPages <= 1) return null;
 
   const changePage = (nextPage) => {
     const safeNextPage = Math.min(Math.max(nextPage, 1), totalPages);
