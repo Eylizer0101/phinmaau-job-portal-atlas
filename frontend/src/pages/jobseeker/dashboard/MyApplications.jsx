@@ -1677,14 +1677,17 @@ const MyApplications = () => {
                   );
                 })}
               </div>
-              <Pagination
-                currentPage={Math.min(currentPage, totalPages)}
-                totalItems={searchedApplications.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                onPageSizeChange={setPageSize}
-                ariaLabel="Application pagination"
-              />
+              {searchedApplications.length >= 10 ? (
+                <Pagination
+                  currentPage={Math.min(currentPage, totalPages)}
+                  totalItems={searchedApplications.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  ariaLabel="Application pagination"
+                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                />
+              ) : null}
             </div>
           )}
         </div>

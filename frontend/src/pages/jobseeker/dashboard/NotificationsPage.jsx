@@ -394,7 +394,7 @@ const NotificationsPage = () => {
         </div>
 
         {/* List */}
-        <div className={UI.shell}>
+        <div className={`${UI.shell} !overflow-visible`}>
           {loading ? (
             <div className="p-12 text-center">
               <div className="h-12 w-12 rounded-full border-2 border-gray-200 border-t-[#2e66a6] animate-spin mx-auto" />
@@ -583,15 +583,17 @@ const NotificationsPage = () => {
           )}
         </div>
 
-        <Pagination
-          currentPage={safePage}
-          totalItems={filteredNotifications.length}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
-          ariaLabel="Notification pagination"
-          className="mt-6"
-        />
+        {filteredNotifications.length >= 10 ? (
+          <Pagination
+            currentPage={safePage}
+            totalItems={filteredNotifications.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            ariaLabel="Notification pagination"
+            className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+          />
+        ) : null}
       </div>
     </div>
   );

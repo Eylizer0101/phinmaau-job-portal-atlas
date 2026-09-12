@@ -545,14 +545,17 @@ const CompanyAllJobs = () => {
             </div>
           )}
 
-          <Pagination
-            currentPage={safePage}
-            totalItems={filtered.length}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            ariaLabel="Company jobs pagination"
-          />
+          {filtered.length >= 10 ? (
+            <Pagination
+              currentPage={safePage}
+              totalItems={filtered.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              ariaLabel="Company jobs pagination"
+              className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+            />
+          ) : null}
         </section>
       </div>
 
