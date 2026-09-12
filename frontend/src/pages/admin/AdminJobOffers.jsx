@@ -661,7 +661,7 @@ const AdminJobOffers = () => {
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-            <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
+            <div className="max-max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
               <table className="w-full min-w-[1060px] table-fixed divide-y divide-slate-200">
                 <colgroup>
                   <col className="w-[11%]" />
@@ -673,7 +673,7 @@ const AdminJobOffers = () => {
                   <col className="w-[10%]" />
                   <col className="w-[7%]" />
                 </colgroup>
-                <thead className="sticky top-0 z-10 bg-[#2e66a6]/[0.055]">
+                <thead className="sticky top-0 z-20 bg-[#f8fafc]">
                   <tr>
                     {['Date Posted', 'Company', 'Job Title', 'Vacancy', 'Applicant', 'Status', 'Valid Until', 'Actions'].map((header) => (
                       <th key={header} className={cn('whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600', header === 'Actions' ? 'text-center' : '')}>
