@@ -1697,7 +1697,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden max-h-[812px] overflow-x-auto overflow-y-auto overscroll-contain md:block">
+                <div className="hidden overflow-x-auto md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
