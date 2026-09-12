@@ -2297,7 +2297,7 @@ const Applicants = () => {
                               </span>
                             ) : (
                               <span className="rounded-full border border-[#f1d37a] bg-[#fff7df] px-3 py-1 text-xs font-semibold text-[#b36b00]">
-                                {app.isViewedByEmployer ? 'Pending – Under Review' : 'Pending'}
+                                {'Pending'}
                               </span>
                             )}
                           </div>

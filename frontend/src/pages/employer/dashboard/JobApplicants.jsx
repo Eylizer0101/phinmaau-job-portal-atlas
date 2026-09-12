@@ -196,7 +196,7 @@ const statusStyle = (status) => {
 
 const statusLabel = (status, isViewedByEmployer = false) => {
   const normalized = String(status || 'pending').toLowerCase();
-  if (normalized === 'pending') return isViewedByEmployer ? 'Pending – Under Review' : 'Pending';
+  if (normalized === 'pending') return 'Pending';
   if (normalized === 'for interview') return 'For Interview';
   if (normalized === 'vacancy full') return 'Vacancy Full';
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
