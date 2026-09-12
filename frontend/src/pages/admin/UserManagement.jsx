@@ -1752,7 +1752,7 @@ const UserManagement = () => {
             ) : (
               <>
                 <div
-                  className="hidden min-h-0 flex-1 overflow-auto md:block"
+                  className="hidden min-h-0 flex-1 overflow-x-auto overflow-y-scroll overscroll-contain md:block"
                 >
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
@@ -1879,7 +1879,7 @@ const UserManagement = () => {
                   </table>
                 </div>
 
-                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto md:hidden">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain md:hidden">
                   {filteredUsers.map((user) => {
                     const roleInfo = getRolePill(user.role);
                     const isLoading = userActionLoading[user.key];
@@ -1991,7 +1991,7 @@ const UserManagement = () => {
                   pageSize={pageSize}
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
-                  className={`-mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 sm:-mx-6 sm:!px-5 ${totalUsers <= 10 ? '[&_nav]:hidden' : ''}`}
+                  className={`sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5 ${totalUsers <= 10 ? '[&_nav]:hidden' : ''}`}
                 />
               </>
             )}
