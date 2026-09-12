@@ -1662,73 +1662,152 @@ const MyApplications = () => {
 
       {withdrawConfirmApplication && (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-[120]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="withdraw-privacy-title"
           aria-describedby="withdraw-privacy-description"
-          onMouseDown={(event) => {
-            if (
-              event.target === event.currentTarget &&
-              actionLoadingId !== withdrawConfirmApplication._id
-            ) {
-              setWithdrawConfirmApplication(null);
-              setWithdrawPrivacyAccepted(false);
-            }
-          }}
         >
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="max-h-[72vh] overflow-y-auto px-6 py-6 sm:px-7">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
-                  <WarningIcon className="h-6 w-6" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 id="withdraw-privacy-title" className="text-xl font-bold text-gray-900">Privacy Notice</h2>
-                  <div id="withdraw-privacy-description" className="mt-3 space-y-3 text-sm leading-6 text-gray-600">
-                    <p>Before continuing with this Withdrawal Request, please carefully review this notice.</p>
-                    <p>This request allows you, as the job seeker, to withdraw your application for a job opportunity you have previously applied for through the platform.</p>
-                    <p>By continuing, you acknowledge that withdrawing your application is <strong>permanent and cannot be undone</strong>. Once submitted, the application will be recorded as <strong>Withdrawn</strong>, and you will no longer be considered for the position.</p>
-                    <p>Please be aware that after withdrawing, you <strong>cannot apply for the same job again</strong>, and the withdrawn application <strong>cannot be reactivated or restored</strong>.</p>
-                    <p>The withdrawal request and relevant application information will be processed and maintained within the platform. This information may be accessible to the Employer and authorized Administrators when necessary to manage or review the application.</p>
-                    <p>By continuing, you acknowledge that you understand the consequences of withdrawing your application and how the withdrawal will be processed.</p>
-                  </div>
-                  <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <input
-                      type="checkbox"
-                      checked={withdrawPrivacyAccepted}
-                      onChange={(event) => setWithdrawPrivacyAccepted(event.target.checked)}
-                      disabled={actionLoadingId === withdrawConfirmApplication._id}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-[#2e66a6] focus:ring-[#2e66a6]"
+          <div
+            className="absolute inset-0 bg-black/55 backdrop-blur-[1px]"
+            onMouseDown={() => {
+              if (actionLoadingId !== withdrawConfirmApplication._id) {
+                setWithdrawConfirmApplication(null);
+                setWithdrawPrivacyAccepted(false);
+              }
+            }}
+            aria-hidden="true"
+          />
+
+          <div className="absolute inset-0 flex items-center justify-center px-3 py-3 sm:px-4 sm:py-4">
+            <div className="relative mx-auto w-full max-w-[860px] overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.12)]">
+              <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.07] blur-3xl" />
+                <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#56b5dc]/[0.12] blur-3xl" />
+                <div className="absolute -bottom-24 -right-20 h-56 w-56 rounded-full bg-[#1e4ba0]/[0.10] blur-3xl" />
+              </div>
+
+              <div className="relative z-10 px-5 pb-5 pt-4 sm:px-9 sm:pb-7 sm:pt-5 lg:px-12">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (actionLoadingId !== withdrawConfirmApplication._id) {
+                      setWithdrawConfirmApplication(null);
+                      setWithdrawPrivacyAccepted(false);
+                    }
+                  }}
+                  className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 sm:right-6 sm:top-5"
+                  style={{ "--tw-ring-color": "#1e4ba0" }}
+                  aria-label="Close"
+                  title="Close"
+                  disabled={actionLoadingId === withdrawConfirmApplication._id}
+                >
+                  <span className="text-2xl leading-none" aria-hidden="true">×</span>
+                </button>
+
+                <div className="-mt-1 flex justify-center sm:-mt-2">
+                  <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                    <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                    <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                    <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                    <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                    <div className="absolute bottom-2 right-7 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
+                    <img
+                      src="/images/lock.png"
+                      alt="Lock"
+                      className="relative h-16 w-16 object-contain sm:h-20 sm:w-20"
+                      draggable="false"
                     />
-                    <span className="text-sm font-medium text-gray-800">I have read and understood this Privacy Notice.</span>
-                  </label>
+                  </div>
+                </div>
+
+                <h2
+                  id="withdraw-privacy-title"
+                  className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]"
+                  style={{ letterSpacing: "0.06em" }}
+                >
+                  PRIVACY NOTICE
+                </h2>
+
+                <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                  <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+                  </svg>
+                  <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
+                </div>
+
+                <div
+                  id="withdraw-privacy-description"
+                  className="mx-auto mt-4 max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:mt-5 sm:px-7 sm:py-5"
+                >
+                  <div className="text-[12px] leading-5 text-[#0f2442] sm:text-[13px] sm:leading-[1.45rem]">
+                    <p className="font-semibold">
+                      Before continuing with this Withdrawal Request, please carefully review this notice.
+                    </p>
+                    <p className="mt-2">
+                      This request allows you, as the job seeker, to withdraw your application for a job opportunity you have previously applied for through the platform.
+                    </p>
+                    <p className="mt-2">
+                      By continuing, you acknowledge that withdrawing your application is <strong>permanent and cannot be undone</strong>. Once submitted, the application will be recorded as <strong>Withdrawn</strong>, and you will no longer be considered for the position.
+                    </p>
+                    <p className="mt-2">
+                      Please be aware that after withdrawing, you <strong>cannot apply for the same job again</strong>, and the withdrawn application <strong>cannot be reactivated or restored</strong>.
+                    </p>
+                    <p className="mt-2">
+                      The withdrawal request and relevant application information will be processed and maintained within the platform. This information may be accessible to the Employer and authorized Administrators when necessary to manage or review the application.
+                    </p>
+                    <p className="mt-2">
+                      By continuing, you acknowledge that you understand the consequences of withdrawing your application and how the withdrawal will be processed.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer select-none items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] sm:mt-4">
+                  <input
+                    type="checkbox"
+                    checked={withdrawPrivacyAccepted}
+                    onChange={(event) => setWithdrawPrivacyAccepted(event.target.checked)}
+                    disabled={actionLoadingId === withdrawConfirmApplication._id}
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
+                    style={{ accentColor: "#1e4ba0", "--tw-ring-color": "#1e4ba0" }}
+                  />
+                  <span className="leading-5">I have read and understood this Privacy Notice.</span>
+                </label>
+
+                <div className="mt-4 flex justify-center gap-3 sm:mt-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWithdrawConfirmApplication(null);
+                      setWithdrawPrivacyAccepted(false);
+                    }}
+                    disabled={actionLoadingId === withdrawConfirmApplication._id}
+                    className="h-11 min-w-[120px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-[#0f2442] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleWithdraw(withdrawConfirmApplication._id)}
+                    disabled={!withdrawPrivacyAccepted || actionLoadingId === withdrawConfirmApplication._id}
+                    className="inline-flex h-11 min-w-[190px] items-center justify-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-[0_10px_22px_rgba(30,75,160,0.25)] transition disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor:
+                        withdrawPrivacyAccepted && actionLoadingId !== withdrawConfirmApplication._id
+                          ? "#1e4ba0"
+                          : "#93a6c9",
+                    }}
+                  >
+                    {actionLoadingId === withdrawConfirmApplication._id && (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    )}
+                    {actionLoadingId === withdrawConfirmApplication._id ? 'Withdrawing...' : 'Withdraw Application'}
+                  </button>
                 </div>
               </div>
-            </div>
-            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:justify-end sm:px-7">
-              <button
-                type="button"
-                onClick={() => {
-                  setWithdrawConfirmApplication(null);
-                  setWithdrawPrivacyAccepted(false);
-                }}
-                disabled={actionLoadingId === withdrawConfirmApplication._id}
-                className="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleWithdraw(withdrawConfirmApplication._id)}
-                disabled={!withdrawPrivacyAccepted || actionLoadingId === withdrawConfirmApplication._id}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-red-300 disabled:opacity-70"
-              >
-                {actionLoadingId === withdrawConfirmApplication._id && (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                )}
-                {actionLoadingId === withdrawConfirmApplication._id ? 'Withdrawing...' : 'Withdraw Application'}
-              </button>
             </div>
           </div>
         </div>
