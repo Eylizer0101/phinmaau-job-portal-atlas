@@ -1684,7 +1684,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden overflow-x-auto md:block">
+                <div className="hidden max-h-[508px] overflow-x-auto overflow-y-auto overscroll-contain md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
@@ -1697,7 +1697,7 @@ const ManageJobs = () => {
                       <col className="w-[24%]" />
                     </colgroup>
 
-                    <thead className="bg-gray-50">
+                    <thead className="sticky top-0 z-10 bg-gray-50">
                       <tr >
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Posted
