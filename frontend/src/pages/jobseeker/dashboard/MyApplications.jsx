@@ -1685,7 +1685,7 @@ const MyApplications = () => {
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                   ariaLabel="Application pagination"
-                  className="fixed bottom-[64px] left-1/2 z-30 w-[min(96vw,1650px)] -translate-x-1/2 md:bottom-0 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
                 />
               ) : null}
             </div>
