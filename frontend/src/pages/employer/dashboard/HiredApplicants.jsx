@@ -1185,7 +1185,7 @@ const selectBase =
         </div>
 
         {/* Table */}
-        <div className="overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
+        <div className="relative overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
           {loading ? (
             <div className="py-14 text-center" role="status" aria-live="polite">
               <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1201,7 +1201,7 @@ const selectBase =
               {/* Desktop */}
               <div className="hidden overflow-x-auto md:block">
                 <table className="min-w-full">
-                  <thead className="sticky top-0 z-20 border-b border-gray-200 bg-[#fafafa]">
+                  <thead className="sticky top-px z-20 border-b border-gray-200 bg-[#fafafa]">
                     <tr>
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Applied Date
