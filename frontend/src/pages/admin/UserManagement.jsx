@@ -1733,8 +1733,8 @@ const UserManagement = () => {
           </div>
         </div>
 
-        <div className="flex h-[calc(100vh-310px)] min-h-[430px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-          <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
+        <div className="flex h-[calc(100vh-285px)] min-h-[450px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+          <div className="flex min-h-0 flex-1 flex-col px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
 
             {loading && users.length === 0 ? null : filteredUsers.length === 0 ? (
               <div className="py-14 text-center">
@@ -1991,7 +1991,7 @@ const UserManagement = () => {
                   pageSize={pageSize}
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
-                  className={`mt-3 shrink-0 ${totalUsers <= 10 ? '[&_nav]:hidden' : ''}`}
+                  className={`-mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 sm:-mx-6 sm:!px-5 ${totalUsers <= 10 ? '[&_nav]:hidden' : ''}`}
                 />
               </>
             )}
