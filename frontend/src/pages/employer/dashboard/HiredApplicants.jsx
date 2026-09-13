@@ -1638,29 +1638,36 @@ const selectBase =
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="review-request-title" className="text-lg font-bold text-gray-900">Approve Request?</h2>
+                <h2 id="review-request-title" className="text-lg font-bold text-gray-900">Employment Status Request</h2>
                 <p className="mt-2 text-sm leading-6 text-gray-600">
-                  Are you sure you want to approve the job seeker's request to end their current employment status? Their employment record will change from Active to Inactive.
+                  <strong className="text-gray-900">{buildApplicantName(reviewApplication.jobseeker)}</strong>{' '}
+                  has requested to update the employment status.
                 </p>
+                <p className="mt-2 text-sm leading-6 text-gray-600">The job seeker is requesting to end their current employment status.</p>
               </div>
               <button type="button" onClick={() => !reviewLoading && setReviewApplication(null)} className="rounded-lg p-1 text-gray-500 hover:bg-gray-100" aria-label="Close request review modal">
                 <Icon name="x" className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              Request reason:{' '}
-              <strong className="text-gray-900">
+            <div className="mt-4 space-y-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              <p>
+                <strong className="text-gray-900">Request Reason:</strong>{' '}
                 {reviewApplication.employmentStatusRequest?.reason === 'contract_ended' ? 'Contract Ended' : 'Employment Ended'}
-              </strong>
-            </p>
+              </p>
+              <p><strong className="text-gray-900">Request Date:</strong> {formatDate(reviewApplication.employmentStatusRequest?.requestedAt)}</p>
+              <p>
+                <strong className="text-gray-900">Current Status:</strong>{' '}
+                {String(reviewApplication.employmentStatus || 'active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active'}
+              </p>
+            </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => { setError(''); setReviewStep('decline'); }} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
-                Decline Request
+                Decline
               </button>
               <button type="button" onClick={() => setReviewStep('approve')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-60">
-                Approve Request
+                Approve
               </button>
             </div>
           </div>
