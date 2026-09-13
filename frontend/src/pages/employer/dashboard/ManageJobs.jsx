@@ -1343,8 +1343,8 @@ const ManageJobs = () => {
   }, [showDeleteModal]);
 
   return (
-    <EmployerLayout compactHeight>
-      <div className="mx-auto max-w-7xl px-1 pt-8 pb-2">
+    <EmployerLayout>
+      <div className="mx-auto max-w-7xl px-1 py-8">
         <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Manage Jobs</h1>
@@ -1484,8 +1484,8 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
-          <div className="p-6">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
+          <div className="flex min-h-0 flex-col px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
             {loading ? (
               <div className="py-14 text-center">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1984,7 +1984,7 @@ const ManageJobs = () => {
                     setCurrentPage(1);
                   }}
                   ariaLabel="Manage jobs pagination"
-                  className="sticky bottom-0 z-30 -mx-6 mt-0 shrink-0 !min-h-[58px] !px-5 !py-2 shadow-[0_-1px_0_rgba(229,231,235,1)]"
+                  className="sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(229,231,235,1)] sm:-mx-6 sm:!px-5"
                 />
               ) : null}
 
