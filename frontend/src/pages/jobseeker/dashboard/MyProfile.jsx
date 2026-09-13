@@ -985,30 +985,6 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
   );
 };
 
-const InputWithDropdown = ({ label, value, onChange, placeholder = '', options = [] }) => {
-  const listId = 'personal-educational-attainment-options';
-
-  return (
-    <div>
-      <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
-      <input
-        type="text"
-        list={listId}
-        value={value || ''}
-        onChange={onChange}
-        placeholder={placeholder}
-        autoComplete="off"
-        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
-      />
-      <datalist id={listId}>
-        {options.map((option) => (
-          <option key={option} value={option} />
-        ))}
-      </datalist>
-    </div>
-  );
-};
-
 const escapeRichText = (value = '') =>
   String(value || '')
     .replace(/&/g, '&amp;')
@@ -3381,11 +3357,11 @@ const ProfileEditModal = ({
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
           <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
-          <InputWithDropdown
+          <Select
             label="Educational Attainment"
             value={drafts.educationalAttainment}
             onChange={(e) => onChange('educationalAttainment', e.target.value)}
-            placeholder="Type or select educational attainment"
+            placeholder="Select educational attainment"
             options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
           />
           <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" />
