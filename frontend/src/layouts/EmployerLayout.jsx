@@ -883,7 +883,7 @@ const EmployerLayout = ({ children }) => {
       {showLogoutModal && (
         <div
           className={[
-            "fixed inset-0 z-[70] flex items-center justify-center px-4",
+            "fixed inset-0 z-[10050] flex items-center justify-center px-4",
             "bg-black/10",
             "transition-opacity duration-200",
             isLogoutModalVisible ? "opacity-100" : "opacity-0",
