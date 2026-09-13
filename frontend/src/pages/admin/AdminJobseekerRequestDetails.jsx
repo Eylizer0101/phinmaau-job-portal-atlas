@@ -53,20 +53,20 @@ export default function AdminJobseekerRequestDetails() {
   const statusRequest = request.employmentStatusRequest || {};
   const employerResponse = statusRequest.employerResponse || {};
   const adminDecision = statusRequest.adminDecision || {};
-  const employerAnswered = ['approved','declined','no_response'].includes(employerResponse.decision) || statusRequest.status === 'no_response';
-  const final = ['approved','declined'].includes(adminDecision.decision);
   const employerDecision = String(employerResponse.decision || 'pending').toLowerCase();
+  const employerAnswered = ['approved','declined','no_response'].includes(employerDecision) || statusRequest.status === 'no_response';
+  const final = ['approved','declined'].includes(adminDecision.decision);
   const status = final
     ? adminDecision.decision
-    : (statusRequest.status === 'no_response' ? 'no_response' : employerDecision);
+    : (statusRequest.status === 'no_response' ? 'no_response' : 'pending');
   const isApproved = status === 'approved';
   const isDeclined = status === 'declined';
   const isWaiting = status === 'pending';
-  const showDecisionDetails = !isWaiting && status !== 'no_response';
+  const showDecisionDetails = final || (employerAnswered && employerDecision !== 'no_response');
   const showDeclineDetails = employerDecision === 'declined';
   const companyName = request.job?.companyName || request.employer?.employerProfile?.companyName || '—';
-  const responseReason = employerResponse.declineReason || employerResponse.reason || '—';
-  const responseComment = employerResponse.explanation || employerResponse.comment || '—';
+  const responseReason = String(employerResponse.declineReason || employerResponse.reason || '').trim();
+  const responseComment = String(employerResponse.explanation || employerResponse.comment || '').trim();
   const decisionPerson = final ? adminDecision.decidedBy : employerResponse.respondedBy || request.employer;
   const decisionDate = final
     ? (adminDecision.decidedAt || statusRequest.reviewedAt || employerResponse.respondedAt)
@@ -102,7 +102,7 @@ export default function AdminJobseekerRequestDetails() {
           onClick={()=>setConfirm('declined')}
           className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          <X size={17}/>Decline Request
+          <X size={17}/>Decline Case
         </button>
       </div>
     </header>
@@ -152,7 +152,9 @@ export default function AdminJobseekerRequestDetails() {
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
               {status === 'pending'
-                ? 'Waiting for the employer to respond to this request.'
+                ? (employerAnswered
+                    ? `The employer ${employerDecision} the request. Waiting for final Admin confirmation.`
+                    : 'Waiting for the employer to respond to this request.')
                 : status === 'no_response'
                   ? 'The employer did not respond to this request within 7 days.'
                   : status === 'approved'
@@ -184,7 +186,7 @@ export default function AdminJobseekerRequestDetails() {
           Reason
         </h2>
         <div className="mt-4 rounded-xl border border-purple-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
-          {responseReason === '—' ? reason(statusRequest.reason) : reason(responseReason)}
+          {responseReason || 'No reason was provided for this request.'}
         </div>
       </section>
 
@@ -194,12 +196,12 @@ export default function AdminJobseekerRequestDetails() {
           Comment
         </h2>
         <div className="mt-4 min-h-[64px] rounded-xl border border-amber-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
-          {responseComment}
+          {responseComment || 'No additional comments were provided.'}
         </div>
       </section>
     </div>}
 
-    {confirm && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-bold capitalize">{confirm} Request?</h2><p className="mt-3 text-slate-600">{confirm === 'approved' ? "Are you sure you want to approve this request to end the job seeker's current employment status? The status will change from Active to Inactive." : "Are you sure you want to decline the job seeker's request? The current employment status will remain Active."}</p><p className="mt-4 rounded-xl bg-slate-50 p-4"><b>Request Reason:</b> {reason(statusRequest.reason)}</p><div className="mt-5 grid grid-cols-2 gap-3"><button onClick={()=>setConfirm('')} className="rounded-xl border py-3 font-semibold">Cancel</button><button disabled={saving} onClick={decide} className={`rounded-xl py-3 font-semibold text-white ${confirm === 'approved' ? 'bg-[#2e66a6]' : 'bg-red-600'}`}>{saving ? 'Processing...' : `${confirm === 'approved' ? 'Approve' : 'Decline'} Request`}</button></div></div></div>}
+    {confirm && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-bold capitalize">{confirm === 'approved' ? 'Approve Request?' : 'Decline Case?'}</h2><p className="mt-3 text-slate-600">{confirm === 'approved' ? "Are you sure you want to approve this request to end the job seeker's current employment status? The status will change from Active to Inactive." : "Are you sure you want to decline the job seeker's request? The current employment status will remain Active."}</p><p className="mt-4 rounded-xl bg-slate-50 p-4"><b>Request Reason:</b> {reason(statusRequest.reason)}</p><div className="mt-5 grid grid-cols-2 gap-3"><button onClick={()=>setConfirm('')} className="rounded-xl border py-3 font-semibold">Cancel</button><button disabled={saving} onClick={decide} className={`rounded-xl py-3 font-semibold text-white ${confirm === 'approved' ? 'bg-[#2e66a6]' : 'bg-red-600'}`}>{saving ? 'Processing...' : (confirm === 'approved' ? 'Approve Request' : 'Decline Case')}</button></div></div></div>}
     {success && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-7 text-center shadow-2xl"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/>{success.split('\n').map(line=><p key={line} className="mt-3 first:text-xl first:font-bold">{line}</p>)}<button onClick={()=>setSuccess('')} className="mt-5 rounded-xl bg-[#2e66a6] px-8 py-3 font-semibold text-white">Close</button></div></div>}
   </div>;
 }

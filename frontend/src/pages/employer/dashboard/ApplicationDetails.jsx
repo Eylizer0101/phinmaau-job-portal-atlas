@@ -2411,10 +2411,10 @@ const ApplicationDetails = () => {
       if (response.data?.application) applyEmploymentResponse(response.data.application);
       setEmploymentModal('');
       setEmploymentResult({
-        title: decision === 'approved' ? 'Status change approved successfully!' : 'Status change request declined!',
+        title: 'Response Submitted Successfully',
         description: decision === 'approved'
-          ? "The job seeker's employment status has been changed from Active to Inactive."
-          : "The job seeker's employment status remains Active."
+          ? 'Your approval was sent to the Admin for final review. The employment status remains Active until the Admin approves the request.'
+          : 'Your decline response was sent to the Admin for final review. The employment status remains Active.'
       });
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failed to review the status change request.');
@@ -2437,8 +2437,8 @@ const ApplicationDetails = () => {
       setEmploymentModal('');
       setEmploymentReason('');
       setEmploymentResult({
-        title: 'Employment status updated successfully!',
-        description: "The job seeker's employment status has been changed from Active to Inactive."
+        title: 'Employment Status Update Submitted',
+        description: 'The update was sent to the Admin for final review. The employment status remains Active until the Admin approves it.'
       });
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failed to update the employment status.');
@@ -2495,8 +2495,22 @@ const ApplicationDetails = () => {
     currentHiringStage.toLowerCase() === finalHiringStage.toLowerCase();
   const employmentStatus = String(application.employmentStatus || 'active').toLowerCase();
   const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
+  const employerRequestDecision = String(application.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase();
+  const adminRequestDecision = String(application.employmentStatusRequest?.adminDecision?.decision || 'pending').toLowerCase();
   const isActiveHiredEmployment = currentStatus === 'hired' && employmentStatus === 'active';
-  const hasPendingEmploymentRequest = isActiveHiredEmployment && employmentRequestStatus === 'pending';
+  const canReviewEmploymentRequest =
+    isActiveHiredEmployment &&
+    employmentRequestStatus === 'pending' &&
+    employerRequestDecision === 'pending' &&
+    adminRequestDecision === 'pending';
+  const isAwaitingAdminDecision =
+    isActiveHiredEmployment &&
+    employmentRequestStatus === 'pending' &&
+    ['approved', 'declined'].includes(employerRequestDecision) &&
+    adminRequestDecision === 'pending';
+  const canUpdateEmploymentStatus =
+    isActiveHiredEmployment &&
+    (employmentRequestStatus !== 'pending' || employerRequestDecision === 'declined');
   const isAlreadyEmployed = Boolean(application.alreadyEmployed);
   const visibleStatusLabel = isAlreadyEmployed
     ? 'Already Employed'
@@ -2893,12 +2907,17 @@ const ApplicationDetails = () => {
               {!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
               {!isAlreadyEmployed && isFromForInterviewPage && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
               {!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}
-              {hasPendingEmploymentRequest ? (
+              {canReviewEmploymentRequest ? (
                 <button onClick={() => setEmploymentModal('review')} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
                   <SvgIcon name="check" /> Approve Request
                 </button>
               ) : null}
-              {isActiveHiredEmployment && !hasPendingEmploymentRequest ? (
+              {isAwaitingAdminDecision ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+                  Response submitted — awaiting final Admin review
+                </div>
+              ) : null}
+              {canUpdateEmploymentStatus ? (
                 <button onClick={() => { setEmploymentReason(''); setEmploymentModal('reason'); }} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91] hover:bg-blue-50 disabled:opacity-50">
                   <SvgIcon name="edit" /> Update Status
                 </button>

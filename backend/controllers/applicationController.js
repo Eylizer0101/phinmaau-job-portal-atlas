@@ -1570,6 +1570,39 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       });
     }
 
+    const existingApplication = await Application.findOne({
+      _id: applicationId,
+      employer: req.user._id,
+      status: 'hired',
+      'employmentStatusRequest.status': 'pending'
+    });
+
+    if (!existingApplication) {
+      return res.status(409).json({
+        success: false,
+        message: 'This employment status request is not pending or does not belong to your company.'
+      });
+    }
+
+    const existingEmployerDecision = String(
+      existingApplication.employmentStatusRequest?.employerResponse?.decision || 'pending'
+    ).toLowerCase();
+
+    // A slow connection or a double-click can submit the same response twice.
+    // Return the saved response instead of showing a misleading ownership error.
+    if (['approved', 'declined'].includes(existingEmployerDecision)) {
+      await existingApplication.populate('job', 'title companyName companyLogo salaryMin salaryMax');
+      await existingApplication.populate('jobseeker', 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber');
+      await existingApplication.populate('employer', 'fullName employerProfile.companyName employerProfile.companyLogo');
+
+      return res.status(200).json({
+        success: true,
+        alreadySubmitted: true,
+        message: 'Your Employer response was already submitted and is waiting for final Admin review.',
+        application: existingApplication
+      });
+    }
+
     const reviewedAt = new Date();
     const update = {
       // The Employer response is recorded separately. The request remains
@@ -1606,7 +1639,7 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
     if (!application) {
       return res.status(409).json({
         success: false,
-        message: 'This request is no longer pending or does not belong to your company.'
+        message: 'This request was updated while you were submitting. Please refresh the application details.'
       });
     }
 
@@ -1614,9 +1647,7 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: decision === 'approved'
-        ? 'Employer response submitted for Admin review.'
-        : 'Employer response submitted for Admin review.',
+      message: 'Employer response submitted for Admin review.',
       application
     });
   } catch (error) {
