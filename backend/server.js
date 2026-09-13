@@ -6,6 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const applicationRoutes = require('./routes/applicationRoutes');
+const { processNoResponseRequests } = require('./controllers/employmentStatusRequestController');
 const path = require('path');
 const fs = require('fs');
 
@@ -402,4 +403,9 @@ app.listen(PORT, () => {
   console.log(` Uploads available at: ${publicBaseUrl}/uploads/`);
   console.log(` Cloudinary configured: ${process.env.CLOUDINARY_CLOUD_NAME ? 'YES' : 'NO'}`);
   console.log(` Admin API: ${publicBaseUrl}/api/admin/users`);
+
+  const runNoResponseCheck = () => processNoResponseRequests()
+    .catch((error) => console.error('Employment status no-response check failed:', error));
+  runNoResponseCheck();
+  setInterval(runNoResponseCheck, 60 * 60 * 1000);
 });

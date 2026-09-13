@@ -521,6 +521,7 @@ exports.createApplicationStatusNotification = async (application, oldStatus, new
         });
 
         await notification.save();
+
         return notification;
     } catch (error) {
         console.error('Error creating application status notification:', error);
@@ -620,6 +621,20 @@ exports.createEmploymentStatusRequestNotification = async (application) => {
         });
 
         await notification.save();
+
+        const admins = await User.find({ role: 'admin', status: { $ne: 'deleted' } }).select('_id');
+        if (admins.length) {
+            await Notification.insertMany(admins.map((admin) => ({
+                user: admin._id,
+                type: 'employment_status_request',
+                title: 'Jobseeker Status Request Submitted',
+                message: `${jobseekerName} submitted an employment status update request to the employer.`,
+                relatedId: application._id,
+                relatedModel: 'Application',
+                link: `/admin/jobseeker-status-requests/${jobseekerId}/${application._id}`,
+                metadata: { applicationId: application._id, jobseekerId, jobseekerName }
+            })));
+        }
         return notification;
     } catch (error) {
         console.error('Error creating employment status request notification:', error);
@@ -653,6 +668,43 @@ exports.createEmploymentStatusDecisionNotification = async (application, decisio
     } catch (error) {
         console.error('Error creating employment status decision notification:', error);
         return null;
+    }
+};
+
+// Notify every Admin after an Employer responds. The Jobseeker is intentionally
+// not notified here because the Admin still has to make the final decision.
+exports.createAdminEmploymentStatusResponseNotification = async (application, decision, employerInitiated = false) => {
+    try {
+        const admins = await User.find({ role: 'admin', status: { $ne: 'deleted' } }).select('_id');
+        if (!admins.length) return [];
+
+        const jobseeker = application?.jobseeker || {};
+        const nameParts = [jobseeker?.firstName, jobseeker?.middleName, jobseeker?.lastName]
+            .map((part) => String(part || '').trim()).filter(Boolean);
+        const jobseekerName = String(jobseeker?.fullName || '').trim() || nameParts.join(' ') || 'A job seeker';
+        const action = employerInitiated
+            ? `The employer has updated ${jobseekerName}'s employment status.`
+            : `The employer has ${decision === 'approved' ? 'approved' : 'declined'} ${jobseekerName}'s employment status update request.`;
+
+        return Notification.insertMany(admins.map((admin) => ({
+            user: admin._id,
+            type: 'employment_status_request',
+            title: employerInitiated ? 'Employer Updated Jobseeker Status' : `Employer ${decision === 'approved' ? 'Approved' : 'Declined'} Request`,
+            message: action,
+            relatedId: application._id,
+            relatedModel: 'Application',
+            link: `/admin/jobseeker-status-requests/${jobseeker?._id || application.jobseeker}/${application._id}`,
+            metadata: {
+                applicationId: application._id,
+                jobseekerId: jobseeker?._id || application.jobseeker,
+                jobseekerName,
+                employerDecision: decision,
+                employerInitiated
+            }
+        })));
+    } catch (error) {
+        console.error('Error creating Admin employment status response notification:', error);
+        return [];
     }
 };
 

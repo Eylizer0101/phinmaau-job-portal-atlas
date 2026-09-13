@@ -95,6 +95,8 @@ import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminEmployerJobEditRequests from './pages/admin/AdminEmployerJobEditRequests';
 import AdminEmployerJobEditRequestDetails from './pages/admin/AdminEmployerJobEditRequestDetails';
 import AdminEmployerJobEditRequestReview from './pages/admin/AdminEmployerJobEditRequestReview';
+import AdminJobseekerRequestHistory from './pages/admin/AdminJobseekerRequestHistory';
+import AdminJobseekerRequestDetails from './pages/admin/AdminJobseekerRequestDetails';
 import AdminDashboardJobs from './pages/admin/AdminDashboardJobs';
 import AdminDashboardJobSeekers from './pages/admin/AdminDashboardJobSeekers';
 import AdminDashboardEmployers from './pages/admin/AdminDashboardEmployers';
@@ -581,6 +583,15 @@ function App() {
               </AdminLayout>
             </RequireRole>
           }
+        />
+
+        <Route
+          path="/admin/jobseeker-status-requests/:jobseekerId"
+          element={<RequireRole role="admin" redirectTo="/login"><AdminLayout><AdminJobseekerRequestHistory /></AdminLayout></RequireRole>}
+        />
+        <Route
+          path="/admin/jobseeker-status-requests/:jobseekerId/:requestId"
+          element={<RequireRole role="admin" redirectTo="/login"><AdminLayout><AdminJobseekerRequestDetails /></AdminLayout></RequireRole>}
         />
 
         <Route

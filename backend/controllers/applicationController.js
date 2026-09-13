@@ -1503,7 +1503,20 @@ exports.requestEmploymentStatusChange = async (req, res) => {
             reviewedBy: null,
             declineReason: '',
             explanation: '',
-            noResponseAt: null
+            noResponseAt: null,
+            employerResponse: {
+              decision: 'pending',
+              respondedAt: null,
+              respondedBy: null,
+              declineReason: '',
+              explanation: ''
+            },
+            adminDecision: {
+              decision: 'pending',
+              decidedAt: null,
+              decidedBy: null
+            },
+            followUpEmailSentAt: null
           }
         }
       },
@@ -1559,17 +1572,16 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
 
     const reviewedAt = new Date();
     const update = {
-      'employmentStatusRequest.status': decision,
+      'employmentStatusRequest.status': 'reviewed',
       'employmentStatusRequest.reviewedAt': reviewedAt,
-      'employmentStatusRequest.reviewedBy': req.user._id
+      'employmentStatusRequest.reviewedBy': req.user._id,
+      'employmentStatusRequest.employerResponse.decision': decision,
+      'employmentStatusRequest.employerResponse.respondedAt': reviewedAt,
+      'employmentStatusRequest.employerResponse.respondedBy': req.user._id,
+      'employmentStatusRequest.employerResponse.declineReason': decision === 'declined' ? declineReason : '',
+      'employmentStatusRequest.employerResponse.explanation': decision === 'declined' ? explanation : ''
     };
-    if (decision === 'approved') {
-      update.employmentStatus = 'inactive';
-      update.employmentEndedAt = reviewedAt;
-      update.employmentUpdatedBy = 'jobseeker';
-    } else {
-      update.employmentStatus = 'active';
-      update.employmentStatusCheckedAt = reviewedAt;
+    if (decision === 'declined') {
       update['employmentStatusRequest.declineReason'] = declineReason;
       update['employmentStatusRequest.explanation'] = explanation;
     }
@@ -1595,18 +1607,13 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       });
     }
 
-    if (decision === 'approved') {
-      application.employmentEndReason = application.employmentStatusRequest.reason;
-      await application.save();
-    }
-
-    await notificationController.createEmploymentStatusDecisionNotification(application, decision);
+    await notificationController.createAdminEmploymentStatusResponseNotification(application, decision);
 
     return res.status(200).json({
       success: true,
       message: decision === 'approved'
-        ? 'Status Request Approved Successfully'
-        : 'Status Request Declined Successfully',
+        ? 'Employer response submitted for Admin review.'
+        : 'Employer response submitted for Admin review.',
       application
     });
   } catch (error) {
@@ -1640,19 +1647,30 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
       },
       {
         $set: {
-          employmentStatus: 'inactive',
-          employmentEndReason: reason,
-          employmentEndedAt,
-          employmentUpdatedBy: 'employer',
+          employmentStatus: 'active',
+          employmentStatusCheckedAt: employmentEndedAt,
           employmentStatusRequest: {
-            reason: '',
-            status: 'none',
-            requestedAt: null,
-            reviewedAt: null,
-            reviewedBy: null,
+            reason,
+            status: 'reviewed',
+            requestedAt: employmentEndedAt,
+            reviewedAt: employmentEndedAt,
+            reviewedBy: req.user._id,
             declineReason: '',
             explanation: '',
-            noResponseAt: null
+            noResponseAt: null,
+            employerResponse: {
+              decision: 'approved',
+              respondedAt: employmentEndedAt,
+              respondedBy: req.user._id,
+              declineReason: '',
+              explanation: ''
+            },
+            adminDecision: {
+              decision: 'pending',
+              decidedAt: null,
+              decidedBy: null
+            },
+            followUpEmailSentAt: null
           }
         }
       },
@@ -1669,11 +1687,11 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
       });
     }
 
-    await notificationController.createEmployerEmploymentStatusUpdateNotification(application);
+    await notificationController.createAdminEmploymentStatusResponseNotification(application, 'approved', true);
 
     return res.status(200).json({
       success: true,
-      message: 'Employment Status Updated Successfully',
+      message: 'Employment status update submitted for Admin review.',
       application
     });
   } catch (error) {

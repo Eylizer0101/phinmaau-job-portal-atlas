@@ -215,7 +215,7 @@ const applicationSchema = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['none', 'pending', 'approved', 'declined', 'no_response'],
+            enum: ['none', 'pending', 'reviewed', 'approved', 'declined', 'no_response'],
             default: 'none'
         },
         requestedAt: {
@@ -244,6 +244,22 @@ const applicationSchema = new mongoose.Schema({
             maxlength: 500
         },
         noResponseAt: {
+            type: Date,
+            default: null
+        },
+        employerResponse: {
+            decision: { type: String, enum: ['pending', 'approved', 'declined', 'no_response'], default: 'pending' },
+            respondedAt: { type: Date, default: null },
+            respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+            declineReason: { type: String, default: '', trim: true, maxlength: 120 },
+            explanation: { type: String, default: '', trim: true, maxlength: 500 }
+        },
+        adminDecision: {
+            decision: { type: String, enum: ['pending', 'approved', 'declined'], default: 'pending' },
+            decidedAt: { type: Date, default: null },
+            decidedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
+        },
+        followUpEmailSentAt: {
             type: Date,
             default: null
         }

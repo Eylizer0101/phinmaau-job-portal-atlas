@@ -992,12 +992,8 @@ const HiredApplicants = () => {
         setDeclineExplanation('');
         setReviewResult({
           decision,
-          title: decision === 'approved'
-            ? 'Status Request Approved Successfully'
-            : 'Status Request Declined Successfully',
-          description: decision === 'approved'
-            ? "The Jobseeker's employment status has been updated from Active to Inactive."
-            : "The request was declined, and the Jobseeker's employment status remains Active."
+          title: 'Response Submitted Successfully',
+          description: 'Your response was sent to the Admin for final review. The employment status remains Active until the Admin makes a final decision.'
         });
       }
     } catch (reviewError) {
@@ -1353,7 +1349,7 @@ const selectBase =
                                 </button>
                               )}
                               {String(app.employmentStatus || 'active').toLowerCase() === 'active' &&
-                                String(app.employmentStatusRequest?.status || 'none').toLowerCase() !== 'pending' && (
+                                ['none', 'declined'].includes(String(app.employmentStatusRequest?.status || 'none').toLowerCase()) && (
                                 <button
                                   type="button"
                                   onClick={() => openEmploymentUpdate(app)}
@@ -1471,7 +1467,7 @@ const selectBase =
                           </button>
                         )}
                         {String(app.employmentStatus || 'active').toLowerCase() === 'active' &&
-                          String(app.employmentStatusRequest?.status || 'none').toLowerCase() !== 'pending' && (
+                          ['none', 'declined'].includes(String(app.employmentStatusRequest?.status || 'none').toLowerCase()) && (
                           <button
                             type="button"
                             onClick={() => openEmploymentUpdate(app)}

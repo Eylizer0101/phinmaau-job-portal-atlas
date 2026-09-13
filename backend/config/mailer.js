@@ -617,6 +617,32 @@ const sendEmployerRegistrationSummaryEmail = async ({
   });
 };
 
+const sendEmploymentStatusNoResponseEmail = async ({ to, companyName, jobseekerName, jobTitle, industry }) => {
+  if (!to) throw new Error('Employer email missing');
+  await sendMail({
+    to,
+    subject: 'Action Required: Employment Status Request Awaiting Your Response',
+    html: `
+      <div style="font-family:Arial,sans-serif;color:#1f2937;line-height:1.65;max-width:680px;margin:auto">
+        <p>Dear <strong>${escapeHtml(companyName || 'Company')} HR/Recruitment Team</strong>,</p>
+        <p>Greetings from AGAPAY.</p>
+        <p>We are writing to kindly request an update regarding the employment status of <strong>${escapeHtml(jobseekerName)}</strong>, who applied for the position of <strong>${escapeHtml(jobTitle || 'the listed position')}</strong> at <strong>${escapeHtml(companyName || 'your company')}</strong>.</p>
+        <p>Our records indicate that the employment status for this application has not yet been updated. Kindly review the request and provide your response through AGAPAY.</p>
+        <h3>Application Details</h3>
+        <ul>
+          <li>Job Seeker: ${escapeHtml(jobseekerName)}</li>
+          <li>Company: ${escapeHtml(companyName || 'Not provided')}</li>
+          <li>Industry: ${escapeHtml(industry || 'Not specified')}</li>
+          <li>Job Title: ${escapeHtml(jobTitle || 'Not specified')}</li>
+          <li>Status: Awaiting Employer Response</li>
+        </ul>
+        <p>We would appreciate your response at your earliest convenience.</p>
+        <p>Thank you for your time and cooperation.</p>
+        <p>Sincerely,<br><strong>AGAPAY</strong></p>
+      </div>`
+  });
+};
+
 module.exports = {
   sendCredentialsEmail,
   sendPasswordResetEmail,
@@ -627,4 +653,5 @@ module.exports = {
   sendSettingsEmailVerificationCode,
   sendJobseekerRegistrationSummaryEmail,
   sendEmployerRegistrationSummaryEmail,
+  sendEmploymentStatusNoResponseEmail,
 };

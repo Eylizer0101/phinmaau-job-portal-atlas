@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
+const employmentStatusRequestController = require('../controllers/employmentStatusRequestController');
 
 const {
   applyForJob,
@@ -56,6 +57,10 @@ router.post('/:applicationId/employment-status-request', protect, authorize('job
 
 // Admin routes
 router.get('/admin/all', protect, authorize('admin'), getAdminApplications);
+router.get('/admin/employment-status-requests', protect, authorize('admin'), employmentStatusRequestController.getAllStatusRequests);
+router.get('/admin/employment-status-requests/jobseeker/:jobseekerId', protect, authorize('admin'), employmentStatusRequestController.getJobseekerStatusRequestHistory);
+router.get('/admin/employment-status-requests/jobseeker/:jobseekerId/:requestId', protect, authorize('admin'), employmentStatusRequestController.getStatusRequestDetails);
+router.put('/admin/employment-status-requests/:requestId/final-decision', protect, authorize('admin'), employmentStatusRequestController.finalizeStatusRequest);
 
 // Employer routes
 router.get('/employer/all', protect, authorize('employer'), getEmployerApplications);

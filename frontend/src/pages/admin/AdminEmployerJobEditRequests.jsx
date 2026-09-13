@@ -159,10 +159,9 @@ const AdminEmployerJobEditRequests = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [company, setCompany] = useState('all');
-  const [industry, setIndustry] = useState('all');
-  const [jobTitle, setJobTitle] = useState('all');
-  const [status, setStatus] = useState('pending');
+  const [role, setRole] = useState('all');
+  const [requestType, setRequestType] = useState('all');
+  const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -172,17 +171,19 @@ const AdminEmployerJobEditRequests = () => {
 
   useEffect(() => {
     let active = true;
-    api.get('/job-edit-requests/admin').then(({ data }) => {
-      if (active) setRequests(Array.isArray(data?.requests) ? data.requests : []);
+    Promise.all([
+      api.get('/job-edit-requests/admin'),
+      api.get('/applications/admin/employment-status-requests')
+    ]).then(([jobEditResponse, statusResponse]) => {
+      if (!active) return;
+      const employerRequests = (jobEditResponse.data?.requests || []).map((item) => ({ ...item, rowType: 'job_post' }));
+      const jobseekerRequests = (statusResponse.data?.requests || []).map((item) => ({ ...item, rowType: 'status_request' }));
+      setRequests([...employerRequests, ...jobseekerRequests]);
     }).catch((requestError) => {
       if (active) setError(requestError.response?.data?.message || 'Unable to load edit requests.');
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
-
-  const companyOptions = useMemo(() => [...new Set(requests.map(companyName).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
-  const industryOptions = useMemo(() => [...new Set(requests.map(industryName).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
-  const jobTitleOptions = useMemo(() => [...new Set(requests.map((item) => item?.job?.title).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -190,27 +191,28 @@ const AdminEmployerJobEditRequests = () => {
       ? { from: dateFrom ? new Date(`${dateFrom}T00:00:00`) : null, to: dateTo ? new Date(`${dateTo}T23:59:59.999`) : null }
       : presetRange(time);
     return requests.filter((item) => {
-      const itemStatus = item.status === 'pending' ? 'pending' : 'reviewed';
-      const created = new Date(item.createdAt);
-      const matchesSearch =
-        companyName(item).toLowerCase().includes(query) ||
-        String(item?.job?.title || '').toLowerCase().includes(query) ||
-        industryName(item).toLowerCase().includes(query);
+      const isStatusRequest = item.rowType === 'status_request';
+      const itemStatus = isStatusRequest ? String(item.employmentStatusRequest?.status || 'pending') : (item.status === 'pending' ? 'pending' : String(item.status || 'reviewed'));
+      const createdValue = isStatusRequest ? item.employmentStatusRequest?.requestedAt : item.createdAt;
+      const created = new Date(createdValue);
+      const person = isStatusRequest ? (item.jobseeker || {}) : (item.employer || {});
+      const name = isStatusRequest
+        ? (person.fullName || [person.firstName, person.middleName, person.lastName].filter(Boolean).join(' ') || 'Job Seeker')
+        : companyName(item);
+      const searchable = [name, person.email, item.job?.title, companyName(item), isStatusRequest ? 'status request job seeker' : 'job post employer'].join(' ').toLowerCase();
 
-      if (query) return matchesSearch;
-
-      return (company === 'all' || companyName(item) === company) &&
-        (industry === 'all' || industryName(item) === industry) &&
-        (jobTitle === 'all' || item?.job?.title === jobTitle) &&
+      return (!query || searchable.includes(query)) &&
+        (role === 'all' || role === (isStatusRequest ? 'jobseeker' : 'employer')) &&
+        (requestType === 'all' || requestType === item.rowType) &&
         (status === 'all' || status === itemStatus) &&
         (!range.from || (!Number.isNaN(created.getTime()) && created >= range.from)) &&
         (!range.to || (!Number.isNaN(created.getTime()) && created <= range.to));
-    }).sort((a, b) => (new Date(b.createdAt).getTime() || 0) - (new Date(a.createdAt).getTime() || 0));
-  }, [requests, search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
+    }).sort((a, b) => (new Date(b.rowType === 'status_request' ? b.employmentStatusRequest?.requestedAt : b.createdAt).getTime() || 0) - (new Date(a.rowType === 'status_request' ? a.employmentStatusRequest?.requestedAt : a.createdAt).getTime() || 0));
+  }, [requests, search, role, requestType, status, time, dateFrom, dateTo]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
+  }, [search, role, requestType, status, time, dateFrom, dateTo]);
 
   const paginatedRows = useMemo(() => {
     if (pageSize === 'all') return rows;
@@ -223,14 +225,13 @@ const AdminEmployerJobEditRequests = () => {
     setTime(value); setDateFrom(''); setDateTo('');
   };
 
-  const hasActiveFilters = Boolean(search.trim()) || company !== 'all' || industry !== 'all' || jobTitle !== 'all' || status !== 'pending' || time !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
+  const hasActiveFilters = Boolean(search.trim()) || role !== 'all' || requestType !== 'all' || status !== 'all' || time !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
 
   const clearFilters = () => {
     setSearch('');
-    setCompany('all');
-    setIndustry('all');
-    setJobTitle('all');
-    setStatus('pending');
+    setRole('all');
+    setRequestType('all');
+    setStatus('all');
     setTime('all');
     setDateFrom('');
     setDateTo('');
@@ -238,24 +239,22 @@ const AdminEmployerJobEditRequests = () => {
   };
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
-    <header> <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Edit Requests</h1><p className="mt-2 text-base text-slate-600">Review employer requests and grant temporary edit access to locked job postings.</p></header>
-    <section className={cn('grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2', hasActiveFilters ? 'xl:grid-cols-7' : 'xl:grid-cols-6')}>
-      <label className="relative block min-w-0"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company, job title..." className="h-12 w-full rounded-xl border border-slate-200 pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></label>
-      <select value={company} onChange={(e) => setCompany(e.target.value)} className="h-12 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Company</option>{companyOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select>
-      <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="h-12 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Industry</option>{industryOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select>
-      <select value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="h-12 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Job Title</option>{jobTitleOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select>
-      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option></select>
+    <header> <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Edit Requests</h1><p className="mt-2 text-base text-slate-600">Manage employer requests and job seeker status approvals.</p></header>
+    <section className={cn('grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2', hasActiveFilters ? 'xl:grid-cols-6' : 'xl:grid-cols-5')}>
+      <label className="relative block min-w-0"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search request..." className="h-12 w-full rounded-xl border border-slate-200 pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></label>
+      <select value={role} onChange={(e) => setRole(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Role</option><option value="employer">Employer</option><option value="jobseeker">Job Seeker</option></select>
+      <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Type</option><option value="job_post">Job Post</option><option value="status_request">Status Request</option></select>
+      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
       <div className="relative min-w-0"><select value={time} onChange={(e) => changeTime(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-11 text-sm"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select><CalendarDays className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={17} /></div>
       {hasActiveFilters && <button type="button" onClick={clearFilters} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"><RefreshCw size={16} />Clear All</button>}
     </section>
     {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {!loading && <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto"><table className="w-full min-w-[1050px] text-left">
-        <thead className="border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]"><tr><th className="px-6 py-5">Request Date</th><th className="px-6 py-5">Company</th><th className="px-6 py-5">Job Title</th><th className="px-6 py-5 text-center">Vacancy</th><th className="px-6 py-5 text-center">Applicant</th><th className="px-6 py-5">Status</th><th className="px-6 py-5">Valid Until</th><th className="px-6 py-5 text-center">Actions</th></tr></thead>
-        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const job = item.job || {}; const reviewed = item.status !== 'pending'; const detailsPath = `/admin/employer-job-edit-requests/${item._id}`; return <tr key={item._id} role="link" tabIndex={0} onClick={() => navigate(detailsPath)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(detailsPath); } }} className="cursor-pointer transition hover:bg-slate-50/80 focus:bg-blue-50/70 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
-          <td className="px-6 py-5 text-sm text-slate-600">{formatDate(item.createdAt)}</td><td className="px-6 py-5"><div className="flex items-center gap-3">{job.companyLogo ? <img src={job.companyLogo} alt="" className="h-11 w-11 rounded-xl border object-cover" /> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-700 text-xs font-bold text-white">{companyName(item).slice(0, 2).toUpperCase()}</span>}<div><p className="font-bold text-slate-950">{companyName(item)}</p><p className="mt-1 text-xs text-slate-500">{job.category || 'Company'}</p></div></div></td><td className="px-6 py-5"><p className="font-bold text-slate-950">{job.title || 'Untitled Job'}</p><p className="mt-1 text-xs text-slate-500">{[job.jobType, job.workMode].filter(Boolean).join(' • ') || 'Job posting'}</p></td><td className="px-6 py-5 text-center font-semibold">{job.vacancies ?? 0}</td><td className="px-6 py-5 text-center font-semibold">{job.applicationCount ?? 0}</td>
-          <td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${reviewed ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-700'}`}>{reviewed ? 'Reviewed' : 'Pending'}</span></td><td className="px-6 py-5 text-sm text-slate-600">{formatDate(job.applicationDeadline)}</td><td className="px-6 py-5 text-center"><button type="button" onClick={(event) => { event.stopPropagation(); navigate(detailsPath); }} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View edit request"><Eye size={19} /></button></td>
-        </tr>; })}{!rows.length && <tr><td colSpan="8" className="px-6 py-16 text-center text-sm text-slate-500">No edit requests match the selected filters.</td></tr>}</tbody>
+        <thead className="sticky top-0 z-10 border-b border-slate-200 bg-[#f7f9fc] text-xs font-bold uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-5">Request Date</th><th className="px-6 py-5">Name</th><th className="px-6 py-5">Role</th><th className="px-6 py-5">Request Type</th><th className="px-6 py-5">Status</th><th className="px-6 py-5 text-center">Action</th></tr></thead>
+        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const isStatusRequest = item.rowType === 'status_request'; const person = isStatusRequest ? item.jobseeker || {} : item.employer || {}; const name = isStatusRequest ? (person.fullName || [person.firstName, person.middleName, person.lastName].filter(Boolean).join(' ') || 'Job Seeker') : companyName(item); const itemStatus = isStatusRequest ? (item.employmentStatusRequest?.status || 'pending') : (item.status === 'pending' ? 'pending' : 'reviewed'); const date = isStatusRequest ? item.employmentStatusRequest?.requestedAt : item.createdAt; const detailsPath = isStatusRequest ? `/admin/jobseeker-status-requests/${person._id}` : `/admin/employer-job-edit-requests/${item._id}`; return <tr key={`${item.rowType}-${item._id}`} className="transition hover:bg-slate-50/80">
+          <td className="px-6 py-5 text-sm text-slate-600">{formatDate(date)}</td><td className="px-6 py-5"><p className="font-bold text-slate-950">{name}</p><p className="mt-1 text-xs text-slate-500">{isStatusRequest ? person.email : (item.job?.companyWebsite || item.employer?.email)}</p></td><td className="px-6 py-5 text-sm font-medium">{isStatusRequest ? 'Job Seeker' : 'Employer'}</td><td className="px-6 py-5 text-sm font-medium">{isStatusRequest ? 'Status Request' : 'Job Post'}</td><td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${itemStatus === 'pending' ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>{itemStatus.replace('_', ' ')}</span></td><td className="px-6 py-5 text-center"><button type="button" onClick={() => navigate(detailsPath)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View request"><Eye size={19} /></button></td>
+        </tr>; })}{!rows.length && <tr><td colSpan="6" className="px-6 py-16 text-center text-sm text-slate-500">No requests match the selected filters.</td></tr>}</tbody>
       </table></div>}
       {!loading && rows.length >= 10 && (
         <Pagination
