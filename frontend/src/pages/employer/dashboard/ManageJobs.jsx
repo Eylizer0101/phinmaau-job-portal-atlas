@@ -1512,7 +1512,7 @@ const ManageJobs = () => {
               </div>
             ) : (
               <>
-                <div className="space-y-4 md:hidden">
+                <div className="max-h-[508px] space-y-4 overflow-y-auto overscroll-auto md:hidden">
                   {paginatedJobs.map((job) => {
                     const title = safeTitle(job);
                     const busyThisRow = action.jobId === job._id;
@@ -1701,7 +1701,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden overflow-x-auto md:block">
+                <div className="hidden max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
@@ -1714,7 +1714,7 @@ const ManageJobs = () => {
                       <col className="w-[24%]" />
                     </colgroup>
 
-                    <thead className="sticky top-0 z-20 bg-gray-50">
+                    <thead className="sticky top-0 z-20 bg-gray-50 shadow-[0_1px_0_rgba(229,231,235,1)]">
                       <tr >
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Posted
@@ -1979,9 +1979,12 @@ const ManageJobs = () => {
                   totalItems={totalItems}
                   pageSize={pageSize}
                   onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
+                  onPageSizeChange={(nextPageSize) => {
+                    setPageSize(nextPageSize);
+                    setCurrentPage(1);
+                  }}
                   ariaLabel="Manage jobs pagination"
-                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                  className="sticky bottom-0 z-30 -mx-6 mt-0 shrink-0 !min-h-[58px] !px-5 !py-2 shadow-[0_-1px_0_rgba(229,231,235,1)]"
                 />
               ) : null}
 
