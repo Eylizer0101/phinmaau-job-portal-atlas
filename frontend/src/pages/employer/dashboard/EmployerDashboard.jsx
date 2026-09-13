@@ -1263,6 +1263,14 @@ const EmployerDashboard = () => {
                 {subtitle ? <p className="text-sm text-gray-500 mt-1">{subtitle}</p> : null}
               </div>
             </div>
+
+            {/* The duplicate top profile menu is intentionally hidden; the sidebar profile is canonical. */}
+            <div className="hidden" ref={profileWrapRef} aria-hidden="true">
+              <span>{companyLogoError ? 'profile-image-error' : ''}</span>
+              <button type="button" onClick={handleCompanyProfileClick}>Company Profile</button>
+              <button type="button" onClick={handleSettingsClick}>Account Settings</button>
+              <button type="button" onClick={openLogoutModal}>Sign out</button>
+            </div>
           </div>
 
           {actionLabel ? (

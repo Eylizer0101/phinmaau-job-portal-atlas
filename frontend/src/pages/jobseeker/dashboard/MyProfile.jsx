@@ -12,8 +12,6 @@ import {
 import {
   MAJOR_COURSE_OPTIONS,
   CAMPUS_OPTIONS,
-  EDUCATIONAL_ATTAINMENT_OPTIONS,
-  FIELD_OF_STUDY_OPTIONS,
 } from '../../../constants/jobseekerEducationOptions';
 import { TECHNICAL_SKILLS } from '../../../constants/technicalSkills';
 import { SOFT_SKILLS } from '../../../constants/softSkills';
@@ -6312,7 +6310,10 @@ const MyProfile = () => {
   const handleRemoveProfileImage = async () => {
     try {
       setProfileImageUploading(true);
-      const response = await api.delete('/auth/profile-image');
+      const token = localStorage.getItem('token');
+      const response = await axios.delete(`${API_BASE}/auth/profile-image`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data?.success) {
         const updatedUser = response.data.user;
         setUserData(updatedUser);
