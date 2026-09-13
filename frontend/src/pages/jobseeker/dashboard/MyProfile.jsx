@@ -279,9 +279,9 @@ const normalizeEducationalAttainmentValue = (value = '') => {
     return 'Doctorate Degree';
   }
 
-  // Educational Attainment is now a regular text input. Preserve custom values
-  // instead of clearing them when they are not one of the former dropdown options.
-  return clean;
+  return PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS.find(
+    (option) => option.toLowerCase() === normalized
+  ) || '';
 };
 
 const normalizeCivilStatusValue = (value = '') => {
@@ -986,25 +986,96 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
 };
 
 const InputWithDropdown = ({ label, value, onChange, placeholder = '', options = [] }) => {
-  const listId = 'personal-educational-attainment-options';
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+  const cleanValue = String(value || '');
+  const normalizedValue = cleanValue.trim().toLowerCase();
+  const filteredOptions = normalizedValue
+    ? options.filter((option) => option.toLowerCase().includes(normalizedValue))
+    : options;
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open]);
+
+  const emitValue = (nextValue) => {
+    onChange?.({ target: { value: nextValue } });
+  };
 
   return (
-    <div>
+    <div ref={wrapperRef} className="relative">
       <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
-      <input
-        type="text"
-        list={listId}
-        value={value || ''}
-        onChange={onChange}
-        placeholder={placeholder}
-        autoComplete="off"
-        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
-      />
-      <datalist id={listId}>
-        {options.map((option) => (
-          <option key={option} value={option} />
-        ))}
-      </datalist>
+
+      <div className="relative">
+        <input
+          type="text"
+          value={cleanValue}
+          onChange={(event) => {
+            emitValue(event.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder}
+          autoComplete="off"
+          className="w-full h-12 pl-4 pr-12 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
+        />
+
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-600"
+          aria-label="Toggle educational attainment options"
+          aria-expanded={open}
+        >
+          <FaChevronDown className={`text-xs transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      {open ? (
+        <div
+          role="listbox"
+          className="absolute left-0 top-full z-[10050] mt-2 w-full min-w-[360px] overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl"
+        >
+          {(filteredOptions.length ? filteredOptions : options).map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="option"
+              aria-selected={option === cleanValue}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                emitValue(option);
+                setOpen(false);
+              }}
+              className={`block w-full px-4 py-3 text-left text-sm font-medium transition ${
+                option === cleanValue
+                  ? 'bg-blue-50 text-[#2e66a6]'
+                  : 'bg-white text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -3381,11 +3452,11 @@ const ProfileEditModal = ({
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
           <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
-          <InputWithDropdown
+          <Select
             label="Educational Attainment"
             value={drafts.educationalAttainment}
             onChange={(e) => onChange('educationalAttainment', e.target.value)}
-            placeholder="Type or select educational attainment"
+            placeholder="Select educational attainment"
             options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
           />
           <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" />
