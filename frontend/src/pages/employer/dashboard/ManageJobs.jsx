@@ -1984,7 +1984,7 @@ const ManageJobs = () => {
                     setCurrentPage(1);
                   }}
                   ariaLabel="Manage jobs pagination"
-                  className="sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(229,231,235,1)] sm:-mx-6 sm:!px-5"
+                  className="sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5"
                 />
               ) : null}
 
