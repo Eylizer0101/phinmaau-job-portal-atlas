@@ -132,12 +132,13 @@ const getUploadedResume = (profile) => {
 const hasText = (value) => String(value ?? '').trim().length > 0;
 
 const getMissingResumeSections = (userData = {}) => {
-  const profile = userData?.jobSeekerProfile || {};
+  const safeUserData = userData && typeof userData === 'object' ? userData : {};
+  const profile = safeUserData.jobSeekerProfile || {};
   const address = String(profile.address || '').split(',').map((part) => part.trim()).filter(Boolean);
   const basicComplete = [
-    userData.firstName || userData.fullName,
-    userData.lastName || userData.fullName,
-    userData.email,
+    safeUserData.firstName || safeUserData.fullName,
+    safeUserData.lastName || safeUserData.fullName,
+    safeUserData.email,
     profile.phoneNumber,
     profile.campus,
     profile.course,

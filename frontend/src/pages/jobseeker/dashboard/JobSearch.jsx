@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import { JOB_TYPES, EXPERIENCE_LEVELS, EDUCATION_LEVELS } from '../../../constants/postJobDropdownOptions';
 import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 import api from '../../../services/api';
@@ -1414,6 +1415,7 @@ const JobSearch = () => {
   );
 
   return (
+    <JobSeekerLayout>
       <div className="min-h-screen bg-slate-50">
         <div className="-mt-10 pb-12">
           <div className="max-w-[1500px] mx-auto px-3 lg:px-4 2xl:px-6">
@@ -2038,6 +2040,7 @@ const JobSearch = () => {
           }
         `}</style>
       </div>
+    </JobSeekerLayout>
   );
 };
 
