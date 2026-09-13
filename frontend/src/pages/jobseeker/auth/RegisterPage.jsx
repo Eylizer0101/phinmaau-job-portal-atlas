@@ -277,6 +277,7 @@ const RegisterPage = () => {
 
     const email = String(formData.email || '').trim();
     if (!email) errors.email = 'Email is required';
+    else if (email.length > 100) errors.email = 'Maximum of 100 characters only.';
     else if (!isValidGmailAddress(email)) errors.email = 'Gmail account required to continue.';
 
     // ✅ Philippine mobile number: 11 digits and must start with 09
@@ -722,6 +723,7 @@ const RegisterPage = () => {
                     type="text"
                     name="firstName"
                     value={formData.firstName}
+                    maxLength={50}
                     placeholder="Enter your first name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}
@@ -745,6 +747,7 @@ const RegisterPage = () => {
                   type="text"
                   name="middleName"
                   value={formData.middleName}
+                  maxLength={50}
                   placeholder="Enter your middle name"
                   onChange={handleChange}
                   onKeyDown={handleNameKeyDown}
@@ -769,6 +772,7 @@ const RegisterPage = () => {
                     type="text"
                     name="lastName"
                     value={formData.lastName}
+                    maxLength={50}
                     placeholder="Enter your last name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}
@@ -827,7 +831,7 @@ const RegisterPage = () => {
                     disabled={loading}
                     aria-invalid={!!formErrors.email}
                     aria-describedby={describedBy(formErrors.email ? 'email-error' : null)}
-                    maxLength={80}
+                    maxLength={100}
                   />
                 </div>
                 {errorText('email-error', formErrors.email)}

@@ -548,11 +548,12 @@ exports.submitCompanyReview = async (req, res) => {
       daysToFirstResponse === null ||
       daysToFirstResponse === undefined ||
       !Number.isInteger(numericDaysToFirstResponse) ||
-      numericDaysToFirstResponse < 0
+      numericDaysToFirstResponse < 0 ||
+      numericDaysToFirstResponse > 999
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Days to first response is required and must be a whole number of 0 or higher.',
+        message: 'Days to first response is required and must be a whole number from 0 to 999.',
       });
     }
 
@@ -561,11 +562,12 @@ exports.submitCompanyReview = async (req, res) => {
       totalProcessDays === null ||
       totalProcessDays === undefined ||
       !Number.isInteger(numericTotalProcessDays) ||
-      numericTotalProcessDays < 0
+      numericTotalProcessDays < 0 ||
+      numericTotalProcessDays > 999
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Total process length is required and must be a whole number of 0 or higher.',
+        message: 'Total process length is required and must be a whole number from 0 to 999.',
       });
     }
 
@@ -573,6 +575,13 @@ exports.submitCompanyReview = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Review message is required.',
+      });
+    }
+
+    if (trimmedMessage.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your review must not exceed 1,000 characters.',
       });
     }
 
@@ -643,6 +652,13 @@ exports.submitCompanyReview = async (req, res) => {
     }
 
     const trimmedRoleAppliedFor = String(selectedApplication.job.title).trim();
+
+    if (trimmedRoleAppliedFor.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Role you applied for must not exceed 100 characters.',
+      });
+    }
 
     if (!company.employerProfile) {
       company.employerProfile = {};

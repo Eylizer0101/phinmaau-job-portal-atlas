@@ -187,7 +187,7 @@ const SALARY_PRIVACY_OPTIONS = [
 ];
 
 const normalizeSalaryDigits = (value = '') =>
-  String(value || '').replace(/[^\d]/g, '');
+  String(value || '').replace(/[^\d]/g, '').slice(0, 7);
 
 const formatSalaryInput = (value = '') => {
   const digits = normalizeSalaryDigits(value);
@@ -969,7 +969,7 @@ const ResumePasswordModal = ({
   );
 };
 
-const Input = ({ label, value, onChange, placeholder = '', disabled = false, type = 'text' }) => {
+const Input = ({ label, value, onChange, placeholder = '', disabled = false, type = 'text', maxLength, inputMode }) => {
   return (
     <div>
       <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
@@ -979,6 +979,8 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
+        maxLength={maxLength}
+        inputMode={inputMode}
         className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
       />
     </div>
@@ -1226,6 +1228,7 @@ const BulletTextArea = ({
   rows = 5,
   className = '',
   showToolbar = true,
+  maxLength,
 }) => {
   const editorRef = useRef(null);
   const alignmentMenuRef = useRef(null);
@@ -1405,6 +1408,23 @@ const BulletTextArea = ({
           role="textbox"
           aria-multiline="true"
           onInput={() => {
+            const editor = editorRef.current;
+            if (
+              editor &&
+              Number.isFinite(Number(maxLength)) &&
+              (editor.innerText || '').length > Number(maxLength)
+            ) {
+              editor.innerHTML = normalizeRichTextValue(value);
+              const selection = window.getSelection?.();
+              if (selection) {
+                const range = document.createRange();
+                range.selectNodeContents(editor);
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+              }
+              return;
+            }
             saveSelection();
             emitChange();
           }}
@@ -1430,7 +1450,7 @@ const BulletTextArea = ({
   );
 };
 
-const TextArea = ({ label, value, onChange, placeholder = '', rows = 4 }) => {
+const TextArea = ({ label, value, onChange, placeholder = '', rows = 4, maxLength }) => {
   return (
     <div>
       <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
@@ -1439,6 +1459,7 @@ const TextArea = ({ label, value, onChange, placeholder = '', rows = 4 }) => {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        maxLength={maxLength}
         className="rounded-b-xl resize-none"
       />
     </div>
@@ -2641,12 +2662,14 @@ const WorkExperienceModal = ({
             <Input
               label="Company"
               value={form.companyName}
+              maxLength={150}
               onChange={(e) => onChange('companyName', e.target.value)}
               placeholder="e.g. Phinma Araullo University"
             />
             <Input
               label="Job Title"
               value={form.positionTitle}
+              maxLength={100}
               onChange={(e) => onChange('positionTitle', e.target.value)}
               placeholder="e.g. UI / UX Designer"
             />
@@ -2691,6 +2714,7 @@ const WorkExperienceModal = ({
             rows={5}
             value={form.description}
             onChange={(e) => onChange('description', e.target.value)}
+            maxLength={1000}
             placeholder="Describe your responsibilities, achievements, and the work you handled."
           />
         </div>
@@ -2949,6 +2973,7 @@ const BasicInfoModal = ({
                 <input
                   value={drafts.streetAddress || ''}
                   required
+                  maxLength={250}
                   onChange={(e) => onChange('streetAddress', e.target.value)}
                   placeholder="e.g. #89 Garcia St"
                   className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
@@ -3116,6 +3141,7 @@ const EmailUpdateModal = ({
                 type="email"
                 value={form.newEmail}
                 onChange={(e) => onChange('newEmail', e.target.value)}
+                maxLength={100}
                 placeholder="Enter new email address"
               />
               <Input
@@ -3437,6 +3463,7 @@ const ProfileEditModal = ({
             rows={8}
             value={drafts.aboutMe}
             onChange={(e) => onChange('aboutMe', e.target.value)}
+            maxLength={500}
             placeholder="Insert text here..."
           />
         </div>
@@ -3451,7 +3478,7 @@ const ProfileEditModal = ({
           <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
-          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
+          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" maxLength={50} />
           <Select
             label="Educational Attainment"
             value={drafts.educationalAttainment}
@@ -3460,11 +3487,11 @@ const ProfileEditModal = ({
             options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
           />
           <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" />
-          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
-          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
+          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" inputMode="numeric" />
+          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" inputMode="numeric" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
-          <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
-          <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
+          <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" maxLength={10} />
+          <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" maxLength={10} />
           <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
           <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
           <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
@@ -3487,6 +3514,7 @@ const ProfileEditModal = ({
                 <input
                   type="text"
                   value={item.skill || ''}
+                  maxLength={100}
                   onChange={(e) => onSkillRowChange(index, 'skill', e.target.value)}
                   placeholder="e.g. Communication, Canva, Figma, Coding"
                   className="w-full h-12 px-4 rounded-[6px] border border-gray-300 bg-white text-black outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
@@ -3560,6 +3588,7 @@ const ProfileEditModal = ({
                 <Input
                   label="School / University *"
                   value={entry.school || entry.campus}
+                  maxLength={150}
                   onChange={(e) => onChangeEducationEntry(index, 'school', e.target.value)}
                   placeholder="Enter school / university"
                 />
@@ -3607,6 +3636,7 @@ const ProfileEditModal = ({
                   rows={4}
                   value={entry.description}
                   onChange={(e) => onChangeEducationEntry(index, 'description', e.target.value)}
+                  maxLength={1000}
                   placeholder="Add education details, honors, activities, or relevant notes."
                 />
               </div>
@@ -5517,6 +5547,12 @@ const MyProfile = () => {
 
       if (invalidNameField) {
         setError(`${invalidNameField[0]} must not exceed ${NAME_MAX_LENGTH} characters.`);
+        return false;
+      }
+
+      const nextAddress = buildAddressString(activeDrafts);
+      if (String(nextAddress || '').length > 250) {
+        setError('Address must not exceed 250 characters.');
         return false;
       }
 

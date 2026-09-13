@@ -1476,18 +1476,22 @@ const CompanyViewDetails = () => {
     if (!reviewApplicationId || !trimmedRoleAppliedFor) {
       return "Please select the role you applied for.";
     }
+    if (trimmedRoleAppliedFor.length > 100) {
+      return "Role you applied for must not exceed 100 characters.";
+    }
     if (!reviewProcessRating || reviewProcessRating < 1 || reviewProcessRating > 5) {
       return "Please select an application process rating from 1 to 5.";
     }
-    if (reviewDaysToFirstResponse === "" || !Number.isInteger(daysToFirstResponse) || daysToFirstResponse < 0) {
-      return "Days to first response is required and must be a whole number of 0 or higher.";
+    if (reviewDaysToFirstResponse === "" || !Number.isInteger(daysToFirstResponse) || daysToFirstResponse < 0 || daysToFirstResponse > 999) {
+      return "Days to first response is required and must be a whole number from 0 to 999.";
     }
-    if (reviewTotalProcessDays === "" || !Number.isInteger(totalProcessDays) || totalProcessDays < 0) {
-      return "Total process length is required and must be a whole number of 0 or higher.";
+    if (reviewTotalProcessDays === "" || !Number.isInteger(totalProcessDays) || totalProcessDays < 0 || totalProcessDays > 999) {
+      return "Total process length is required and must be a whole number from 0 to 999.";
     }
     if (typeof reviewWouldApplyAgain !== "boolean") return "Please select Yes or No for whether you would apply again.";
     if (!reviewOutcome) return "Please select an outcome.";
     if (!trimmedMessage) return "Please enter your review.";
+    if (trimmedMessage.length > 1000) return "Your review must not exceed 1,000 characters.";
     if (!String(reviewerName || "").trim()) return "Your name is required.";
     return "";
   };
@@ -2732,12 +2736,13 @@ const CompanyViewDetails = () => {
                         Days to first response *
                       </label>
                       <input
-                        type="number"
-                        min="0"
-                        step="1"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={3}
                         required
                         value={reviewDaysToFirstResponse}
-                        onChange={(e) => setReviewDaysToFirstResponse(e.target.value)}
+                        onChange={(e) => setReviewDaysToFirstResponse(String(e.target.value || "").replace(/\D/g, "").slice(0, 3))}
                         placeholder="e.g. 3"
                         disabled={reviewSubmitting}
                         className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
@@ -2750,12 +2755,13 @@ const CompanyViewDetails = () => {
                         Total process length (days) *
                       </label>
                       <input
-                        type="number"
-                        min="0"
-                        step="1"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={3}
                         required
                         value={reviewTotalProcessDays}
-                        onChange={(e) => setReviewTotalProcessDays(e.target.value)}
+                        onChange={(e) => setReviewTotalProcessDays(String(e.target.value || "").replace(/\D/g, "").slice(0, 3))}
                         placeholder="e.g. 21"
                         disabled={reviewSubmitting}
                         className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
@@ -2840,7 +2846,7 @@ const CompanyViewDetails = () => {
                     value={reviewMessage}
                     onChange={(e) => setReviewMessage(e.target.value)}
                     rows="5"
-                    maxLength={2000}
+                    maxLength={1000}
                     className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none resize-y focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     placeholder="How were the interviews? Communication? Timing? What surprised you?"
                     disabled={reviewSubmitting}

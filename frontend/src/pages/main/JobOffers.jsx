@@ -182,6 +182,7 @@ const CheckboxDropdown = ({
   pillBtn,
   topItems = [],
   allItems = [],
+  searchMaxLength,
 }) => {
   const [localSearch, setLocalSearch] = useState("");
 
@@ -253,6 +254,7 @@ const CheckboxDropdown = ({
             <input
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
+              maxLength={searchMaxLength}
               placeholder={placeholder}
               className="w-full px-4 py-3 rounded-xl bg-[#212C61]/5 border border-[#212C61]/20 outline-none text-sm text-black placeholder:text-black/45 caret-[#212C61] focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/20"
             />
@@ -378,7 +380,7 @@ const SalaryDropdown = ({
                 type="text"
                 inputMode="numeric"
                 value={formatAmountInput(value)}
-                onChange={(e) => setValue(normalizeAmount(e.target.value))}
+                onChange={(e) => setValue(normalizeAmount(e.target.value).slice(0, 7))}
                 placeholder="Indicate minimum salary"
                 className="w-full px-4 py-3 outline-none text-sm text-black/75 bg-white"
               />
@@ -1389,6 +1391,7 @@ const JobOffers = () => {
                     placeholder="Find a Job or Company..."
                     className="w-full h-full outline-none text-sm text-black/75 bg-transparent placeholder:text-black/40"
                     value={search}
+                    maxLength={150}
                     onChange={(e) => setSearch(e.target.value)}
                     onFocus={() => setSearchFocused(true)}
                     onBlur={() => setSearchFocused(false)}
@@ -1406,6 +1409,7 @@ const JobOffers = () => {
                   selected={selectedLocations}
                   setSelected={setSelectedLocations}
                   enableSearch
+                  searchMaxLength={100}
                   menuWidth="w-[300px]"
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}
@@ -1459,6 +1463,7 @@ const JobOffers = () => {
                   selected={selectedCompanies}
                   setSelected={setSelectedCompanies}
                   enableSearch
+                  searchMaxLength={150}
                   menuWidth="w-[300px]"
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}

@@ -182,7 +182,8 @@ const CheckboxDropdown = ({
   setOpenDropdown,
   pillBtn,
   topItems = [],
-  allItems = []
+  allItems = [],
+  searchMaxLength
 }) => {
   const [localSearch, setLocalSearch] = useState('');
 
@@ -254,6 +255,7 @@ const CheckboxDropdown = ({
             <input
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
+              maxLength={searchMaxLength}
               placeholder={placeholder}
               className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 outline-none text-sm text-gray-800"
             />
@@ -369,7 +371,7 @@ const SalaryDropdown = ({ id, label, value, setValue, openDropdown, setOpenDropd
                 type="text"
                 inputMode="numeric"
                 value={formatAmountInput(value)}
-                onChange={(e) => setValue(normalizeAmount(e.target.value))}
+                onChange={(e) => setValue(normalizeAmount(e.target.value).slice(0, 7))}
                 placeholder="Indicate minimum salary"
                 className="w-full px-4 py-3 outline-none text-sm text-gray-700 bg-white"
               />
@@ -1513,6 +1515,7 @@ const JobSearch = () => {
                         placeholder="Find a Job or Company..."
                         className="w-full h-full outline-none text-sm text-gray-700 bg-transparent placeholder:text-gray-400"
                         value={searchTerm}
+                        maxLength={150}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
                         onBlur={() => setSearchFocused(false)}
@@ -1530,6 +1533,7 @@ const JobSearch = () => {
                       selected={selectedLocations}
                       setSelected={setSelectedLocations}
                       enableSearch
+                      searchMaxLength={100}
                       menuWidth="w-[300px]"
                       openDropdown={openDropdown}
                       setOpenDropdown={setOpenDropdown}
@@ -1583,6 +1587,7 @@ const JobSearch = () => {
                       selected={selectedCompanies}
                       setSelected={setSelectedCompanies}
                       enableSearch
+                      searchMaxLength={150}
                       menuWidth="w-[300px]"
                       openDropdown={openDropdown}
                       setOpenDropdown={setOpenDropdown}

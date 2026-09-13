@@ -220,7 +220,7 @@ const companyReviewSchema = new mongoose.Schema(
       type: String,
       default: 'Role not specified',
       trim: true,
-      maxlength: 160,
+      maxlength: 100,
     },
     rating: {
       type: Number,
@@ -238,11 +238,13 @@ const companyReviewSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+      max: 999,
     },
     totalProcessDays: {
       type: Number,
       default: 0,
       min: 0,
+      max: 999,
     },
     outcome: {
       type: String,
@@ -257,7 +259,7 @@ const companyReviewSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 2000,
+      maxlength: 1000,
     },
     createdAt: {
       type: Date,
@@ -278,7 +280,7 @@ const educationEntrySchema = new mongoose.Schema(
   {
     level: { type: String, default: '', trim: true },
     educationalAttainment: { type: String, default: '', trim: true },
-    school: { type: String, default: '', trim: true },
+    school: { type: String, default: '', trim: true, maxlength: 150 },
     campus: { type: String, default: '', trim: true, set: normalizeCampusValue },
     course: { type: String, default: '', trim: true, set: normalizeCourseValue },
     studyField: { type: String, default: '', trim: true },
@@ -287,7 +289,7 @@ const educationEntrySchema = new mongoose.Schema(
     endMonth: { type: String, default: '', trim: true },
     endYear: { type: String, default: '', trim: true },
     yearGraduated: { type: String, default: '', trim: true },
-    description: { type: String, default: '', trim: true },
+    description: { type: String, default: '', trim: true, maxlength: 1000 },
   },
   { _id: false }
 );
@@ -297,12 +299,12 @@ const educationEntrySchema = new mongoose.Schema(
 // ---------------------------
 const workExperienceSchema = new mongoose.Schema(
   {
-    companyName: { type: String, required: true, trim: true, default: '' },
-    positionTitle: { type: String, required: true, trim: true, default: '' },
+    companyName: { type: String, required: true, trim: true, maxlength: 150, default: '' },
+    positionTitle: { type: String, required: true, trim: true, maxlength: 100, default: '' },
     startDate: { type: Date, required: true },
     endDate: { type: Date, default: null },
     isPresent: { type: Boolean, default: false },
-    description: { type: String, default: '', trim: true },
+    description: { type: String, default: '', trim: true, maxlength: 1000 },
   },
   { _id: true, timestamps: true }
 );
@@ -364,6 +366,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      maxlength: 100,
     },
 
     password: { type: String, required: true },
@@ -476,11 +479,11 @@ const userSchema = new mongoose.Schema(
       whatHaveYouDone: { type: String, default: '', trim: true },
       howSoonCanYouStart: { type: String, default: '', trim: true },
 
-      phoneNumber: { type: String, default: '', trim: true },
+      phoneNumber: { type: String, default: '', trim: true, maxlength: 11 },
 
-      aboutMe: { type: String, default: '', trim: true },
-      minimumSalary: { type: String, default: '', trim: true },
-      maximumSalary: { type: String, default: '', trim: true },
+      aboutMe: { type: String, default: '', trim: true, maxlength: 500 },
+      minimumSalary: { type: String, default: '', trim: true, maxlength: 7 },
+      maximumSalary: { type: String, default: '', trim: true, maxlength: 7 },
       salaryCurrency: { type: String, default: 'PHP', trim: true },
       salaryPrivacy: {
         type: String,
@@ -489,14 +492,14 @@ const userSchema = new mongoose.Schema(
         trim: true,
       },
 
-      address: { type: String, default: '', trim: true },
+      address: { type: String, default: '', trim: true, maxlength: 250 },
       birthday: { type: String, default: '', trim: true },
       gender: { type: String, default: '', trim: true },
       nationality: { type: String, default: '', trim: true },
       civilStatus: { type: String, default: '', trim: true },
-      height: { type: String, default: '', trim: true },
-      weight: { type: String, default: '', trim: true },
-      preferredLanguage: { type: String, default: '', trim: true },
+      height: { type: String, default: '', trim: true, maxlength: 10 },
+      weight: { type: String, default: '', trim: true, maxlength: 10 },
+      preferredLanguage: { type: String, default: '', trim: true, maxlength: 50 },
 
       employmentType: { type: String, default: '', trim: true },
       educationalAttainment: { type: String, default: '', trim: true },

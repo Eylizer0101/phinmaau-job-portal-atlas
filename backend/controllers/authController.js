@@ -874,6 +874,9 @@ exports.register = async (req, res) => {
 
     const emailLower = normalizeEmail(email);
     if (!emailLower) return res.status(400).json({ message: 'Email is required' });
+    if (emailLower.length > 100) {
+      return res.status(400).json({ message: 'Email must not exceed 100 characters.' });
+    }
     if (!isGmailAddress(emailLower)) {
       return res.status(400).json({ message: 'Gmail account required to continue.' });
     }
