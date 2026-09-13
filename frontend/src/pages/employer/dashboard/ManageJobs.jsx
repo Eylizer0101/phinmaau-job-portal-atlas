@@ -1512,10 +1512,7 @@ const ManageJobs = () => {
               </div>
             ) : (
               <>
-                <div className={cn(
-                  'space-y-4 md:hidden',
-                  pageSize === 10 ? '' : 'max-h-[1100px] overflow-y-auto overscroll-auto'
-                )}>
+                <div className="max-h-[508px] space-y-4 overflow-y-auto overscroll-auto md:hidden">
                   {paginatedJobs.map((job) => {
                     const title = safeTitle(job);
                     const busyThisRow = action.jobId === job._id;
@@ -1704,10 +1701,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className={cn(
-                  'hidden overflow-x-auto md:block',
-                  pageSize === 10 ? '' : 'max-h-[808px] overflow-y-auto overscroll-auto'
-                )}>
+                <div className="hidden max-h-[584px] overflow-x-auto overflow-y-auto overscroll-auto md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>

@@ -6,7 +6,7 @@ import ChatbotWidget from "../components/shared/ChatbotWidget";
 
 const VERIFY_MODAL_SEEN_KEY = "employerVerifyModalSeen"; // session flag
 
-const EmployerLayout = ({ children, compactHeight = false }) => {
+const EmployerLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -1092,7 +1092,7 @@ const EmployerLayout = ({ children, compactHeight = false }) => {
       {/* Main content */}
       <div
         className={[
-          compactHeight ? "flex flex-col" : "min-h-screen flex flex-col",
+          "min-h-screen flex flex-col",
           "pl-0",
           "md:pl-[calc(var(--sidebar-w)+(var(--sidebar-gutter)*2))]",
         ].join(" ")}
@@ -1152,7 +1152,7 @@ const EmployerLayout = ({ children, compactHeight = false }) => {
           </div>
         </header>
 
-        <main id="main-content" className={compactHeight ? "p-4 sm:p-6" : "flex-1 p-4 sm:p-6"}>
+        <main id="main-content" className="flex-1 p-4 sm:p-6">
           {children}
         </main>
       </div>
