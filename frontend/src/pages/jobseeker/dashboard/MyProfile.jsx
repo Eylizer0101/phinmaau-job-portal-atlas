@@ -249,7 +249,8 @@ const normalizeExperienceValue = (value = '') => {
 };
 
 const normalizeEducationalAttainmentValue = (value = '') => {
-  const normalized = String(value || '').trim().toLowerCase();
+  const clean = String(value || '').trim();
+  const normalized = clean.toLowerCase();
 
   if (
     [
@@ -272,7 +273,9 @@ const normalizeEducationalAttainmentValue = (value = '') => {
     return 'Doctorate Degree';
   }
 
-  return '';
+  // Educational Attainment is now a regular text input. Preserve custom values
+  // instead of clearing them when they are not one of the former dropdown options.
+  return clean;
 };
 
 const normalizeCivilStatusValue = (value = '') => {
