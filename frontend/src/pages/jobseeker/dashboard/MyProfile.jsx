@@ -3478,12 +3478,12 @@ const ProfileEditModal = ({
           {educationRows.map((entry, index) => (
             <div key={`education-entry-${index}`} className="space-y-4">
               <div className="space-y-4">
-                <Select
+                <InputWithDropdown
                   label="Educational Attainment *"
                   value={entry.level || entry.educationalAttainment}
                   onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)}
                   options={EDUCATION_LEVEL_OPTIONS}
-                  placeholder="Select educational attainment"
+                  placeholder="Select or enter educational attainment"
                 />
 
                 <Input
