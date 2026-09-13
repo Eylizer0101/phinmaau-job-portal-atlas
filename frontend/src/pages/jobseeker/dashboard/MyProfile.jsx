@@ -2765,19 +2765,50 @@ const ProfilePhotoCropModal = ({ source, fileName, onCancel, onApply }) => {
   const [positionX, setPositionX] = useState(50);
   const [positionY, setPositionY] = useState(50);
   const [saving, setSaving] = useState(false);
+  const previewCanvasRef = useRef(null);
+  const imageRef = useRef(null);
+
+  const getCropArea = (image) => {
+    const size = Math.min(image.naturalWidth, image.naturalHeight) / zoom;
+    const maxX = Math.max(0, image.naturalWidth - size);
+    const maxY = Math.max(0, image.naturalHeight - size);
+    return {
+      sourceX: maxX * (positionX / 100),
+      sourceY: maxY * (positionY / 100),
+      size,
+    };
+  };
+
+  useEffect(() => {
+    if (!source) return undefined;
+    let active = true;
+    const image = new Image();
+    image.onload = () => {
+      if (!active) return;
+      imageRef.current = image;
+      const canvas = previewCanvasRef.current;
+      if (!canvas) return;
+      const { sourceX, sourceY, size } = getCropArea(image);
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, sourceX, sourceY, size, size, 0, 0, canvas.width, canvas.height);
+    };
+    image.src = source;
+    return () => { active = false; };
+  }, [source, zoom, positionX, positionY]);
+
   if (!source) return null;
 
   const createCrop = async () => {
     setSaving(true);
     try {
-      const image = new Image();
-      image.src = source;
-      await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; });
-      const size = Math.min(image.naturalWidth, image.naturalHeight) / zoom;
-      const maxX = Math.max(0, image.naturalWidth - size);
-      const maxY = Math.max(0, image.naturalHeight - size);
-      const sourceX = maxX * (positionX / 100);
-      const sourceY = maxY * (positionY / 100);
+      let image = imageRef.current;
+      if (!image) {
+        image = new Image();
+        image.src = source;
+        await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; });
+      }
+      const { sourceX, sourceY, size } = getCropArea(image);
       const canvas = document.createElement('canvas');
       canvas.width = 600;
       canvas.height = 600;
@@ -2798,7 +2829,7 @@ const ProfilePhotoCropModal = ({ source, fileName, onCancel, onApply }) => {
         <div className="flex items-center justify-between"><h2 id="profile-crop-title" className="text-xl font-bold">Crop Profile Photo</h2><button type="button" onClick={onCancel} className="p-2 text-2xl text-gray-500" aria-label="Close">×</button></div>
         <p className="mt-1 text-sm text-gray-500">Adjust the zoom and position before saving.</p>
         <div className="mx-auto mt-5 h-[300px] w-[300px] overflow-hidden rounded-full bg-gray-100 ring-4 ring-white shadow-lg">
-          <img src={source} alt="Crop preview" className="h-full w-full object-cover" style={{ objectPosition: `${positionX}% ${positionY}%`, transform: `scale(${zoom})` }} />
+          <canvas ref={previewCanvasRef} width="600" height="600" aria-label="Crop preview" className="h-full w-full" />
         </div>
         <div className="mt-5 space-y-3 text-sm text-gray-700">
           <label className="block">Zoom<input type="range" min="1" max="3" step="0.05" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="mt-1 w-full" /></label>

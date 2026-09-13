@@ -1071,7 +1071,7 @@ const ArchivedJobs = () => {
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search archived job title, location, category..."
+                  placeholder="Search archived job title..."
                   className="h-11 w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 />
               </div>

@@ -2879,12 +2879,14 @@ const ApplicationDetails = () => {
 
         <aside className="space-y-5">
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5">
-            <h2 className="text-lg font-bold">Employer Actions</h2>
+            <h2 className="text-lg font-bold">
+              {currentStatus === 'withdrawn' ? 'Application Withdrawn' : 'Employer Actions'}
+            </h2>
             {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}
             <div className="mt-5 space-y-3">
               {currentStatus === 'withdrawn' ? (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
-                  This application was withdrawn by the jobseeker. All employer hiring actions are disabled for this application.
+                  This application was withdrawn by the job seeker and is no longer active or being considered for this position.
                 </div>
               ) : (
                 <>

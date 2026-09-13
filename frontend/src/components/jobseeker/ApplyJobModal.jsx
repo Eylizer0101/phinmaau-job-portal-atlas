@@ -178,8 +178,8 @@ const getMissingResumeSections = (userData = {}) => {
 
   return [
     ['Basic Information', basicComplete],
+    ['Career Objective', hasText(profile.aboutMe)],
     ['Personal Information', personalComplete],
-    ['Objective', hasText(profile.aboutMe)],
     ['Work Experience', workComplete],
     ['Skills', skillComplete],
     ['Education', educationComplete],
@@ -621,7 +621,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
           <div className="mt-5 rounded-xl border border-[#e4ebf3] bg-[#f8fbff] p-4">
             <p className="text-sm font-semibold text-gray-800">Missing required sections:</p>
             <ul className="mt-3 space-y-2">
-              {missingResumeSections.map((section) => <li key={section} className="flex items-center gap-2 text-sm text-gray-700"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-50 text-xs font-bold text-red-600">!</span>{section}</li>)}
+              {missingResumeSections.map((section) => <li key={section} className="flex items-center gap-2 text-sm text-gray-700"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">!</span>{section}</li>)}
             </ul>
           </div>
           <button type="button" onClick={handleGoToProfile} className="mt-6 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white hover:bg-[#25578f]">Complete Resume</button>
