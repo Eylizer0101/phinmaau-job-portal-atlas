@@ -87,6 +87,12 @@ const EDUCATION_LEVEL_OPTIONS = [
   'Doctorate',
 ];
 
+const PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS = [
+  "Bachelor’s / College degree graduate's",
+  'Master’s degree',
+  'Doctorate Degree',
+];
+
 const MONTH_OPTIONS = [
   'January',
   'February',
@@ -975,6 +981,30 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
         disabled={disabled}
         className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
       />
+    </div>
+  );
+};
+
+const InputWithDropdown = ({ label, value, onChange, placeholder = '', options = [] }) => {
+  const listId = 'personal-educational-attainment-options';
+
+  return (
+    <div>
+      <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
+      <input
+        type="text"
+        list={listId}
+        value={value || ''}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete="off"
+        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
+      />
+      <datalist id={listId}>
+        {options.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
     </div>
   );
 };
@@ -3351,7 +3381,13 @@ const ProfileEditModal = ({
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
           <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
-          <Input label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} placeholder="Enter educational attainment" />
+          <InputWithDropdown
+            label="Educational Attainment"
+            value={drafts.educationalAttainment}
+            onChange={(e) => onChange('educationalAttainment', e.target.value)}
+            placeholder="Type or select educational attainment"
+            options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
+          />
           <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" />
           <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
           <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
