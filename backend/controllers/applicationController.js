@@ -1856,6 +1856,10 @@ exports.getEmployerHiredApplications = async (req, res) => {
         select: 'title companyName companyLogo salaryMin salaryMax'
       })
       .populate({
+        path: 'employer',
+        select: 'fullName employerProfile.companyName employerProfile.industry'
+      })
+      .populate({
         path: 'jobseeker',
         select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
       })
