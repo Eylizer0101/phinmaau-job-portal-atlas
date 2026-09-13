@@ -1659,9 +1659,64 @@ const selectBase =
               <button type="button" onClick={() => { setError(''); setReviewStep('decline'); }} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
                 Decline Request
               </button>
-              <button type="button" onClick={() => handleReviewStatusRequest('approved')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-60">
-                {reviewLoading ? 'Processing...' : 'Approve Request'}
+              <button type="button" onClick={() => setReviewStep('approve')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-60">
+                Approve Request
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reviewApplication && reviewStep === 'approve' && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="approve-request-title">
+          <div className="relative max-h-[94vh] w-full max-w-[620px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl sm:p-7">
+            <button type="button" onClick={() => { if (!reviewLoading) setReviewStep('actions'); }} disabled={reviewLoading} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 disabled:opacity-50" aria-label="Close approve request modal"><Icon name="x" className="h-5 w-5" /></button>
+
+            <div className="flex items-start gap-3 pr-10">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <Icon name="check" className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 id="approve-request-title" className="text-xl font-bold text-[#172033]">Approve Request?</h2>
+                <p className="mt-1 text-sm leading-5 text-gray-600">Are you sure you want to approve this request to end the job seeker's current employment?</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 overflow-hidden rounded-xl bg-[#f1f6fc] sm:grid-cols-3">
+              <div className="border-b border-[#dbe5f0] px-4 py-3 sm:border-b-0 sm:border-r">
+                <p className="text-[11px] font-medium text-gray-500">Company</p>
+                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.companyName || 'Not specified'}</p>
+              </div>
+              <div className="border-b border-[#dbe5f0] px-4 py-3 sm:border-b-0 sm:border-r">
+                <p className="text-[11px] font-medium text-gray-500">Job Title</p>
+                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.title || 'Not specified'}</p>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-[11px] font-medium text-gray-500">Industry</p>
+                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.industry || reviewApplication.employer?.employerProfile?.industry || 'Not specified'}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 border-b border-gray-200 pb-4 text-sm">
+              <div><p className="text-xs text-gray-500">Current Status</p><span className="mt-1 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span></div>
+              <div><p className="text-xs text-gray-500">Request Reason</p><p className="mt-1 font-semibold text-[#172033]">{reviewApplication.employmentStatusRequest?.reason === 'contract_ended' ? 'Contract Ended' : 'Employment Ended'}</p></div>
+            </div>
+
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Applied</span><span className="font-medium text-[#172033]">{formatDate(reviewApplication.appliedAt)}</span></div>
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Date Hired</span><span className="font-medium text-[#172033]">{formatDate(reviewApplication.hiredAt || reviewApplication.reviewedAt)}</span></div>
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Employment Duration</span><span className="font-medium text-[#172033]">{formatEmploymentDuration(reviewApplication)}</span></div>
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Request Date</span><span className="font-medium text-[#172033]">{formatDate(reviewApplication.employmentStatusRequest?.requestedAt)}</span></div>
+            </div>
+
+            <div className="mt-5 flex items-start gap-3 rounded-lg bg-[#eef5ff] px-4 py-3 text-sm text-[#244e83]">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-xs font-bold text-white">i</span>
+              <p>Approving this request will change the employment status from <strong>Active</strong> to <strong>Inactive</strong>.</p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setReviewStep('actions')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={() => handleReviewStatusRequest('approved')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-60">{reviewLoading ? 'Processing...' : 'Approve Request'}</button>
             </div>
           </div>
         </div>
