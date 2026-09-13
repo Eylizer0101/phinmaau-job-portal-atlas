@@ -151,7 +151,7 @@ export default function AdminJobseekerRequestDetails() {
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <DetailItem
             icon={<UserRound size={16}/>} 
-            label={final ? (adminDecision.decision === 'approved' ? 'Approved By' : 'Declined By') : (employerResponse.decision === 'declined' ? 'Declined By' : 'Responded By')}
+            label={final ? (adminDecision.decision === 'approved' ? 'Approved By' : 'Declined By') : (employerResponse.decision === 'declined' ? 'Declined By' : 'Approved By')}
             value={name(decisionPerson)}
           />
           <DetailItem
