@@ -481,7 +481,7 @@ const userSchema = new mongoose.Schema(
 
       phoneNumber: { type: String, default: '', trim: true, maxlength: 11 },
 
-      aboutMe: { type: String, default: '', trim: true, maxlength: 500 },
+      aboutMe: { type: String, default: '', trim: true },
       minimumSalary: { type: String, default: '', trim: true, maxlength: 7 },
       maximumSalary: { type: String, default: '', trim: true, maxlength: 7 },
       salaryCurrency: { type: String, default: 'PHP', trim: true },

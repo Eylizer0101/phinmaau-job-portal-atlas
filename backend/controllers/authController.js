@@ -288,6 +288,18 @@ const normalizeExtensionName = (value) => {
   return clean.toLowerCase() === 'none' ? '' : clean;
 };
 
+const getRichTextPlainText = (value) =>
+  String(value ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(div|p|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'");
+
 const sendBrevoSms = async ({ to, message }) => {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey || apiKey === 'your_brevo_api_key_here') {
@@ -1965,6 +1977,17 @@ exports.updateProfile = async (req, res) => {
       }
 
       const existingProfile = user.jobSeekerProfile || {};
+
+      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'aboutMe')) {
+        const objectiveText = getRichTextPlainText(updateData.jobSeekerProfile.aboutMe);
+        if (objectiveText.length > 500) {
+          return res.status(400).json({
+            success: false,
+            message: 'Objective must not exceed 500 characters.',
+          });
+        }
+      }
+
       if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'addedResumeSections')) {
         const allowedResumeSections = [
           'seminars',

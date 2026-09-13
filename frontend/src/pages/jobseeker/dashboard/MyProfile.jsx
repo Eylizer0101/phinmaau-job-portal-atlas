@@ -3879,15 +3879,20 @@ const isCompletedProfileValue = (value) => {
   );
 };
 
-const isMeaningfulRichTextValue = (value) => {
-  const raw = String(value ?? '').trim();
-  if (!raw) return false;
-
-  const plainText = raw
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<[^>]*>/g, ' ')
+const getRichTextPlainText = (value) =>
+  String(value ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(div|p|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;|&#160;/gi, ' ')
     .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'");
+
+const isMeaningfulRichTextValue = (value) => {
+  const plainText = getRichTextPlainText(value)
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -5535,6 +5540,14 @@ const MyProfile = () => {
     // different profile modal before running the current section validation.
     setError('');
 
+    if (sectionKey === 'about') {
+      const objectiveLength = getRichTextPlainText(activeDrafts.aboutMe).length;
+      if (objectiveLength > 500) {
+        setError('Objective must not exceed 500 characters.');
+        return false;
+      }
+    }
+
     if (sectionKey === 'basic') {
       const nameFields = [
         ['First Name', activeDrafts.firstName],
@@ -5844,7 +5857,16 @@ const MyProfile = () => {
       return false;
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Failed to save changes.');
+      const serverMessage = String(err.response?.data?.message || '').trim();
+      const isObjectiveLengthError =
+        sectionKey === 'about' &&
+        (/aboutMe/i.test(serverMessage) || /maximum allowed length \(500\)/i.test(serverMessage));
+
+      setError(
+        isObjectiveLengthError
+          ? 'Objective must not exceed 500 characters.'
+          : serverMessage || 'Failed to save changes.'
+      );
       return false;
     } finally {
       setSavingSection('');
