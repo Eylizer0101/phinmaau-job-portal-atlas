@@ -70,7 +70,7 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
   return <svg {...common}>{icons[name] || null}</svg>;
 };
 
-const ReviewStars = ({ rating }) => {
+const ReviewStars = ({ rating, sizeClass = "text-xl" }) => {
   const numericRating = Number(rating);
   const safeRating = Number.isFinite(numericRating)
     ? Math.min(5, Math.max(0, Math.round(numericRating)))
@@ -86,7 +86,8 @@ const ReviewStars = ({ rating }) => {
         <span
           key={star}
           className={cn(
-            "text-xl leading-none",
+            "leading-none",
+            sizeClass,
             star <= safeRating ? "text-[#e5a900]" : "text-[#d7dee8]"
           )}
           aria-hidden="true"
@@ -2534,6 +2535,18 @@ const UserManagementDetails = () => {
                             <span className="text-[15px] text-[#6b7280]">No website added yet.</span>
                           )}
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setActiveEmployerTab("reviews")}
+                          className="inline-flex w-fit items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                          aria-label={`View ${reviewItems.length} company review${reviewItems.length === 1 ? "" : "s"}`}
+                        >
+                          <ReviewStars rating={averageReview} sizeClass="text-[15px]" />
+                          <span className="text-[13px] font-medium text-[#6b7280]">
+                            {averageReview.toFixed(1)} ({reviewItems.length} review{reviewItems.length === 1 ? "" : "s"})
+                          </span>
+                        </button>
 
                       </div>
                     </div>
