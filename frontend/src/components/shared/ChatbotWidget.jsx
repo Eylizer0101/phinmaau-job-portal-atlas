@@ -361,14 +361,16 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
           setIsOpen(true);
           setIsMinimized(false);
         }}
-        className="ml-auto flex h-12 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:border-[#212C61]/30 hover:text-[#212C61] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+        className="ml-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-transparent p-0 shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
         aria-label={isOpen && isMinimized ? 'Restore Agap-AI' : 'Open Agap-AI'}
         aria-expanded={isOpen && !isMinimized}
       >
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#212C61]/10 text-[#212C61]">
-          <FontAwesomeIcon icon={faRobot} />
-        </span>
-        <span>Agap-AI</span>
+        <img
+          src="/images/Agap_Ai.png"
+          alt=""
+          className="h-full w-full rounded-full object-cover"
+          draggable="false"
+        />
       </button>
     </div>
   );
