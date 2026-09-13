@@ -2002,26 +2002,78 @@ const MyApplications = () => {
       )}
 
       {statusRequestApplication && statusRequestStep === 'privacy' && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="status-request-privacy-title">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
-            <h2 id="status-request-privacy-title" className="text-lg font-bold text-gray-900">Privacy Notice</h2>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-gray-600">
-              <p>Before submitting your Employment Status Request, please carefully review this notice.</p>
-              <p>This request is intended for job seekers who have ended their employment with the company after being hired. You may submit a request when your contract has ended or when you are no longer employed in your role.</p>
-              <p>By continuing, you confirm that the employment information and reason you selected accurately reflect your current employment situation.</p>
-              <p>Once submitted, your request will be sent to the company or employer associated with your employment record. The employer will be given the opportunity to review the request and verify the information related to your employment. The employer may approve or decline your request based on their review.</p>
-              <p>The employer has 7 days from the date the request is submitted to provide a response. If the employer does not respond within 7 days, the Admin will review and follow up on the request.</p>
-              <p>By submitting this request, you acknowledge that you understand how your information will be shared, how the employer review process works, and when an Admin review may be requested.</p>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 px-3 py-3 backdrop-blur-[1px] sm:px-4 sm:py-4" role="dialog" aria-modal="true" aria-labelledby="status-request-privacy-title">
+          <div className="relative max-h-[96vh] w-full max-w-[860px] overflow-y-auto rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.18)]">
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[22px]" aria-hidden="true">
+              <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.07] blur-3xl" />
+              <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#56b5dc]/[0.12] blur-3xl" />
+              <div className="absolute -bottom-24 -right-20 h-56 w-56 rounded-full bg-[#1e4ba0]/[0.10] blur-3xl" />
             </div>
-            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-800">
-              <input type="checkbox" checked={statusRequestPrivacyAccepted} onChange={(event) => setStatusRequestPrivacyAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-[#2e66a6]" />
-              I have read and understood this Privacy Notice.
-            </label>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setStatusRequestStep('reason')} disabled={statusRequestLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
-              <button type="button" onClick={handleSendStatusRequest} disabled={!statusRequestPrivacyAccepted || statusRequestLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:cursor-not-allowed disabled:opacity-50">
-                {statusRequestLoading ? 'Sending request...' : 'Send Status Request'}
+
+            <div className="relative z-10 px-5 pb-5 pt-4 sm:px-9 sm:pb-7 sm:pt-5 lg:px-12">
+              <button
+                type="button"
+                onClick={() => {
+                  if (statusRequestLoading) return;
+                  setStatusRequestApplication(null);
+                  setStatusRequestReason('');
+                  setStatusRequestStep('reason');
+                  setStatusRequestPrivacyAccepted(false);
+                }}
+                disabled={statusRequestLoading}
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2 disabled:opacity-50 sm:right-6 sm:top-5"
+                aria-label="Close Privacy Notice"
+                title="Close"
+              >
+                <span className="text-2xl leading-none" aria-hidden="true">×</span>
               </button>
+
+              <div className="-mt-1 flex justify-center sm:-mt-2">
+                <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                  <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                  <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                  <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                  <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                  <div className="absolute bottom-2 right-7 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
+                  <img src="/images/lock.png" alt="" className="relative h-16 w-16 object-contain sm:h-20 sm:w-20" draggable="false" />
+                </div>
+              </div>
+
+              <h2 id="status-request-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>
+                PRIVACY NOTICE
+              </h2>
+
+              <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+                </svg>
+                <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
+              </div>
+
+              <div className="mx-auto mt-4 max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:mt-5 sm:px-7 sm:py-5">
+                <div className="space-y-2 text-[12px] leading-5 text-[#0f2442] sm:text-[13px] sm:leading-[1.45rem]">
+                  <p className="font-semibold">Before submitting your Employment Status Request, please carefully review this notice.</p>
+                  <p>This request is intended for job seekers who have ended their employment with the company after being hired. You may submit a request when your <strong>contract has ended</strong> or when you are <strong>no longer employed in your role.</strong></p>
+                  <p>By continuing, you confirm that the employment information and reason you selected accurately reflect your current employment situation.</p>
+                  <p>Once submitted, your request will be sent to the company or employer associated with your employment record. The employer will review the request and may <strong>approve or decline</strong> it based on their review.</p>
+                  <p>The employer has <strong>7 days</strong> from the date the request is submitted to respond. If the employer does not respond, the <strong>Admin</strong> will review and follow up on the request.</p>
+                  <p>By submitting this request, you acknowledge that you understand how your information will be shared, how the employer review process works, and when an Admin review may be requested.</p>
+                </div>
+              </div>
+
+              <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer select-none items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] sm:mt-4">
+                <input type="checkbox" checked={statusRequestPrivacyAccepted} onChange={(event) => setStatusRequestPrivacyAccepted(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 accent-[#1e4ba0] focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2" />
+                <span className="leading-5">I have read and understood this Privacy Notice.</span>
+              </label>
+
+              <div className="mt-4 flex justify-center gap-3 sm:mt-5">
+                <button type="button" onClick={() => setStatusRequestStep('reason')} disabled={statusRequestLoading} className="h-11 min-w-[120px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-[#0f2442] transition hover:bg-slate-50 disabled:opacity-50">Back</button>
+                <button type="button" onClick={handleSendStatusRequest} disabled={!statusRequestPrivacyAccepted || statusRequestLoading} className="h-11 min-w-[190px] rounded-xl px-6 text-sm font-bold text-white shadow-[0_10px_22px_rgba(30,75,160,0.25)] transition disabled:cursor-not-allowed" style={{ backgroundColor: statusRequestPrivacyAccepted && !statusRequestLoading ? '#1e4ba0' : '#93a6c9' }}>
+                  {statusRequestLoading ? 'Sending request...' : 'Send Status Request'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
