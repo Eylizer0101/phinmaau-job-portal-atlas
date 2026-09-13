@@ -12,6 +12,8 @@ import {
 import {
   MAJOR_COURSE_OPTIONS,
   CAMPUS_OPTIONS,
+  EDUCATIONAL_ATTAINMENT_OPTIONS,
+  FIELD_OF_STUDY_OPTIONS,
 } from '../../../constants/jobseekerEducationOptions';
 import { TECHNICAL_SKILLS } from '../../../constants/technicalSkills';
 import { SOFT_SKILLS } from '../../../constants/softSkills';
@@ -249,8 +251,7 @@ const normalizeExperienceValue = (value = '') => {
 };
 
 const normalizeEducationalAttainmentValue = (value = '') => {
-  const clean = String(value || '').trim();
-  const normalized = clean.toLowerCase();
+  const normalized = String(value || '').trim().toLowerCase();
 
   if (
     [
@@ -273,9 +274,7 @@ const normalizeEducationalAttainmentValue = (value = '') => {
     return 'Doctorate Degree';
   }
 
-  // Educational Attainment is now a regular text input. Preserve custom values
-  // instead of clearing them when they are not one of the former dropdown options.
-  return clean;
+  return '';
 };
 
 const normalizeCivilStatusValue = (value = '') => {
@@ -2632,57 +2631,6 @@ const WorkExperienceModal = ({
   );
 };
 
-const ProfilePhotoCropModal = ({ source, fileName, onCancel, onApply }) => {
-  const [zoom, setZoom] = useState(1);
-  const [positionX, setPositionX] = useState(50);
-  const [positionY, setPositionY] = useState(50);
-  const [saving, setSaving] = useState(false);
-  if (!source) return null;
-
-  const createCrop = async () => {
-    setSaving(true);
-    try {
-      const image = new Image();
-      image.src = source;
-      await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; });
-      const size = Math.min(image.naturalWidth, image.naturalHeight) / zoom;
-      const maxX = Math.max(0, image.naturalWidth - size);
-      const maxY = Math.max(0, image.naturalHeight - size);
-      const sourceX = maxX * (positionX / 100);
-      const sourceY = maxY * (positionY / 100);
-      const canvas = document.createElement('canvas');
-      canvas.width = 600;
-      canvas.height = 600;
-      canvas.getContext('2d').drawImage(image, sourceX, sourceY, size, size, 0, 0, 600, 600);
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-      if (!blob) throw new Error('Unable to crop profile photo.');
-      onApply(new File([blob], `${String(fileName || 'profile').replace(/\.[^.]+$/, '')}-cropped.jpg`, { type: 'image/jpeg' }));
-    } catch (cropError) {
-      console.error(cropError);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="profile-crop-title">
-      <div className="w-full max-w-[500px] rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between"><h2 id="profile-crop-title" className="text-xl font-bold">Crop Profile Photo</h2><button type="button" onClick={onCancel} className="p-2 text-2xl text-gray-500" aria-label="Close">×</button></div>
-        <p className="mt-1 text-sm text-gray-500">Adjust the zoom and position before saving.</p>
-        <div className="mx-auto mt-5 h-[300px] w-[300px] overflow-hidden rounded-full bg-gray-100 ring-4 ring-white shadow-lg">
-          <img src={source} alt="Crop preview" className="h-full w-full object-cover" style={{ objectPosition: `${positionX}% ${positionY}%`, transform: `scale(${zoom})` }} />
-        </div>
-        <div className="mt-5 space-y-3 text-sm text-gray-700">
-          <label className="block">Zoom<input type="range" min="1" max="3" step="0.05" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="mt-1 w-full" /></label>
-          <label className="block">Horizontal position<input type="range" min="0" max="100" value={positionX} onChange={(e) => setPositionX(Number(e.target.value))} className="mt-1 w-full" /></label>
-          <label className="block">Vertical position<input type="range" min="0" max="100" value={positionY} onChange={(e) => setPositionY(Number(e.target.value))} className="mt-1 w-full" /></label>
-        </div>
-        <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600">Cancel</button><button type="button" onClick={createCrop} disabled={saving} className="rounded-lg bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Applying...' : 'Apply Photo'}</button></div>
-      </div>
-    </div>
-  );
-};
-
 const BasicInfoModal = ({
   open,
   drafts,
@@ -2692,7 +2640,6 @@ const BasicInfoModal = ({
   profileImageInputRef,
   onImageChange,
   onImageClick,
-  onImageRemove,
   onChange,
   onClose,
   onSave,
@@ -2754,7 +2701,6 @@ const BasicInfoModal = ({
                 >
                   {profileImageUploading ? <Spinner size="small" /> : <FaCamera className="text-xs" />}
                 </button>
-                {userData?.profileImage ? <button type="button" onClick={onImageRemove} disabled={profileImageUploading} className="mt-3 w-full border-0 bg-transparent text-center text-sm font-medium text-red-600 hover:underline disabled:opacity-60">Remove</button> : null}
               </div>
             </div>
 
@@ -3198,9 +3144,9 @@ const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-[10008] overflow-y-auto bg-black/75 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="skill-proficiency-title">
-      <div className="relative mx-auto w-full max-w-[720px] bg-white rounded-[6px] shadow-2xl border border-[#d8e2ee]">
-        <div className="bg-white px-6 sm:px-8 pt-7 pb-4 border-b border-[#d8e2ee]">
+    <div className="fixed inset-0 z-[10008] bg-black/75 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="skill-proficiency-title">
+      <div className="relative w-full max-w-[720px] max-h-[78vh] bg-white rounded-[6px] shadow-2xl border border-[#d8e2ee] overflow-hidden">
+        <div className="sticky top-0 z-10 bg-white px-6 sm:px-8 pt-7 pb-4 border-b border-[#d8e2ee]">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 id="skill-proficiency-title" className="text-[21px] font-bold text-black">Skill Proficiency Description</h2>
@@ -3220,7 +3166,7 @@ const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
           </div>
         </div>
 
-        <div className="px-6 sm:px-8 py-5 space-y-7 bg-white">
+        <div className="max-h-[calc(78vh-132px)] overflow-y-auto px-6 sm:px-8 py-5 space-y-7 bg-white">
           {levels.map((level) => (
             <section key={level.title}>
               <h3 className="text-[18px] font-bold text-black">{level.title}</h3>
@@ -3351,8 +3297,8 @@ const ProfileEditModal = ({
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
           <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
-          <Input label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} placeholder="Enter educational attainment" />
-          <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" />
+          <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
+          <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
           <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
           <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
@@ -4291,7 +4237,6 @@ const MyProfile = () => {
   const [userData, setUserData] = useState(null);
   const [profileImageUploading, setProfileImageUploading] = useState(false);
   const profileImageInputRef = useRef(null);
-  const [profilePhotoCrop, setProfilePhotoCrop] = useState({ source: '', fileName: '' });
 
   const [emailUpdateModalOpen, setEmailUpdateModalOpen] = useState(false);
   const [emailUpdateStep, setEmailUpdateStep] = useState('request');
@@ -4587,8 +4532,11 @@ const MyProfile = () => {
       formData.experience,
       formData.preferredLanguage,
       formData.educationalAttainment,
+      formData.studyField,
       isCompletedProfileValue(formData.minimumSalary) && isCompletedProfileValue(formData.maximumSalary) ? 'completed' : '',
       formData.nationality,
+      formData.height,
+      formData.weight,
       formData.gender,
       formData.civilStatus,
       formData.birthday,
@@ -6276,10 +6224,6 @@ const MyProfile = () => {
       return;
     }
 
-    setProfilePhotoCrop({ source: URL.createObjectURL(file), fileName: file.name });
-  };
-
-  const uploadCroppedProfileImage = async (file) => {
     try {
       setProfileImageUploading(true);
       const token = localStorage.getItem('token');
@@ -6297,35 +6241,11 @@ const MyProfile = () => {
         const updatedUser = response.data.user;
         setUserData(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        window.dispatchEvent(new Event('user:updated'));
         showSuccess('Profile Photo Updated', 'Your profile photo has been updated successfully.');
       }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Failed to upload profile photo.');
-    } finally {
-      setProfileImageUploading(false);
-      if (profilePhotoCrop.source) URL.revokeObjectURL(profilePhotoCrop.source);
-      setProfilePhotoCrop({ source: '', fileName: '' });
-    }
-  };
-
-  const handleRemoveProfileImage = async () => {
-    try {
-      setProfileImageUploading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.delete(`${API_BASE}/auth/profile-image`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.data?.success) {
-        const updatedUser = response.data.user;
-        setUserData(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        window.dispatchEvent(new Event('user:updated'));
-        showSuccess('Profile Photo Removed', 'Your profile photo has been removed successfully.');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to remove profile photo.');
     } finally {
       setProfileImageUploading(false);
     }
@@ -7266,7 +7186,6 @@ const MyProfile = () => {
         profileImageInputRef={profileImageInputRef}
         onImageChange={handleProfileImageChange}
         onImageClick={handleProfileImageClick}
-        onImageRemove={handleRemoveProfileImage}
         onChange={handleBasicInfoChange}
         onClose={() => cancelEdit('basic')}
         onSave={() => saveSection('basic')}
@@ -7278,16 +7197,6 @@ const MyProfile = () => {
         onEmailUpdate={() => navigate('/jobseeker/settings?section=email')}
         onMobileUpdate={() => navigate('/jobseeker/settings?section=mobile')}
         error={error}
-      />
-
-      <ProfilePhotoCropModal
-        source={profilePhotoCrop.source}
-        fileName={profilePhotoCrop.fileName}
-        onCancel={() => {
-          if (profilePhotoCrop.source) URL.revokeObjectURL(profilePhotoCrop.source);
-          setProfilePhotoCrop({ source: '', fileName: '' });
-        }}
-        onApply={uploadCroppedProfileImage}
       />
 
       <EmailUpdateModal
