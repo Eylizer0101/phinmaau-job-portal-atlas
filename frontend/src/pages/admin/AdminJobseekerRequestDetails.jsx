@@ -62,7 +62,9 @@ export default function AdminJobseekerRequestDetails() {
   const responseReason = employerResponse.declineReason || employerResponse.reason || '—';
   const responseComment = employerResponse.explanation || employerResponse.comment || '—';
   const decisionPerson = final ? adminDecision.decidedBy : employerResponse.respondedBy || request.employer;
-  const decisionDate = final ? adminDecision.decidedAt : employerResponse.respondedAt;
+  const decisionDate = final
+    ? (adminDecision.decidedAt || statusRequest.reviewedAt || employerResponse.respondedAt)
+    : (employerResponse.respondedAt || statusRequest.reviewedAt);
 
   return <div className="mx-auto max-w-[1450px] space-y-5 px-1 py-8">
     <header className="flex flex-wrap items-center justify-between gap-4 px-1">
