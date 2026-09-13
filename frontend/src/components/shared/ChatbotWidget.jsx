@@ -208,7 +208,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
 
   return (
     <div
-      className={`fixed right-3 sm:right-5 md:right-6 ${floatingBottomClass} z-[60]`}
+      className={`fixed right-3 sm:right-5 md:right-6 ${floatingBottomClass} z-[10040]`}
       aria-live="polite"
     >
       {isOpen && !isMinimized && (
