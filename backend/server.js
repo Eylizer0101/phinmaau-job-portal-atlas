@@ -135,6 +135,7 @@ const { startInactiveEmployerMonitor } = require('./services/inactiveEmployerSer
 const createDefaultAdminAccount = async () => {
   const adminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').trim().toLowerCase();
   const adminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
+  const adminResetPassword = String(process.env.DEFAULT_ADMIN_RESET_PASSWORD || '');
 
   if (!adminEmail || !adminPassword) {
     console.log(' Default admin account not created: DEFAULT_ADMIN_EMAIL or DEFAULT_ADMIN_PASSWORD is missing.');
@@ -155,6 +156,27 @@ const createDefaultAdminAccount = async () => {
     }
 
     let changed = false;
+
+    // Optional recovery override for an existing administrator. This fixes the
+    // case where DEFAULT_ADMIN_PASSWORD was changed after the account had
+    // already been created, because the stored password is a bcrypt hash and
+    // was previously never updated. Remove DEFAULT_ADMIN_RESET_PASSWORD from
+    // the environment after the administrator can sign in again.
+    if (adminResetPassword) {
+      if (adminResetPassword.length < 8) {
+        console.log(' Default admin password not reset: DEFAULT_ADMIN_RESET_PASSWORD must be at least 8 characters.');
+      } else {
+        const resetPasswordMatches = await bcrypt.compare(adminResetPassword, existingUser.password);
+        if (!resetPasswordMatches) {
+          const salt = await bcrypt.genSalt(10);
+          existingUser.password = await bcrypt.hash(adminResetPassword, salt);
+          existingUser.mustChangePassword = false;
+          existingUser.loginSecurity = { failedAttempts: 0, lockedUntil: null };
+          changed = true;
+          console.log(' Default admin password reset successfully. Remove DEFAULT_ADMIN_RESET_PASSWORD from the environment.');
+        }
+      }
+    }
 
     if (existingUser.status !== 'active') {
       existingUser.status = 'active';

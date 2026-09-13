@@ -1803,15 +1803,21 @@ exports.forgotPassword = async (req, res) => {
     const otpHash = hashToken(otp);
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 
-    user.passwordReset = {
-      tokenHash: '',
-      otpHash,
-      expiresAt,
-      requestedAt: new Date(),
-      usedAt: null,
-    };
-
-    await user.save();
+    // Update only the recovery fields. Using an atomic update prevents an old
+    // account with unrelated legacy profile data from failing full-document
+    // validation before the OTP email can be sent.
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          'passwordReset.tokenHash': '',
+          'passwordReset.otpHash': otpHash,
+          'passwordReset.expiresAt': expiresAt,
+          'passwordReset.requestedAt': new Date(),
+          'passwordReset.usedAt': null,
+        },
+      }
+    );
 
     try {
       await sendPasswordResetOtpEmail({
@@ -1823,14 +1829,18 @@ exports.forgotPassword = async (req, res) => {
     } catch (mailError) {
       console.error('Forgot password OTP email sending error:', mailError);
 
-      user.passwordReset = {
-        tokenHash: '',
-        otpHash: '',
-        expiresAt: null,
-        requestedAt: null,
-        usedAt: null,
-      };
-      await user.save().catch(() => {});
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            'passwordReset.tokenHash': '',
+            'passwordReset.otpHash': '',
+            'passwordReset.expiresAt': null,
+            'passwordReset.requestedAt': null,
+            'passwordReset.usedAt': null,
+          },
+        }
+      ).catch(() => {});
 
       return res.status(503).json({
         message: 'Unable to send the verification code right now. Please try again later.',
@@ -1903,19 +1913,23 @@ exports.resetPassword = async (req, res) => {
     }
 
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword.trim(), salt);
-    user.mustChangePassword = false;
-    clearFailedLogins(user);
-
-    user.passwordReset = {
-      tokenHash: '',
-      otpHash: '',
-      expiresAt: null,
-      requestedAt: null,
-      usedAt: new Date(),
-    };
-
-    await user.save();
+    const hashedPassword = await bcrypt.hash(newPassword.trim(), salt);
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          password: hashedPassword,
+          mustChangePassword: false,
+          'loginSecurity.failedAttempts': 0,
+          'loginSecurity.lockedUntil': null,
+          'passwordReset.tokenHash': '',
+          'passwordReset.otpHash': '',
+          'passwordReset.expiresAt': null,
+          'passwordReset.requestedAt': null,
+          'passwordReset.usedAt': new Date(),
+        },
+      }
+    );
 
     return res.status(200).json({
       success: true,
