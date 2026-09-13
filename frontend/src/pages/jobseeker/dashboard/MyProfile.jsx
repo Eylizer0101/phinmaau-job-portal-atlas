@@ -2626,6 +2626,7 @@ const WorkExperienceModal = ({
   open,
   mode,
   form,
+  error,
   onChange,
   onClose,
   onSave,
@@ -2658,6 +2659,8 @@ const WorkExperienceModal = ({
         </div>
 
         <div className="px-6 sm:px-8 py-6 space-y-5 max-h-[80vh] overflow-y-auto">
+          {error ? <Alert type="error" message={error} /> : null}
+
           <div className="grid md:grid-cols-2 gap-6">
             <Input
               label="Company"
@@ -4556,6 +4559,7 @@ const MyProfile = () => {
   const [workExperienceModalOpen, setWorkExperienceModalOpen] = useState(false);
   const [workExperienceModalMode, setWorkExperienceModalMode] = useState('add');
   const [savingWorkExperience, setSavingWorkExperience] = useState(false);
+  const [workExperienceError, setWorkExperienceError] = useState('');
   const [editingWorkExperienceId, setEditingWorkExperienceId] = useState('');
   const [workExperienceForm, setWorkExperienceForm] = useState({
     companyName: '',
@@ -6642,6 +6646,7 @@ const MyProfile = () => {
   };
 
   const handleWorkExperienceFormChange = (field, value) => {
+    if (workExperienceError) setWorkExperienceError('');
     setWorkExperienceForm((prev) => {
       if (field === 'isPresent') {
         return {
@@ -6662,6 +6667,7 @@ const MyProfile = () => {
     setEditingWorkExperienceId('');
     setWorkExperienceModalMode('add');
     setWorkExperienceForm(createEmptyWorkExperienceForm());
+    setWorkExperienceError('');
     setWorkExperienceModalOpen(true);
   };
 
@@ -6678,6 +6684,7 @@ const MyProfile = () => {
       isPresent: Boolean(item?.isPresent),
       description: item?.description || '',
     });
+    setWorkExperienceError('');
     setWorkExperienceModalOpen(true);
   };
 
@@ -6687,29 +6694,30 @@ const MyProfile = () => {
     setEditingWorkExperienceId('');
     setWorkExperienceModalMode('add');
     setWorkExperienceForm(createEmptyWorkExperienceForm());
+    setWorkExperienceError('');
   };
 
   const handleSaveWorkExperience = async () => {
     try {
-      setError('');
+      setWorkExperienceError('');
 
       if (!workExperienceForm.companyName.trim()) {
-        setError('Company / Organization name is required.');
+        setWorkExperienceError('Company / Organization name is required.');
         return;
       }
 
       if (!workExperienceForm.positionTitle.trim()) {
-        setError('Position / Role title is required.');
+        setWorkExperienceError('Position / Role title is required.');
         return;
       }
 
       if (!workExperienceForm.startDate) {
-        setError('Start date is required.');
+        setWorkExperienceError('Start date is required.');
         return;
       }
 
       if (!workExperienceForm.isPresent && !workExperienceForm.endDate) {
-        setError('End date is required unless the role is marked as Present.');
+        setWorkExperienceError('End date is required unless the role is marked as Present.');
         return;
       }
 
@@ -6719,7 +6727,7 @@ const MyProfile = () => {
         !workExperienceForm.isPresent &&
         new Date(workExperienceForm.startDate) > new Date(workExperienceForm.endDate)
       ) {
-        setError('Start date cannot be later than end date.');
+        setWorkExperienceError('Start date cannot be later than end date.');
         return;
       }
 
@@ -6757,7 +6765,7 @@ const MyProfile = () => {
       fetchWorkExperiences();
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Failed to save work experience.');
+      setWorkExperienceError(err.response?.data?.message || 'Failed to save work experience.');
     } finally {
       setSavingWorkExperience(false);
     }
@@ -7407,6 +7415,7 @@ const MyProfile = () => {
         open={workExperienceModalOpen}
         mode={workExperienceModalMode}
         form={workExperienceForm}
+        error={workExperienceError}
         onChange={handleWorkExperienceFormChange}
         onClose={closeWorkExperienceModal}
         onSave={handleSaveWorkExperience}
