@@ -26,6 +26,57 @@ const normalizeHiringStage = (value) => String(value || '').replace(/\s+/g, ' ')
 const sameHiringStage = (first, second) =>
   normalizeHiringStage(first).toLowerCase() === normalizeHiringStage(second).toLowerCase();
 
+const getMissingResumeSections = (user = {}) => {
+  const profile = user.jobSeekerProfile || {};
+  const hasText = (value) => String(value ?? '').trim().length > 0;
+  const addressParts = String(profile.address || '').split(',').map((part) => part.trim()).filter(Boolean);
+  const basicComplete = [
+    user.firstName || user.fullName,
+    user.lastName || user.fullName,
+    user.email,
+    profile.phoneNumber,
+    profile.campus,
+    profile.course,
+    profile.yearGraduated,
+  ].every(hasText) && addressParts.length >= 4;
+  const personalComplete = [
+    profile.preferredWorkMode,
+    profile.employmentType,
+    profile.willingToRelocate,
+    profile.howSoonCanYouStart,
+    profile.experience,
+    profile.preferredLanguage,
+    profile.educationalAttainment,
+    profile.minimumSalary,
+    profile.maximumSalary,
+    profile.nationality,
+    profile.gender,
+    profile.civilStatus,
+    profile.birthday,
+  ].every(hasText);
+  const workComplete = (profile.workExperiences || []).some((entry) =>
+    hasText(entry?.companyName || entry?.company) && hasText(entry?.positionTitle || entry?.title)
+  );
+  const skills = [
+    ...(Array.isArray(profile.skillRows) ? profile.skillRows : []),
+    ...(Array.isArray(profile.technicalSkills) ? profile.technicalSkills : String(profile.technicalSkills || '').split(',')),
+    ...(Array.isArray(profile.softSkills) ? profile.softSkills : String(profile.softSkills || '').split(',')),
+  ];
+  const skillsComplete = skills.some((entry) => hasText(typeof entry === 'string' ? entry : entry?.skill || entry?.name));
+  const educationComplete = (profile.educationEntries || []).some((entry) =>
+    hasText(entry?.level || entry?.educationalAttainment || entry?.course) && hasText(entry?.school || entry?.campus)
+  );
+
+  return [
+    ['Basic Information', basicComplete],
+    ['Personal Information', personalComplete],
+    ['Objective', hasText(profile.aboutMe)],
+    ['Work Experience', workComplete],
+    ['Skills', skillsComplete],
+    ['Education', educationComplete],
+  ].filter(([, complete]) => !complete).map(([label]) => label);
+};
+
 const escapeRegExp = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const buildExactHiringStageRegex = (value) => {
@@ -984,6 +1035,16 @@ exports.applyForJob = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please upload your CV/Resume in your Profile Credentials first.'
+      });
+    }
+
+    const missingResumeSections = getMissingResumeSections(jobseeker);
+    if (missingResumeSections.length) {
+      return res.status(400).json({
+        success: false,
+        code: 'RESUME_PROFILE_INCOMPLETE',
+        message: 'Please complete all required Resume Profile sections before applying.',
+        missingSections: missingResumeSections,
       });
     }
 

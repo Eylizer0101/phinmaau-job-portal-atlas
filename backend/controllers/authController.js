@@ -2398,6 +2398,22 @@ exports.uploadProfileImage = async (req, res) => {
   }
 };
 
+exports.removeProfileImage = async (req, res) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { profileImage: '', lastProfileUpdateAt: new Date() } },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) return res.status(404).json({ success: false, message: 'User not found' });
+    return res.status(200).json({ success: true, message: 'Profile image removed successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Error removing profile image:', error);
+    return res.status(500).json({ success: false, message: 'Error removing profile image' });
+  }
+};
+
 // ---------------------------
 // GET CURRENT USER
 // ---------------------------

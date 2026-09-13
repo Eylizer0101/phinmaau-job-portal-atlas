@@ -189,6 +189,13 @@ router.post(
   authController.uploadProfileImage
 );
 
+router.delete(
+  '/profile-image',
+  protect,
+  authorize('jobseeker'),
+  authController.removeProfileImage
+);
+
 // Alumni verification docs
 router.post(
   '/upload-alumni-verification/:docType',

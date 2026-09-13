@@ -132,7 +132,11 @@ const EmployerNotificationsPage = () => {
       await handleMarkAsRead(notification._id);
     }
     if (notification.link) {
-      navigate(notification.link);
+      const isStatusRequest = notification.type === 'employment_status_request';
+      const target = isStatusRequest
+        ? `${notification.link}${notification.link.includes('?') ? '&' : '?'}employmentStatus=active`
+        : notification.link;
+      navigate(target);
       return;
     }
 

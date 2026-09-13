@@ -609,7 +609,7 @@ exports.createEmploymentStatusRequestNotification = async (application) => {
             message: `${jobseekerName} has requested to change their employment status.`,
             relatedId: application._id,
             relatedModel: 'Application',
-            link: `/employer/hired?statusRequest=${application._id}`,
+            link: `/employer/hired?employmentStatus=active&statusRequest=${application._id}`,
             metadata: {
                 applicationId: application._id,
                 jobseekerId,

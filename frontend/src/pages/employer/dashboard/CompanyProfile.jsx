@@ -2347,7 +2347,8 @@ const CompanyProfile = () => {
             return;
           }
 
-          fd.append(key, companyData[key] ?? '');
+          // The registered Employer contact number is read-only in Company Profile.
+          if (key !== 'mobileNumber') fd.append(key, companyData[key] ?? '');
         });
 
         fd.set(
@@ -3400,10 +3401,10 @@ const CompanyProfile = () => {
                                 type="text"
                                 name="mobileNumber"
                                 value={companyData.mobileNumber}
-                                onChange={handleInputChange}
+                                readOnly
                                 placeholder="+63 900 000 0000"
-                                disabled={saving}
-                                className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.mobileNumber ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
+                                disabled
+                                className={cx('w-full cursor-not-allowed rounded-[10px] border bg-[#f3f4f6] px-4 py-3 text-[14px] text-[#6b7280] outline-none', fieldErrors.mobileNumber ? 'border-red-400' : 'border-[#d1d5db]')}
                               />
                             </FormField>
                           </div>

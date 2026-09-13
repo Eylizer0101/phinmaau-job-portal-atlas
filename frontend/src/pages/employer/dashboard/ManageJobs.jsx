@@ -1390,7 +1390,7 @@ const ManageJobs = () => {
                     setQ(e.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search job title, company, location, status…"
+                  placeholder="Search job title, company, location..."
                   className="w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 />
               </div>

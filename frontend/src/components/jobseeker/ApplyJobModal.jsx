@@ -129,6 +129,62 @@ const getUploadedResume = (profile) => {
   );
 };
 
+const hasText = (value) => String(value ?? '').trim().length > 0;
+
+const getMissingResumeSections = (userData = {}) => {
+  const profile = userData?.jobSeekerProfile || {};
+  const address = String(profile.address || '').split(',').map((part) => part.trim()).filter(Boolean);
+  const basicComplete = [
+    userData.firstName || userData.fullName,
+    userData.lastName || userData.fullName,
+    userData.email,
+    profile.phoneNumber,
+    profile.campus,
+    profile.course,
+    profile.yearGraduated,
+  ].every(hasText) && address.length >= 4;
+
+  // Height, weight, and double degree/studyField are intentionally optional.
+  const personalComplete = [
+    profile.preferredWorkMode,
+    profile.employmentType,
+    profile.willingToRelocate,
+    profile.howSoonCanYouStart,
+    profile.experience,
+    profile.preferredLanguage,
+    profile.educationalAttainment,
+    profile.minimumSalary,
+    profile.maximumSalary,
+    profile.nationality,
+    profile.gender,
+    profile.civilStatus,
+    profile.birthday,
+  ].every(hasText);
+
+  const workComplete = getWorkExperiences(profile).some((entry) =>
+    hasText(entry?.companyName || entry?.company) &&
+    hasText(entry?.positionTitle || entry?.title)
+  );
+  const skillComplete = [
+    ...(Array.isArray(profile.skillRows) ? profile.skillRows : []),
+    ...(Array.isArray(profile.technicalSkills) ? profile.technicalSkills : String(profile.technicalSkills || '').split(',')),
+    ...(Array.isArray(profile.softSkills) ? profile.softSkills : String(profile.softSkills || '').split(',')),
+  ].some((entry) => hasText(typeof entry === 'string' ? entry : entry?.skill || entry?.name));
+  const educationComplete = getEducationEntries(profile).some((entry) =>
+    hasText(entry?.level || entry?.educationalAttainment || entry?.course) &&
+    hasText(entry?.school || entry?.campus)
+  );
+
+  return [
+    ['Basic Information', basicComplete],
+    ['Personal Information', personalComplete],
+    ['Objective', hasText(profile.aboutMe)],
+    ['Work Experience', workComplete],
+    ['Skills', skillComplete],
+    ['Education', educationComplete],
+  ].filter(([, complete]) => !complete).map(([label]) => label);
+};
+
 const IconCheckCircle = ({ className = 'w-7 h-7' }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
@@ -237,6 +293,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
   const profile = userData?.jobSeekerProfile || {};
   const workExperiences = useMemo(() => getWorkExperiences(profile), [profile]);
   const educationEntries = useMemo(() => getEducationEntries(profile), [profile]);
+  const missingResumeSections = useMemo(() => getMissingResumeSections(userData), [userData]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -547,6 +604,26 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
               Take Me There <span className="ml-3 inline-block text-[24px] font-black leading-none">→</span>
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profileLoading && !profileError && missingResumeSections.length > 0) {
+    return (
+      <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-black/45 px-4 py-6">
+        <div role="dialog" aria-modal="true" aria-labelledby="resume-required-title" className="relative w-full max-w-[520px] rounded-[20px] border border-[#d8e2ee] bg-white p-7 shadow-[0_24px_70px_rgba(15,23,42,0.22)] sm:p-8">
+          <button type="button" onClick={closeAndReset} className="absolute right-4 top-4 rounded-lg p-1.5 text-gray-500 hover:bg-gray-100" aria-label="Close"><IconClose className="h-5 w-5" /></button>
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eef5ff] text-[#2e66a6]"><IconInfo className="h-7 w-7" /></div>
+          <h2 id="resume-required-title" className="mt-4 text-center text-[22px] font-bold text-gray-900">Resume Profile Information Required</h2>
+          <p className="mt-2 text-center text-sm leading-6 text-gray-600">Please complete all required resume sections before applying for this job.</p>
+          <div className="mt-5 rounded-xl border border-[#e4ebf3] bg-[#f8fbff] p-4">
+            <p className="text-sm font-semibold text-gray-800">Missing required sections:</p>
+            <ul className="mt-3 space-y-2">
+              {missingResumeSections.map((section) => <li key={section} className="flex items-center gap-2 text-sm text-gray-700"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-50 text-xs font-bold text-red-600">!</span>{section}</li>)}
+            </ul>
+          </div>
+          <button type="button" onClick={handleGoToProfile} className="mt-6 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white hover:bg-[#25578f]">Complete Resume</button>
         </div>
       </div>
     );

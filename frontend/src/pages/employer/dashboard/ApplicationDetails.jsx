@@ -2681,7 +2681,7 @@ const ApplicationDetails = () => {
           </div>
 
           {activeTab === 'resume' ? (
-            <div className="border-t border-[#d8e2ee] bg-white px-5 pb-6 pt-3 sm:px-7 lg:px-8">
+            <div className="relative max-h-[clamp(520px,calc(100vh-300px),820px)] overflow-hidden border-t border-[#d8e2ee] bg-white px-5 pb-16 pt-3 sm:px-7 lg:px-8">
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
                 <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 text-center">
                   <AutoFitResumeHeaderName profileImageRef={resumeProfileImageRef}>
@@ -2872,6 +2872,7 @@ const ApplicationDetails = () => {
                 ) : null}
 
               </article>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-white/0 via-white/80 to-white" aria-hidden="true" />
             </div>
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
