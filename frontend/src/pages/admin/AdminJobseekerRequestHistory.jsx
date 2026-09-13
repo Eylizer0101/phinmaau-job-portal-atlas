@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Eye, Search, UserRound } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Eye, Search, UserRound } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
@@ -16,6 +16,133 @@ const statusBadgeClass = (status = '') => ({
   declined: 'border-red-300 bg-red-50 text-red-700',
   no_response: 'border-slate-300 bg-slate-100 text-slate-600',
 }[String(status || '').toLowerCase()] || 'border-slate-300 bg-slate-50 text-slate-600');
+
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const formatDateInput = (date) => {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return '';
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+};
+
+const formatDateRangeLabel = (value) => {
+  if (!value) return 'Select date';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return 'Select date';
+  return date.toLocaleDateString('en-PH', { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
+const addCalendarMonths = (date, amount) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+};
+
+const getYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: currentYear - 1949 }, (_, index) => 1950 + index);
+};
+
+const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const gridStart = new Date(year, month, 1 - firstWeekday);
+  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const day = new Date(gridStart);
+    day.setDate(gridStart.getDate() + index);
+    return day;
+  });
+  const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
+  const inRange = (day) => start && end && day >= start && day <= end;
+
+  return <div className="min-w-0 flex-1">
+    <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
+      <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, -1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-600 hover:bg-slate-100" aria-label="Previous month">‹</button>
+      <div className="grid grid-cols-[1fr_92px] gap-2">
+        <select value={month} onChange={(event) => onChangeMonth(new Date(year, Number(event.target.value), 1))} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select month">
+          {MONTH_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
+        </select>
+        <select value={year} onChange={(event) => onChangeMonth(new Date(Number(event.target.value), month, 1))} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select year">
+          {getYearOptions().map((yearOption) => <option key={yearOption} value={yearOption}>{yearOption}</option>)}
+        </select>
+      </div>
+      <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, 1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-600 hover:bg-slate-100" aria-label="Next month">›</button>
+    </div>
+    <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
+      {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map((day) => <div key={day}>{day}</div>)}
+    </div>
+    <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
+      {days.map((day) => {
+        const value = formatDateInput(day);
+        const outside = day.getMonth() !== month;
+        const selected = isSameDay(day, start) || isSameDay(day, end);
+        return <button type="button" key={value} onClick={() => onPickDate(value)} className={cn(
+          'mx-auto flex h-10 w-full items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20',
+          outside ? 'text-slate-300' : 'text-slate-700',
+          inRange(day) ? 'bg-[#2e66a6]/10 text-[#2e66a6]' : '',
+          selected ? 'rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md' : 'hover:bg-[#2e66a6]/10'
+        )}>{day.getDate()}</button>;
+      })}
+    </div>
+  </div>;
+};
+
+const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
+  const todayValue = formatDateInput(new Date());
+  const initialStart = startDate || todayValue;
+  const initialEnd = endDate || todayValue;
+  const [draftStart, setDraftStart] = useState(initialStart);
+  const [draftEnd, setDraftEnd] = useState(initialEnd);
+  const [leftMonth, setLeftMonth] = useState(new Date(`${initialStart}T00:00:00`));
+  const [rightMonth, setRightMonth] = useState(new Date(`${initialEnd}T00:00:00`));
+
+  useEffect(() => {
+    if (!open) return;
+    const nextStart = startDate || formatDateInput(new Date());
+    const nextEnd = endDate || nextStart;
+    setDraftStart(nextStart);
+    setDraftEnd(nextEnd);
+    setLeftMonth(new Date(`${nextStart}T00:00:00`));
+    setRightMonth(new Date(`${nextEnd}T00:00:00`));
+  }, [open, startDate, endDate]);
+
+  if (!open) return null;
+
+  const pickDate = (value) => {
+    if (!draftStart || (draftStart && draftEnd)) {
+      setDraftStart(value);
+      setDraftEnd('');
+    } else if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
+      setDraftEnd(draftStart);
+      setDraftStart(value);
+    } else {
+      setDraftEnd(value);
+    }
+  };
+
+  return <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
+    <div className="w-full max-w-[920px] overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div className="grid gap-6 px-6 pb-5 pt-6 md:grid-cols-[1fr_auto_1fr] md:items-end">
+        <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Start Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#2e66a6]"><CalendarDays size={20} />{formatDateRangeLabel(draftStart)}</div></div>
+        <div className="hidden pb-4 text-3xl text-slate-500 md:block">→</div>
+        <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">End Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#2e66a6]"><CalendarDays size={20} />{formatDateRangeLabel(draftEnd)}</div></div>
+      </div>
+      <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
+        <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
+        <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
+      </div>
+      <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
+        <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600 transition hover:text-slate-900">Cancel</button>
+        <button type="button" onClick={() => draftStart && draftEnd && onApply(draftStart, draftEnd)} disabled={!draftStart || !draftEnd} className="h-12 rounded-xl bg-[#2e66a6] px-9 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60">Apply Range</button>
+      </div>
+    </div>
+  </div>;
+};
+
 
 export default function AdminJobseekerRequestHistory() {
   const { jobseekerId } = useParams();
@@ -111,6 +238,16 @@ export default function AdminJobseekerRequestHistory() {
     );
   }), [requests, search, company, jobTitle, type, status, time, from, to]);
 
+  const changeTime = (value) => {
+    if (value === 'custom') {
+      setShowCustomDate(true);
+      return;
+    }
+    setTime(value);
+    setFrom('');
+    setTo('');
+  };
+
   const jobseeker = data.jobseeker || {};
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
@@ -126,7 +263,7 @@ export default function AdminJobseekerRequestHistory() {
       <select value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} className="rounded-xl border px-3"><option value="all">All Job Title</option>{jobs.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={type} onChange={(e)=>setType(e.target.value)} className="rounded-xl border px-3"><option value="all">All Type</option><option value="contract_ended">Contract Ended</option><option value="employment_ended">Employment Ended</option></select>
       <select value={status} onChange={(e)=>setStatus(e.target.value)} className="rounded-xl border px-3"><option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
-      <select value={time} onChange={(e)=>{setTime(e.target.value);setShowCustomDate(e.target.value === 'custom');}} className="rounded-xl border px-3"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select>
+      <select value={time} onChange={(e)=>changeTime(e.target.value)} className="rounded-xl border px-3"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select>
     </section>
 
     {error && <p className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
@@ -164,6 +301,17 @@ export default function AdminJobseekerRequestHistory() {
       </table>
     </section>
 
-    {showCustomDate && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-bold">Custom Date Range</h2><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold">Start Date<input type="date" value={from} onChange={(e)=>setFrom(e.target.value)} className="mt-2 h-12 w-full rounded-xl border px-3"/></label><label className="text-sm font-semibold">End Date<input type="date" value={to} onChange={(e)=>setTo(e.target.value)} className="mt-2 h-12 w-full rounded-xl border px-3"/></label></div><div className="mt-6 flex justify-end gap-3"><button onClick={()=>{setShowCustomDate(false);setTime('all');setFrom('');setTo('');}} className="rounded-xl border px-6 py-3 font-semibold">Cancel</button><button disabled={!from||!to} onClick={()=>setShowCustomDate(false)} className="rounded-xl bg-[#2e66a6] px-6 py-3 font-semibold text-white disabled:opacity-50">Apply Range</button></div></div></div>}
+    <CustomDateRangeModal
+      open={showCustomDate}
+      startDate={from}
+      endDate={to}
+      onCancel={() => setShowCustomDate(false)}
+      onApply={(startDate, endDate) => {
+        setFrom(startDate);
+        setTo(endDate);
+        setTime('custom');
+        setShowCustomDate(false);
+      }}
+    />
   </div>;
 }
