@@ -215,7 +215,7 @@ const applicationSchema = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['none', 'pending', 'approved', 'declined'],
+            enum: ['none', 'pending', 'approved', 'declined', 'no_response'],
             default: 'none'
         },
         requestedAt: {
@@ -229,6 +229,22 @@ const applicationSchema = new mongoose.Schema({
         reviewedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            default: null
+        },
+        declineReason: {
+            type: String,
+            default: '',
+            trim: true,
+            maxlength: 120
+        },
+        explanation: {
+            type: String,
+            default: '',
+            trim: true,
+            maxlength: 500
+        },
+        noResponseAt: {
+            type: Date,
             default: null
         }
     },

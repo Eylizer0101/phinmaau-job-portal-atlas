@@ -505,10 +505,14 @@ const HiredApplicants = () => {
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
   const [reviewApplication, setReviewApplication] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewStep, setReviewStep] = useState('actions');
+  const [declineReason, setDeclineReason] = useState('');
+  const [declineExplanation, setDeclineExplanation] = useState('');
   const [reviewResult, setReviewResult] = useState(null);
   const [updateApplication, setUpdateApplication] = useState(null);
   const [updateReason, setUpdateReason] = useState('');
   const [updateStep, setUpdateStep] = useState('reason');
+  const [updatePrivacyAccepted, setUpdatePrivacyAccepted] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [highlightedApplicationId, setHighlightedApplicationId] = useState('');
 
@@ -890,6 +894,7 @@ const HiredApplicants = () => {
     setUpdateApplication(null);
     setUpdateReason('');
     setUpdateStep('reason');
+    setUpdatePrivacyAccepted(false);
   };
 
   const handleEmployerEmploymentUpdate = async () => {
@@ -913,8 +918,8 @@ const HiredApplicants = () => {
         setUpdateReason('');
         setUpdateStep('reason');
         setReviewResult({
-          title: 'Employment status updated successfully!',
-          description: "The job seeker's employment status has been changed from Active to Inactive."
+          title: 'Employment Status Updated Successfully',
+          description: "The Jobseeker's employment status has been updated from Active to Inactive."
         });
       }
     } catch (updateError) {
@@ -945,12 +950,17 @@ const HiredApplicants = () => {
   const handleReviewStatusRequest = async (decision) => {
     if (!reviewApplication?._id || reviewLoading) return;
 
+    if (decision === 'declined' && (!declineReason || !declineExplanation.trim())) {
+      setError('Select a decline reason and enter an Explanation.');
+      return;
+    }
+
     try {
       setReviewLoading(true);
       setError('');
       const response = await axios.put(
         `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${reviewApplication._id}/employment-status-request/review`,
-        { decision },
+        { decision, declineReason, explanation: declineExplanation.trim() },
         { headers: getAuthHeaders() }
       );
 
@@ -964,14 +974,17 @@ const HiredApplicants = () => {
           )
         );
         setReviewApplication(null);
+        setReviewStep('actions');
+        setDeclineReason('');
+        setDeclineExplanation('');
         setReviewResult({
           decision,
           title: decision === 'approved'
-            ? 'Status change approved successfully!'
-            : 'Status change request declined!',
+            ? 'Status Request Approved Successfully'
+            : 'Status Request Declined Successfully',
           description: decision === 'approved'
-            ? "The job seeker's employment status has been changed from Active to Inactive."
-            : "The job seeker's employment status remains Active."
+            ? "The Jobseeker's employment status has been updated from Active to Inactive."
+            : "The request was declined, and the Jobseeker's employment status remains Active."
         });
       }
     } catch (reviewError) {
@@ -1317,7 +1330,7 @@ const selectBase =
                               {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
                                 <button
                                   type="button"
-                                  onClick={() => setReviewApplication(app)}
+                                  onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
                                   className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#2e66a6]/25 bg-[#2e66a6]/5 text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`Review employment status request from ${name}`}
                                   title="Review employment status request"
@@ -1436,7 +1449,7 @@ const selectBase =
                         {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
                           <button
                             type="button"
-                            onClick={() => setReviewApplication(app)}
+                            onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
                             className="relative mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/5 px-4 py-2 text-sm font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/10"
                           >
                             <Icon name="request" className="h-4 w-4" />
@@ -1533,7 +1546,7 @@ const selectBase =
             </div>
             <button
               type="button"
-              onClick={() => setUpdateStep('confirm')}
+              onClick={() => setUpdateStep('privacy')}
               disabled={!updateReason}
               className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -1543,14 +1556,37 @@ const selectBase =
         </div>
       )}
 
+      {updateApplication && updateStep === 'privacy' && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="employer-privacy-title">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 id="employer-privacy-title" className="text-lg font-bold text-gray-900">Privacy Notice</h2>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-gray-600">
+              <p>Before continuing with this Employment Status Update, please carefully review this notice.</p>
+              <p>This request allows you, as the employer or authorized company representative, to update the employment status of a job seeker who was previously hired through the platform. You may initiate this update when the job seeker's contract has ended or when they are no longer employed in the role.</p>
+              <p>By continuing, you confirm that the selected reason accurately reflects the job seeker's current employment relationship with your company.</p>
+              <p>The selected reason and relevant employment information will be used to process and maintain the job seeker's employment record within the platform.</p>
+              <p>By continuing, you acknowledge that you understand how the employment status update will be processed, how the job seeker will be notified, and how the updated employment information will be maintained within the platform.</p>
+            </div>
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-800">
+              <input type="checkbox" checked={updatePrivacyAccepted} onChange={(event) => setUpdatePrivacyAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-[#2e66a6]" />
+              I have read and understood this Privacy Notice.
+            </label>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setUpdateStep('reason')} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50">Back</button>
+              <button type="button" onClick={() => setUpdateStep('confirm')} disabled={!updatePrivacyAccepted} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:cursor-not-allowed disabled:opacity-50">Continue</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {updateApplication && updateStep === 'confirm' && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="confirm-employment-title">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="confirm-employment-title" className="text-lg font-bold text-gray-900">End Employment?</h2>
+                <h2 id="confirm-employment-title" className="text-lg font-bold text-gray-900">{updateReason === 'contract_ended' ? 'End Contract?' : 'End Employment?'}</h2>
                 <p className="mt-2 text-sm leading-6 text-gray-600">
-                  Are you sure you want to update the job seeker's employment status? Their current status will change from Active to Inactive.{' '}
+                  Are you sure you want to update the job seeker's employment status? The current status will change from Active to Inactive.{' '}
                   (<strong className="text-gray-900">{updateReason === 'contract_ended' ? 'Contract Ended' : 'Employment Ended'}</strong>)
                 </p>
               </div>
@@ -1559,7 +1595,7 @@ const selectBase =
               </button>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setUpdateStep('reason')} disabled={updateLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={() => setUpdateStep('privacy')} disabled={updateLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
               <button type="button" onClick={handleEmployerEmploymentUpdate} disabled={updateLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
                 {updateLoading ? 'Updating...' : 'Update Status'}
               </button>
@@ -1568,7 +1604,7 @@ const selectBase =
         </div>
       )}
 
-      {reviewApplication && (
+      {reviewApplication && reviewStep === 'actions' && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="review-request-title">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
@@ -1591,12 +1627,37 @@ const selectBase =
             </p>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
+              <button type="button" onClick={() => { setError(''); setReviewStep('decline'); }} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
                 Decline Request
               </button>
               <button type="button" onClick={() => handleReviewStatusRequest('approved')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-60">
                 {reviewLoading ? 'Processing...' : 'Approve Request'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reviewApplication && reviewStep === 'decline' && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="decline-request-title">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 id="decline-request-title" className="text-lg font-bold text-gray-900">Decline Request?</h2>
+            <p className="mt-2 text-sm text-gray-600">The job seeker's employment status will remain Active.</p>
+            <label className="mt-5 block text-sm font-semibold text-gray-800">
+              Select Reason for Decline
+              <select value={declineReason} onChange={(event) => setDeclineReason(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6]">
+                <option value="">Choose a reason</option>
+                {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other'].map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+              </select>
+            </label>
+            <label className="mt-4 block text-sm font-semibold text-gray-800">
+              Explanation
+              <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={4} placeholder="Enter your explanation" className="mt-2 w-full resize-none rounded-xl border border-gray-300 p-3 font-normal outline-none focus:border-[#2e66a6]" />
+            </label>
+            {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || !declineExplanation.trim() || reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
             </div>
           </div>
         </div>

@@ -362,6 +362,8 @@ const MyApplications = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusRequestApplication, setStatusRequestApplication] = useState(null);
   const [statusRequestReason, setStatusRequestReason] = useState('');
+  const [statusRequestStep, setStatusRequestStep] = useState('reason');
+  const [statusRequestPrivacyAccepted, setStatusRequestPrivacyAccepted] = useState(false);
   const [statusRequestLoading, setStatusRequestLoading] = useState(false);
   const [employmentCheckApplication, setEmploymentCheckApplication] = useState(null);
   const [employmentCheckLoading, setEmploymentCheckLoading] = useState(false);
@@ -1039,6 +1041,8 @@ const MyApplications = () => {
         );
         setStatusRequestApplication(null);
         setStatusRequestReason('');
+        setStatusRequestStep('reason');
+        setStatusRequestPrivacyAccepted(false);
         setActionMessage('status-requested');
       }
     } catch (requestError) {
@@ -1938,7 +1942,7 @@ const MyApplications = () => {
         </div>
       )}
 
-      {statusRequestApplication && (
+      {statusRequestApplication && statusRequestStep === 'reason' && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="status-request-title">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
             <div className="flex items-start justify-between gap-4">
@@ -1957,6 +1961,8 @@ const MyApplications = () => {
                   if (statusRequestLoading) return;
                   setStatusRequestApplication(null);
                   setStatusRequestReason('');
+                  setStatusRequestStep('reason');
+                  setStatusRequestPrivacyAccepted(false);
                 }}
                 className="rounded-lg p-1 text-gray-500 hover:bg-gray-100"
                 aria-label="Close status request modal"
@@ -1985,12 +1991,38 @@ const MyApplications = () => {
 
             <button
               type="button"
-              onClick={handleSendStatusRequest}
-              disabled={!statusRequestReason || statusRequestLoading}
+              onClick={() => setStatusRequestStep('privacy')}
+              disabled={!statusRequestReason}
               className={`${UI.btnBase} ${UI.btnLg} ${UI.btnPrimary} ${UI.ring} mt-5 w-full`}
             >
-              {statusRequestLoading ? 'Sending request...' : 'Send request to employer'}
+              Continue
             </button>
+          </div>
+        </div>
+      )}
+
+      {statusRequestApplication && statusRequestStep === 'privacy' && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="status-request-privacy-title">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+            <h2 id="status-request-privacy-title" className="text-lg font-bold text-gray-900">Privacy Notice</h2>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-gray-600">
+              <p>Before submitting your Employment Status Request, please carefully review this notice.</p>
+              <p>This request is intended for job seekers who have ended their employment with the company after being hired. You may submit a request when your contract has ended or when you are no longer employed in your role.</p>
+              <p>By continuing, you confirm that the employment information and reason you selected accurately reflect your current employment situation.</p>
+              <p>Once submitted, your request will be sent to the company or employer associated with your employment record. The employer will be given the opportunity to review the request and verify the information related to your employment. The employer may approve or decline your request based on their review.</p>
+              <p>The employer has 7 days from the date the request is submitted to provide a response. If the employer does not respond within 7 days, the Admin will review and follow up on the request.</p>
+              <p>By submitting this request, you acknowledge that you understand how your information will be shared, how the employer review process works, and when an Admin review may be requested.</p>
+            </div>
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-800">
+              <input type="checkbox" checked={statusRequestPrivacyAccepted} onChange={(event) => setStatusRequestPrivacyAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-[#2e66a6]" />
+              I have read and understood this Privacy Notice.
+            </label>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setStatusRequestStep('reason')} disabled={statusRequestLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={handleSendStatusRequest} disabled={!statusRequestPrivacyAccepted || statusRequestLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:cursor-not-allowed disabled:opacity-50">
+                {statusRequestLoading ? 'Sending request...' : 'Send Status Request'}
+              </button>
+            </div>
           </div>
         </div>
       )}

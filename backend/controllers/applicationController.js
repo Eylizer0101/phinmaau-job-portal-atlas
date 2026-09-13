@@ -1500,7 +1500,10 @@ exports.requestEmploymentStatusChange = async (req, res) => {
             status: 'pending',
             requestedAt,
             reviewedAt: null,
-            reviewedBy: null
+            reviewedBy: null,
+            declineReason: '',
+            explanation: '',
+            noResponseAt: null
           }
         }
       },
@@ -1521,7 +1524,7 @@ exports.requestEmploymentStatusChange = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Status change request sent successfully!',
+      message: 'Status Request Sent Successfully',
       application
     });
   } catch (error) {
@@ -1537,11 +1540,20 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
   try {
     const { applicationId } = req.params;
     const decision = String(req.body?.decision || '').trim().toLowerCase();
+    const declineReason = String(req.body?.declineReason || '').trim();
+    const explanation = String(req.body?.explanation || '').trim();
 
     if (!['approved', 'declined'].includes(decision)) {
       return res.status(400).json({
         success: false,
         message: 'Decision must be approved or declined.'
+      });
+    }
+
+    if (decision === 'declined' && (!declineReason || !explanation)) {
+      return res.status(400).json({
+        success: false,
+        message: 'A decline reason and Explanation are required.'
       });
     }
 
@@ -1558,6 +1570,8 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
     } else {
       update.employmentStatus = 'active';
       update.employmentStatusCheckedAt = reviewedAt;
+      update['employmentStatusRequest.declineReason'] = declineReason;
+      update['employmentStatusRequest.explanation'] = explanation;
     }
 
     const application = await Application.findOneAndUpdate(
@@ -1591,8 +1605,8 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: decision === 'approved'
-        ? 'Status change approved successfully!'
-        : 'Status change request declined!',
+        ? 'Status Request Approved Successfully'
+        : 'Status Request Declined Successfully',
       application
     });
   } catch (error) {
@@ -1635,7 +1649,10 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
             status: 'none',
             requestedAt: null,
             reviewedAt: null,
-            reviewedBy: null
+            reviewedBy: null,
+            declineReason: '',
+            explanation: '',
+            noResponseAt: null
           }
         }
       },
@@ -1656,7 +1673,7 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Employment status updated successfully!',
+      message: 'Employment Status Updated Successfully',
       application
     });
   } catch (error) {
