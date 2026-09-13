@@ -15,6 +15,18 @@ const formatDate = (value) => {
 };
 const companyName = (item) => item?.job?.companyName || item?.employer?.employerProfile?.companyName || item?.employer?.fullName || 'Employer';
 const industryName = (item) => item?.job?.industry || item?.job?.category || item?.employer?.employerProfile?.industry || 'Company';
+const adminRequestStatus = (item = {}) => {
+  const request = item.employmentStatusRequest || {};
+  const finalDecision = String(request.adminDecision?.decision || '').toLowerCase();
+  if (['approved', 'declined'].includes(finalDecision)) return finalDecision;
+  return String(request.status || '').toLowerCase() === 'no_response' ? 'no_response' : 'pending';
+};
+const statusBadgeClass = (status = '') => ({
+  pending: 'border-amber-300 bg-amber-50 text-amber-700',
+  approved: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+  declined: 'border-red-300 bg-red-50 text-red-700',
+  no_response: 'border-slate-300 bg-slate-100 text-slate-600',
+}[String(status).toLowerCase()] || 'border-slate-300 bg-slate-50 text-slate-600');
 const formatDateInput = (date) => {
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return '';
@@ -161,7 +173,7 @@ const AdminEmployerJobEditRequests = () => {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('all');
   const [requestType, setRequestType] = useState('all');
-  const [status, setStatus] = useState('all');
+  const [status, setStatus] = useState('pending');
   const [time, setTime] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -192,7 +204,7 @@ const AdminEmployerJobEditRequests = () => {
       : presetRange(time);
     return requests.filter((item) => {
       const isStatusRequest = item.rowType === 'status_request';
-      const itemStatus = isStatusRequest ? String(item.employmentStatusRequest?.status || 'pending') : (item.status === 'pending' ? 'pending' : String(item.status || 'reviewed'));
+      const itemStatus = isStatusRequest ? adminRequestStatus(item) : String(item.status || 'pending').toLowerCase();
       const createdValue = isStatusRequest ? item.employmentStatusRequest?.requestedAt : item.createdAt;
       const created = new Date(createdValue);
       const person = isStatusRequest ? (item.jobseeker || {}) : (item.employer || {});
@@ -225,13 +237,13 @@ const AdminEmployerJobEditRequests = () => {
     setTime(value); setDateFrom(''); setDateTo('');
   };
 
-  const hasActiveFilters = Boolean(search.trim()) || role !== 'all' || requestType !== 'all' || status !== 'all' || time !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
+  const hasActiveFilters = Boolean(search.trim()) || role !== 'all' || requestType !== 'all' || status !== 'pending' || time !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
 
   const clearFilters = () => {
     setSearch('');
     setRole('all');
     setRequestType('all');
-    setStatus('all');
+    setStatus('pending');
     setTime('all');
     setDateFrom('');
     setDateTo('');
@@ -244,7 +256,7 @@ const AdminEmployerJobEditRequests = () => {
       <label className="relative block min-w-0"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search request..." className="h-12 w-full rounded-xl border border-slate-200 pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></label>
       <select value={role} onChange={(e) => setRole(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Role</option><option value="employer">Employer</option><option value="jobseeker">Job Seeker</option></select>
       <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Type</option><option value="job_post">Job Post</option><option value="status_request">Status Request</option></select>
-      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
+      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
       <div className="relative min-w-0"><select value={time} onChange={(e) => changeTime(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-11 text-sm"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select><CalendarDays className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={17} /></div>
       {hasActiveFilters && <button type="button" onClick={clearFilters} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"><RefreshCw size={16} />Clear All</button>}
     </section>
@@ -252,8 +264,8 @@ const AdminEmployerJobEditRequests = () => {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {!loading && <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto"><table className="w-full min-w-[1050px] text-left">
         <thead className="sticky top-0 z-10 border-b border-slate-200 bg-[#f7f9fc] text-xs font-bold uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-5">Request Date</th><th className="px-6 py-5">Name</th><th className="px-6 py-5">Role</th><th className="px-6 py-5">Request Type</th><th className="px-6 py-5">Status</th><th className="px-6 py-5 text-center">Action</th></tr></thead>
-        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const isStatusRequest = item.rowType === 'status_request'; const person = isStatusRequest ? item.jobseeker || {} : item.employer || {}; const name = isStatusRequest ? (person.fullName || [person.firstName, person.middleName, person.lastName].filter(Boolean).join(' ') || 'Job Seeker') : companyName(item); const itemStatus = isStatusRequest ? (item.employmentStatusRequest?.status || 'pending') : (item.status === 'pending' ? 'pending' : 'reviewed'); const date = isStatusRequest ? item.employmentStatusRequest?.requestedAt : item.createdAt; const detailsPath = isStatusRequest ? `/admin/jobseeker-status-requests/${person._id}` : `/admin/employer-job-edit-requests/${item._id}`; return <tr key={`${item.rowType}-${item._id}`} className="transition hover:bg-slate-50/80">
-          <td className="px-6 py-5 text-sm text-slate-600">{formatDate(date)}</td><td className="px-6 py-5"><p className="font-bold text-slate-950">{name}</p><p className="mt-1 text-xs text-slate-500">{isStatusRequest ? person.email : (item.job?.companyWebsite || item.employer?.email)}</p></td><td className="px-6 py-5 text-sm font-medium">{isStatusRequest ? 'Job Seeker' : 'Employer'}</td><td className="px-6 py-5 text-sm font-medium">{isStatusRequest ? 'Status Request' : 'Job Post'}</td><td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${itemStatus === 'pending' ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>{itemStatus.replace('_', ' ')}</span></td><td className="px-6 py-5 text-center"><button type="button" onClick={() => navigate(detailsPath)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View request"><Eye size={19} /></button></td>
+        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const isStatusRequest = item.rowType === 'status_request'; const person = isStatusRequest ? item.jobseeker || {} : item.employer || {}; const name = isStatusRequest ? (person.fullName || [person.firstName, person.middleName, person.lastName].filter(Boolean).join(' ') || 'Job Seeker') : companyName(item); const itemStatus = isStatusRequest ? adminRequestStatus(item) : String(item.status || 'pending').toLowerCase(); const date = isStatusRequest ? item.employmentStatusRequest?.requestedAt : item.createdAt; const detailsPath = isStatusRequest ? `/admin/jobseeker-status-requests/${person._id}` : `/admin/employer-job-edit-requests/${item._id}`; return <tr key={`${item.rowType}-${item._id}`} className="transition hover:bg-slate-50/80">
+          <td className="px-6 py-5 text-sm text-slate-600">{formatDate(date)}</td><td className="px-6 py-5"><p className="font-bold text-slate-950">{name}</p><p className="mt-1 text-xs text-slate-500">{isStatusRequest ? person.email : (item.job?.companyWebsite || item.employer?.email)}</p></td><td className="px-6 py-5 text-sm font-medium">{isStatusRequest ? 'Job Seeker' : 'Employer'}</td><td className="px-6 py-5 text-sm font-medium">{isStatusRequest ? 'Status Request' : 'Job Post'}</td><td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${statusBadgeClass(itemStatus)}`}>{itemStatus.replace('_', ' ')}</span></td><td className="px-6 py-5 text-center"><button type="button" onClick={() => navigate(detailsPath)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View request"><Eye size={19} /></button></td>
         </tr>; })}{!rows.length && <tr><td colSpan="6" className="px-6 py-16 text-center text-sm text-slate-500">No requests match the selected filters.</td></tr>}</tbody>
       </table></div>}
       {!loading && rows.length >= 10 && (

@@ -55,9 +55,15 @@ export default function AdminJobseekerRequestDetails() {
   const adminDecision = statusRequest.adminDecision || {};
   const employerAnswered = ['approved','declined','no_response'].includes(employerResponse.decision) || statusRequest.status === 'no_response';
   const final = ['approved','declined'].includes(adminDecision.decision);
-  const status = final ? adminDecision.decision : statusRequest.status;
+  const employerDecision = String(employerResponse.decision || 'pending').toLowerCase();
+  const status = final
+    ? adminDecision.decision
+    : (statusRequest.status === 'no_response' ? 'no_response' : employerDecision);
   const isApproved = status === 'approved';
   const isDeclined = status === 'declined';
+  const isWaiting = status === 'pending';
+  const showDecisionDetails = !isWaiting && status !== 'no_response';
+  const showDeclineDetails = employerDecision === 'declined';
   const companyName = request.job?.companyName || request.employer?.employerProfile?.companyName || '—';
   const responseReason = employerResponse.declineReason || employerResponse.reason || '—';
   const responseComment = employerResponse.explanation || employerResponse.comment || '—';
@@ -78,7 +84,7 @@ export default function AdminJobseekerRequestDetails() {
           <ArrowLeft size={19}/>
         </button>
         <div>
-          <h1 className="text-[22px] font-bold leading-tight text-slate-900">Job Seeker Request</h1>
+          <h1 className="text-[22px] font-bold leading-tight text-slate-900">Employment Status Update Request</h1>
           <p className="mt-1 text-sm text-slate-500">Review the details below and take action on the request.</p>
         </div>
       </div>
@@ -105,9 +111,9 @@ export default function AdminJobseekerRequestDetails() {
       <div className="grid gap-y-5 md:grid-cols-[1.15fr_1fr_1fr_1.15fr_0.9fr] md:divide-x md:divide-slate-200">
         <SummaryInfo
           icon={<UserRound size={18}/>} 
-          label="Jobseeker"
-          value={name(request.jobseeker)}
-          sub={request.jobseeker?.email}
+          label="Employer"
+          value={name(request.employer)}
+          sub={request.employer?.email}
           first
         />
         <SummaryInfo icon={<CalendarDays size={17}/>} label="Requested Date" value={date(statusRequest.requestedAt)} />
@@ -137,20 +143,26 @@ export default function AdminJobseekerRequestDetails() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-start gap-3">
-          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${isDeclined ? 'bg-red-600' : isApproved ? 'bg-emerald-600' : 'bg-slate-400'} text-white`}>
-            {isDeclined ? <X size={22}/> : <Check size={22}/>} 
+          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${isDeclined ? 'bg-red-600' : isApproved ? 'bg-emerald-600' : status === 'no_response' ? 'bg-amber-500' : 'bg-slate-400'} text-white`}>
+            {isWaiting ? <Clock3 size={22}/> : isDeclined || status === 'no_response' ? <X size={22}/> : <Check size={22}/>} 
           </span>
           <div className="min-w-0 flex-1">
             <h2 className={`text-lg font-semibold capitalize ${isDeclined ? 'text-red-600' : isApproved ? 'text-emerald-700' : 'text-slate-700'}`}>
               {status === 'no_response' ? 'No Response' : status.replace('_',' ')}
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
-              {status === 'pending' ? 'Waiting for the employer to respond to this request.' : status === 'no_response' ? 'No response received. The employer did not respond to this request within 7 days.' : `The request has been ${status}.`}
+              {status === 'pending'
+                ? 'Waiting for the employer to respond to this request.'
+                : status === 'no_response'
+                  ? 'The employer did not respond to this request within 7 days.'
+                  : status === 'approved'
+                    ? 'The Employment status has been approved.'
+                    : 'The Employment status has been declined.'}
             </p>
           </div>
         </div>
 
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        {showDecisionDetails && <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <DetailItem
             icon={<UserRound size={16}/>} 
             label={final ? (adminDecision.decision === 'approved' ? 'Approved By' : 'Declined By') : (employerResponse.decision === 'declined' ? 'Declined By' : 'Approved By')}
@@ -161,29 +173,31 @@ export default function AdminJobseekerRequestDetails() {
             label="Date & Time"
             value={date(decisionDate, true)}
           />
-        </div>
+        </div>}
       </section>
     </div>
 
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="flex items-center gap-2 text-[16px] font-semibold text-slate-900">
-        <FileText size={19}/>
-        Reason
-      </h2>
-      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
-        {responseReason === '—' ? reason(statusRequest.reason) : reason(responseReason)}
-      </div>
-    </section>
+    {showDeclineDetails && <div className="grid gap-5 lg:grid-cols-2">
+      <section className="rounded-2xl border border-purple-200 bg-purple-50/50 p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-purple-800">
+          <FileText size={19}/>
+          Reason
+        </h2>
+        <div className="mt-4 rounded-xl border border-purple-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
+          {responseReason === '—' ? reason(statusRequest.reason) : reason(responseReason)}
+        </div>
+      </section>
 
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="flex items-center gap-2 text-[16px] font-semibold text-slate-900">
-        <MessageSquare size={19}/>
-        Comment
-      </h2>
-      <div className="mt-4 min-h-[64px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
-        {responseComment}
-      </div>
-    </section>
+      <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-amber-800">
+          <MessageSquare size={19}/>
+          Comment
+        </h2>
+        <div className="mt-4 min-h-[64px] rounded-xl border border-amber-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
+          {responseComment}
+        </div>
+      </section>
+    </div>}
 
     {confirm && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-bold capitalize">{confirm} Request?</h2><p className="mt-3 text-slate-600">{confirm === 'approved' ? "Are you sure you want to approve this request to end the job seeker's current employment status? The status will change from Active to Inactive." : "Are you sure you want to decline the job seeker's request? The current employment status will remain Active."}</p><p className="mt-4 rounded-xl bg-slate-50 p-4"><b>Request Reason:</b> {reason(statusRequest.reason)}</p><div className="mt-5 grid grid-cols-2 gap-3"><button onClick={()=>setConfirm('')} className="rounded-xl border py-3 font-semibold">Cancel</button><button disabled={saving} onClick={decide} className={`rounded-xl py-3 font-semibold text-white ${confirm === 'approved' ? 'bg-[#2e66a6]' : 'bg-red-600'}`}>{saving ? 'Processing...' : `${confirm === 'approved' ? 'Approve' : 'Decline'} Request`}</button></div></div></div>}
     {success && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-7 text-center shadow-2xl"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/>{success.split('\n').map(line=><p key={line} className="mt-3 first:text-xl first:font-bold">{line}</p>)}<button onClick={()=>setSuccess('')} className="mt-5 rounded-xl bg-[#2e66a6] px-8 py-3 font-semibold text-white">Close</button></div></div>}

@@ -9,9 +9,14 @@ const nameOf = (user = {}) => String(user?.fullName || [user?.firstName, user?.m
 const companyNameOf = (item = {}) => String(item?.job?.companyName || item?.employer?.employerProfile?.companyName || 'Company');
 const companyIndustryOf = (item = {}) => String(item?.job?.industry || item?.job?.category || item?.employer?.employerProfile?.industry || 'Industry not specified');
 const companyLogoOf = (item = {}) => item?.job?.companyLogo || item?.employer?.employerProfile?.companyLogo || '';
+const adminRequestStatus = (item = {}) => {
+  const request = item?.employmentStatusRequest || {};
+  const finalDecision = String(request.adminDecision?.decision || '').toLowerCase();
+  if (['approved', 'declined'].includes(finalDecision)) return finalDecision;
+  return String(request.status || '').toLowerCase() === 'no_response' ? 'no_response' : 'pending';
+};
 const statusBadgeClass = (status = '') => ({
   pending: 'border-amber-300 bg-amber-50 text-amber-700',
-  reviewed: 'border-emerald-300 bg-emerald-50 text-emerald-700',
   approved: 'border-emerald-300 bg-emerald-50 text-emerald-700',
   declined: 'border-red-300 bg-red-50 text-red-700',
   no_response: 'border-slate-300 bg-slate-100 text-slate-600',
@@ -154,7 +159,7 @@ export default function AdminJobseekerRequestHistory() {
   const [company, setCompany] = useState('all');
   const [jobTitle, setJobTitle] = useState('all');
   const [type, setType] = useState('all');
-  const [status, setStatus] = useState('all');
+  const [status, setStatus] = useState('pending');
   const [time, setTime] = useState('all');
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [from, setFrom] = useState('');
@@ -206,7 +211,7 @@ export default function AdminJobseekerRequestHistory() {
     const companyName = companyNameOf(item);
     const title = String(item?.job?.title || '');
     const requestType = String(item?.employmentStatusRequest?.reason || '');
-    const requestStatus = String(item?.employmentStatusRequest?.status || 'pending').toLowerCase();
+    const requestStatus = adminRequestStatus(item);
     const text = `${companyName} ${title} ${reasonLabel(requestType)} ${requestStatus}`.toLowerCase();
     let dateMatch = true;
     const now = new Date();
@@ -262,7 +267,7 @@ export default function AdminJobseekerRequestHistory() {
       <select value={company} onChange={(e)=>setCompany(e.target.value)} className="rounded-xl border px-3"><option value="all">All Company</option>{companies.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} className="rounded-xl border px-3"><option value="all">All Job Title</option>{jobs.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={type} onChange={(e)=>setType(e.target.value)} className="rounded-xl border px-3"><option value="all">All Type</option><option value="contract_ended">Contract Ended</option><option value="employment_ended">Employment Ended</option></select>
-      <select value={status} onChange={(e)=>setStatus(e.target.value)} className="rounded-xl border px-3"><option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
+      <select value={status} onChange={(e)=>setStatus(e.target.value)} className="rounded-xl border px-3"><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
       <select value={time} onChange={(e)=>changeTime(e.target.value)} className="rounded-xl border px-3"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select>
     </section>
 
@@ -275,7 +280,7 @@ export default function AdminJobseekerRequestHistory() {
         </thead>
         <tbody className="divide-y">
           {!loading && filtered.map(item => {
-            const requestStatus = String(item?.employmentStatusRequest?.status || 'pending').toLowerCase();
+            const requestStatus = adminRequestStatus(item);
             const companyLogo = companyLogoOf(item);
             const companyName = companyNameOf(item);
 

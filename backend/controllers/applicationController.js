@@ -1572,7 +1572,9 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
 
     const reviewedAt = new Date();
     const update = {
-      'employmentStatusRequest.status': 'reviewed',
+      // The Employer response is recorded separately. The request remains
+      // Pending until the Admin makes the final decision.
+      'employmentStatusRequest.status': 'pending',
       'employmentStatusRequest.reviewedAt': reviewedAt,
       'employmentStatusRequest.reviewedBy': req.user._id,
       'employmentStatusRequest.employerResponse.decision': decision,
@@ -1591,7 +1593,8 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
         _id: applicationId,
         employer: req.user._id,
         status: 'hired',
-        'employmentStatusRequest.status': 'pending'
+        'employmentStatusRequest.status': 'pending',
+        'employmentStatusRequest.employerResponse.decision': 'pending'
       },
       { $set: update },
       { new: true, runValidators: true }
@@ -1651,7 +1654,7 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
           employmentStatusCheckedAt: employmentEndedAt,
           employmentStatusRequest: {
             reason,
-            status: 'reviewed',
+            status: 'pending',
             requestedAt: employmentEndedAt,
             reviewedAt: employmentEndedAt,
             reviewedBy: req.user._id,

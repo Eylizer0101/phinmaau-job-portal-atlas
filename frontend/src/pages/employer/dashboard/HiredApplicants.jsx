@@ -1336,7 +1336,8 @@ const selectBase =
                                 <Icon name="eye" className="h-4 w-4" />
                                 <span className="sr-only">View application</span>
                               </Link>
-                              {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
+                              {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' &&
+                                String(app.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase() === 'pending' && (
                                 <button
                                   type="button"
                                   onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
@@ -1349,7 +1350,8 @@ const selectBase =
                                 </button>
                               )}
                               {String(app.employmentStatus || 'active').toLowerCase() === 'active' &&
-                                ['none', 'declined'].includes(String(app.employmentStatusRequest?.status || 'none').toLowerCase()) && (
+                                (String(app.employmentStatusRequest?.status || 'none').toLowerCase() === 'none' ||
+                                  String(app.employmentStatusRequest?.employerResponse?.decision || '').toLowerCase() === 'declined') && (
                                 <button
                                   type="button"
                                   onClick={() => openEmploymentUpdate(app)}
@@ -1455,7 +1457,8 @@ const selectBase =
                           <Icon name="eye" className="h-4 w-4" />
                           <span className="sr-only">View application</span>
                         </Link>
-                        {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
+                        {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' &&
+                          String(app.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase() === 'pending' && (
                           <button
                             type="button"
                             onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
@@ -1467,7 +1470,8 @@ const selectBase =
                           </button>
                         )}
                         {String(app.employmentStatus || 'active').toLowerCase() === 'active' &&
-                          ['none', 'declined'].includes(String(app.employmentStatusRequest?.status || 'none').toLowerCase()) && (
+                          (String(app.employmentStatusRequest?.status || 'none').toLowerCase() === 'none' ||
+                            String(app.employmentStatusRequest?.employerResponse?.decision || '').toLowerCase() === 'declined') && (
                           <button
                             type="button"
                             onClick={() => openEmploymentUpdate(app)}

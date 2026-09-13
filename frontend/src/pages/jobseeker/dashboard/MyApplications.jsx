@@ -1467,6 +1467,7 @@ const MyApplications = () => {
                   const isActionLoading = actionLoadingId === application._id;
                   const employmentStatus = String(application.employmentStatus || 'active').toLowerCase();
                   const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
+                  const employerRequestDecision = String(application.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase();
                   const canRequestEmploymentChange = statusValue === 'hired' && employmentStatus !== 'inactive';
 
                   const declineReason = String(application.declineReason || '').trim();
@@ -1585,7 +1586,9 @@ const MyApplications = () => {
                                 }}
                                 disabled={employmentRequestStatus === 'pending'}
                                 className={`${UI.btnBase} ${UI.btnMd} min-w-[140px] w-auto whitespace-nowrap text-[13px] border border-[#2e66a6]/25 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/5 ${UI.ring}`}
-                                title={employmentRequestStatus === 'pending' ? 'Your request is awaiting employer review' : 'Request an employment status change'}
+                                title={employmentRequestStatus === 'pending'
+                                  ? (employerRequestDecision === 'pending' ? 'Your request is awaiting employer review' : 'Your request is awaiting final Admin review')
+                                  : 'Request an employment status change'}
                               >
                                 <SvgIcon name="statusRequest" className="h-4 w-4 flex-shrink-0" />
                                 {employmentRequestStatus === 'pending' ? 'Request Pending' : 'Status Request'}

@@ -114,6 +114,7 @@ exports.processNoResponseRequests = async () => {
   const pending = await populateRequest(Application.find({
     status: 'hired',
     'employmentStatusRequest.status': 'pending',
+    'employmentStatusRequest.employerResponse.decision': { $in: ['pending', null] },
     'employmentStatusRequest.requestedAt': { $lte: deadline }
   }));
 
