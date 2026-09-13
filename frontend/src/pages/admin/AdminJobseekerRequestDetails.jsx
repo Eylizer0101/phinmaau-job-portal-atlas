@@ -44,7 +44,9 @@ export default function AdminJobseekerRequestDetails() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const load = () => api.get(`/applications/admin/employment-status-requests/jobseeker/${jobseekerId}/${requestId}`).then(({data})=>setRequest(data.request)).catch(err=>setError(err.response?.data?.message || 'Unable to load request.'));
-  useEffect(load, [jobseekerId, requestId]);
+  useEffect(() => {
+    load();
+  }, [jobseekerId, requestId]);
   const decide = async () => { try { setSaving(true); const {data}=await api.put(`/applications/admin/employment-status-requests/${requestId}/final-decision`, { decision: confirm }); setRequest(data.application); setSuccess(confirm === 'approved' ? "Request Approved Successfully\nThe job seeker's employment status request has been approved." : "Request Declined Successfully\nThe job seeker's employment status request has been declined."); setConfirm(''); } catch(err){ setError(err.response?.data?.message || 'Unable to save decision.'); } finally { setSaving(false); } };
   if (!request) return <div className="p-10 text-center">{error || 'Loading request...'}</div>;
 
@@ -67,7 +69,7 @@ export default function AdminJobseekerRequestDetails() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={()=>navigate(-1)}
+          onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}`)}
           className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
           aria-label="Back"
         >
