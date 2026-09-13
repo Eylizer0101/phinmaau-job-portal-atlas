@@ -3489,7 +3489,7 @@ const ProfileEditModal = ({
             placeholder="Select educational attainment"
             options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
           />
-          <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" />
+          <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" maxLength={100} />
           <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" inputMode="numeric" />
           <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" inputMode="numeric" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
