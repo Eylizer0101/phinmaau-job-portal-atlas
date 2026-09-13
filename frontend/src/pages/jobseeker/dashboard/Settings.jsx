@@ -45,7 +45,7 @@ const StatusBadge = ({ verified, label = 'contact information' }) => {
   );
 };
 
-const PasswordInput = ({ value, onChange, placeholder, show, onToggle, autoComplete }) => (
+const PasswordInput = ({ value, onChange, placeholder, show, onToggle, autoComplete, maxLength }) => (
   <div className="relative">
     <input
       type={show ? 'text' : 'password'}
@@ -53,6 +53,7 @@ const PasswordInput = ({ value, onChange, placeholder, show, onToggle, autoCompl
       onChange={onChange}
       placeholder={placeholder}
       autoComplete={autoComplete}
+      maxLength={maxLength}
       className={`w-full h-11 px-4 pr-11 rounded-xl border border-[#d8e2ee] bg-white text-sm text-black placeholder:text-black/40 transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 ${focusRing}`}
     />
     <button
@@ -634,6 +635,7 @@ const Settings = () => {
                   show={showEmailPassword}
                   onToggle={() => setShowEmailPassword((v) => !v)}
                   autoComplete="off"
+                  maxLength={64}
                 />
 
                 <label className="text-black/70">New Email Address:</label>
@@ -645,6 +647,7 @@ const Settings = () => {
                   }}
                   placeholder="Enter new email here"
                   type="email"
+                  maxLength={100}
                   autoComplete="off"
                 />
               </div>
@@ -801,6 +804,7 @@ const Settings = () => {
                   show={showCurrentPassword}
                   onToggle={() => setShowCurrentPassword((v) => !v)}
                   autoComplete="current-password"
+                  maxLength={64}
                 />
 
                 <label className="text-black/70">New Password:</label>
@@ -815,6 +819,7 @@ const Settings = () => {
                     show={showNewPassword}
                     onToggle={() => setShowNewPassword((v) => !v)}
                     autoComplete="new-password"
+                    maxLength={64}
                   />
 
                   {newPassword ? (
@@ -862,6 +867,7 @@ const Settings = () => {
                   show={showConfirmPassword}
                   onToggle={() => setShowConfirmPassword((v) => !v)}
                   autoComplete="new-password"
+                  maxLength={64}
                 />
               </div>
             </div>

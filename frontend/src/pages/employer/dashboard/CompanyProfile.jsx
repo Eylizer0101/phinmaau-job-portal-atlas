@@ -130,7 +130,11 @@ const MAX_COMPANY_NAME_LENGTH = 150;
 const MAX_INDUSTRY_LENGTH = 100;
 const MIN_COMPANY_DESCRIPTION_LENGTH = 500;
 const MAX_COMPANY_DESCRIPTION_LENGTH = 1500;
-const MAX_OFFICE_ADDRESS_LENGTH = 150;
+const MAX_OFFICE_ADDRESS_LENGTH = 250;
+const MAX_EMAIL_LENGTH = 100;
+const MAX_PHONE_LENGTH = 11;
+const MAX_WEBSITE_LENGTH = 255;
+const MAX_SOCIAL_MEDIA_LINK_LENGTH = 255;
 
 const MIN_LOGO_DIM = 128;
 const MIN_RATIO = 0.25;
@@ -2217,12 +2221,16 @@ const CompanyProfile = () => {
 
     if (!businessEmail) {
       next.businessEmail = 'Contact email is required.';
+    } else if (businessEmail.length > MAX_EMAIL_LENGTH) {
+      next.businessEmail = `Contact email must not exceed ${MAX_EMAIL_LENGTH} characters.`;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessEmail)) {
       next.businessEmail = 'Enter a valid contact email.';
     }
 
     if (!mobileNumber) {
       next.mobileNumber = 'Contact number is required.';
+    } else if (!/^\d{11}$/.test(mobileNumber)) {
+      next.mobileNumber = 'Contact number must contain exactly 11 digits.';
     }
 
     if (!industry) next.industry = 'Industry is required.';
@@ -2230,9 +2238,15 @@ const CompanyProfile = () => {
       next.industry = `Industry must not exceed ${MAX_INDUSTRY_LENGTH} characters.`;
     }
 
-    if (companyWebsiteUrl && !isWebUrl(companyWebsiteUrl)) next.companyWebsiteUrl = 'Enter a valid website URL beginning with http:// or https://.';
+    if (companyWebsiteUrl && companyWebsiteUrl.length > MAX_WEBSITE_LENGTH) {
+      next.companyWebsiteUrl = `Company website must not exceed ${MAX_WEBSITE_LENGTH} characters.`;
+    } else if (companyWebsiteUrl && !isWebUrl(companyWebsiteUrl)) {
+      next.companyWebsiteUrl = 'Enter a valid website URL beginning with http:// or https://.';
+    }
 
-    if (socialMediaUrls.some((url) => url && !isWebUrl(url))) {
+    if (socialMediaUrls.some((url) => url.length > MAX_SOCIAL_MEDIA_LINK_LENGTH)) {
+      next.socialMedia = `Social Media links must not exceed ${MAX_SOCIAL_MEDIA_LINK_LENGTH} characters.`;
+    } else if (socialMediaUrls.some((url) => url && !isWebUrl(url))) {
       next.socialMedia = 'Enter valid Social Media links beginning with http:// or https://.';
     }
 
@@ -3388,6 +3402,7 @@ const CompanyProfile = () => {
                               name="businessEmail"
                               value={companyData.businessEmail}
                               onChange={handleInputChange}
+                              maxLength={MAX_EMAIL_LENGTH}
                               placeholder="careers@company.com"
                               readOnly
                               disabled={saving}
@@ -3401,6 +3416,7 @@ const CompanyProfile = () => {
                                 type="text"
                                 name="mobileNumber"
                                 value={companyData.mobileNumber}
+                                maxLength={MAX_PHONE_LENGTH}
                                 readOnly
                                 placeholder="+63 900 000 0000"
                                 disabled
@@ -3484,6 +3500,7 @@ const CompanyProfile = () => {
                             name="companyWebsiteUrl"
                             value={companyData.companyWebsiteUrl}
                             onChange={handleInputChange}
+                            maxLength={MAX_WEBSITE_LENGTH}
                             placeholder="https://www.yourcompany.com"
                             disabled={saving}
                             className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.companyWebsiteUrl ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
@@ -3812,16 +3829,16 @@ const CompanyProfile = () => {
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="facebook" className="h-4 w-4 text-[#1877f2]" />Facebook</span>}>
-                            <input type="text" name="facebookUrl" value={companyData.facebookUrl} onChange={handleInputChange} placeholder="https://www.facebook.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                            <input type="text" name="facebookUrl" value={companyData.facebookUrl} onChange={handleInputChange} maxLength={MAX_SOCIAL_MEDIA_LINK_LENGTH} placeholder="https://www.facebook.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
                           <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="instagram" className="h-4 w-4 text-[#e1306c]" />Instagram</span>}>
-                            <input type="text" name="instagramUrl" value={companyData.instagramUrl} onChange={handleInputChange} placeholder="https://www.instagram.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                            <input type="text" name="instagramUrl" value={companyData.instagramUrl} onChange={handleInputChange} maxLength={MAX_SOCIAL_MEDIA_LINK_LENGTH} placeholder="https://www.instagram.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
                           <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="youtube" className="h-4 w-4 text-[#ff0000]" />YouTube</span>}>
-                            <input type="text" name="youtubeUrl" value={companyData.youtubeUrl} onChange={handleInputChange} placeholder="https://www.youtube.com/@yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                            <input type="text" name="youtubeUrl" value={companyData.youtubeUrl} onChange={handleInputChange} maxLength={MAX_SOCIAL_MEDIA_LINK_LENGTH} placeholder="https://www.youtube.com/@yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
                           <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="x" className="h-4 w-4 text-black" />X / Twitter</span>}>
-                            <input type="text" name="xUrl" value={companyData.xUrl} onChange={handleInputChange} placeholder="https://x.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                            <input type="text" name="xUrl" value={companyData.xUrl} onChange={handleInputChange} maxLength={MAX_SOCIAL_MEDIA_LINK_LENGTH} placeholder="https://x.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
                         </div>
                         {fieldErrors.socialMedia ? <p className="mt-3 text-[12px] font-medium text-red-600">{fieldErrors.socialMedia}</p> : null}

@@ -1106,6 +1106,10 @@ const HiringStageModal = ({
       setLocalError('Enter a custom stage name.');
       return;
     }
+    if (value.length > 50) {
+      setLocalError('Hiring stage must not exceed 50 characters.');
+      return;
+    }
     const normalizedValue = normalizeHiringStageName(value);
     if (!['hired', 'declined'].includes(normalizedValue) && stages.length >= 30) {
       setLocalError('Maximum of 30 hiring stages only.');
@@ -1168,7 +1172,7 @@ const HiringStageModal = ({
                     addCustomStage();
                   }
                 }}
-                maxLength={80}
+                maxLength={50}
                 placeholder="e.g. Initial Interview, Assessment, Job Offer"
                 className="h-11 min-w-0 flex-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
               />

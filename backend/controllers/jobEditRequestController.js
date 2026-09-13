@@ -117,6 +117,12 @@ exports.createRequest = async (req, res) => {
         message: 'Reason for the edit request is required.',
       });
     }
+    if (reason.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reason for the edit request must not exceed 500 characters.',
+      });
+    }
 
     const request = await JobEditRequest.create({
       job: job._id,

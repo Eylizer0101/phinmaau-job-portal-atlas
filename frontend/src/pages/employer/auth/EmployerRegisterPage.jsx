@@ -301,6 +301,7 @@ const EmployerRegisterPage = () => {
     if (check('businessEmail')) {
       const businessEmail = normalizeEmail(formData.businessEmail);
       if (!businessEmail) next.businessEmail = 'Business email is required.';
+      else if (businessEmail.length > 100) next.businessEmail = 'Maximum of 100 characters only.';
       else if (!BUSINESS_EMAIL_PATTERN.test(businessEmail))
         next.businessEmail = 'Please enter a valid email address.';
     }
@@ -318,7 +319,7 @@ const EmployerRegisterPage = () => {
       const value = formData.companyName.trim();
       if (!value) next.companyName = 'Company name is required.';
       else if (value.length < 2) next.companyName = 'Company name must contain at least 2 characters.';
-      else if (value.length > 200) next.companyName = 'Company name must not exceed 200 characters.';
+      else if (value.length > 150) next.companyName = 'Company name must not exceed 150 characters.';
     }
 
     if (check('companyWebsiteUrl')) {
@@ -1371,6 +1372,7 @@ const EmployerRegisterPage = () => {
                                 id="companyName"
                                 name="companyName"
                                 value={formData.companyName}
+                                maxLength={150}
                                 onChange={handleChange}
                                 onFocus={() => setFieldFocus('companyName', true)}
                                 onBlur={() => setFieldFocus('companyName', false)}
@@ -1685,6 +1687,7 @@ const EmployerRegisterPage = () => {
                                 id="firstName"
                                 name="firstName"
                                 value={formData.firstName}
+                                maxLength={50}
                                 onChange={handleChange}
                                 onFocus={() => setFieldFocus('firstName', true)}
                                 onBlur={() => setFieldFocus('firstName', false)}
@@ -1713,6 +1716,7 @@ const EmployerRegisterPage = () => {
                                 id="middleName"
                                 name="middleName"
                                 value={formData.middleName}
+                                maxLength={50}
                                 onChange={handleChange}
                                 onFocus={() => setFieldFocus('middleName', true)}
                                 onBlur={() => setFieldFocus('middleName', false)}
@@ -1740,6 +1744,7 @@ const EmployerRegisterPage = () => {
                                 id="lastName"
                                 name="lastName"
                                 value={formData.lastName}
+                                maxLength={50}
                                 onChange={handleChange}
                                 onFocus={() => setFieldFocus('lastName', true)}
                                 onBlur={() => setFieldFocus('lastName', false)}
@@ -1844,7 +1849,7 @@ const EmployerRegisterPage = () => {
                                 inputMode="email"
                                 autoCapitalize="none"
                                 spellCheck={false}
-                                maxLength={80}
+                                maxLength={100}
                                 placeholder="Enter company email address"
                               />
                             </div>
