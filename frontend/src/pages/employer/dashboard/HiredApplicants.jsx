@@ -666,7 +666,7 @@ const HiredApplicants = () => {
 
     setQuery('');
     setSelectedJob('all');
-    setEmploymentFilter('all');
+    setEmploymentFilter('active');
     setDateFilter('all');
     setCustomDateFrom('');
     setCustomDateTo('');
