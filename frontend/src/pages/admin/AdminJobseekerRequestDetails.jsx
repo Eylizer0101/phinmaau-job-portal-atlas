@@ -67,7 +67,7 @@ export default function AdminJobseekerRequestDetails() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}`)}
+          onClick={()=>navigate(-1)}
           className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
           aria-label="Back"
         >
