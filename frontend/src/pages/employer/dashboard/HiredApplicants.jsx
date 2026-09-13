@@ -445,6 +445,19 @@ const formatDate = (dateValue) => {
   return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
+const formatEmploymentDuration = (application) => {
+  const startValue = application?.hiredAt || application?.reviewedAt || application?.appliedAt;
+  if (!startValue) return '—';
+  const start = new Date(startValue);
+  const end = new Date();
+  if (Number.isNaN(start.getTime())) return '—';
+  const days = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'}`;
+  const months = Math.floor(days / 30);
+  const remainingDays = days % 30;
+  return `${months} month${months === 1 ? '' : 's'}${remainingDays ? ` and ${remainingDays} day${remainingDays === 1 ? '' : 's'}` : ''}`;
+};
+
 const formatSalary = (min, max) => {
   const hasMin = Number.isFinite(Number(min));
   const hasMax = Number.isFinite(Number(max));
@@ -1656,24 +1669,64 @@ const selectBase =
 
       {reviewApplication && reviewStep === 'decline' && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="decline-request-title">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 id="decline-request-title" className="text-lg font-bold text-gray-900">Decline Request?</h2>
-            <p className="mt-2 text-sm text-gray-600">The job seeker's employment status will remain Active.</p>
+          <div className="relative max-h-[94vh] w-full max-w-[620px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl sm:p-7">
+            <button type="button" onClick={() => { if (!reviewLoading) { setError(''); setReviewStep('actions'); } }} disabled={reviewLoading} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 disabled:opacity-50" aria-label="Close decline request modal"><Icon name="x" className="h-5 w-5" /></button>
+
+            <div className="flex items-start gap-3 pr-10">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-500">
+                <Icon name="x" className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 id="decline-request-title" className="text-xl font-bold text-[#172033]">Decline Request?</h2>
+                <p className="mt-1 text-sm leading-5 text-gray-600">Are you sure you want to decline this request of job seeker current employment?</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 overflow-hidden rounded-xl bg-[#f1f6fc] sm:grid-cols-3">
+              <div className="border-b border-[#dbe5f0] px-4 py-3 sm:border-b-0 sm:border-r">
+                <p className="text-[11px] font-medium text-gray-500">Company</p>
+                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.companyName || 'Not specified'}</p>
+              </div>
+              <div className="border-b border-[#dbe5f0] px-4 py-3 sm:border-b-0 sm:border-r">
+                <p className="text-[11px] font-medium text-gray-500">Job Title</p>
+                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.title || 'Not specified'}</p>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-[11px] font-medium text-gray-500">Industry</p>
+                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.industry || reviewApplication.employer?.employerProfile?.industry || 'Not specified'}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 border-b border-gray-200 pb-4 text-sm">
+              <div><p className="text-xs text-gray-500">Current Status</p><span className="mt-1 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span></div>
+              <div><p className="text-xs text-gray-500">Request Reason</p><p className="mt-1 font-semibold text-[#172033]">{reviewApplication.employmentStatusRequest?.reason === 'contract_ended' ? 'Contract Ended' : 'Employment Ended'}</p></div>
+            </div>
+
+            <div className="mt-4 space-y-3 border-b border-gray-200 pb-4 text-sm">
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Applied</span><span className="font-medium text-[#172033]">{formatDate(reviewApplication.appliedAt)}</span></div>
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Date Hired</span><span className="font-medium text-[#172033]">{formatDate(reviewApplication.hiredAt || reviewApplication.reviewedAt)}</span></div>
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Employment Duration</span><span className="font-medium text-[#172033]">{formatEmploymentDuration(reviewApplication)}</span></div>
+              <div className="grid grid-cols-[150px_1fr] gap-3"><span className="text-gray-500">Request Date</span><span className="font-medium text-[#172033]">{formatDate(reviewApplication.employmentStatusRequest?.requestedAt)}</span></div>
+            </div>
+
             <label className="mt-5 block text-sm font-semibold text-gray-800">
               Select Reason for Decline
-              <select value={declineReason} onChange={(event) => setDeclineReason(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6]">
+              <select value={declineReason} onChange={(event) => setDeclineReason(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15">
                 <option value="">Choose a reason</option>
                 {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other'].map((reason) => <option key={reason} value={reason}>{reason}</option>)}
               </select>
             </label>
             <label className="mt-4 block text-sm font-semibold text-gray-800">
               Explanation
-              <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={4} placeholder="Enter your explanation" className="mt-2 w-full resize-none rounded-xl border border-gray-300 p-3 font-normal outline-none focus:border-[#2e66a6]" />
+              <div className="relative mt-2">
+                <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={4} placeholder="Enter your explanation" className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+                <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineExplanation.length}/500</span>
+              </div>
             </label>
             {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
-              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || !declineExplanation.trim() || reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
+              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || !declineExplanation.trim() || reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
             </div>
           </div>
         </div>
