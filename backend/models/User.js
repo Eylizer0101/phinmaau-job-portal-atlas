@@ -98,7 +98,7 @@ const employerResubmitRequestSchema = new mongoose.Schema(
       enum: ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'],
       default: [],
     },
-    reasonMessage: { type: String, default: '' },
+    reasonMessage: { type: String, default: '', maxlength: 500 },
     requestedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
     usedAt: { type: Date, default: null },
@@ -127,7 +127,7 @@ const employerVerificationSchema = new mongoose.Schema(
     remarks: { type: String, default: '' },
 
     rejectionReasons: { type: [String], default: [] },
-    rejectionMessage: { type: String, default: '' },
+    rejectionMessage: { type: String, default: '', maxlength: 500 },
     rejectedAt: { type: Date, default: null },
 
     resubmitRequest: { type: employerResubmitRequestSchema, default: () => ({}) },
@@ -151,7 +151,7 @@ const alumniResubmitRequestSchema = new mongoose.Schema(
       enum: ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'],
       default: [],
     },
-    reasonMessage: { type: String, default: '' },
+    reasonMessage: { type: String, default: '', maxlength: 500 },
     requestedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
     usedAt: { type: Date, default: null },
@@ -183,7 +183,7 @@ const alumniVerificationSchema = new mongoose.Schema(
     verifiedAt: { type: Date, default: null },
 
     rejectionReasons: { type: [String], default: [] },
-    rejectionMessage: { type: String, default: '' },
+    rejectionMessage: { type: String, default: '', maxlength: 500 },
     rejectedAt: { type: Date, default: null },
 
     resubmitRequest: { type: alumniResubmitRequestSchema, default: () => ({}) },
@@ -387,12 +387,12 @@ const userSchema = new mongoose.Schema(
 
     // Profile information shown on the administrator profile page.
     adminProfile: {
-      organizationName: { type: String, trim: true, maxlength: 120, default: 'PHINMA Araullo University' },
+      organizationName: { type: String, trim: true, maxlength: 150, default: 'PHINMA Araullo University' },
       organizationLogo: { type: String, trim: true, default: '' },
       organizationLogoPublicId: { type: String, trim: true, default: '', select: false },
-      positionRole: { type: String, trim: true, maxlength: 80, default: 'System Administrator' },
-      contactNumber: { type: String, trim: true, maxlength: 30, default: '' },
-      departmentOffice: { type: String, trim: true, maxlength: 120, default: '' },
+      positionRole: { type: String, trim: true, maxlength: 100, default: 'System Administrator' },
+      contactNumber: { type: String, trim: true, maxlength: 11, match: [/^\d{0,11}$/, 'Phone Number must contain numbers only and must not exceed 11 digits.'], default: '' },
+      departmentOffice: { type: String, trim: true, maxlength: 100, default: '' },
     },
 
     isActive: { type: Boolean, default: true },

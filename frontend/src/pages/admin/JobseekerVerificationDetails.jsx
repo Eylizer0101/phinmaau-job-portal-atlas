@@ -2150,6 +2150,7 @@ const JobseekerVerificationDetails = () => {
                     <textarea
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
+                      maxLength={Math.max(0, 500 - (holdSelectedReason ? holdSelectedReason.length + 3 : 0))}
                       rows={4}
                       placeholder="Explain what needs to be corrected or re-uploaded."
                       className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
@@ -2262,6 +2263,7 @@ const JobseekerVerificationDetails = () => {
                   <textarea
                     value={declineMessage}
                     onChange={(e) => setDeclineMessage(e.target.value)}
+                    maxLength={500}
                     rows={5}
                     placeholder="Add a clear reason why the credential was not verified and what the Job Seeker needs to do next."
                     className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-[#667085] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"

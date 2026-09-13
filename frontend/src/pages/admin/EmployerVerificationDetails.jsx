@@ -1665,6 +1665,7 @@ const EmployerVerificationDetails = () => {
                     <textarea
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
+                      maxLength={Math.max(0, 500 - (holdSelectedReason ? holdSelectedReason.length + 3 : 0))}
                       rows={5}
                       placeholder="Explain what needs to be corrected or re-uploaded."
                       className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#475467] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
@@ -1761,6 +1762,7 @@ const EmployerVerificationDetails = () => {
                   <textarea
                     value={rejectionMessage}
                     onChange={(e) => setRejectionMessage(e.target.value)}
+                    maxLength={500}
                     rows={5}
                     placeholder="Add a clear reason why the credential was not verified and what the Employer needs to do next."
                     className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#475467] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"

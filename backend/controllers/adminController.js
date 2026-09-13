@@ -74,16 +74,50 @@ exports.updateAdminProfile = async (req, res) => {
     const admin = await getAdminWithPrivateProfileFields(req.userId);
     if (!admin) return res.status(404).json({ success: false, message: 'Admin account not found.' });
 
-    const clean = (value, max) => String(value ?? '').trim().slice(0, max);
+    const clean = (value) => String(value ?? '').trim();
+    const profileValues = {
+      organizationName: clean(req.body.organizationName),
+      firstName: clean(req.body.firstName),
+      middleName: clean(req.body.middleName),
+      lastName: clean(req.body.lastName),
+      extensionName: clean(req.body.extensionName),
+      positionRole: clean(req.body.positionRole),
+      contactNumber: clean(req.body.contactNumber),
+      departmentOffice: clean(req.body.departmentOffice),
+    };
+
+    const fieldLimits = [
+      ['School / Organization Name', profileValues.organizationName, 150],
+      ['First Name', profileValues.firstName, 50],
+      ['Middle Name', profileValues.middleName, 50],
+      ['Last Name', profileValues.lastName, 50],
+      ['Role', profileValues.positionRole, 100],
+      ['Department Office', profileValues.departmentOffice, 100],
+    ];
+    const exceededField = fieldLimits.find(([, value, max]) => value.length > max);
+    if (exceededField) {
+      return res.status(400).json({
+        success: false,
+        message: `${exceededField[0]} must not exceed ${exceededField[2]} characters.`,
+      });
+    }
+
+    if (profileValues.contactNumber && !/^\d{1,11}$/.test(profileValues.contactNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone Number must contain numbers only and must not exceed 11 digits.',
+      });
+    }
+
     if (!admin.adminProfile) admin.adminProfile = {};
-    admin.firstName = clean(req.body.firstName, 50);
-    admin.middleName = clean(req.body.middleName, 50);
-    admin.lastName = clean(req.body.lastName, 50);
-    admin.extensionName = clean(req.body.extensionName, 20);
-    admin.adminProfile.organizationName = clean(req.body.organizationName, 120);
-    admin.adminProfile.positionRole = clean(req.body.positionRole, 80);
-    admin.adminProfile.contactNumber = clean(req.body.contactNumber, 30);
-    admin.adminProfile.departmentOffice = clean(req.body.departmentOffice, 120);
+    admin.firstName = profileValues.firstName;
+    admin.middleName = profileValues.middleName;
+    admin.lastName = profileValues.lastName;
+    admin.extensionName = profileValues.extensionName.slice(0, 20);
+    admin.adminProfile.organizationName = profileValues.organizationName;
+    admin.adminProfile.positionRole = profileValues.positionRole;
+    admin.adminProfile.contactNumber = profileValues.contactNumber;
+    admin.adminProfile.departmentOffice = profileValues.departmentOffice;
 
     if (req.file) {
       const previousPublicId = admin.adminProfile.organizationLogoPublicId;
@@ -126,6 +160,13 @@ exports.updateAdminPassword = async (req, res) => {
     const { currentPassword, newPassword, confirmNewPassword } = req.body || {};
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       return res.status(400).json({ success: false, message: 'Complete all password fields.' });
+    }
+    if (
+      String(currentPassword).length > 64 ||
+      String(newPassword).length > 64 ||
+      String(confirmNewPassword).length > 64
+    ) {
+      return res.status(400).json({ success: false, message: 'Password must not exceed 64 characters.' });
     }
     if (newPassword !== confirmNewPassword) {
       return res.status(400).json({ success: false, message: 'New passwords do not match.' });
@@ -2049,6 +2090,10 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
   try {
     const { overallStatus, remarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
 
+    if (String(rejectionMessage || '').trim().length > 500) {
+      return res.status(400).json({ success: false, message: 'Message must not exceed 500 characters.' });
+    }
+
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
       return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
     }
@@ -2214,6 +2259,12 @@ exports.holdEmployerVerification = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Reason/message is required'
+      });
+    }
+    if (String(reasonMessage || '').trim().length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message must not exceed 500 characters.'
       });
     }
 
@@ -2760,6 +2811,10 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     const { overallStatus, adminRemarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
     const suppliedAdminPassword = adminPassword || req.headers['x-admin-password'];
 
+    if (String(rejectionMessage || '').trim().length > 500) {
+      return res.status(400).json({ success: false, message: 'Message must not exceed 500 characters.' });
+    }
+
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, suppliedAdminPassword))) {
       return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
     }
@@ -2983,6 +3038,12 @@ exports.holdJobseekerVerification = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Reason/message is required'
+      });
+    }
+    if (String(reasonMessage || '').trim().length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message must not exceed 500 characters.'
       });
     }
 
