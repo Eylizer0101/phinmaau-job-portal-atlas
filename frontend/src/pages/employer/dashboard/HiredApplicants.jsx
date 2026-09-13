@@ -1557,23 +1557,39 @@ const selectBase =
       )}
 
       {updateApplication && updateStep === 'privacy' && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="employer-privacy-title">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 id="employer-privacy-title" className="text-lg font-bold text-gray-900">Privacy Notice</h2>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-gray-600">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 px-3 py-3 backdrop-blur-[1px] sm:px-4 sm:py-4" role="dialog" aria-modal="true" aria-labelledby="employer-privacy-title">
+          <div className="relative max-h-[96vh] w-full max-w-[860px] overflow-y-auto rounded-[22px] border border-gray-200 bg-white px-5 pb-5 pt-4 shadow-[0_18px_55px_rgba(15,23,42,0.18)] sm:px-9 sm:pb-7 sm:pt-5 lg:px-12">
+            <button type="button" onClick={closeEmploymentUpdate} disabled={updateLoading} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2 disabled:opacity-50 sm:right-6 sm:top-5" aria-label="Close Privacy Notice" title="Close"><span className="text-2xl leading-none" aria-hidden="true">×</span></button>
+            <div className="-mt-1 flex justify-center sm:-mt-2">
+              <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                <div className="absolute bottom-2 right-7 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
+                <img src="/images/lock.png" alt="" className="relative h-16 w-16 object-contain sm:h-20 sm:w-20" draggable="false" />
+              </div>
+            </div>
+            <h2 id="employer-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>PRIVACY NOTICE</h2>
+            <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+              <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" /></svg>
+              <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
+            </div>
+            <div className="mx-auto mt-4 max-w-[760px] space-y-2 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 text-[12px] leading-5 text-[#0f2442] shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:mt-5 sm:px-7 sm:py-5 sm:text-[13px] sm:leading-[1.45rem]">
               <p>Before continuing with this Employment Status Update, please carefully review this notice.</p>
               <p>This request allows you, as the employer or authorized company representative, to update the employment status of a job seeker who was previously hired through the platform. You may initiate this update when the job seeker's contract has ended or when they are no longer employed in the role.</p>
               <p>By continuing, you confirm that the selected reason accurately reflects the job seeker's current employment relationship with your company.</p>
               <p>The selected reason and relevant employment information will be used to process and maintain the job seeker's employment record within the platform.</p>
               <p>By continuing, you acknowledge that you understand how the employment status update will be processed, how the job seeker will be notified, and how the updated employment information will be maintained within the platform.</p>
             </div>
-            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-800">
-              <input type="checkbox" checked={updatePrivacyAccepted} onChange={(event) => setUpdatePrivacyAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-[#2e66a6]" />
-              I have read and understood this Privacy Notice.
+            <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer select-none items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] sm:mt-4">
+              <input type="checkbox" checked={updatePrivacyAccepted} onChange={(event) => setUpdatePrivacyAccepted(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 accent-[#1e4ba0] focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2" />
+              <span className="leading-5">I have read and understood this Privacy Notice.</span>
             </label>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setUpdateStep('reason')} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50">Back</button>
-              <button type="button" onClick={() => setUpdateStep('confirm')} disabled={!updatePrivacyAccepted} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:cursor-not-allowed disabled:opacity-50">Continue</button>
+            <div className="mt-4 flex justify-center gap-3 sm:mt-5">
+              <button type="button" onClick={() => setUpdateStep('reason')} disabled={updateLoading} className="h-11 min-w-[120px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-[#0f2442] transition hover:bg-slate-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={() => setUpdateStep('confirm')} disabled={!updatePrivacyAccepted || updateLoading} className="h-11 min-w-[190px] rounded-xl px-6 text-sm font-bold text-white shadow-[0_10px_22px_rgba(30,75,160,0.25)] transition disabled:cursor-not-allowed" style={{ backgroundColor: updatePrivacyAccepted && !updateLoading ? '#1e4ba0' : '#93a6c9' }}>Continue</button>
             </div>
           </div>
         </div>
