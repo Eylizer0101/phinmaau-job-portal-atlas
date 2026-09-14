@@ -4,7 +4,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronDown,
   faPaperPlane,
-  faRobot,
   faSpinner,
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
@@ -213,13 +212,18 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
     >
       {isOpen && !isMinimized && (
         <section
-          className="mb-3 flex h-[min(560px,72vh)] w-[calc(100vw-24px)] max-w-[390px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.22)]"
+          className="mb-3 flex h-[min(560px,72vh)] w-[calc(100vw-24px)] max-w-[390px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(15,23,42,0.22)]"
           aria-label="Agap-AI chatbot"
         >
           <header className="flex items-center justify-between bg-[#212C61] px-4 py-3 text-white">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/15">
-                <FontAwesomeIcon icon={faRobot} className="text-lg" />
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 shadow-sm">
+                <img
+                  src="/images/agpay.png"
+                  alt="AGAPAY"
+                  className="h-full w-full object-contain"
+                  draggable="false"
+                />
               </div>
               <div className="min-w-0">
                 <h2 className="truncate text-base font-bold">Agap-AI</h2>
@@ -361,14 +365,14 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
           setIsOpen(true);
           setIsMinimized(false);
         }}
-        className="ml-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-transparent p-0 shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+        className="ml-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
         aria-label={isOpen && isMinimized ? 'Restore Agap-AI' : 'Open Agap-AI'}
         aria-expanded={isOpen && !isMinimized}
       >
         <img
-          src="/images/Agap_Ai.png"
-          alt=""
-          className="h-full w-full rounded-full object-cover"
+          src="/images/agpay.png"
+          alt="AGAPAY"
+          className="h-full w-full object-contain"
           draggable="false"
         />
       </button>

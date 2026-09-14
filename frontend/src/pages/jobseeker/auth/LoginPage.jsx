@@ -623,7 +623,7 @@ const LoginPage = () => {
         role="status"
         aria-live="polite"
       >
-        <p className="text-sm font-semibold text-red-600">{attemptBanner}</p>
+        <p className="whitespace-nowrap text-[clamp(9px,1vw,12px)] font-semibold leading-5 text-red-600">{attemptBanner}</p>
       </div>
     );
   }, [attemptBanner, isLocked]);
