@@ -103,6 +103,14 @@ const verificationDocSchema = new mongoose.Schema(
 // ---------------------------
 // Employer resubmit request schema
 // ---------------------------
+const resubmitDocumentReasonSchema = new mongoose.Schema(
+  {
+    docType: { type: String, required: true },
+    reason: { type: String, required: true, trim: true, maxlength: 300 },
+  },
+  { _id: false }
+);
+
 const employerResubmitRequestSchema = new mongoose.Schema(
   {
     tokenHash: { type: String, default: '' },
@@ -117,6 +125,8 @@ const employerResubmitRequestSchema = new mongoose.Schema(
       default: [],
     },
     reasonMessage: { type: String, default: '', maxlength: 500 },
+    documentReasons: { type: [resubmitDocumentReasonSchema], default: [] },
+    additionalMessage: { type: String, default: '', maxlength: 500 },
     requestedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
     usedAt: { type: Date, default: null },
@@ -170,6 +180,8 @@ const alumniResubmitRequestSchema = new mongoose.Schema(
       default: [],
     },
     reasonMessage: { type: String, default: '', maxlength: 500 },
+    documentReasons: { type: [resubmitDocumentReasonSchema], default: [] },
+    additionalMessage: { type: String, default: '', maxlength: 500 },
     requestedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
     usedAt: { type: Date, default: null },

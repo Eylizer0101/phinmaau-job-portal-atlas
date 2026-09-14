@@ -294,18 +294,30 @@ const sendPasswordResetOtpEmail = async ({ to, fullName, otp, expiresInMinutes }
   });
 };
 
-const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [], reasonMessage, resubmitUrl }) => {
+const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [], reasonMessage, documentReasons = [], additionalMessage = '', resubmitUrl }) => {
   if (!to) throw new Error('Recipient email missing');
 
   const safeName = escapeHtml(fullName || 'User');
   const normalizedDocLabels = (Array.isArray(docLabels) && docLabels.length ? docLabels : [docLabel || 'Document'])
     .map((label) => escapeHtml(label))
     .filter(Boolean);
-  const safeDocLabel = normalizedDocLabels[0] || 'Document';
-  const safeDocItems = normalizedDocLabels
-    .map((label) => `<li style="margin:4px 0;">${label}</li>`)
-    .join('');
-  const safeReason = escapeHtml(reasonMessage || 'Please upload a clearer and valid document.');
+  const normalizedDocumentReasons = Array.isArray(documentReasons)
+    ? documentReasons.map((item) => ({
+        label: escapeHtml(item?.docLabel || item?.docType || 'Document'),
+        reason: escapeHtml(item?.reason || ''),
+      })).filter((item) => item.reason)
+    : [];
+  const documentBlocks = normalizedDocumentReasons.length
+    ? normalizedDocumentReasons.map((item) => `
+        <div style="margin-top:16px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
+          <p style="margin:0; font-size:14px; color:#111827;"><strong>${item.label}</strong></p>
+          <p style="margin:8px 0 0; font-size:14px; color:#6b4b00; line-height:1.6;"><strong>Reason:</strong> ${item.reason}</p>
+        </div>`).join('')
+    : `<div style="margin-top:16px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
+        <p style="margin:0; font-size:14px; color:#111827;"><strong>${normalizedDocLabels[0] || 'Document'}</strong></p>
+        <p style="margin:8px 0 0; font-size:14px; color:#6b4b00; line-height:1.6;"><strong>Reason:</strong> ${escapeHtml(reasonMessage || '')}</p>
+      </div>`;
+  const safeAdditionalMessage = escapeHtml(additionalMessage || '');
   const safeResubmitUrl = escapeHtml(resubmitUrl);
 
   await sendMail({
@@ -323,25 +335,18 @@ const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [
             Hello <strong>${safeName}</strong>,
           </p>
 
-          <p style="font-size:14px; color:#374151; line-height:1.6;">
-            ${normalizedDocLabels.length > 1 ? 'Some of your verification documents need to be resubmitted.' : 'One of your verification documents needs to be resubmitted.'}
-          </p>
+          <p style="font-size:14px; color:#374151; line-height:1.6;">We have reviewed your submitted documents and found that the following ${normalizedDocLabels.length > 1 ? 'documents need' : 'document needs'} to be resubmitted:</p>
 
-          <div style="margin-top:20px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
-            <p style="margin:0 0 10px 0; font-size:14px; color:#111827;">
-              <strong>${normalizedDocLabels.length > 1 ? 'Documents to resubmit:' : 'Document to resubmit:'}</strong>
-              ${normalizedDocLabels.length > 1
-                ? `<ul style="margin:8px 0 0 18px; padding:0;">${safeDocItems}</ul>`
-                : `<div style="margin-top:8px;">${safeDocLabel}</div>`}
-            </p>
+          ${documentBlocks}
 
-            <p style="margin:0; font-size:14px; color:#6b4b00; line-height:1.6;">
-              <strong>Reason:</strong> ${safeReason}
-            </p>
-          </div>
+          ${safeAdditionalMessage ? `<p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.7; white-space:pre-line;">${safeAdditionalMessage}</p>` : ''}
+
+          <p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.6;">Once you have submitted the required ${normalizedDocLabels.length > 1 ? 'documents, they' : 'document, it'} will be reviewed again.</p>
+
+          <p style="font-size:14px; color:#374151;">Thank you.</p>
 
           <p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.6;">
-            Click the button below to upload a new document.
+            Use the button below to resubmit the requested ${normalizedDocLabels.length > 1 ? 'documents' : 'document'}.
           </p>
 
           <div style="margin-top:25px;">
@@ -375,26 +380,10 @@ const sendVerificationRejectedEmail = async ({ to, fullName, reasons = [], messa
 
   const safeName = escapeHtml(fullName || 'User');
   const safeMessage = escapeHtml(message || '');
-  const safeReasons = Array.isArray(reasons) ? reasons.map((reason) => escapeHtml(reason)).filter(Boolean) : [];
-
-  const reasonsHtml = safeReasons.length
-    ? `<ul style="margin:10px 0 0 18px; padding:0; color:#374151; font-size:14px; line-height:1.8;">
-        ${safeReasons.map((reason) => `<li>${reason}</li>`).join('')}
-      </ul>`
-    : `<p style="margin:10px 0 0 0; font-size:14px; color:#374151;">No specific reasons were provided.</p>`;
-
-  const messageHtml = safeMessage
-    ? `
-      <div style="margin-top:20px; padding:15px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px;">
-        <p style="margin:0 0 8px 0; font-size:14px; color:#111827;"><strong>Message from Admin:</strong></p>
-        <p style="margin:0; font-size:14px; color:#374151; line-height:1.7;">${safeMessage}</p>
-      </div>
-    `
-    : '';
 
   await sendMail({
     to,
-    subject: 'Verification Request Rejected',
+    subject: 'AGAPAY Verification Request Declined',
     html: `
       <div style="background:#f4f6f9; padding:40px 15px; font-family:Arial, sans-serif;">
         <div style="max-width:520px; margin:auto; background:#ffffff; padding:30px; border-radius:8px; border:1px solid #e5e7eb;">
@@ -407,22 +396,11 @@ const sendVerificationRejectedEmail = async ({ to, fullName, reasons = [], messa
             Hello <strong>${safeName}</strong>,
           </p>
 
-          <p style="font-size:14px; color:#374151; line-height:1.6;">
-            Your verification request has been rejected.
-          </p>
+          <p style="font-size:14px; color:#374151; line-height:1.6;">Your verification request has been reviewed.</p>
 
-          <div style="margin-top:20px; padding:15px; background:#fff5f5; border:1px solid #f3d1d1; border-radius:6px;">
-            <p style="margin:0; font-size:14px; color:#111827;">
-              <strong>Reason(s) for rejection:</strong>
-            </p>
-            ${reasonsHtml}
-          </div>
+          <h3 style="margin-top:22px; font-size:17px; color:#111827;">Verification Request Declined</h3>
 
-          ${messageHtml}
-
-          <p style="margin-top:20px; font-size:13px; color:#6b7280; line-height:1.6;">
-            Please review the details above and update your submission if needed.
-          </p>
+          <p style="margin-top:14px; font-size:14px; color:#374151; line-height:1.7; white-space:pre-line;">${safeMessage}</p>
 
           <p style="margin-top:30px; font-size:12px; color:#9ca3af;">
             This is an automated message from AGAPAY. Please do not reply.

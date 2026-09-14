@@ -2545,10 +2545,16 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     }
 
     if (overallStatus === 'rejected') {
-      if (!Array.isArray(rejectionReasons) || rejectionReasons.length === 0) {
+      const allowedEmployerDeclineReasons = [
+        'Not a PHINMA AU partner company',
+        'Organization could not be verified as a legitimate company',
+        'Other',
+      ];
+      const selectedReason = Array.isArray(rejectionReasons) ? String(rejectionReasons[0] || '').trim() : '';
+      if (!allowedEmployerDeclineReasons.includes(selectedReason) || !String(rejectionMessage || '').trim()) {
         return res.status(400).json({
           success: false,
-          message: 'At least one rejection reason is required'
+          message: 'A valid decline reason and message are required.'
         });
       }
     }
@@ -2659,7 +2665,7 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
 // HOLD employer verification and send resubmit email
 exports.holdEmployerVerification = async (req, res) => {
   try {
-    const { docType, docTypes, reasonMessage } = req.body;
+    const { docType, docTypes, documentReasons, additionalMessage = '' } = req.body;
 
     const requestedDocTypes = [...new Set(
       (Array.isArray(docTypes) && docTypes.length ? docTypes : [docType])
@@ -2674,16 +2680,23 @@ exports.holdEmployerVerification = async (req, res) => {
       });
     }
 
-    if (!String(reasonMessage || '').trim()) {
+    const normalizedDocumentReasons = Array.isArray(documentReasons)
+      ? documentReasons.map((item) => ({
+          docType: String(item?.docType || '').trim(),
+          reason: String(item?.reason || '').trim(),
+        }))
+      : [];
+    const reasonByDocType = new Map(normalizedDocumentReasons.map((item) => [item.docType, item.reason]));
+    if (requestedDocTypes.some((key) => !reasonByDocType.get(key))) {
       return res.status(400).json({
         success: false,
-        message: 'Reason/message is required'
+        message: 'A reason is required for every selected document.'
       });
     }
-    if (String(reasonMessage || '').trim().length > 500) {
+    if (normalizedDocumentReasons.some((item) => item.reason.length > 300) || String(additionalMessage || '').trim().length > 500) {
       return res.status(400).json({
         success: false,
-        message: 'Message must not exceed 500 characters.'
+        message: 'A document reason must not exceed 300 characters and the additional message must not exceed 500 characters.'
       });
     }
 
@@ -2710,6 +2723,21 @@ exports.holdEmployerVerification = async (req, res) => {
       });
     }
 
+    const alreadyOnHoldDoc = requestedDocTypes.find(
+      (key) => String(verificationDocs?.[key]?.status || '').toLowerCase() === 'hold'
+    );
+    if (alreadyOnHoldDoc) {
+      return res.status(409).json({
+        success: false,
+        message: `${EMPLOYER_DOC_LABELS[alreadyOnHoldDoc] || 'This document'} is already on hold and must be resubmitted first.`
+      });
+    }
+
+    const finalDocumentReasons = requestedDocTypes.map((key) => ({ docType: key, reason: reasonByDocType.get(key) }));
+    const reasonMessage = finalDocumentReasons
+      .map((item) => `${EMPLOYER_DOC_LABELS[item.docType] || item.docType}: ${item.reason}`)
+      .join('\n');
+
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = User.hashToken(rawToken);
     const now = new Date();
@@ -2734,6 +2762,8 @@ exports.holdEmployerVerification = async (req, res) => {
       docType: requestedDocTypes[0],
       docTypes: requestedDocTypes,
       reasonMessage: String(reasonMessage).trim(),
+      documentReasons: finalDocumentReasons,
+      additionalMessage: String(additionalMessage || '').trim(),
       requestedAt: now,
       expiresAt,
       usedAt: null,
@@ -2749,10 +2779,16 @@ exports.holdEmployerVerification = async (req, res) => {
 
     sendResubmitDocumentEmail({
       to: employer.email,
-      fullName: employer.fullName || employer.email,
+      fullName: employer.employerProfile?.companyName || employer.fullName || employer.email,
       docLabel: docLabels[0],
       docLabels,
       reasonMessage: String(reasonMessage).trim(),
+      documentReasons: finalDocumentReasons.map((item) => ({
+        docType: item.docType,
+        docLabel: EMPLOYER_DOC_LABELS[item.docType] || item.docType,
+        reason: item.reason,
+      })),
+      additionalMessage: String(additionalMessage || '').trim(),
       resubmitUrl,
     }).catch((emailError) => {
       console.error('Failed to send employer resubmit email:', emailError);
@@ -2770,6 +2806,8 @@ exports.holdEmployerVerification = async (req, res) => {
           docType: requestedDocTypes[0],
           docTypes: requestedDocTypes,
           reasonMessage: String(reasonMessage).trim(),
+          documentReasons: finalDocumentReasons,
+          additionalMessage: String(additionalMessage || '').trim(),
           requestedAt: now,
           expiresAt,
         }
@@ -3237,8 +3275,6 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, suppliedAdminPassword))) {
       return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
     }
-    const DEFAULT_JOBSEEKER_REJECTION_MESSAGE = 'Your verification request was rejected. Please contact support.';
-
     let adminId = null;
     if (req.user && req.user._id) {
       adminId = req.user._id;
@@ -3259,6 +3295,20 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
         success: false,
         message: 'Jobseeker not found'
       });
+    }
+
+    if (overallStatus === 'rejected') {
+      const allowedJobseekerDeclineReasons = [
+        'Not a PHINMA Araullo University graduate',
+        'Other',
+      ];
+      const selectedReason = Array.isArray(rejectionReasons) ? String(rejectionReasons[0] || '').trim() : '';
+      if (!allowedJobseekerDeclineReasons.includes(selectedReason) || !String(rejectionMessage || '').trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'A valid decline reason and message are required.'
+        });
+      }
     }
 
     const prevStatus = jobseeker?.jobSeekerProfile?.verificationDocs?.overallStatus || 'not_submitted';
@@ -3319,7 +3369,7 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
           ? rejectionReasons.map((item) => String(item || '').trim()).filter(Boolean)
           : [];
 
-        const finalRejectionMessage = String(rejectionMessage || '').trim() || DEFAULT_JOBSEEKER_REJECTION_MESSAGE;
+        const finalRejectionMessage = String(rejectionMessage || '').trim();
 
         jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = normalizedRejectionReasons;
         jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = finalRejectionMessage;
@@ -3438,7 +3488,7 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
 // HOLD jobseeker verification and send resubmit email
 exports.holdJobseekerVerification = async (req, res) => {
   try {
-    const { docType, docTypes, reasonMessage } = req.body;
+    const { docType, docTypes, documentReasons, additionalMessage = '' } = req.body;
 
     const requestedDocTypes = [...new Set(
       (Array.isArray(docTypes) && docTypes.length ? docTypes : [docType])
@@ -3453,16 +3503,31 @@ exports.holdJobseekerVerification = async (req, res) => {
       });
     }
 
-    if (!String(reasonMessage || '').trim()) {
+    const allowedResubmissionDocTypes = ['validId', 'cv', 'diploma'];
+    if (requestedDocTypes.some((key) => !allowedResubmissionDocTypes.includes(key))) {
       return res.status(400).json({
         success: false,
-        message: 'Reason/message is required'
+        message: 'Only Valid ID, Resume, and Diploma can be requested for resubmission.'
       });
     }
-    if (String(reasonMessage || '').trim().length > 500) {
+
+    const normalizedDocumentReasons = Array.isArray(documentReasons)
+      ? documentReasons.map((item) => ({
+          docType: String(item?.docType || '').trim(),
+          reason: String(item?.reason || '').trim(),
+        }))
+      : [];
+    const reasonByDocType = new Map(normalizedDocumentReasons.map((item) => [item.docType, item.reason]));
+    if (requestedDocTypes.some((key) => !reasonByDocType.get(key))) {
       return res.status(400).json({
         success: false,
-        message: 'Message must not exceed 500 characters.'
+        message: 'A reason is required for every selected document.'
+      });
+    }
+    if (normalizedDocumentReasons.some((item) => item.reason.length > 300) || String(additionalMessage || '').trim().length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'A document reason must not exceed 300 characters and the additional message must not exceed 500 characters.'
       });
     }
 
@@ -3485,7 +3550,7 @@ exports.holdJobseekerVerification = async (req, res) => {
       const targetDocument = verificationDocs?.[key];
       return (
         !targetDocument?.url ||
-        !['pending', 'submitted', 'hold'].includes(String(targetDocument.status || '').toLowerCase())
+        !['pending', 'submitted'].includes(String(targetDocument.status || '').toLowerCase())
       );
     });
 
@@ -3495,6 +3560,21 @@ exports.holdJobseekerVerification = async (req, res) => {
         message: 'Only submitted pending credentials can be requested for resubmission.'
       });
     }
+
+    const alreadyOnHoldDoc = requestedDocTypes.find(
+      (key) => String(verificationDocs?.[key]?.status || '').toLowerCase() === 'hold'
+    );
+    if (alreadyOnHoldDoc) {
+      return res.status(409).json({
+        success: false,
+        message: `${JOBSEEKER_DOC_LABELS[alreadyOnHoldDoc] || 'This document'} is already on hold and must be resubmitted first.`
+      });
+    }
+
+    const finalDocumentReasons = requestedDocTypes.map((key) => ({ docType: key, reason: reasonByDocType.get(key) }));
+    const reasonMessage = finalDocumentReasons
+      .map((item) => `${JOBSEEKER_DOC_LABELS[item.docType] || item.docType}: ${item.reason}`)
+      .join('\n');
 
     const wasAccountVerified = isApprovedJobseekerAccount(jobseeker);
     const rawToken = crypto.randomBytes(32).toString('hex');
@@ -3527,6 +3607,8 @@ exports.holdJobseekerVerification = async (req, res) => {
       docType: requestedDocTypes[0],
       docTypes: requestedDocTypes,
       reasonMessage: String(reasonMessage).trim(),
+      documentReasons: finalDocumentReasons,
+      additionalMessage: String(additionalMessage || '').trim(),
       requestedAt: now,
       expiresAt,
       usedAt: null,
@@ -3552,10 +3634,16 @@ exports.holdJobseekerVerification = async (req, res) => {
 
     sendResubmitDocumentEmail({
       to: jobseeker.email,
-      fullName: jobseeker.fullName || jobseeker.email,
+      fullName: [jobseeker.firstName, jobseeker.lastName].filter(Boolean).join(' ') || jobseeker.fullName || jobseeker.email,
       docLabel: docLabels[0],
       docLabels,
       reasonMessage: String(reasonMessage).trim(),
+      documentReasons: finalDocumentReasons.map((item) => ({
+        docType: item.docType,
+        docLabel: JOBSEEKER_DOC_LABELS[item.docType] || item.docType,
+        reason: item.reason,
+      })),
+      additionalMessage: String(additionalMessage || '').trim(),
       resubmitUrl,
     }).catch((emailError) => {
       console.error('Failed to send jobseeker resubmit email:', emailError);
@@ -3574,6 +3662,8 @@ exports.holdJobseekerVerification = async (req, res) => {
           docType: requestedDocTypes[0],
           docTypes: requestedDocTypes,
           reasonMessage: String(reasonMessage).trim(),
+          documentReasons: finalDocumentReasons,
+          additionalMessage: String(additionalMessage || '').trim(),
           requestedAt: now,
           expiresAt,
         }

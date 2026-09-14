@@ -405,6 +405,19 @@ const EMPLOYER_REJECTION_REASONS = [
   "Other",
 ];
 
+const EMPLOYER_DECLINE_REASONS = [
+  "Not a PHINMA AU partner company",
+  "Organization could not be verified as a legitimate company",
+  "Other",
+];
+
+const EMPLOYER_DECLINE_MESSAGES = {
+  "Not a PHINMA AU partner company":
+    "Your organization is not currently recognized as a PHINMA Araullo University partner company. As a result, your employer verification request has been declined.\n\nThank you for your understanding.",
+  "Organization could not be verified as a legitimate company":
+    "We were unable to sufficiently verify your organization based on the applicable employer verification requirements. As a result, your employer verification request has been declined.\n\nThank you for your understanding.",
+};
+
 const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear reason..." }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -626,7 +639,7 @@ const EmployerVerificationDetails = () => {
   const [verifyCredential, setVerifyCredential] = useState(null);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [holdDocTypes, setHoldDocTypes] = useState([]);
-  const [holdSelectedReason, setHoldSelectedReason] = useState("");
+  const [holdDocumentReasons, setHoldDocumentReasons] = useState({});
   const [holdReason, setHoldReason] = useState("");
 
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -634,9 +647,6 @@ const EmployerVerificationDetails = () => {
   const [rejectionMessage, setRejectionMessage] = useState("");
 
   const [confirm, setConfirm] = useState({ open: false, nextStatus: null });
-
-  const DEFAULT_REJECTION_MESSAGE = "Your verification request was rejected. Please contact support.";
-  const DEFAULT_REJECTION_REASON = "Verification requirements were not met.";
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -707,7 +717,7 @@ const EmployerVerificationDetails = () => {
   const resetHoldModal = () => {
     setShowHoldModal(false);
     setHoldDocTypes([]);
-    setHoldSelectedReason("");
+    setHoldDocumentReasons({});
     setHoldReason("");
   };
 
@@ -718,9 +728,22 @@ const EmployerVerificationDetails = () => {
   };
 
   const toggleHoldDocType = (docKey) => {
-    setHoldDocTypes((prev) =>
-      prev.includes(docKey) ? prev.filter((item) => item !== docKey) : [...prev, docKey]
-    );
+    setHoldDocTypes((prev) => {
+      if (prev.includes(docKey)) {
+        setHoldDocumentReasons((reasons) => {
+          const nextReasons = { ...reasons };
+          delete nextReasons[docKey];
+          return nextReasons;
+        });
+        return prev.filter((item) => item !== docKey);
+      }
+      return [...prev, docKey];
+    });
+  };
+
+  const handleRejectionReasonChange = (reason) => {
+    setRejectionReasons(reason ? [reason] : []);
+    setRejectionMessage(EMPLOYER_DECLINE_MESSAGES[reason] || "");
   };
 
   const validateBeforeUpdate = (newStatus) => {
@@ -772,8 +795,12 @@ const EmployerVerificationDetails = () => {
   };
 
   const handleRejectSubmit = async () => {
-    const finalRejectionMessage =
-      rejectionMessage.trim() || rejectionReasons[0] || DEFAULT_REJECTION_MESSAGE;
+    const selectedReason = rejectionReasons[0] || "";
+    const finalRejectionMessage = rejectionMessage.trim();
+    if (!selectedReason || !finalRejectionMessage) {
+      setError("Please select a decline reason and enter a message.");
+      return;
+    }
 
     try {
       setAction("reject");
@@ -782,7 +809,7 @@ const EmployerVerificationDetails = () => {
 
       const res = await api.put(`/admin/employers/verification/${employerId}/status`, {
         overallStatus: "rejected",
-        rejectionReasons: rejectionReasons.length ? rejectionReasons : [DEFAULT_REJECTION_REASON],
+        rejectionReasons,
         rejectionMessage: finalRejectionMessage,
         remarks: finalRejectionMessage,
       });
@@ -807,14 +834,11 @@ const EmployerVerificationDetails = () => {
       return;
     }
 
-    if (!holdSelectedReason && !holdReason.trim()) {
-      setError("Please select a reason or write a message for the employer.");
+    const missingReason = holdDocTypes.find((docType) => !String(holdDocumentReasons[docType] || "").trim());
+    if (missingReason) {
+      setError("Please choose a reason for every selected document.");
       return;
     }
-
-    const finalHoldMessage = [holdSelectedReason, holdReason.trim()]
-      .filter(Boolean)
-      .join(" — ");
 
     try {
       setAction("hold");
@@ -824,7 +848,11 @@ const EmployerVerificationDetails = () => {
       const res = await api.put(`/admin/employers/verification/${employerId}/hold`, {
         docType: holdDocTypes[0],
         docTypes: holdDocTypes,
-        reasonMessage: finalHoldMessage,
+        documentReasons: holdDocTypes.map((docType) => ({
+          docType,
+          reason: String(holdDocumentReasons[docType] || "").trim(),
+        })),
+        additionalMessage: holdReason.trim(),
       });
 
       if (res.data?.success) {
@@ -1625,47 +1653,44 @@ const EmployerVerificationDetails = () => {
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {DOC_TYPES.map((doc) => {
                         const checked = holdDocTypes.includes(doc.key);
+                        const isAlreadyOnHold = String(docs?.[doc.key]?.status || "").toLowerCase() === "hold";
 
                         return (
-                          <label
-                            key={doc.key}
-                            className={cn(
-                              "flex min-h-12 cursor-pointer select-none items-center gap-3 rounded-xl border px-4 py-3 transition",
-                              checked
-                                ? "border-[#2e66a6]/50 bg-[#2e66a6]/[0.08]"
-                                : "border-[#D8E0EA] bg-white/85 hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04]"
+                          <div key={doc.key} className="rounded-xl border border-[#D8E0EA] bg-white/85 p-3">
+                            <label className={cn("flex min-h-8 select-none items-center gap-3", isAlreadyOnHold ? "cursor-not-allowed opacity-60" : "cursor-pointer")}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={isAlreadyOnHold}
+                                onChange={() => toggleHoldDocType(doc.key)}
+                                className="h-5 w-5 rounded-md border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
+                              />
+                              <span className="text-[15px] font-medium text-black">{doc.label}</span>
+                              {isAlreadyOnHold && <span className="ml-auto text-xs font-medium text-[#2e66a6]">On Hold</span>}
+                            </label>
+                            {checked && (
+                              <div className="mt-3 border-t border-[#E2E8F0] pt-3">
+                                <label className="mb-1 block text-sm font-medium text-[#344054]">Reason <span className="text-red-600">*</span></label>
+                                <ReasonDropdown
+                                  value={holdDocumentReasons[doc.key] || ""}
+                                  onChange={(reason) => setHoldDocumentReasons((prev) => ({ ...prev, [doc.key]: reason }))}
+                                  options={EMPLOYER_REJECTION_REASONS}
+                                  placeholder="Choose a reason"
+                                />
+                              </div>
                             )}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleHoldDocType(doc.key)}
-                              className="h-5 w-5 rounded-md border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
-                            />
-                            <span className="text-[15px] font-medium text-black">{doc.label}</span>
-                          </label>
+                          </div>
                         );
                       })}
                     </div>
                   </div>
 
                   <div className="mt-4">
-                    <label className="mb-1 block text-[15px] font-medium text-[#344054]">
-                      Reason for Resubmission (Select at least one reason) <span className="text-[#475467]">(Optional)</span>
-                    </label>
-                    <ReasonDropdown
-                      value={holdSelectedReason}
-                      onChange={setHoldSelectedReason}
-                      options={EMPLOYER_REJECTION_REASONS}
-                    />
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="mb-1 block text-sm font-semibold text-black">Message to {companyName}</label>
+                    <label className="mb-1 block text-sm font-semibold text-black">Additional message <span className="font-normal text-[#475467]">(optional)</span></label>
                     <textarea
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
-                      maxLength={Math.max(0, 500 - (holdSelectedReason ? holdSelectedReason.length + 3 : 0))}
+                      maxLength={500}
                       rows={5}
                       placeholder="Explain what needs to be corrected or re-uploaded."
                       className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#475467] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
@@ -1692,7 +1717,7 @@ const EmployerVerificationDetails = () => {
                     size="lg"
                     className="!h-11 rounded-lg px-6 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleHoldSubmit}
-                    disabled={!holdDocTypes.length || (!holdSelectedReason && !holdReason.trim()) || !!action}
+                    disabled={!holdDocTypes.length || holdDocTypes.some((docType) => !String(holdDocumentReasons[docType] || "").trim()) || !!action}
                     loading={action === "hold"}
                   >
                     Send
@@ -1747,13 +1772,13 @@ const EmployerVerificationDetails = () => {
 
                 <div className="mt-5">
                   <label className="mb-1 block text-[15px] font-medium leading-5 text-[#475467]">
-                    Reason for Declining <span className="font-semibold text-black">{companyName}</span>{" "}
-                    (Select at least one reason) <span className="text-[#475467]">(Optional)</span>
+                    Reason for Declining <span className="font-semibold text-black">{companyName}</span> <span className="text-red-600">*</span>
                   </label>
                   <ReasonDropdown
                     value={rejectionReasons[0] || ""}
-                    onChange={(reason) => setRejectionReasons([reason])}
-                    options={EMPLOYER_REJECTION_REASONS}
+                    onChange={handleRejectionReasonChange}
+                    options={EMPLOYER_DECLINE_REASONS}
+                    placeholder="Choose a decline reason"
                   />
                 </div>
 
@@ -1777,7 +1802,7 @@ const EmployerVerificationDetails = () => {
                     size="lg"
                     className="!h-11 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetRejectModal}
-                    disabled={action === "reject"}
+                    disabled={action === "reject" || !rejectionReasons[0] || !rejectionMessage.trim()}
                   >
                     Cancel
                   </Button>
