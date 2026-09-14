@@ -226,7 +226,7 @@ exports.getAdminRequests = async (req, res) => {
   try {
     const requests = await JobEditRequest.find({})
       .populate('job', 'title companyName companyLogo category jobType workMode vacancies applicationCount applicationDeadline location createdAt publishedAt editUnlockedUntil')
-      .populate('employer', 'firstName lastName fullName employerProfile.companyName employerProfile.companyLogo')
+      .populate('employer', 'firstName lastName fullName employerProfile.companyName employerProfile.companyLogo employerProfile.industry')
       .populate('reviewedBy', 'firstName lastName fullName')
       .sort({ createdAt: -1 });
 

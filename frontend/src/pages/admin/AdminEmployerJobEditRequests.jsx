@@ -16,11 +16,37 @@ const formatDate = (value) => {
 const companyName = (item) => item?.job?.companyName || item?.employer?.employerProfile?.companyName || item?.employer?.fullName || 'Employer';
 const industryName = (item) => item?.job?.industry || item?.job?.category || item?.employer?.employerProfile?.industry || 'Company';
 const statusBadgeClass = (status = '') => ({
-  pending: 'border-amber-300 bg-amber-50 text-amber-700',
-  approved: 'border-emerald-300 bg-emerald-50 text-emerald-700',
-  declined: 'border-red-300 bg-red-50 text-red-700',
+  pending: 'border-[#f0c58d] bg-[#fff6e8] text-[#d97706]',
+  approved: 'border-[#9fe4bf] bg-[#e8fbf0] text-[#059669]',
+  rejected: 'border-[#ffb8b8] bg-[#fff0f0] text-[#ef4444]',
+  declined: 'border-[#ffb8b8] bg-[#fff0f0] text-[#ef4444]',
+  expired: 'border-slate-300 bg-slate-100 text-slate-600',
   no_response: 'border-slate-300 bg-slate-100 text-slate-600',
 }[String(status).toLowerCase()] || 'border-slate-300 bg-slate-50 text-slate-600');
+
+const companyLogo = (item) => item?.job?.companyLogo || item?.employer?.employerProfile?.companyLogo || '';
+const displayStatus = (status = '') => {
+  const normalized = String(status || 'pending').toLowerCase();
+  if (normalized === 'rejected') return 'Declined';
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1).replaceAll('_', ' ');
+};
+const getInitials = (name = '') => {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'CO';
+  if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase();
+  return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+};
+
+const CompanyLogo = ({ item, name }) => {
+  const [failed, setFailed] = useState(false);
+  const logo = companyLogo(item);
+
+  if (!logo || failed) {
+    return <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1458ad] px-1 text-center text-[10px] font-extrabold text-white shadow-sm">{getInitials(name)}</div>;
+  }
+
+  return <img src={logo} alt={`${name} logo`} onError={() => setFailed(true)} className="h-11 w-11 shrink-0 rounded-xl border border-slate-100 bg-white object-cover shadow-sm" />;
+};
 const formatDateInput = (date) => {
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return '';
@@ -165,9 +191,10 @@ const AdminEmployerJobEditRequests = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [role, setRole] = useState('all');
-  const [requestType, setRequestType] = useState('all');
-  const [status, setStatus] = useState('pending');
+  const [company, setCompany] = useState('all');
+  const [industry, setIndustry] = useState('all');
+  const [jobTitle, setJobTitle] = useState('all');
+  const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -187,31 +214,37 @@ const AdminEmployerJobEditRequests = () => {
     return () => { active = false; };
   }, []);
 
+  const companyOptions = useMemo(() => [...new Set(requests.map((item) => companyName(item)).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
+  const industryOptions = useMemo(() => [...new Set(requests.map((item) => industryName(item)).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
+  const jobTitleOptions = useMemo(() => [...new Set(requests.map((item) => item?.job?.title).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
+
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
     const range = time === 'custom'
       ? { from: dateFrom ? new Date(`${dateFrom}T00:00:00`) : null, to: dateTo ? new Date(`${dateTo}T23:59:59.999`) : null }
       : presetRange(time);
+
     return requests.filter((item) => {
       const itemStatus = String(item.status || 'pending').toLowerCase();
-      const createdValue = item.createdAt;
-      const created = new Date(createdValue);
-      const person = item.employer || {};
+      const created = new Date(item.createdAt);
       const name = companyName(item);
-      const searchable = [name, person.email, item.job?.title, companyName(item), 'job post employer'].join(' ').toLowerCase();
+      const itemIndustry = industryName(item);
+      const title = item?.job?.title || '';
+      const searchable = [name, itemIndustry, title].join(' ').toLowerCase();
 
       return (!query || searchable.includes(query)) &&
-        (role === 'all' || role === 'employer') &&
-        (requestType === 'all' || requestType === 'job_post') &&
+        (company === 'all' || company === name) &&
+        (industry === 'all' || industry === itemIndustry) &&
+        (jobTitle === 'all' || jobTitle === title) &&
         (status === 'all' || status === itemStatus) &&
         (!range.from || (!Number.isNaN(created.getTime()) && created >= range.from)) &&
         (!range.to || (!Number.isNaN(created.getTime()) && created <= range.to));
     }).sort((a, b) => (new Date(b.createdAt).getTime() || 0) - (new Date(a.createdAt).getTime() || 0));
-  }, [requests, search, role, requestType, status, time, dateFrom, dateTo]);
+  }, [requests, search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, role, requestType, status, time, dateFrom, dateTo]);
+  }, [search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
 
   const paginatedRows = useMemo(() => {
     if (pageSize === 'all') return rows;
@@ -221,40 +254,123 @@ const AdminEmployerJobEditRequests = () => {
 
   const changeTime = (value) => {
     if (value === 'custom') { setShowCustomDate(true); return; }
-    setTime(value); setDateFrom(''); setDateTo('');
-  };
-
-  const hasActiveFilters = Boolean(search.trim()) || role !== 'all' || requestType !== 'all' || status !== 'pending' || time !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
-
-  const clearFilters = () => {
-    setSearch('');
-    setRole('all');
-    setRequestType('all');
-    setStatus('pending');
-    setTime('all');
+    setTime(value);
     setDateFrom('');
     setDateTo('');
-    setShowCustomDate(false);
   };
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
-    <header> <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Edit Requests</h1><p className="mt-2 text-base text-slate-600">Manage employer job edit requests.</p></header>
-    <section className={cn('grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-2', hasActiveFilters ? 'xl:grid-cols-6' : 'xl:grid-cols-5')}>
-      <label className="relative block min-w-0"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search request..." className="h-12 w-full rounded-xl border border-slate-200 pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></label>
-      <select value={role} onChange={(e) => setRole(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Role</option><option value="employer">Employer</option></select>
-      <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Type</option><option value="job_post">Job Post</option></select>
-      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option></select>
-      <div className="relative min-w-0"><select value={time} onChange={(e) => changeTime(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-11 text-sm"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select><CalendarDays className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={17} /></div>
-      {hasActiveFilters && <button type="button" onClick={clearFilters} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"><RefreshCw size={16} />Clear All</button>}
+    <header>
+      <h1 className="text-[33px] font-semibold leading-[40px] text-slate-950">Edit Requests</h1>
+      <p className="mt-1 text-sm text-[#526d91]">Review employer requests and grant temporary edit access to locked job postings.</p>
+    </header>
+
+    <section className="grid gap-3 rounded-2xl border border-[#dbe3ee] bg-white p-4 shadow-[0_2px_5px_rgba(15,23,42,0.08)] md:grid-cols-2 xl:grid-cols-[1.45fr_repeat(5,minmax(0,1fr))]">
+      <label className="relative block min-w-0">
+        <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#667f9f]" size={18} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company, job title..." className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-[#526d91] focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10" />
+      </label>
+
+      <select value={company} onChange={(e) => setCompany(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+        <option value="all">All Company</option>
+        {companyOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+
+      <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+        <option value="all">All Industry</option>
+        {industryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+
+      <select value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+        <option value="all">All Job Title</option>
+        {jobTitleOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+
+      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+        <option value="all">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Declined</option>
+        <option value="expired">Expired</option>
+      </select>
+
+      <div className="relative min-w-0">
+        <select value={time} onChange={(e) => changeTime(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-[#d7e0eb] bg-white px-4 pr-11 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="sevenDays">Last 7 Days</option>
+          <option value="month">This Month</option>
+          <option value="lastMonth">Last Month</option>
+          <option value="custom">Custom Range</option>
+        </select>
+        <CalendarDays className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#667f9f]" size={17} />
+      </div>
     </section>
+
     {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      {!loading && <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}><table className="w-full min-w-[1050px] text-left">
-        <thead className="sticky top-0 z-10 border-b border-slate-200 bg-[#f7f9fc] text-xs font-bold uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-5">Request Date</th><th className="px-6 py-5">Name</th><th className="px-6 py-5">Role</th><th className="px-6 py-5">Request Type</th><th className="px-6 py-5">Status</th><th className="px-6 py-5 text-center">Action</th></tr></thead>
-        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const person = item.employer || {}; const name = companyName(item); const itemStatus = String(item.status || 'pending').toLowerCase(); const date = item.createdAt; const detailsPath = `/admin/employer-job-edit-requests/${item._id}`; return <tr key={`${item.rowType}-${item._id}`} className="transition hover:bg-slate-50/80">
-          <td className="px-6 py-5 text-sm text-slate-600">{formatDate(date)}</td><td className="px-6 py-5"><p className="font-bold text-slate-950">{name}</p><p className="mt-1 text-xs text-slate-500">{item.job?.companyWebsite || person.email}</p></td><td className="px-6 py-5 text-sm font-medium">Employer</td><td className="px-6 py-5 text-sm font-medium">Job Post</td><td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${statusBadgeClass(itemStatus)}`}>{itemStatus.replace('_', ' ')}</span></td><td className="px-6 py-5 text-center"><button type="button" onClick={() => navigate(detailsPath)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View request"><Eye size={19} /></button></td>
-        </tr>; })}{!rows.length && <tr><td colSpan="6" className="px-6 py-16 text-center text-sm text-slate-500">No requests match the selected filters.</td></tr>}</tbody>
-      </table></div>}
+
+    <section className="overflow-hidden rounded-2xl border border-[#dbe3ee] bg-white shadow-[0_2px_5px_rgba(15,23,42,0.08)]">
+      <div className={cn('overflow-x-auto overscroll-auto', pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto')}>
+        <table className="w-full min-w-[1120px] text-left">
+          <thead className="border-b border-[#dbe3ee] bg-white text-[11px] font-medium uppercase tracking-[0.08em] text-[#526d91]">
+            <tr>
+              <th className="px-6 py-5">Request Date</th>
+              <th className="px-6 py-5">Company</th>
+              <th className="px-6 py-5">Job Title</th>
+              <th className="px-6 py-5 text-center">Vacancy</th>
+              <th className="px-6 py-5 text-center">Applicant</th>
+              <th className="px-6 py-5">Status</th>
+              <th className="px-6 py-5 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#dbe3ee]">
+            {loading && <tr><td colSpan="7" className="px-6 py-16 text-center text-sm text-slate-500">Loading edit requests...</td></tr>}
+
+            {!loading && paginatedRows.map((item) => {
+              const name = companyName(item);
+              const itemIndustry = industryName(item);
+              const itemStatus = String(item.status || 'pending').toLowerCase();
+              const detailsPath = `/admin/employer-job-edit-requests/${item._id}`;
+              const vacancy = item?.job?.vacancies ?? 0;
+              const applicants = item?.job?.applicationCount ?? 0;
+              const typeAndMode = [item?.job?.jobType, item?.job?.workMode].filter(Boolean).join(' • ');
+
+              return <tr key={`${item.rowType}-${item._id}`} className="transition hover:bg-[#f7faff]">
+                <td className="px-6 py-[18px] text-[13px] text-[#526d91]">{formatDate(item.createdAt)}</td>
+                <td className="px-6 py-[18px]">
+                  <div className="flex min-w-[220px] items-center gap-3">
+                    <CompanyLogo item={item} name={name} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
+                      <p className="mt-1 truncate text-xs text-[#526d91]">{itemIndustry}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-[18px]">
+                  <div className="min-w-[210px]">
+                    <p className="truncate text-sm font-semibold text-slate-950">{item?.job?.title || 'Untitled Job'}</p>
+                    <p className="mt-1 truncate text-xs text-[#526d91]">{typeAndMode || '—'}</p>
+                  </div>
+                </td>
+                <td className="px-6 py-[18px] text-center text-sm font-semibold text-slate-950">{vacancy}</td>
+                <td className="px-6 py-[18px] text-center text-sm font-semibold text-slate-950">{applicants}</td>
+                <td className="px-6 py-[18px]">
+                  <span className={`inline-flex min-w-[74px] justify-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${statusBadgeClass(itemStatus)}`}>{displayStatus(itemStatus)}</span>
+                </td>
+                <td className="px-6 py-[18px] text-center">
+                  <button type="button" onClick={() => navigate(detailsPath)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#667f9f] transition hover:bg-[#edf4fb] hover:text-[#2e66a6]" aria-label="View request">
+                    <Eye size={17} />
+                  </button>
+                </td>
+              </tr>;
+            })}
+
+            {!loading && !rows.length && <tr><td colSpan="7" className="px-6 py-16 text-center text-sm text-slate-500">No requests match the selected filters.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
       {!loading && rows.length > 10 && (
         <Pagination
           currentPage={currentPage}
@@ -266,6 +382,7 @@ const AdminEmployerJobEditRequests = () => {
         />
       )}
     </section>
+
     <CustomDateRangeModal open={showCustomDate} startDate={dateFrom} endDate={dateTo} onCancel={() => setShowCustomDate(false)} onApply={(from, to) => { setDateFrom(from); setDateTo(to); setTime('custom'); setShowCustomDate(false); }} />
   </div>;
 };
