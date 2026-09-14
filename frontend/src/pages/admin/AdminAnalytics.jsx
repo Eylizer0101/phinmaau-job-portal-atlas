@@ -5,16 +5,12 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
-  Clock3,
   Download,
-  Eye,
   Filter,
   Mail,
   RefreshCw,
   ShieldAlert,
-  TrendingUp,
   UserRoundCheck,
-  UsersRound,
   X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -50,17 +46,7 @@ const emptyAnalytics = {
   trends: [],
   filters: { options: {} },
   sections: {
-    users: {
-      roles: [],
-      statuses: [],
-      verification: [],
-      campuses: [],
-      ageGroups: [],
-      genders: [],
-      education: [],
-      employmentTypes: [],
-      employerIndustries: [],
-    },
+    users: { roles: [], statuses: [], verification: [], campuses: [] },
     jobs: {
       statuses: [],
       categories: [],
@@ -71,13 +57,8 @@ const emptyAnalytics = {
     },
     applications: {
       funnel: [],
-      statuses: [],
       interviewRate: 0,
       hireRate: 0,
-      viewToApplicationRate: 0,
-      uniqueApplicants: 0,
-      applicationsPerJob: 0,
-      averageTimeToHireDays: 0,
       employmentStatus: [],
     },
     verification: {
@@ -128,6 +109,17 @@ const initialFilters = {
   logModule: "all",
 };
 
+const statCardImages = {
+  users: "/images/admin_1.png",
+  jobs: "/images/case.png",
+  applications: "/images/admin_3.png",
+  hired: "/images/admin_2.png",
+  rate: "/images/admin_4.png",
+  verification: "/images/admin_3.png",
+  messages: "/images/admin_1.png",
+  failures: "/images/case.png",
+};
+
 const colors = [
   "#2e66a6",
   "#16a36f",
@@ -143,17 +135,38 @@ const titleCase = (value) =>
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const formatMetric = (value, suffix = "") => {
-  const numeric = Number(value || 0);
-  return `${Number.isInteger(numeric) ? numberFormat.format(numeric) : numeric.toLocaleString("en-US", { maximumFractionDigits: 1 })}${suffix}`;
-};
-
-const StatCard = ({ label, value, suffix = "", note }) => (
-  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-0.5 hover:border-[#2e66a6]/30 hover:shadow-[0_14px_35px_rgba(46,102,166,0.10)]">
-    <div className="absolute inset-x-0 top-0 h-1 bg-[#2e66a6]" />
-    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
-    <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{formatMetric(value, suffix)}</p>
-    <p className="mt-2 min-h-[18px] text-[11px] leading-4 text-slate-500">{note}</p>
+const StatCard = ({ label, value, suffix = "", imageSrc }) => (
+  <div className="group relative min-h-[132px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-6 py-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
+    <div
+      className="pointer-events-none absolute right-8 top-1/2 h-[70px] w-[70px] -translate-y-1/2 rounded-full blur-[35px]"
+      style={{
+        background:
+          "radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,.14) 45%, transparent 75%)",
+      }}
+    />
+    <img
+      src={imageSrc}
+      alt=""
+      aria-hidden="true"
+      className="pointer-events-none absolute right-[-18px] top-1/2 h-20 w-20 -translate-y-1/2 object-contain opacity-50 mix-blend-soft-light saturate-150 transition-all duration-700 group-hover:right-[-15px] group-hover:scale-105"
+      style={{
+        WebkitMaskImage:
+          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+        maskImage:
+          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+      }}
+    />
+    <div className="relative z-10">
+      <h3 className="text-3xl font-semibold leading-none">
+        {numberFormat.format(Number(value || 0))}
+        {suffix}
+      </h3>
+      <p className="mt-3 flex items-center gap-1 whitespace-nowrap text-sm text-white/90">
+        <span>{label}</span>
+        <span className="ml-1 text-base font-bold">&gt;</span>
+      </p>
+    </div>
+    <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition group-hover:border-white/20" />
   </div>
 );
 
@@ -596,87 +609,58 @@ const DateFilterDropdown = ({
   );
 };
 
-
-const ChartCard = ({ title, subtitle, children, className = "", headerRight = null }) => (
-  <section className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.045)] ${className}`}>
-    <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
-        <h2 className="text-[15px] font-bold tracking-tight text-slate-900">{title}</h2>
-        {subtitle ? <p className="mt-1 text-xs leading-5 text-slate-500">{subtitle}</p> : null}
-      </div>
-      {headerRight ? <div className="shrink-0">{headerRight}</div> : null}
+const ChartCard = ({ title, subtitle, children, className = "" }) => (
+  <section
+    className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}
+  >
+    <div className="mb-3 border-b border-slate-100 pb-3">
+      <h2 className="text-sm font-bold text-slate-800">{title}</h2>
+      {subtitle ? (
+        <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
+      ) : null}
     </div>
     {children}
   </section>
 );
 
 const EmptyChart = () => (
-  <div className="flex h-44 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center">
-    <p className="text-sm font-semibold text-slate-500">No data available</p>
-    <p className="mt-1 text-[11px] text-slate-400">Try changing or clearing the selected filters.</p>
+  <div className="flex h-32 items-center justify-center rounded-xl bg-slate-50 text-xs font-medium text-slate-400">
+    No data for the selected filters.
   </div>
 );
 
 const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
   const rows = data.slice(0, maxItems);
   const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
-  const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
   if (!rows.length) return <EmptyChart />;
-
   return (
-    <div className="space-y-3.5">
-      {rows.map((item, index) => {
-        const value = Number(item.value || 0);
-        const share = total ? (value / total) * 100 : 0;
-        return (
-          <div key={`${item.name}-${index}`}>
-            <div className="mb-1.5 flex items-end justify-between gap-4 text-xs">
-              <span className="min-w-0 truncate font-semibold text-slate-700" title={titleCase(item.name)}>
-                {titleCase(item.name)}
-              </span>
-              <span className="shrink-0 font-bold tabular-nums text-slate-900">
-                {numberFormat.format(value)}{percentage ? "%" : ""}
-                {!percentage && total ? <span className="ml-1 font-medium text-slate-400">({share.toFixed(1)}%)</span> : null}
-              </span>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full min-w-[4px] rounded-full transition-all duration-700"
-                style={{ width: `${Math.max(2, (value / max) * 100)}%`, backgroundColor: colors[index % colors.length] }}
-              />
-            </div>
+    <div className="space-y-2.5">
+      {rows.map((item, index) => (
+        <div
+          key={`${item.name}-${index}`}
+          className="grid grid-cols-[minmax(90px,140px)_1fr_auto] items-center gap-3 text-xs"
+        >
+          <span
+            className="truncate text-right font-semibold text-slate-600"
+            title={titleCase(item.name)}
+          >
+            {titleCase(item.name)}
+          </span>
+          <div className="h-6 overflow-hidden rounded-md bg-slate-100">
+            <div
+              className="h-full min-w-[3px] rounded-lg transition-all"
+              style={{
+                width: `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`,
+                backgroundColor: colors[index % colors.length],
+              }}
+            />
           </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const ColumnChart = ({ data = [], valueSuffix = "" }) => {
-  if (!data.length) return <EmptyChart />;
-  const max = Math.max(1, ...data.map((item) => Number(item.value || 0)));
-  return (
-    <div className="overflow-x-auto pb-1">
-      <div className="flex h-56 min-w-[520px] items-end gap-3 border-b border-slate-200 px-2 pt-5">
-        {data.map((item, index) => {
-          const value = Number(item.value || 0);
-          const height = Math.max(8, (value / max) * 165);
-          return (
-            <div key={`${item.name}-${index}`} className="group flex min-w-[54px] flex-1 flex-col items-center justify-end self-stretch">
-              <div className="mb-2 rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
-                {numberFormat.format(value)}{valueSuffix}
-              </div>
-              <div
-                className="w-full max-w-[62px] rounded-t-lg transition-all duration-700 group-hover:brightness-95"
-                style={{ height, backgroundColor: colors[index % colors.length] }}
-              />
-              <span className="mt-2 max-w-[86px] truncate text-center text-[10px] font-semibold text-slate-500" title={titleCase(item.name)}>
-                {titleCase(item.name)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+          <span className="w-10 text-right font-bold text-slate-700">
+            {numberFormat.format(Number(item.value || 0))}
+            {percentage ? "%" : ""}
+          </span>
+        </div>
+      ))}
     </div>
   );
 };
@@ -691,152 +675,37 @@ const DonutChart = ({ data = [] }) => {
     cursor += (Number(item.value || 0) / total) * 100;
     return `${colors[index % colors.length]} ${start}% ${cursor}%`;
   });
-
   return (
-    <div className="grid min-h-[210px] items-center gap-6 sm:grid-cols-[170px_1fr]">
-      <div className="relative mx-auto h-36 w-36 rounded-full shadow-inner" style={{ background: `conic-gradient(${stops.join(",")})` }}>
-        <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white shadow-sm">
-          <span className="text-2xl font-bold tracking-tight text-slate-900">{numberFormat.format(total)}</span>
-          <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Total</span>
+    <div className="grid min-h-40 items-center gap-4 sm:grid-cols-[150px_1fr]">
+      <div
+        className="relative mx-auto h-32 w-32 rounded-full"
+        style={{ background: `conic-gradient(${stops.join(",")})` }}
+      >
+        <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
+          <span className="text-2xl font-extrabold text-slate-800">
+            {numberFormat.format(total)}
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+            Total
+          </span>
         </div>
       </div>
-      <div className="space-y-2.5">
-        {rows.slice(0, 8).map((item, index) => {
-          const value = Number(item.value || 0);
-          return (
-            <div key={`${item.name}-${index}`} className="flex items-center justify-between gap-4 rounded-lg px-2 py-1.5 transition hover:bg-slate-50">
-              <span className="flex min-w-0 items-center gap-2.5 text-xs font-medium text-slate-600">
-                <i className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
-                <span className="truncate">{titleCase(item.name)}</span>
-              </span>
-              <span className="shrink-0 text-xs font-bold tabular-nums text-slate-900">
-                {numberFormat.format(value)} <span className="font-medium text-slate-400">{((value / total) * 100).toFixed(1)}%</span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const useElementWidth = () => {
-  const ref = useRef(null);
-  const [width, setWidth] = useState(900);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return undefined;
-    const update = () => setWidth(Math.max(320, node.clientWidth || 900));
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  return [ref, width];
-};
-
-const TrendChart = ({ data = [] }) => {
-  const [containerRef, width] = useElementWidth();
-  const [hoverIndex, setHoverIndex] = useState(null);
-  const series = [
-    ["registrations", "Registrations", "#2e66a6"],
-    ["jobs", "Jobs", "#16a36f"],
-    ["applications", "Applications", "#dc9300"],
-    ["hires", "Hires", "#6366f1"],
-  ];
-  if (!data.length) return <EmptyChart />;
-
-  const height = 300;
-  const left = 46;
-  const right = 18;
-  const top = 22;
-  const bottom = 44;
-  const plotWidth = Math.max(1, width - left - right);
-  const plotHeight = height - top - bottom;
-  const maxValue = Math.max(1, ...data.flatMap((item) => series.map(([key]) => Number(item[key] || 0))));
-  const max = Math.ceil(maxValue / 10) * 10 || 10;
-  const xAt = (index) => left + (data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth);
-  const yAt = (value) => top + plotHeight - (Number(value || 0) / max) * plotHeight;
-  const pointsFor = (key) => data.map((item, index) => `${xAt(index)},${yAt(item[key])}`).join(" ");
-  const areaPointsFor = (key) => `${left},${top + plotHeight} ${pointsFor(key)} ${left + plotWidth},${top + plotHeight}`;
-  const latest = data[data.length - 1] || {};
-  const hovered = hoverIndex === null ? null : data[hoverIndex];
-  const hoverX = hoverIndex === null ? 0 : xAt(hoverIndex);
-
-  return (
-    <div ref={containerRef} className="relative w-full">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11px] font-medium text-slate-400">Monthly totals · Hover a data point for details</p>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
-          {data[0]?.label} – {latest?.label}
-        </span>
-      </div>
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-slate-50/60 to-white">
-        <svg width={width} height={height} className="block w-full" role="img" aria-label="Monthly analytics trend chart">
-          <defs>
-            {series.map(([key, , color]) => (
-              <linearGradient key={key} id={`area-${key}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.13" />
-                <stop offset="100%" stopColor={color} stopOpacity="0" />
-              </linearGradient>
-            ))}
-          </defs>
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-            const y = top + plotHeight - ratio * plotHeight;
-            return (
-              <g key={ratio}>
-                <line x1={left} y1={y} x2={width - right} y2={y} stroke="#dbe4ee" strokeDasharray="4 6" />
-                <text x={left - 10} y={y + 4} textAnchor="end" fontSize="10" fill="#64748b">{Math.round(max * ratio)}</text>
-              </g>
-            );
-          })}
-          <line x1={left} y1={top} x2={left} y2={top + plotHeight} stroke="#cbd5e1" />
-          <line x1={left} y1={top + plotHeight} x2={width - right} y2={top + plotHeight} stroke="#cbd5e1" />
-          {series.map(([key]) => <polygon key={`area-${key}`} points={areaPointsFor(key)} fill={`url(#area-${key})`} />)}
-          {series.map(([key, , color]) => (
-            <polyline key={key} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={pointsFor(key)} />
-          ))}
-          {data.map((item, index) => {
-            const x = xAt(index);
-            const showLabel = data.length <= 8 || index % Math.ceil(data.length / 7) === 0 || index === data.length - 1;
-            return (
-              <g key={`${item.key || item.label}-${index}`}>
-                <rect x={Math.max(left, x - plotWidth / Math.max(2, data.length) / 2)} y={top} width={plotWidth / Math.max(1, data.length - 1)} height={plotHeight} fill="transparent" onMouseEnter={() => setHoverIndex(index)} />
-                {showLabel ? <text x={x} y={height - 14} textAnchor="middle" fontSize="10" fill="#64748b">{item.label}</text> : null}
-                {series.map(([key, , color]) => (
-                  <circle key={key} cx={x} cy={yAt(item[key])} r={hoverIndex === index ? 5 : 3.5} fill={color} stroke="white" strokeWidth="2" onMouseEnter={() => setHoverIndex(index)} />
-                ))}
-              </g>
-            );
-          })}
-          {hoverIndex !== null ? <line x1={hoverX} y1={top} x2={hoverX} y2={top + plotHeight} stroke="#94a3b8" strokeDasharray="3 4" /> : null}
-          <text x="13" y={top + plotHeight / 2} transform={`rotate(-90 13 ${top + plotHeight / 2})`} textAnchor="middle" fontSize="10" fill="#64748b">Count</text>
-        </svg>
-        {hovered ? (
+      <div className="space-y-2">
+        {rows.slice(0, 8).map((item, index) => (
           <div
-            className="pointer-events-none absolute top-5 z-10 min-w-[170px] rounded-xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur"
-            style={{ left: Math.min(Math.max(8, hoverX + 12), Math.max(8, width - 190)) }}
+            key={item.name}
+            className="flex items-center justify-between gap-3 text-xs"
           >
-            <p className="mb-2 text-xs font-bold text-slate-900">{hovered.label}</p>
-            <div className="space-y-1.5">
-              {series.map(([key, label, color]) => (
-                <div key={key} className="flex items-center justify-between gap-5 text-[11px]">
-                  <span className="flex items-center gap-2 text-slate-600"><i className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />{label}</span>
-                  <strong className="tabular-nums text-slate-900">{numberFormat.format(Number(hovered[key] || 0))}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {series.map(([key, label, color]) => (
-          <div key={key} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
-            <i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-            <div className="min-w-0">
-              <p className="truncate text-[10px] font-semibold text-slate-500">{label}</p>
-              <p className="text-base font-bold tabular-nums text-slate-900">{numberFormat.format(Number(latest[key] || 0))}</p>
-            </div>
+            <span className="flex min-w-0 items-center gap-2 text-slate-600">
+              <i
+                className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                style={{ backgroundColor: colors[index % colors.length] }}
+              />
+              <span className="truncate">{titleCase(item.name)}</span>
+            </span>
+            <strong className="text-slate-800">
+              {numberFormat.format(item.value)}
+            </strong>
           </div>
         ))}
       </div>
@@ -844,26 +713,136 @@ const TrendChart = ({ data = [] }) => {
   );
 };
 
-const FunnelChart = ({ data = [] }) => {
-  const rows = data.filter((item) => Number(item.value || 0) >= 0);
-  if (!rows.length) return <EmptyChart />;
-  const first = Math.max(1, Number(rows[0]?.value || 0));
+const TrendChart = ({ data = [] }) => {
+  const series = [
+    ["registrations", "Registrations", "#2e66a6"],
+    ["jobs", "Jobs", "#16a36f"],
+    ["applications", "Applications", "#dc9300"],
+    ["hires", "Hires", "#6366f1"],
+  ];
+  if (!data.length) return <EmptyChart />;
+  const width = 760;
+  const height = 250;
+  const left = 42;
+  const top = 18;
+  const plotWidth = width - left - 18;
+  const plotHeight = height - top - 45;
+  const max = Math.max(
+    1,
+    ...data.flatMap((item) => series.map(([key]) => Number(item[key] || 0))),
+  );
+  const point = (item, index, key) => {
+    const x =
+      left +
+      (data.length === 1
+        ? plotWidth / 2
+        : (index / (data.length - 1)) * plotWidth);
+    const y = top + plotHeight - (Number(item[key] || 0) / max) * plotHeight;
+    return `${x},${y}`;
+  };
   return (
-    <div className="space-y-3">
+    <div>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-[220px] w-full"
+        role="img"
+        aria-label="Monthly analytics trend chart"
+      >
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const y = top + plotHeight - ratio * plotHeight;
+          return (
+            <g key={ratio}>
+              <line x1={left} y1={y} x2={width - 18} y2={y} stroke="#e2e8f0" />
+              <text
+                x={left - 8}
+                y={y + 4}
+                textAnchor="end"
+                fontSize="10"
+                fill="#64748b"
+              >
+                {Math.round(max * ratio)}
+              </text>
+            </g>
+          );
+        })}
+        {series.map(([key, , color]) => (
+          <polyline
+            key={key}
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points={data
+              .map((item, index) => point(item, index, key))
+              .join(" ")}
+          />
+        ))}
+        {data.map((item, index) => {
+          if (
+            data.length > 10 &&
+            index % Math.ceil(data.length / 8) !== 0 &&
+            index !== data.length - 1
+          )
+            return null;
+          const x =
+            left +
+            (data.length === 1
+              ? plotWidth / 2
+              : (index / (data.length - 1)) * plotWidth);
+          return (
+            <text
+              key={`${item.label}-${index}`}
+              x={x}
+              y={height - 10}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#64748b"
+            >
+              {item.label}
+            </text>
+          );
+        })}
+      </svg>
+      <div className="flex flex-wrap justify-center gap-4">
+        {series.map(([, label, color]) => (
+          <span
+            key={label}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600"
+          >
+            <i
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const FunnelChart = ({ data = [] }) => {
+  const rows = data.filter((item) => Number(item.value || 0) > 0);
+  const max = Math.max(1, ...rows.map((item) => item.value));
+  if (!rows.length) return <EmptyChart />;
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 py-1">
       {rows.map((item, index) => {
-        const value = Number(item.value || 0);
-        const width = Math.max(28, (value / first) * 100);
-        const conversion = index === 0 ? 100 : (value / first) * 100;
+        const proportionalWidth = (Number(item.value || 0) / max) * 100;
+        const width = Math.max(44, Math.min(100, proportionalWidth));
         return (
-          <div key={`${item.name}-${index}`}>
-            <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
-              <span className="font-semibold text-slate-700">{titleCase(item.name)}</span>
-              <span className="font-bold tabular-nums text-slate-900">{numberFormat.format(value)} <span className="font-medium text-slate-400">{conversion.toFixed(1)}%</span></span>
-            </div>
-            <div className="h-9 overflow-hidden rounded-lg bg-slate-100">
-              <div className="flex h-full items-center rounded-lg px-3 text-[10px] font-bold text-white transition-all duration-700" style={{ width: `${width}%`, backgroundColor: colors[index % colors.length] }}>
-                {index === 0 ? "Baseline" : `${conversion.toFixed(1)}% of submitted`}
-              </div>
+          <div key={item.name} className="w-full text-center">
+            <div
+              className="mx-auto flex h-8 items-center justify-center rounded-lg px-3 text-xs font-bold text-white shadow-sm"
+              style={{
+                width: `${width}%`,
+                backgroundColor: colors[index % colors.length],
+              }}
+            >
+              <span className="truncate">
+                {titleCase(item.name)} · {numberFormat.format(item.value)}
+              </span>
             </div>
           </div>
         );
@@ -872,24 +851,54 @@ const FunnelChart = ({ data = [] }) => {
   );
 };
 
-const MetricTile = ({ label, value, suffix = "", icon: Icon, helper }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-[#2e66a6]/25 hover:bg-[#2e66a6]/[0.03]">
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500">{label}</p>
-        <p className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900">{formatMetric(value, suffix)}</p>
-        {helper ? <p className="mt-1 text-[10px] leading-4 text-slate-400">{helper}</p> : null}
+const MetricTile = ({ label, value, suffix = "", icon: Icon }) => (
+  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+          {label}
+        </p>
+        <p className="mt-1 text-2xl font-extrabold text-slate-800">
+          {numberFormat.format(Number(value || 0))}
+          {suffix}
+        </p>
       </div>
-      {Icon ? <div className="rounded-lg bg-[#2e66a6]/10 p-2 text-[#2e66a6]"><Icon size={17} /></div> : null}
+      <div className="rounded-xl bg-[#2e66a6]/10 p-2.5 text-[#2e66a6]">
+        <Icon size={20} />
+      </div>
     </div>
   </div>
 );
 
 const AnalyticsSkeleton = () => (
-  <div className="grid animate-pulse grid-cols-1 gap-4 xl:grid-cols-12" aria-label="Loading analytics charts">
-    <div className="h-80 rounded-2xl border border-slate-200 bg-white p-5 xl:col-span-12"><div className="h-4 w-44 rounded bg-slate-200" /><div className="mt-5 h-56 rounded-xl bg-slate-100" /></div>
-    <div className="h-64 rounded-2xl border border-slate-200 bg-white p-5 xl:col-span-7"><div className="h-4 w-36 rounded bg-slate-200" /><div className="mt-5 h-44 rounded-xl bg-slate-100" /></div>
-    <div className="h-64 rounded-2xl border border-slate-200 bg-white p-5 xl:col-span-5"><div className="h-4 w-32 rounded bg-slate-200" /><div className="mt-5 h-44 rounded-xl bg-slate-100" /></div>
+  <div
+    className="grid animate-pulse grid-cols-1 gap-4 xl:grid-cols-12"
+    aria-label="Loading analytics charts"
+  >
+    <div className="h-56 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-12">
+      <div className="h-4 w-40 rounded bg-slate-200" />
+      <div className="mt-5 h-36 rounded-xl bg-slate-100" />
+    </div>
+    <div className="h-60 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-7">
+      <div className="h-4 w-36 rounded bg-slate-200" />
+      <div className="mt-5 space-y-3">
+        {[100, 86, 72, 58].map((width) => (
+          <div
+            key={width}
+            className="mx-auto h-7 rounded-lg bg-slate-100"
+            style={{ width: `${width}%` }}
+          />
+        ))}
+      </div>
+    </div>
+    <div className="h-60 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-5">
+      <div className="h-4 w-32 rounded bg-slate-200" />
+      <div className="mt-5 space-y-3">
+        {["w-full", "w-4/5", "w-3/5", "w-2/5"].map((width) => (
+          <div key={width} className={`h-6 rounded-md bg-slate-100 ${width}`} />
+        ))}
+      </div>
+    </div>
   </div>
 );
 
@@ -905,19 +914,7 @@ const AdminAnalytics = () => {
 
   const options = analytics?.filters?.options || {};
   const kpis = analytics?.kpis || emptyAnalytics.kpis;
-  const sections = {
-    ...emptyAnalytics.sections,
-    ...(analytics?.sections || {}),
-    users: { ...emptyAnalytics.sections.users, ...(analytics?.sections?.users || {}) },
-    jobs: { ...emptyAnalytics.sections.jobs, ...(analytics?.sections?.jobs || {}) },
-    applications: { ...emptyAnalytics.sections.applications, ...(analytics?.sections?.applications || {}) },
-    verification: { ...emptyAnalytics.sections.verification, ...(analytics?.sections?.verification || {}) },
-    operations: {
-      ...emptyAnalytics.sections.operations,
-      ...(analytics?.sections?.operations || {}),
-      system: { ...emptyAnalytics.sections.operations.system, ...(analytics?.sections?.operations?.system || {}) },
-    },
-  };
+  const sections = analytics?.sections || emptyAnalytics.sections;
 
   const requestParams = useMemo(() => {
     const next = { ...filters };
@@ -933,11 +930,22 @@ const AdminAnalytics = () => {
     try {
       setLoading(true);
       setError("");
-      const response = await api.get("/admin/analytics", { params: requestParams });
-      setAnalytics({ ...emptyAnalytics, ...(response.data || {}) });
+      const response = await api.get("/admin/analytics", {
+        params: requestParams,
+      });
+      setAnalytics({
+        ...emptyAnalytics,
+        ...(response.data || {}),
+        sections: {
+          ...emptyAnalytics.sections,
+          ...(response.data?.sections || {}),
+        },
+      });
     } catch (err) {
       console.error("Admin analytics error:", err);
-      setError(err?.response?.data?.message || "Unable to load analytics data.");
+      setError(
+        err?.response?.data?.message || "Unable to load analytics data.",
+      );
     } finally {
       setLoading(false);
     }
@@ -949,7 +957,8 @@ const AdminAnalytics = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestParams]);
 
-  const updateFilter = (name, value) => setFilters((previous) => ({ ...previous, [name]: value }));
+  const updateFilter = (name, value) =>
+    setFilters((previous) => ({ ...previous, [name]: value }));
   const selectDateFilter = (value) => {
     if (value === "range") {
       setShowCustomDateModal(true);
@@ -964,51 +973,48 @@ const AdminAnalytics = () => {
     }));
   };
   const applyCustomDateRange = (startDate, endDate) => {
-    setFilters((previous) => ({ ...previous, date: "range", specificDate: "", startDate, endDate }));
+    setFilters((previous) => ({
+      ...previous,
+      date: "range",
+      specificDate: "",
+      startDate,
+      endDate,
+    }));
     setShowCustomDateModal(false);
   };
   const resetFilters = () => setFilters(initialFilters);
   const hasFilters = JSON.stringify(filters) !== JSON.stringify(initialFilters);
 
-  const activeFilterLabels = useMemo(() => {
-    const labels = [];
-    if (filters.date !== "overall") labels.push(dateOptions.find(([value]) => value === filters.date)?.[1] || filters.date);
-    const mapping = [
-      ["role", "Role"], ["campus", "Campus"], ["applicationStatus", "Application"], ["jobType", "Job Type"],
-      ["userStatus", "User Status"], ["verificationStatus", "Verification"], ["jobStatus", "Job Status"],
-      ["category", "Category"], ["workMode", "Work Mode"], ["company", "Company"], ["editRequestStatus", "Edit Request"],
-      ["messageType", "Message Type"], ["notificationType", "Notification"], ["logStatus", "Log Status"], ["logModule", "Log Module"],
-    ];
-    mapping.forEach(([key, label]) => {
-      if (filters[key] && filters[key] !== "all") labels.push(`${label}: ${titleCase(filters[key])}`);
-    });
-    return labels;
-  }, [filters]);
-
   const exportAnalytics = () => {
     try {
       setExporting(true);
       const workbook = XLSX.utils.book_new();
-      const addSheet = (name, rows) => XLSX.utils.book_append_sheet(
-        workbook,
-        XLSX.utils.json_to_sheet(rows?.length ? rows : [{ Message: "No data" }]),
-        name.slice(0, 31),
+      const addSheet = (name, rows) =>
+        XLSX.utils.book_append_sheet(
+          workbook,
+          XLSX.utils.json_to_sheet(
+            rows?.length ? rows : [{ Message: "No data" }],
+          ),
+          name.slice(0, 31),
+        );
+      addSheet(
+        "KPIs",
+        Object.entries(kpis).map(([metric, value]) => ({
+          Metric: titleCase(metric),
+          Value: value,
+        })),
       );
-      addSheet("KPIs", Object.entries(kpis).map(([metric, value]) => ({ Metric: titleCase(metric), Value: value })));
       addSheet("Trends", analytics.trends || []);
       addSheet("Application Funnel", sections.applications?.funnel || []);
-      addSheet("Application Status", sections.applications?.statuses || []);
       addSheet("Job Categories", sections.jobs?.categories || []);
-      addSheet("Age Distribution", sections.users?.ageGroups || []);
-      addSheet("Gender Distribution", sections.users?.genders || []);
-      addSheet("Education", sections.users?.education || []);
-      addSheet("Campuses", sections.users?.campuses || []);
-      addSheet("Employer Industries", sections.users?.employerIndustries || []);
       addSheet("User Verification", sections.users?.verification || []);
       addSheet("Messages", sections.operations?.messages || []);
       addSheet("Notifications", sections.operations?.notifications || []);
       addSheet("System Modules", sections.operations?.system?.modules || []);
-      XLSX.writeFile(workbook, `admin-analytics-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(
+        workbook,
+        `admin-analytics-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      );
     } catch (err) {
       setError("Unable to export analytics data.");
     } finally {
@@ -1019,107 +1025,272 @@ const AdminAnalytics = () => {
   const tabs = [
     ["overview", "Overview"],
     ["recruitment", "Recruitment"],
-    ["users", "Users & Demographics"],
+    ["users", "Users & Verification"],
     ["operations", "Operations"],
   ];
 
   return (
-    <main className="mx-auto w-full max-w-[1680px] px-1 py-6">
-      <div className="space-y-5">
-        <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <main className="mx-auto w-full max-w-[1600px] px-1 py-6">
+      <div className="space-y-4">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="mb-1 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#2e66a6]" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Decision Support</span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Admin Analytics</h1>
-            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
-              System-wide analysis of user growth, recruitment performance, demographics, verification, engagement, and operational reliability.
+            <h1 className="text-xl font-extrabold text-slate-900">
+              Admin Analytics
+            </h1>
+            <p className="text-xs text-slate-500">
+              Compact system-wide analysis of users, jobs, applications,
+              verification, engagement, and operations.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={fetchAnalytics} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60">
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+            <button
+              type="button"
+              onClick={fetchAnalytics}
+              disabled={loading}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
+              Refresh
             </button>
-            <button type="button" onClick={exportAnalytics} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#255487] disabled:opacity-60">
-              <Download size={14} /> {exporting ? "Exporting..." : "Export Excel"}
+            <button
+              type="button"
+              onClick={exportAnalytics}
+              disabled={loading || exporting}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60"
+            >
+              <Download size={14} /> {exporting ? "Exporting..." : "Export"}
             </button>
           </div>
         </header>
 
-        {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div> : null}
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </div>
+        ) : null}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total Users" value={kpis.totalUsers} note="Accounts matching the selected analytics filters" />
-          <StatCard label="Active Jobs" value={kpis.activeJobs} note="Published and currently active job postings" />
-          <StatCard label="Applications" value={kpis.applications} note="Applications submitted in the selected scope" />
-          <StatCard label="Hired" value={kpis.hired} note="Applications with a successful hiring outcome" />
-          <StatCard label="Hire Rate" value={kpis.hireRate} suffix="%" note="Hired applications ÷ total applications" />
-          <StatCard label="Pending Verification" value={kpis.pendingVerification} note="User accounts awaiting verification action" />
-          <StatCard label="Unread Messages" value={kpis.unreadMessages} note="Unread conversation messages in scope" />
-          <StatCard label="System Failures" value={kpis.systemFailures} note="Failed system log events in scope" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Users"
+            value={kpis.totalUsers}
+            imageSrc={statCardImages.users}
+          />
+          <StatCard
+            label="Active Jobs"
+            value={kpis.activeJobs}
+            imageSrc={statCardImages.jobs}
+          />
+          <StatCard
+            label="Applications"
+            value={kpis.applications}
+            imageSrc={statCardImages.applications}
+          />
+          <StatCard
+            label="Hired"
+            value={kpis.hired}
+            imageSrc={statCardImages.hired}
+          />
+          <StatCard
+            label="Hire Rate"
+            value={kpis.hireRate}
+            suffix="%"
+            imageSrc={statCardImages.rate}
+          />
+          <StatCard
+            label="Pending Verification"
+            value={kpis.pendingVerification}
+            imageSrc={statCardImages.verification}
+          />
+          <StatCard
+            label="Unread Messages"
+            value={kpis.unreadMessages}
+            imageSrc={statCardImages.messages}
+          />
+          <StatCard
+            label="System Failures"
+            value={kpis.systemFailures}
+            imageSrc={statCardImages.failures}
+          />
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Analysis Filters</h2>
-              <p className="mt-0.5 text-[11px] text-slate-500">Filters apply across the dashboard so each view uses the same analysis scope.</p>
-            </div>
-            {activeFilterLabels.length ? (
-              <div className="flex max-w-3xl flex-wrap justify-end gap-1.5">
-                {activeFilterLabels.slice(0, 5).map((label) => <span key={label} className="rounded-full bg-[#2e66a6]/8 px-2.5 py-1 text-[10px] font-semibold text-[#2e66a6]">{label}</span>)}
-                {activeFilterLabels.length > 5 ? <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500">+{activeFilterLabels.length - 5} more</span> : null}
-              </div>
-            ) : <span className="text-[10px] font-semibold text-slate-400">No active filters</span>}
-          </div>
-
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-            <DateFilterDropdown value={filters.date} startDate={filters.startDate} endDate={filters.endDate} onSelect={selectDateFilter} disabled={loading} />
+            <DateFilterDropdown
+              value={filters.date}
+              startDate={filters.startDate}
+              endDate={filters.endDate}
+              onSelect={selectDateFilter}
+              disabled={loading}
+            />
             <label className="block">
-              <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">Date Based On</span>
-              <select value={filters.dateField} onChange={(event) => updateFilter("dateField", event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                <option value="primary">Relevant Event Date</option>
+              <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                Date Based On
+              </span>
+              <select
+                value={filters.dateField}
+                onChange={(event) =>
+                  updateFilter("dateField", event.target.value)
+                }
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              >
+                <option value="primary">Primary Event Date</option>
                 <option value="created">Record Created</option>
                 <option value="outcome">Outcome / Updated Date</option>
               </select>
             </label>
-            {filters.date === "specific" ? <DateInput label="Specific Date" value={filters.specificDate} onChange={(value) => updateFilter("specificDate", value)} /> : null}
-            <FilterSelect label="Role" value={filters.role} onChange={(value) => updateFilter("role", value)} values={options.roles} allLabel="All Roles" />
-            <FilterSelect label="Campus" value={filters.campus} onChange={(value) => updateFilter("campus", value)} values={options.campuses} allLabel="All Campuses" />
-            <FilterSelect label="Application Status" value={filters.applicationStatus} onChange={(value) => updateFilter("applicationStatus", value)} values={options.applicationStatuses} allLabel="All Application Statuses" />
-            <FilterSelect label="Job Type" value={filters.jobType} onChange={(value) => updateFilter("jobType", value)} values={options.jobTypes} allLabel="All Job Types" />
+            {filters.date === "specific" ? (
+              <DateInput
+                label="Specific Date"
+                value={filters.specificDate}
+                onChange={(value) => updateFilter("specificDate", value)}
+              />
+            ) : null}
+            <FilterSelect
+              label="Role"
+              value={filters.role}
+              onChange={(value) => updateFilter("role", value)}
+              values={options.roles}
+              allLabel="All Roles"
+            />
+            <FilterSelect
+              label="Campus"
+              value={filters.campus}
+              onChange={(value) => updateFilter("campus", value)}
+              values={options.campuses}
+              allLabel="All Campuses"
+            />
+            <FilterSelect
+              label="Application Status"
+              value={filters.applicationStatus}
+              onChange={(value) => updateFilter("applicationStatus", value)}
+              values={options.applicationStatuses}
+              allLabel="All Application Statuses"
+            />
+            <FilterSelect
+              label="Job Type"
+              value={filters.jobType}
+              onChange={(value) => updateFilter("jobType", value)}
+              values={options.jobTypes}
+              allLabel="All Job Types"
+            />
           </div>
 
           {showMoreFilters ? (
             <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-              <FilterSelect label="User Status" value={filters.userStatus} onChange={(value) => updateFilter("userStatus", value)} values={options.userStatuses} allLabel="All User Statuses" />
-              <FilterSelect label="Verification" value={filters.verificationStatus} onChange={(value) => updateFilter("verificationStatus", value)} values={options.verificationStatuses} allLabel="All Verification Statuses" />
-              <FilterSelect label="Job Status" value={filters.jobStatus} onChange={(value) => updateFilter("jobStatus", value)} values={options.jobStatuses} allLabel="All Job Statuses" />
-              <FilterSelect label="Category" value={filters.category} onChange={(value) => updateFilter("category", value)} values={options.categories} allLabel="All Categories" />
-              <FilterSelect label="Work Mode" value={filters.workMode} onChange={(value) => updateFilter("workMode", value)} values={options.workModes} allLabel="All Work Modes" />
-              <FilterSelect label="Company" value={filters.company} onChange={(value) => updateFilter("company", value)} values={options.companies} allLabel="All Companies" />
-              <FilterSelect label="Edit Request" value={filters.editRequestStatus} onChange={(value) => updateFilter("editRequestStatus", value)} values={options.editRequestStatuses} allLabel="All Edit Requests" />
-              <FilterSelect label="Message Type" value={filters.messageType} onChange={(value) => updateFilter("messageType", value)} values={options.messageTypes} allLabel="All Message Types" />
-              <FilterSelect label="Notification Type" value={filters.notificationType} onChange={(value) => updateFilter("notificationType", value)} values={options.notificationTypes} allLabel="All Notification Types" />
-              <FilterSelect label="Log Status" value={filters.logStatus} onChange={(value) => updateFilter("logStatus", value)} values={options.logStatuses} allLabel="All Log Statuses" />
-              <FilterSelect label="Log Module" value={filters.logModule} onChange={(value) => updateFilter("logModule", value)} values={options.logModules} allLabel="All Log Modules" />
+              <FilterSelect
+                label="User Status"
+                value={filters.userStatus}
+                onChange={(value) => updateFilter("userStatus", value)}
+                values={options.userStatuses}
+                allLabel="All User Statuses"
+              />
+              <FilterSelect
+                label="Verification"
+                value={filters.verificationStatus}
+                onChange={(value) => updateFilter("verificationStatus", value)}
+                values={options.verificationStatuses}
+                allLabel="All Verification Statuses"
+              />
+              <FilterSelect
+                label="Job Status"
+                value={filters.jobStatus}
+                onChange={(value) => updateFilter("jobStatus", value)}
+                values={options.jobStatuses}
+                allLabel="All Job Statuses"
+              />
+              <FilterSelect
+                label="Category"
+                value={filters.category}
+                onChange={(value) => updateFilter("category", value)}
+                values={options.categories}
+                allLabel="All Categories"
+              />
+              <FilterSelect
+                label="Work Mode"
+                value={filters.workMode}
+                onChange={(value) => updateFilter("workMode", value)}
+                values={options.workModes}
+                allLabel="All Work Modes"
+              />
+              <FilterSelect
+                label="Company"
+                value={filters.company}
+                onChange={(value) => updateFilter("company", value)}
+                values={options.companies}
+                allLabel="All Companies"
+              />
+              <FilterSelect
+                label="Edit Request"
+                value={filters.editRequestStatus}
+                onChange={(value) => updateFilter("editRequestStatus", value)}
+                values={options.editRequestStatuses}
+                allLabel="All Edit Requests"
+              />
+              <FilterSelect
+                label="Message Type"
+                value={filters.messageType}
+                onChange={(value) => updateFilter("messageType", value)}
+                values={options.messageTypes}
+                allLabel="All Message Types"
+              />
+              <FilterSelect
+                label="Notification Type"
+                value={filters.notificationType}
+                onChange={(value) => updateFilter("notificationType", value)}
+                values={options.notificationTypes}
+                allLabel="All Notification Types"
+              />
+              <FilterSelect
+                label="Log Status"
+                value={filters.logStatus}
+                onChange={(value) => updateFilter("logStatus", value)}
+                values={options.logStatuses}
+                allLabel="All Log Statuses"
+              />
+              <FilterSelect
+                label="Log Module"
+                value={filters.logModule}
+                onChange={(value) => updateFilter("logModule", value)}
+                values={options.logModules}
+                allLabel="All Log Modules"
+              />
             </div>
           ) : null}
 
-          <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
-            <button type="button" onClick={() => setShowMoreFilters((value) => !value)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10">
-              <Filter size={13} /> {showMoreFilters ? "Hide Filters" : "More Filters"}
+          <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => setShowMoreFilters((value) => !value)}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10"
+            >
+              <Filter size={13} />
+              {showMoreFilters ? "Hide Filters" : "More Filters"}
             </button>
-            <button type="button" onClick={resetFilters} disabled={!hasFilters} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
-              <RefreshCw size={13} /> Clear All
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!hasFilters}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw size={13} />
+              Clear All
             </button>
           </div>
         </section>
 
-        <nav className="flex gap-7 overflow-x-auto border-b border-slate-200" aria-label="Analytics sections">
+        <nav
+          className="flex gap-6 overflow-x-auto border-b border-slate-200"
+          aria-label="Analytics sections"
+        >
           {tabs.map(([key, label]) => (
-            <button type="button" key={key} onClick={() => setActiveTab(key)} className={`shrink-0 border-b-2 px-1 pb-3 text-xs font-bold transition ${activeTab === key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"}`}>{label}</button>
+            <button
+              type="button"
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`shrink-0 border-b-2 px-1 pb-3 text-xs font-bold transition ${activeTab === key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+            >
+              {label}
+            </button>
           ))}
         </nav>
 
@@ -1127,101 +1298,239 @@ const AdminAnalytics = () => {
 
         {!loading && activeTab === "overview" ? (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            <ChartCard title="System Activity Trend" subtitle="Monthly registrations, job postings, applications, and successful hires. Missing months are shown as zero instead of being skipped." className="xl:col-span-12">
+            <ChartCard
+              title="System Activity Trend"
+              subtitle="Registrations, jobs, applications, and hires by month"
+              className="xl:col-span-12"
+            >
               <TrendChart data={analytics.trends} />
             </ChartCard>
-            <ChartCard title="Application Funnel" subtitle="Applicant progression from submission to review, interview, and hiring outcome." className="xl:col-span-7">
+            <ChartCard
+              title="Application Funnel"
+              subtitle="Current recruitment outcome distribution"
+              className="xl:col-span-7"
+            >
               <FunnelChart data={sections.applications?.funnel} />
             </ChartCard>
-            <ChartCard title="Top Job Categories" subtitle="Job postings ranked by category within the selected analysis scope." className="xl:col-span-5">
+            <ChartCard
+              title="Top Job Categories"
+              subtitle="Jobs grouped by category"
+              className="xl:col-span-5"
+            >
               <HorizontalBars data={sections.jobs?.categories} />
             </ChartCard>
-            <ChartCard title="Users by Role" subtitle="Distribution of Admin, Employer, and Jobseeker accounts." className="xl:col-span-4">
+            <ChartCard
+              title="User Roles"
+              subtitle="Admin, employer, and jobseeker accounts"
+              className="xl:col-span-6"
+            >
               <DonutChart data={sections.users?.roles} />
             </ChartCard>
-            <ChartCard title="Job Status Distribution" subtitle="Current lifecycle state of job postings." className="xl:col-span-4">
+            <ChartCard
+              title="Job Status"
+              subtitle="Lifecycle state of job postings"
+              className="xl:col-span-6"
+            >
               <DonutChart data={sections.jobs?.statuses} />
-            </ChartCard>
-            <ChartCard title="Application Status Distribution" subtitle="Current distribution of applications across recruitment outcomes." className="xl:col-span-4">
-              <DonutChart data={sections.applications?.statuses} />
             </ChartCard>
           </div>
         ) : null}
 
         {!loading && activeTab === "recruitment" ? (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            <ChartCard title="Application Funnel" subtitle="Conversion through submitted, reviewed, interviewed, and hired stages." className="xl:col-span-7">
+            <ChartCard
+              title="Application Funnel"
+              subtitle="Pending through final outcome"
+              className="xl:col-span-7"
+            >
               <FunnelChart data={sections.applications?.funnel} />
             </ChartCard>
-            <ChartCard title="Application Status Distribution" subtitle="Current recruitment outcome of applications in the selected scope." className="xl:col-span-5">
-              <HorizontalBars data={sections.applications?.statuses} />
+            <ChartCard
+              title="Employment Type"
+              subtitle="Job supply grouped by employment type"
+              className="xl:col-span-5"
+            >
+              <HorizontalBars data={sections.jobs?.employmentTypes} />
             </ChartCard>
-            <ChartCard title="Employment Type" subtitle="Job supply grouped by employment type." className="xl:col-span-6"><HorizontalBars data={sections.jobs?.employmentTypes} /></ChartCard>
-            <ChartCard title="Work Mode" subtitle="Distribution of on-site, remote, blended, and work-from-home opportunities." className="xl:col-span-6"><DonutChart data={sections.jobs?.workModes} /></ChartCard>
-            <ChartCard title="Recruitment Performance" subtitle="Capacity, reach, conversion, and hiring-speed indicators." className="xl:col-span-12">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-                <MetricTile label="Total Vacancies" value={sections.jobs?.totalVacancies} icon={BriefcaseBusiness} helper="Available positions across jobs" />
-                <MetricTile label="Job Views" value={sections.jobs?.totalViews} icon={Eye} helper="Recorded job listing views" />
-                <MetricTile label="Unique Applicants" value={sections.applications?.uniqueApplicants} icon={UsersRound} helper="Distinct jobseekers who applied" />
-                <MetricTile label="Interview Rate" value={sections.applications?.interviewRate} suffix="%" icon={UserRoundCheck} helper="Reached interview ÷ applications" />
-                <MetricTile label="Hire Rate" value={sections.applications?.hireRate} suffix="%" icon={CheckCircle2} helper="Hired ÷ applications" />
-                <MetricTile label="Avg. Time to Hire" value={sections.applications?.averageTimeToHireDays} suffix=" days" icon={Clock3} helper="Application date to hire date" />
-              </div>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <MetricTile label="Applications per Job" value={sections.applications?.applicationsPerJob} icon={TrendingUp} helper="Average application volume per job" />
-                <MetricTile label="View-to-Application Rate" value={sections.applications?.viewToApplicationRate} suffix="%" icon={Activity} helper="Applications ÷ recorded job views" />
+            <ChartCard
+              title="Work Mode"
+              subtitle="On-site, remote, blended, and work from home"
+              className="xl:col-span-6"
+            >
+              <DonutChart data={sections.jobs?.workModes} />
+            </ChartCard>
+            <ChartCard
+              title="Employment Status"
+              subtitle="Status recorded for hired applicants"
+              className="xl:col-span-6"
+            >
+              <HorizontalBars data={sections.applications?.employmentStatus} />
+            </ChartCard>
+            <ChartCard
+              title="Recruitment KPIs"
+              subtitle="Capacity, attention, and conversion"
+              className="xl:col-span-12"
+            >
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <MetricTile
+                  label="Total Vacancies"
+                  value={sections.jobs?.totalVacancies}
+                  icon={BriefcaseBusiness}
+                />
+                <MetricTile
+                  label="Job Views"
+                  value={sections.jobs?.totalViews}
+                  icon={Activity}
+                />
+                <MetricTile
+                  label="Interview Rate"
+                  value={sections.applications?.interviewRate}
+                  suffix="%"
+                  icon={UserRoundCheck}
+                />
+                <MetricTile
+                  label="Hire Rate"
+                  value={sections.applications?.hireRate}
+                  suffix="%"
+                  icon={CheckCircle2}
+                />
               </div>
             </ChartCard>
-            <ChartCard title="Employment Status of Hires" subtitle="Recorded active or inactive employment state for hired applicants." className="xl:col-span-12"><HorizontalBars data={sections.applications?.employmentStatus} /></ChartCard>
           </div>
         ) : null}
 
         {!loading && activeTab === "users" ? (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            <ChartCard title="Jobseeker Age Distribution" subtitle="Registered jobseekers grouped into ordered age ranges." className="xl:col-span-7"><ColumnChart data={sections.users?.ageGroups} /></ChartCard>
-            <ChartCard title="Jobseekers by Gender" subtitle="Gender distribution from jobseeker profile data." className="xl:col-span-5"><DonutChart data={sections.users?.genders} /></ChartCard>
-            <ChartCard title="Jobseekers by Campus" subtitle="Distribution of jobseekers across recorded campuses." className="xl:col-span-6"><HorizontalBars data={sections.users?.campuses} /></ChartCard>
-            <ChartCard title="Educational Attainment" subtitle="Highest recorded educational level from jobseeker profiles." className="xl:col-span-6"><HorizontalBars data={sections.users?.education} /></ChartCard>
-            <ChartCard title="Verification Status" subtitle="Verification state of Employer and Jobseeker accounts." className="xl:col-span-6"><HorizontalBars data={sections.users?.verification} /></ChartCard>
-            <ChartCard title="Account Status" subtitle="Distribution of active, inactive, suspended, and pending accounts." className="xl:col-span-6"><DonutChart data={sections.users?.statuses} /></ChartCard>
-            <ChartCard title="Employers by Industry" subtitle="Registered employers grouped by industry or business type." className="xl:col-span-7"><HorizontalBars data={sections.users?.employerIndustries} maxItems={10} /></ChartCard>
-            <ChartCard title="Email Registration Verification" subtitle="OTP request volume and completion for pending email registration records." className="xl:col-span-5">
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-                <MetricTile label="OTP Requests" value={sections.verification?.emailRequests} icon={Mail} />
-                <MetricTile label="Verified" value={sections.verification?.emailVerified} icon={CheckCircle2} />
-                <MetricTile label="Completion" value={sections.verification?.emailCompletionRate} suffix="%" icon={UserRoundCheck} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartCard
+              title="Verification Status"
+              subtitle="Employer and jobseeker verification state"
+            >
+              <HorizontalBars data={sections.users?.verification} />
+            </ChartCard>
+            <ChartCard
+              title="Jobseekers by Campus"
+              subtitle="Campus distribution from jobseeker profiles"
+            >
+              <HorizontalBars data={sections.users?.campuses} />
+            </ChartCard>
+            <ChartCard
+              title="Account Status"
+              subtitle="Active, inactive, suspended, and pending users"
+            >
+              <DonutChart data={sections.users?.statuses} />
+            </ChartCard>
+            <ChartCard
+              title="Email Registration Verification"
+              subtitle="Pending email records are subject to TTL cleanup"
+            >
+              <div className="grid gap-3 sm:grid-cols-3">
+                <MetricTile
+                  label="OTP Requests"
+                  value={sections.verification?.emailRequests}
+                  icon={Mail}
+                />
+                <MetricTile
+                  label="Verified"
+                  value={sections.verification?.emailVerified}
+                  icon={CheckCircle2}
+                />
+                <MetricTile
+                  label="Completion"
+                  value={sections.verification?.emailCompletionRate}
+                  suffix="%"
+                  icon={UserRoundCheck}
+                />
               </div>
             </ChartCard>
           </div>
         ) : null}
 
         {!loading && activeTab === "operations" ? (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            <ChartCard title="Job Edit Requests" subtitle="Administrative edit requests grouped by current status." className="xl:col-span-6"><HorizontalBars data={sections.operations?.editRequests} /></ChartCard>
-            <ChartCard title="Most Requested Job Sections" subtitle="Job sections employers most frequently request to modify." className="xl:col-span-6"><HorizontalBars data={sections.operations?.editRequestSections} /></ChartCard>
-            <ChartCard title="Message Types" subtitle="Conversation activity grouped by message type without exposing message content." className="xl:col-span-6"><HorizontalBars data={sections.operations?.messages} /></ChartCard>
-            <ChartCard title="Message Read State" subtitle="Distribution of read and unread messages." className="xl:col-span-6"><DonutChart data={sections.operations?.messageRead} /></ChartCard>
-            <ChartCard title="Notification Types" subtitle="System notifications grouped by workflow." className="xl:col-span-6"><HorizontalBars data={sections.operations?.notifications} /></ChartCard>
-            <ChartCard title="Notification State" subtitle="Read, unread, and archived notification counts." className="xl:col-span-6"><DonutChart data={sections.operations?.notificationRead} /></ChartCard>
-            <ChartCard title="System Reliability" subtitle="Audit-log outcomes and request performance indicators." className="xl:col-span-5">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartCard
+              title="Job Edit Requests"
+              subtitle="Governance requests by status"
+            >
+              <HorizontalBars data={sections.operations?.editRequests} />
+            </ChartCard>
+            <ChartCard
+              title="Most Requested Job Sections"
+              subtitle="Sections employers request to edit"
+            >
+              <HorizontalBars data={sections.operations?.editRequestSections} />
+            </ChartCard>
+            <ChartCard
+              title="Message Types"
+              subtitle="Conversation activity without exposing message content"
+            >
+              <HorizontalBars data={sections.operations?.messages} />
+            </ChartCard>
+            <ChartCard
+              title="Message Read State"
+              subtitle="Read and unread messages"
+            >
+              <DonutChart data={sections.operations?.messageRead} />
+            </ChartCard>
+            <ChartCard
+              title="Notification Types"
+              subtitle="System notifications by workflow"
+            >
+              <HorizontalBars data={sections.operations?.notifications} />
+            </ChartCard>
+            <ChartCard
+              title="Notification State"
+              subtitle="Read, unread, and archived counts"
+            >
+              <DonutChart data={sections.operations?.notificationRead} />
+            </ChartCard>
+            <ChartCard
+              title="System Reliability"
+              subtitle="Log outcome and request performance"
+            >
               <HorizontalBars data={sections.operations?.system?.statuses} />
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <MetricTile label="P95 Duration" value={sections.operations?.system?.p95DurationMs} suffix=" ms" icon={Activity} />
-                <MetricTile label="Server Errors" value={sections.operations?.system?.serverErrors} icon={ShieldAlert} />
+                <MetricTile
+                  label="P95 Duration"
+                  value={sections.operations?.system?.p95DurationMs}
+                  suffix=" ms"
+                  icon={Activity}
+                />
+                <MetricTile
+                  label="Server Errors"
+                  value={sections.operations?.system?.serverErrors}
+                  icon={ShieldAlert}
+                />
               </div>
             </ChartCard>
-            <ChartCard title="System Log Modules" subtitle="Modules generating the most audit events." className="xl:col-span-7"><HorizontalBars data={sections.operations?.system?.modules} maxItems={10} /></ChartCard>
+            <ChartCard
+              title="System Log Modules"
+              subtitle="Modules generating the most audit events"
+              className="lg:col-span-2"
+            >
+              <HorizontalBars
+                data={sections.operations?.system?.modules}
+                maxItems={10}
+              />
+            </ChartCard>
           </div>
         ) : null}
 
         {!loading ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3 text-[10px] text-slate-400">
-            <span>All rates are calculated from records matching the selected filters.</span>
-            <span>Timezone: Asia/Manila · Last updated: {analytics.generatedAt ? new Date(analytics.generatedAt).toLocaleString("en-PH") : "—"}</span>
-          </div>
+          <p className="text-right text-[10px] text-slate-400">
+            Timezone: Asia/Manila · Last updated:{" "}
+            {analytics.generatedAt
+              ? new Date(analytics.generatedAt).toLocaleString("en-PH")
+              : "—"}
+          </p>
         ) : null}
 
-        <CustomDateRangeModal open={showCustomDateModal} startDate={filters.startDate} endDate={filters.endDate} onCancel={() => setShowCustomDateModal(false)} onApply={applyCustomDateRange} />
+        <CustomDateRangeModal
+          open={showCustomDateModal}
+          startDate={filters.startDate}
+          endDate={filters.endDate}
+          onCancel={() => setShowCustomDateModal(false)}
+          onApply={applyCustomDateRange}
+        />
       </div>
     </main>
   );

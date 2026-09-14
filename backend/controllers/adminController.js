@@ -1301,51 +1301,6 @@ const analyticsCountRows = (items, getter, limit = 20) => {
 const analyticsUnique = (values) => [...new Set(values.map(analyticsText).filter(Boolean))]
   .sort((a, b) => a.localeCompare(b));
 
-const analyticsCountOrdered = (items, getter, order = []) => {
-  const counts = new Map(order.map((name) => [name, 0]));
-  items.forEach((item) => {
-    const name = analyticsText(getter(item));
-    if (!name) return;
-    counts.set(name, (counts.get(name) || 0) + 1);
-  });
-  return Array.from(counts, ([name, value]) => ({ name, value })).filter((item) => item.value > 0);
-};
-
-const analyticsAge = (birthday) => {
-  if (!birthday) return null;
-  const birth = new Date(birthday);
-  if (Number.isNaN(birth.getTime())) return null;
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const monthDifference = now.getMonth() - birth.getMonth();
-  if (monthDifference < 0 || (monthDifference === 0 && now.getDate() < birth.getDate())) age -= 1;
-  return age >= 0 && age <= 100 ? age : null;
-};
-
-const analyticsAgeGroup = (user) => {
-  const age = analyticsAge(user?.jobSeekerProfile?.birthday);
-  if (age === null) return 'Unspecified';
-  if (age <= 20) return '18–20';
-  if (age <= 23) return '21–23';
-  if (age <= 26) return '24–26';
-  if (age <= 30) return '27–30';
-  if (age <= 35) return '31–35';
-  return '36+';
-};
-
-const analyticsEducation = (user) => {
-  const profile = user?.jobSeekerProfile || {};
-  const entries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
-  const latest = [...entries].reverse().find((item) => item?.educationalAttainment || item?.level);
-  return profile.educationalAttainment || latest?.educationalAttainment || latest?.level || 'Unspecified';
-};
-
-const analyticsAverage = (values, decimals = 1) => {
-  const valid = values.map(Number).filter(Number.isFinite);
-  if (!valid.length) return 0;
-  return Number((valid.reduce((sum, value) => sum + value, 0) / valid.length).toFixed(decimals));
-};
-
 const analyticsVerificationStatus = (user) => {
   if (user?.role === 'jobseeker') {
     return analyticsLower(
@@ -1372,69 +1327,30 @@ const analyticsPercentile = (values, percentile) => {
 
 const analyticsTrendRows = ({ users, jobs, applications, dateField = 'primary' }) => {
   const buckets = new Map();
-  const events = [];
-
-  const monthInfo = (dateValue) => {
+  const ensure = (dateValue) => {
     const parts = analyticsManilaParts(dateValue);
-    if (!parts || !Number.isFinite(parts.year) || !Number.isFinite(parts.month)) return null;
-    return {
-      key: `${parts.year}-${String(parts.month + 1).padStart(2, '0')}`,
-      year: parts.year,
-      month: parts.month,
-    };
-  };
-
-  const registerEvent = (dateValue) => {
-    if (!dateValue) return null;
-    const info = monthInfo(dateValue);
-    if (!info) return null;
-    events.push(info);
-    return info;
-  };
-
-  users.forEach((item) => registerEvent(analyticsDateFor('user', item, dateField)));
-  jobs.forEach((item) => registerEvent(analyticsDateFor('job', item, dateField)));
-  applications.forEach((item) => {
-    registerEvent(analyticsDateFor('application', item, dateField));
-    if (analyticsLower(item.status) === 'hired') {
-      registerEvent(dateField === 'outcome' ? analyticsDateFor('application', item, dateField) : (item.hiredAt || analyticsDateFor('application', item, dateField)));
+    const key = `${parts.year}-${String(parts.month + 1).padStart(2, '0')}`;
+    if (!buckets.has(key)) {
+      const label = new Date(Date.UTC(parts.year, parts.month, 1)).toLocaleString('en-US', {
+        month: 'short', year: '2-digit', timeZone: 'UTC',
+      });
+      buckets.set(key, { key, label, registrations: 0, jobs: 0, applications: 0, hires: 0 });
     }
-  });
-
-  if (!events.length) return [];
-  events.sort((a, b) => a.key.localeCompare(b.key));
-  const latest = events[events.length - 1];
-  const earliest = events[0];
-  let cursor = new Date(Date.UTC(earliest.year, earliest.month, 1));
-  const latestDate = new Date(Date.UTC(latest.year, latest.month, 1));
-  const eighteenMonthsBefore = new Date(Date.UTC(latest.year, latest.month - 17, 1));
-  if (cursor < eighteenMonthsBefore) cursor = eighteenMonthsBefore;
-
-  while (cursor <= latestDate) {
-    const year = cursor.getUTCFullYear();
-    const month = cursor.getUTCMonth();
-    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
-    const label = cursor.toLocaleString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' });
-    buckets.set(key, { key, label, registrations: 0, jobs: 0, applications: 0, hires: 0 });
-    cursor = new Date(Date.UTC(year, month + 1, 1));
-  }
-
-  const increment = (dateValue, metric) => {
-    const info = monthInfo(dateValue);
-    if (info && buckets.has(info.key)) buckets.get(info.key)[metric] += 1;
+    return buckets.get(key);
   };
 
-  users.forEach((item) => increment(analyticsDateFor('user', item, dateField), 'registrations'));
-  jobs.forEach((item) => increment(analyticsDateFor('job', item, dateField), 'jobs'));
+  users.forEach((item) => { const date = analyticsDateFor('user', item, dateField); if (date) ensure(date).registrations += 1; });
+  jobs.forEach((item) => { const date = analyticsDateFor('job', item, dateField); if (date) ensure(date).jobs += 1; });
   applications.forEach((item) => {
     const date = analyticsDateFor('application', item, dateField);
-    increment(date, 'applications');
+    if (date) ensure(date).applications += 1;
     if (analyticsLower(item.status) === 'hired') {
-      increment(dateField === 'outcome' ? date : (item.hiredAt || date), 'hires');
+      const hireDate = dateField === 'outcome' ? date : (item.hiredAt || date);
+      if (hireDate) ensure(hireDate).hires += 1;
     }
   });
 
-  return Array.from(buckets.values());
+  return Array.from(buckets.values()).sort((a, b) => a.key.localeCompare(b.key)).slice(-18);
 };
 
 exports.getAdminAnalytics = async (req, res) => {
@@ -1472,7 +1388,7 @@ exports.getAdminAnalytics = async (req, res) => {
     const [usersAll, jobsAll, applicationsAll, editRequestsAll, messagesAll, conversationPreferencesAll,
       notificationsAll, verificationRequestsAll, systemLogsAll] = await Promise.all([
       User.find({ status: { $ne: 'deleted' } })
-        .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.birthday jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.employmentType jobSeekerProfile.educationEntries jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.businessType employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
+        .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.educationEntries jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
       Job.find({}).select('employer companyName status isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount publishedAt filledAt archivedAt createdAt updatedAt').lean(),
       Application.find({}).select('job jobseeker employer status appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
@@ -1534,29 +1450,11 @@ exports.getAdminAnalytics = async (req, res) => {
     const activeJobs = jobs.filter((item) => !item.isArchived && item.isActive !== false && item.isPublished !== false && ['published', 'open'].includes(analyticsLower(item.status))).length;
     const failedLogs = systemLogs.filter((item) => analyticsLower(item.status) === 'failed').length;
     const applicationStatuses = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'];
-    const reachedInterview = (item) => {
-      if (['for interview', 'hired'].includes(analyticsLower(item.status))) return true;
-      return (item.activityHistory || []).some((activity) =>
-        analyticsLower(activity?.type) === 'interview' || analyticsLower(activity?.toStatus) === 'for interview'
-      );
-    };
-    const reachedReview = (item) => Boolean(
-      item.reviewedAt || reachedInterview(item) || !['', 'pending'].includes(analyticsLower(item.status))
-    );
-    const applicationFunnel = [
-      { name: 'Submitted', value: applications.length },
-      { name: 'Reviewed', value: applications.filter(reachedReview).length },
-      { name: 'Interview', value: applications.filter(reachedInterview).length },
-      { name: 'Hired', value: hiredApplications.length },
-    ];
+    const applicationFunnel = applicationStatuses.map((name) => ({
+      name,
+      value: applications.filter((item) => analyticsLower(item.status) === name).length,
+    }));
     const verifiedRegistrations = verificationRequests.filter((item) => item.verifiedAt || item.consumedAt).length;
-    const jobseekers = users.filter((item) => analyticsLower(item.role) === 'jobseeker');
-    const employers = users.filter((item) => analyticsLower(item.role) === 'employer');
-    const totalViews = jobs.reduce((sum, item) => sum + Number(item.views || 0), 0);
-    const uniqueApplicants = new Set(applications.map((item) => analyticsId(item.jobseeker)).filter(Boolean)).size;
-    const timeToHireDays = hiredApplications
-      .filter((item) => item.appliedAt && item.hiredAt)
-      .map((item) => Math.max(0, (new Date(item.hiredAt) - new Date(item.appliedAt)) / 86400000));
 
     return res.status(200).json({
       success: true,
@@ -1598,12 +1496,7 @@ exports.getAdminAnalytics = async (req, res) => {
           roles: analyticsCountRows(users, (item) => item.role),
           statuses: analyticsCountRows(users, (item) => item.status),
           verification: analyticsCountRows(users.filter((item) => item.role !== 'admin'), analyticsVerificationStatus),
-          campuses: analyticsCountRows(jobseekers, getJobseekerCampus),
-          ageGroups: analyticsCountOrdered(jobseekers, analyticsAgeGroup, ['18–20', '21–23', '24–26', '27–30', '31–35', '36+', 'Unspecified']),
-          genders: analyticsCountRows(jobseekers, (item) => item?.jobSeekerProfile?.gender || 'Unspecified'),
-          education: analyticsCountRows(jobseekers, analyticsEducation, 10),
-          employmentTypes: analyticsCountRows(jobseekers, (item) => item?.jobSeekerProfile?.employmentType || 'Unspecified'),
-          employerIndustries: analyticsCountRows(employers, (item) => item?.employerProfile?.industry || item?.employerProfile?.businessType || 'Unspecified', 10),
+          campuses: analyticsCountRows(users.filter((item) => item.role === 'jobseeker'), getJobseekerCampus),
         },
         jobs: {
           statuses: analyticsCountRows(jobs, (item) => item.status),
@@ -1611,17 +1504,12 @@ exports.getAdminAnalytics = async (req, res) => {
           employmentTypes: analyticsCountRows(jobs, (item) => item.jobType),
           workModes: analyticsCountRows(jobs, (item) => item.workMode),
           totalVacancies: jobs.reduce((sum, item) => sum + Number(item.vacancies || 0), 0),
-          totalViews,
+          totalViews: jobs.reduce((sum, item) => sum + Number(item.views || 0), 0),
         },
         applications: {
           funnel: applicationFunnel,
-          statuses: analyticsCountRows(applications, (item) => item.status),
-          interviewRate: applications.length ? Number(((applications.filter(reachedInterview).length / applications.length) * 100).toFixed(1)) : 0,
+          interviewRate: applications.length ? Number(((applications.filter((item) => ['for interview', 'hired'].includes(analyticsLower(item.status))).length / applications.length) * 100).toFixed(1)) : 0,
           hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
-          viewToApplicationRate: totalViews ? Number(((applications.length / totalViews) * 100).toFixed(1)) : 0,
-          uniqueApplicants,
-          applicationsPerJob: jobs.length ? Number((applications.length / jobs.length).toFixed(1)) : 0,
-          averageTimeToHireDays: analyticsAverage(timeToHireDays, 1),
           employmentStatus: analyticsCountRows(hiredApplications, (item) => item.employmentStatus || 'not recorded'),
         },
         verification: {
