@@ -1220,7 +1220,7 @@ const EmployerVerificationDetails = () => {
                 <button
                   type="button"
                   onClick={() => setShowHoldModal(true)}
-                  disabled={action !== null || !canTransition(overallStatus, "hold")}
+                  disabled={action !== null}
                   className={cn(
                     "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50",
                     UI.ring
@@ -1324,7 +1324,9 @@ const EmployerVerificationDetails = () => {
               {DOC_TYPES.map((docType, index) => {
                 const doc = docs?.[docType.key] || {};
                 const hasFile = Boolean(doc.url);
-                const credentialApproved = doc.checked === true || String(doc.status || "").toLowerCase() === "approved";
+                const credentialStatus = String(doc.status || "").toLowerCase();
+                const credentialApproved = doc.checked === true || credentialStatus === "approved";
+                const credentialOnHold = credentialStatus === "hold";
                 const fileName = doc.filename || getFileName(doc.url || "") || docType.label;
                 const fileSize = doc.fileSize
                   ? doc.fileSize < 1024 * 1024
@@ -1351,12 +1353,14 @@ const EmployerVerificationDetails = () => {
                         "mt-2 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
                         credentialApproved
                           ? "bg-emerald-50 text-emerald-700"
+                          : credentialOnHold
+                            ? "bg-[#FFF7E6] text-[#B66A00]"
                           : hasFile
                             ? "bg-amber-50 text-amber-700"
                             : "bg-slate-100 text-slate-500"
                       )}
                     >
-                      {credentialApproved ? "Approved" : hasFile ? "Pending" : "Not submitted"}
+                      {credentialApproved ? "Approved" : credentialOnHold ? "On Hold" : hasFile ? "Pending" : "Not submitted"}
                     </span>
 
                     <div className="mt-3 min-h-[46px] flex-1">
