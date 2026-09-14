@@ -18,6 +18,9 @@ router.put('/profile/password', adminController.updateAdminPassword);
 // Dashboard analytics route
 router.get('/dashboard', adminController.getAdminDashboardAnalytics);
 
+// Dedicated Admin Analytics page data
+router.get('/analytics', adminController.getAdminAnalytics);
+
 // Admin job offers route
 router.get('/job-offers', adminController.getAdminJobOffers);
 

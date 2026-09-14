@@ -6,6 +6,9 @@ const SystemLog = require('../models/SystemLog');
 const CommunityPost = require('../models/CommunityPost');
 const Notification = require('../models/Notification');
 const JobEditRequest = require('../models/JobEditRequest');
+const Message = require('../models/Message');
+const ConversationPreference = require('../models/ConversationPreference');
+const PendingEmailVerification = require('../models/PendingEmailVerification');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
@@ -1131,6 +1134,440 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
       success: false,
       message: 'Server error fetching dashboard analytics',
     });
+  }
+};
+
+// ==========================
+// ADMIN ANALYTICS PAGE
+// ==========================
+const ANALYTICS_MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+const analyticsText = (value) => String(value ?? '').trim();
+const analyticsLower = (value) => analyticsText(value).toLowerCase();
+const analyticsId = (value) => analyticsText(value?._id || value);
+const analyticsIsAll = (value) => !analyticsText(value) || analyticsLower(value) === 'all';
+
+const analyticsManilaParts = (value = new Date()) => {
+  const shifted = new Date(new Date(value).getTime() + ANALYTICS_MANILA_OFFSET_MS);
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth(),
+    day: shifted.getUTCDate(),
+  };
+};
+
+const analyticsManilaBoundary = ({ year, month, day }, endOfDay = false) => {
+  const utc = Date.UTC(
+    year,
+    month,
+    day,
+    endOfDay ? 23 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 999 : 0
+  ) - ANALYTICS_MANILA_OFFSET_MS;
+  return new Date(utc);
+};
+
+const analyticsShiftDateParts = (parts, days) => {
+  const date = new Date(Date.UTC(parts.year, parts.month, parts.day + days));
+  return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() };
+};
+
+const analyticsParseDateInput = (value) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(analyticsText(value));
+  if (!match) return null;
+  const parts = { year: Number(match[1]), month: Number(match[2]) - 1, day: Number(match[3]) };
+  const check = new Date(Date.UTC(parts.year, parts.month, parts.day));
+  if (
+    check.getUTCFullYear() !== parts.year ||
+    check.getUTCMonth() !== parts.month ||
+    check.getUTCDate() !== parts.day
+  ) return null;
+  return parts;
+};
+
+const getAdminAnalyticsDateRange = ({ preset, specificDate, startDate, endDate }) => {
+  const value = analyticsLower(preset || 'overall');
+  const today = analyticsManilaParts();
+  const dayOfWeek = new Date(Date.UTC(today.year, today.month, today.day)).getUTCDay();
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const thisMonday = analyticsShiftDateParts(today, -mondayOffset);
+
+  const makeDay = (parts, label) => ({
+    start: analyticsManilaBoundary(parts),
+    end: analyticsManilaBoundary(parts, true),
+    label,
+  });
+
+  if (value === 'today') return makeDay(today, 'Today');
+  if (value === 'yesterday') return makeDay(analyticsShiftDateParts(today, -1), 'Yesterday');
+  if (value === 'thisweek') {
+    return {
+      start: analyticsManilaBoundary(thisMonday),
+      end: analyticsManilaBoundary(today, true),
+      label: 'This Week',
+    };
+  }
+  if (value === 'lastweek') {
+    return {
+      start: analyticsManilaBoundary(analyticsShiftDateParts(thisMonday, -7)),
+      end: analyticsManilaBoundary(analyticsShiftDateParts(thisMonday, -1), true),
+      label: 'Last Week',
+    };
+  }
+  if (value === 'thismonth') {
+    return {
+      start: analyticsManilaBoundary({ ...today, day: 1 }),
+      end: analyticsManilaBoundary(today, true),
+      label: 'This Month',
+    };
+  }
+  if (value === 'lastmonth') {
+    const firstThisMonth = { ...today, day: 1 };
+    const lastPreviousMonth = analyticsShiftDateParts(firstThisMonth, -1);
+    return {
+      start: analyticsManilaBoundary({ ...lastPreviousMonth, day: 1 }),
+      end: analyticsManilaBoundary(lastPreviousMonth, true),
+      label: 'Last Month',
+    };
+  }
+  if (value === 'thisyear') {
+    return {
+      start: analyticsManilaBoundary({ year: today.year, month: 0, day: 1 }),
+      end: analyticsManilaBoundary(today, true),
+      label: 'This Year',
+    };
+  }
+  if (value === 'lastyear') {
+    return {
+      start: analyticsManilaBoundary({ year: today.year - 1, month: 0, day: 1 }),
+      end: analyticsManilaBoundary({ year: today.year - 1, month: 11, day: 31 }, true),
+      label: 'Last Year',
+    };
+  }
+  if (value === 'specific') {
+    const selected = analyticsParseDateInput(specificDate);
+    if (selected) return makeDay(selected, 'Specific Date');
+  }
+  if (value === 'range') {
+    const from = analyticsParseDateInput(startDate);
+    const to = analyticsParseDateInput(endDate);
+    if (from && to) {
+      const start = analyticsManilaBoundary(from);
+      const end = analyticsManilaBoundary(to, true);
+      if (start <= end) return { start, end, label: 'Date Range' };
+    }
+  }
+  return { start: null, end: null, label: 'Overall' };
+};
+
+const analyticsInRange = (value, range) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return false;
+  if (range.start && date < range.start) return false;
+  if (range.end && date > range.end) return false;
+  return true;
+};
+
+const analyticsDateFor = (type, record, dateField) => {
+  if (dateField === 'created') return record?.createdAt;
+  if (dateField === 'outcome') {
+    if (type === 'job') return record?.filledAt || record?.archivedAt || record?.updatedAt || record?.createdAt;
+    if (type === 'application') return record?.hiredAt || record?.reviewedAt || record?.updatedAt || record?.appliedAt || record?.createdAt;
+    if (type === 'editRequest') return record?.reviewedAt || record?.updatedAt || record?.createdAt;
+    if (type === 'message') return record?.readAt || record?.updatedAt || record?.createdAt;
+    if (type === 'verification') return record?.verifiedAt || record?.consumedAt || record?.updatedAt || record?.createdAt;
+    return record?.updatedAt || record?.createdAt;
+  }
+  if (type === 'job') return record?.publishedAt || record?.createdAt;
+  if (type === 'application') return record?.appliedAt || record?.createdAt;
+  if (type === 'verification') return record?.otpRequestedAt || record?.createdAt;
+  return record?.createdAt;
+};
+
+const analyticsCountRows = (items, getter, limit = 20) => {
+  const counts = new Map();
+  items.forEach((item) => {
+    const raw = getter(item);
+    const name = analyticsText(raw) || 'Unspecified';
+    counts.set(name, (counts.get(name) || 0) + 1);
+  });
+  return Array.from(counts, ([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
+    .slice(0, limit);
+};
+
+const analyticsUnique = (values) => [...new Set(values.map(analyticsText).filter(Boolean))]
+  .sort((a, b) => a.localeCompare(b));
+
+const analyticsVerificationStatus = (user) => {
+  if (user?.role === 'jobseeker') {
+    return analyticsLower(
+      user?.jobSeekerProfile?.verificationDocs?.overallStatus ||
+      user?.jobSeekerProfile?.verificationStatus ||
+      (user?.isVerified ? 'verified' : 'not_submitted')
+    );
+  }
+  if (user?.role === 'employer') {
+    return analyticsLower(
+      user?.employerProfile?.verificationDocs?.overallStatus ||
+      (user?.isVerified ? 'verified' : 'unverified')
+    );
+  }
+  return user?.isVerified ? 'verified' : 'unverified';
+};
+
+const analyticsPercentile = (values, percentile) => {
+  const sorted = values.map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+  if (!sorted.length) return 0;
+  const index = Math.min(sorted.length - 1, Math.ceil((percentile / 100) * sorted.length) - 1);
+  return Math.round(sorted[Math.max(0, index)]);
+};
+
+const analyticsTrendRows = ({ users, jobs, applications, dateField = 'primary' }) => {
+  const buckets = new Map();
+  const ensure = (dateValue) => {
+    const parts = analyticsManilaParts(dateValue);
+    const key = `${parts.year}-${String(parts.month + 1).padStart(2, '0')}`;
+    if (!buckets.has(key)) {
+      const label = new Date(Date.UTC(parts.year, parts.month, 1)).toLocaleString('en-US', {
+        month: 'short', year: '2-digit', timeZone: 'UTC',
+      });
+      buckets.set(key, { key, label, registrations: 0, jobs: 0, applications: 0, hires: 0 });
+    }
+    return buckets.get(key);
+  };
+
+  users.forEach((item) => { const date = analyticsDateFor('user', item, dateField); if (date) ensure(date).registrations += 1; });
+  jobs.forEach((item) => { const date = analyticsDateFor('job', item, dateField); if (date) ensure(date).jobs += 1; });
+  applications.forEach((item) => {
+    const date = analyticsDateFor('application', item, dateField);
+    if (date) ensure(date).applications += 1;
+    if (analyticsLower(item.status) === 'hired') {
+      const hireDate = dateField === 'outcome' ? date : (item.hiredAt || date);
+      if (hireDate) ensure(hireDate).hires += 1;
+    }
+  });
+
+  return Array.from(buckets.values()).sort((a, b) => a.key.localeCompare(b.key)).slice(-18);
+};
+
+exports.getAdminAnalytics = async (req, res) => {
+  try {
+    const filters = {
+      date: analyticsText(req.query.date || 'overall'),
+      dateField: ['primary', 'created', 'outcome'].includes(analyticsLower(req.query.dateField))
+        ? analyticsLower(req.query.dateField) : 'primary',
+      specificDate: analyticsText(req.query.specificDate),
+      startDate: analyticsText(req.query.startDate),
+      endDate: analyticsText(req.query.endDate),
+      role: analyticsLower(req.query.role || 'all'),
+      campus: analyticsText(req.query.campus || 'all'),
+      userStatus: analyticsLower(req.query.userStatus || 'all'),
+      verificationStatus: analyticsLower(req.query.verificationStatus || 'all'),
+      jobStatus: analyticsLower(req.query.jobStatus || 'all'),
+      category: analyticsText(req.query.category || 'all'),
+      jobType: analyticsText(req.query.jobType || 'all'),
+      workMode: analyticsText(req.query.workMode || 'all'),
+      applicationStatus: analyticsLower(req.query.applicationStatus || 'all'),
+      company: analyticsText(req.query.company || 'all'),
+      editRequestStatus: analyticsLower(req.query.editRequestStatus || 'all'),
+      messageType: analyticsLower(req.query.messageType || 'all'),
+      notificationType: analyticsLower(req.query.notificationType || 'all'),
+      communityCategory: analyticsLower(req.query.communityCategory || 'all'),
+      logStatus: analyticsLower(req.query.logStatus || 'all'),
+      logModule: analyticsText(req.query.logModule || 'all'),
+    };
+    const range = getAdminAnalyticsDateRange({
+      preset: filters.date,
+      specificDate: filters.specificDate,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    });
+
+    const [usersAll, jobsAll, applicationsAll, editRequestsAll, messagesAll, conversationPreferencesAll,
+      notificationsAll, communityPostsAll, verificationRequestsAll, systemLogsAll] = await Promise.all([
+      User.find({ status: { $ne: 'deleted' } })
+        .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.educationEntries jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
+        .lean(),
+      Job.find({}).select('employer companyName status isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount publishedAt filledAt archivedAt createdAt updatedAt').lean(),
+      Application.find({}).select('job jobseeker employer status appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
+      JobEditRequest.find({}).select('job employer requestedSections status reviewedAt unlockUntil createdAt updatedAt').lean(),
+      Message.find({}).select('conversationId sender receiver messageType isRead readAt job application createdAt updatedAt').lean(),
+      ConversationPreference.find({}).select('user conversationId otherUser archived hiddenCompany deleted createdAt updatedAt').lean(),
+      Notification.find({}).select('user type relatedModel isRead isArchived createdAt updatedAt').lean(),
+      CommunityPost.find({}).select('category topics likes comments commentsCount reports isSensitive moderationFlags isDeleted deletedAt createdAt updatedAt').lean(),
+      PendingEmailVerification.find({}).select('role otpRequestedAt otpExpiresAt verifiedAt consumedAt deleteAfterAt createdAt updatedAt').lean(),
+      SystemLog.find({}).select('actorRole action module status method statusCode durationMs createdAt updatedAt').lean(),
+    ]);
+
+    const userById = new Map(usersAll.map((user) => [analyticsId(user._id), user]));
+    const jobById = new Map(jobsAll.map((job) => [analyticsId(job._id), job]));
+    const dateMatches = (type, item) => !range.start || analyticsInRange(analyticsDateFor(type, item, filters.dateField), range);
+    const same = (actual, selected) => analyticsIsAll(selected) || analyticsLower(actual) === analyticsLower(selected);
+
+    const users = usersAll.filter((user) => {
+      if (!dateMatches('user', user)) return false;
+      if (!same(user.role, filters.role)) return false;
+      if (!same(user.status, filters.userStatus)) return false;
+      if (!same(analyticsVerificationStatus(user), filters.verificationStatus)) return false;
+      if (!analyticsIsAll(filters.campus) && analyticsLower(getJobseekerCampus(user)) !== analyticsLower(filters.campus)) return false;
+      return true;
+    });
+
+    const jobAttributeMatches = (job) => {
+      if (!same(job.status, filters.jobStatus)) return false;
+      if (!same(job.category, filters.category)) return false;
+      if (!same(job.jobType, filters.jobType)) return false;
+      if (!same(job.workMode, filters.workMode)) return false;
+      const employer = userById.get(analyticsId(job.employer));
+      const company = analyticsText(job.companyName || employer?.employerProfile?.companyName);
+      if (!same(company, filters.company)) return false;
+      return true;
+    };
+    const jobs = jobsAll.filter((job) => dateMatches('job', job) && jobAttributeMatches(job));
+    const allowedJobIds = new Set(jobsAll.filter(jobAttributeMatches).map((job) => analyticsId(job._id)));
+
+    const applications = applicationsAll.filter((application) => {
+      if (!dateMatches('application', application)) return false;
+      if (!same(application.status, filters.applicationStatus)) return false;
+      const job = jobById.get(analyticsId(application.job));
+      if ((!analyticsIsAll(filters.jobStatus) || !analyticsIsAll(filters.category) || !analyticsIsAll(filters.jobType) ||
+        !analyticsIsAll(filters.workMode) || !analyticsIsAll(filters.company)) && !allowedJobIds.has(analyticsId(job?._id))) return false;
+      const seeker = userById.get(analyticsId(application.jobseeker));
+      if (!analyticsIsAll(filters.campus) && analyticsLower(getJobseekerCampus(seeker)) !== analyticsLower(filters.campus)) return false;
+      return true;
+    });
+
+    const editRequests = editRequestsAll.filter((item) => dateMatches('editRequest', item) && same(item.status, filters.editRequestStatus));
+    const messages = messagesAll.filter((item) => dateMatches('message', item) && same(item.messageType, filters.messageType));
+    const notifications = notificationsAll.filter((item) => dateMatches('notification', item) && same(item.type, filters.notificationType));
+    const communityPosts = communityPostsAll.filter((item) => dateMatches('community', item) && same(item.category, filters.communityCategory));
+    const verificationRequests = verificationRequestsAll.filter((item) => dateMatches('verification', item) && same(item.role, filters.role));
+    const systemLogs = systemLogsAll.filter((item) => dateMatches('log', item) && same(item.status, filters.logStatus) && same(item.module, filters.logModule));
+    const conversationPreferences = conversationPreferencesAll.filter((item) => dateMatches('conversationPreference', item));
+
+    const hiredApplications = applications.filter((item) => analyticsLower(item.status) === 'hired');
+    const pendingVerification = users.filter((item) => ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
+    const activeJobs = jobs.filter((item) => !item.isArchived && item.isActive !== false && item.isPublished !== false && ['published', 'open'].includes(analyticsLower(item.status))).length;
+    const failedLogs = systemLogs.filter((item) => analyticsLower(item.status) === 'failed').length;
+    const totalCommunityReports = communityPosts.reduce((total, post) => {
+      const commentReports = (post.comments || []).reduce((sum, comment) => sum + (comment.reports || []).length +
+        (comment.replies || []).reduce((replySum, reply) => replySum + (reply.reports || []).length, 0), 0);
+      return total + (post.reports || []).length + commentReports;
+    }, 0);
+
+    const applicationStatuses = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'];
+    const applicationFunnel = applicationStatuses.map((name) => ({
+      name,
+      value: applications.filter((item) => analyticsLower(item.status) === name).length,
+    }));
+    const verifiedRegistrations = verificationRequests.filter((item) => item.verifiedAt || item.consumedAt).length;
+
+    return res.status(200).json({
+      success: true,
+      generatedAt: new Date().toISOString(),
+      timezone: 'Asia/Manila',
+      appliedFilters: { ...filters, dateLabel: range.label },
+      filters: {
+        options: {
+          roles: ['admin', 'employer', 'jobseeker'],
+          campuses: analyticsUnique(usersAll.map(getJobseekerCampus).filter((value) => value !== 'Unspecified')),
+          userStatuses: analyticsUnique(usersAll.map((item) => item.status)),
+          verificationStatuses: analyticsUnique(usersAll.map(analyticsVerificationStatus)),
+          jobStatuses: analyticsUnique(jobsAll.map((item) => item.status)),
+          categories: analyticsUnique(jobsAll.map((item) => item.category)),
+          jobTypes: analyticsUnique(jobsAll.map((item) => item.jobType)),
+          workModes: analyticsUnique(jobsAll.map((item) => item.workMode)),
+          applicationStatuses,
+          companies: analyticsUnique(jobsAll.map((job) => job.companyName || userById.get(analyticsId(job.employer))?.employerProfile?.companyName)),
+          editRequestStatuses: analyticsUnique(editRequestsAll.map((item) => item.status)),
+          messageTypes: analyticsUnique(messagesAll.map((item) => item.messageType)),
+          notificationTypes: analyticsUnique(notificationsAll.map((item) => item.type)),
+          communityCategories: analyticsUnique(communityPostsAll.map((item) => item.category)),
+          logStatuses: analyticsUnique(systemLogsAll.map((item) => item.status)),
+          logModules: analyticsUnique(systemLogsAll.map((item) => item.module)),
+        },
+      },
+      kpis: {
+        totalUsers: users.length,
+        activeJobs,
+        applications: applications.length,
+        hired: hiredApplications.length,
+        hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
+        pendingVerification,
+        unreadMessages: messages.filter((item) => !item.isRead).length,
+        systemFailures: failedLogs,
+      },
+      trends: analyticsTrendRows({ users, jobs, applications, dateField: filters.dateField }),
+      sections: {
+        users: {
+          roles: analyticsCountRows(users, (item) => item.role),
+          statuses: analyticsCountRows(users, (item) => item.status),
+          verification: analyticsCountRows(users.filter((item) => item.role !== 'admin'), analyticsVerificationStatus),
+          campuses: analyticsCountRows(users.filter((item) => item.role === 'jobseeker'), getJobseekerCampus),
+        },
+        jobs: {
+          statuses: analyticsCountRows(jobs, (item) => item.status),
+          categories: analyticsCountRows(jobs, (item) => item.category, 10),
+          employmentTypes: analyticsCountRows(jobs, (item) => item.jobType),
+          workModes: analyticsCountRows(jobs, (item) => item.workMode),
+          totalVacancies: jobs.reduce((sum, item) => sum + Number(item.vacancies || 0), 0),
+          totalViews: jobs.reduce((sum, item) => sum + Number(item.views || 0), 0),
+        },
+        applications: {
+          funnel: applicationFunnel,
+          interviewRate: applications.length ? Number(((applications.filter((item) => ['for interview', 'hired'].includes(analyticsLower(item.status))).length / applications.length) * 100).toFixed(1)) : 0,
+          hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
+          employmentStatus: analyticsCountRows(hiredApplications, (item) => item.employmentStatus || 'not recorded'),
+        },
+        verification: {
+          emailRequests: verificationRequests.length,
+          emailVerified: verifiedRegistrations,
+          emailCompletionRate: verificationRequests.length ? Number(((verifiedRegistrations / verificationRequests.length) * 100).toFixed(1)) : 0,
+          byRole: analyticsCountRows(verificationRequests, (item) => item.role),
+        },
+        operations: {
+          editRequests: analyticsCountRows(editRequests, (item) => item.status),
+          editRequestSections: analyticsCountRows(editRequests.flatMap((item) => item.requestedSections || []), (item) => item, 10),
+          messages: analyticsCountRows(messages, (item) => item.messageType),
+          messageRead: [
+            { name: 'Read', value: messages.filter((item) => item.isRead).length },
+            { name: 'Unread', value: messages.filter((item) => !item.isRead).length },
+          ],
+          conversationPreferences: [
+            { name: 'Archived', value: conversationPreferences.filter((item) => item.archived).length },
+            { name: 'Hidden Company', value: conversationPreferences.filter((item) => item.hiddenCompany).length },
+            { name: 'Deleted', value: conversationPreferences.filter((item) => item.deleted).length },
+          ],
+          notifications: analyticsCountRows(notifications, (item) => item.type, 12),
+          notificationRead: [
+            { name: 'Read', value: notifications.filter((item) => item.isRead).length },
+            { name: 'Unread', value: notifications.filter((item) => !item.isRead).length },
+            { name: 'Archived', value: notifications.filter((item) => item.isArchived).length },
+          ],
+          community: {
+            categories: analyticsCountRows(communityPosts, (item) => item.category),
+            posts: communityPosts.length,
+            deleted: communityPosts.filter((item) => item.isDeleted).length,
+            sensitive: communityPosts.filter((item) => item.isSensitive).length,
+            reports: totalCommunityReports,
+            engagement: communityPosts.reduce((sum, item) => sum + (item.likes || []).length + Number(item.commentsCount || (item.comments || []).length), 0),
+          },
+          system: {
+            statuses: analyticsCountRows(systemLogs, (item) => item.status),
+            modules: analyticsCountRows(systemLogs, (item) => item.module, 10),
+            methods: analyticsCountRows(systemLogs, (item) => item.method || 'N/A'),
+            p95DurationMs: analyticsPercentile(systemLogs.map((item) => item.durationMs), 95),
+            serverErrors: systemLogs.filter((item) => Number(item.statusCode) >= 500).length,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Admin analytics error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load analytics data.' });
   }
 };
 

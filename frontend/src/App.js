@@ -77,6 +77,7 @@ import JobSeekerLayout from './layouts/JobSeekerLayout';
 // ✅ ADMIN
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 import UserManagement from './pages/admin/UserManagement';
 import UserManagementDetails from './pages/admin/UserManagementDetails';
 import AdminUserApplicationHistory from './pages/admin/AdminUserApplicationHistory';
@@ -527,7 +528,7 @@ function App() {
           element={
             <RequireRole role="admin" redirectTo="/login">
               <AdminLayout>
-                <AdminDashboard />
+                <AdminAnalytics />
               </AdminLayout>
             </RequireRole>
           }
