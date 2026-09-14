@@ -592,6 +592,9 @@ const ResumePreviewPage = () => {
 
         .resume-section {
           margin-top: 10px;
+          min-width: 0;
+          max-width: 100%;
+          overflow: hidden;
           break-inside: auto;
         }
 
@@ -650,11 +653,23 @@ const ResumePreviewPage = () => {
         .resume-rich-text p,
         .resume-rich-text div,
         .resume-rich-text li,
-        .resume-education-summary {
+        .resume-education-summary,
+        .resume-bullets,
+        .resume-bullets li,
+        .reference-card,
+        .reference-card > div,
+        .skill-item {
           min-width: 0;
           max-width: 100%;
-          overflow-wrap: anywhere;
-          word-break: break-word;
+          white-space: normal !important;
+          overflow-wrap: anywhere !important;
+          word-wrap: break-word !important;
+          word-break: break-all !important;
+        }
+
+        .objective-text,
+        .resume-rich-text {
+          width: 100%;
         }
 
         .dated-item {
@@ -671,6 +686,9 @@ const ResumePreviewPage = () => {
 
         .dated-main {
           min-width: 0;
+          max-width: 100%;
+          flex: 1 1 auto;
+          overflow: hidden;
         }
 
         .item-title,
@@ -719,7 +737,11 @@ const ResumePreviewPage = () => {
           color: #111111;
           padding-left: 11px;
           min-width: 0;
-          overflow-wrap: anywhere;
+          max-width: 100%;
+          white-space: normal !important;
+          overflow-wrap: anywhere !important;
+          word-wrap: break-word !important;
+          word-break: break-all !important;
         }
         .skill-item::before {
           content: '•';
