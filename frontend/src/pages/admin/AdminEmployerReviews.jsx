@@ -228,7 +228,7 @@ const AdminEmployerReviews = () => {
                 {!reviews.length ? <p className="mt-1 text-sm text-black/50">Candidate feedback will appear here once submitted.</p> : null}
               </div>
             ) : (
-              <div className={cn("mt-8 space-y-5 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[2600px] overflow-y-auto overscroll-auto")}> 
+              <div className={`mt-8 space-y-5 pr-1 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[2600px] overflow-y-auto overscroll-auto"}`}> 
                 {paginatedReviews.map((review, index) => (
                   <article
                     key={review?._id || index}
