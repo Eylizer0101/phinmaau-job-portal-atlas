@@ -584,8 +584,6 @@ const JOBSEEKER_DECLINE_MESSAGES = {
     "We were unable to verify that you are a graduate of PHINMA Araullo University based on the information available to us. As a result, your verification request has been declined.\n\nThank you for your understanding.",
 };
 
-const RESUBMITTABLE_JOBSEEKER_DOCS = new Set(["validId", "cv", "diploma"]);
-
 const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear reason..." }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -2123,7 +2121,6 @@ const JobseekerVerificationDetails = () => {
                     </p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {documentTypes.filter((doc) => {
-                        if (!RESUBMITTABLE_JOBSEEKER_DOCS.has(doc.key)) return false;
                         const status = String(documentDetails[doc.key]?.status || "").toLowerCase();
                         return ["pending", "submitted", "hold"].includes(status);
                       }).map((doc) => {

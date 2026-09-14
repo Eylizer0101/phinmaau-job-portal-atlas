@@ -1651,7 +1651,10 @@ const EmployerVerificationDetails = () => {
                   <div className="mt-5">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.04em] text-[#344054]">Documents needed</p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {DOC_TYPES.map((doc) => {
+                      {DOC_TYPES.filter((doc) => {
+                        const status = String(docs?.[doc.key]?.status || "").toLowerCase();
+                        return Boolean(docs?.[doc.key]?.url) && ["pending", "submitted", "hold"].includes(status);
+                      }).map((doc) => {
                         const checked = holdDocTypes.includes(doc.key);
                         const isAlreadyOnHold = String(docs?.[doc.key]?.status || "").toLowerCase() === "hold";
 

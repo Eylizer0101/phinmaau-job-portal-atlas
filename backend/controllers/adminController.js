@@ -2714,12 +2714,18 @@ exports.holdEmployerVerification = async (req, res) => {
     }
 
     const verificationDocs = employer.employerProfile.verificationDocs;
-    const invalidRequestedDoc = requestedDocTypes.find((key) => !verificationDocs?.[key]?.url);
+    const invalidRequestedDoc = requestedDocTypes.find((key) => {
+      const targetDocument = verificationDocs?.[key];
+      return (
+        !targetDocument?.url ||
+        !['pending', 'submitted', 'hold'].includes(String(targetDocument.status || '').toLowerCase())
+      );
+    });
 
     if (invalidRequestedDoc) {
       return res.status(400).json({
         success: false,
-        message: 'Only submitted credentials can be requested for resubmission.'
+        message: 'Only submitted pending credentials can be requested for resubmission.'
       });
     }
 
@@ -3503,14 +3509,6 @@ exports.holdJobseekerVerification = async (req, res) => {
       });
     }
 
-    const allowedResubmissionDocTypes = ['validId', 'cv', 'diploma'];
-    if (requestedDocTypes.some((key) => !allowedResubmissionDocTypes.includes(key))) {
-      return res.status(400).json({
-        success: false,
-        message: 'Only Valid ID, Resume, and Diploma can be requested for resubmission.'
-      });
-    }
-
     const normalizedDocumentReasons = Array.isArray(documentReasons)
       ? documentReasons.map((item) => ({
           docType: String(item?.docType || '').trim(),
@@ -3546,6 +3544,16 @@ exports.holdJobseekerVerification = async (req, res) => {
 
     const verificationDocs = jobseeker.jobSeekerProfile.verificationDocs;
 
+    const alreadyOnHoldDoc = requestedDocTypes.find(
+      (key) => String(verificationDocs?.[key]?.status || '').toLowerCase() === 'hold'
+    );
+    if (alreadyOnHoldDoc) {
+      return res.status(409).json({
+        success: false,
+        message: `${JOBSEEKER_DOC_LABELS[alreadyOnHoldDoc] || 'This document'} is already on hold and must be resubmitted first.`
+      });
+    }
+
     const invalidRequestedDoc = requestedDocTypes.find((key) => {
       const targetDocument = verificationDocs?.[key];
       return (
@@ -3558,16 +3566,6 @@ exports.holdJobseekerVerification = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Only submitted pending credentials can be requested for resubmission.'
-      });
-    }
-
-    const alreadyOnHoldDoc = requestedDocTypes.find(
-      (key) => String(verificationDocs?.[key]?.status || '').toLowerCase() === 'hold'
-    );
-    if (alreadyOnHoldDoc) {
-      return res.status(409).json({
-        success: false,
-        message: `${JOBSEEKER_DOC_LABELS[alreadyOnHoldDoc] || 'This document'} is already on hold and must be resubmitted first.`
       });
     }
 
