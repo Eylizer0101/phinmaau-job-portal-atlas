@@ -1826,7 +1826,7 @@ const UserManagement = () => {
                 <div
                   className={cn(
                     'hidden overflow-x-auto overscroll-auto md:block',
-                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[508px] overflow-y-auto'
+                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'
                   )}
                 >
                   <table className="min-w-full divide-y divide-slate-200">
