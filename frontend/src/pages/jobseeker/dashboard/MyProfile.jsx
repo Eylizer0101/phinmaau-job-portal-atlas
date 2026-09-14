@@ -2671,7 +2671,6 @@ const WorkExperienceModal = ({
   onChange,
   onClose,
   onSave,
-  onDelete,
   saving,
 }) => {
   if (!open) return null;
@@ -2763,20 +2762,7 @@ const WorkExperienceModal = ({
           />
         </div>
 
-        <div className="px-6 sm:px-8 py-5 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          {mode === 'edit' && onDelete ? (
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={saving}
-              className="px-4 h-11 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 disabled:opacity-70"
-            >
-              Remove
-            </button>
-          ) : (
-            <div className="hidden sm:block" />
-          )}
-
+        <div className="px-6 sm:px-8 py-5 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
           <div className="flex justify-end gap-3">
             <button
               type="button"
