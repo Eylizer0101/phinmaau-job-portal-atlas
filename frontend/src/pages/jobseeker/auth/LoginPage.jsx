@@ -520,6 +520,27 @@ const LoginPage = () => {
         return;
       }
 
+      if (!err.response || status >= 500) {
+        setError(
+          !err.response
+            ? 'Unable to connect to the server. Please check your connection and try again.'
+            : 'Unable to log in because of a server error. Please try again later.'
+        );
+        resetCaptcha();
+        remountCaptcha();
+        return;
+      }
+
+      // Only a confirmed credential mismatch may increase the login-attempt
+      // counter. Validation, approval, network, and server errors must show
+      // their real message instead of being presented as an incorrect password.
+      if (code !== 'INVALID_CREDENTIALS') {
+        setError(message);
+        resetCaptcha();
+        remountCaptcha();
+        return;
+      }
+
       const { nextAttempt, locked } = registerFailedAttempt();
       resetCaptcha();
       remountCaptcha();

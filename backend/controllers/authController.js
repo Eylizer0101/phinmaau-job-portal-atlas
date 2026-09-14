@@ -245,13 +245,22 @@ const isLoginLocked = (user) => {
 const recordFailedLogin = async (user) => {
   const { failedAttempts } = getLoginSecurity(user);
   const nextAttempts = failedAttempts + 1;
-  user.loginSecurity = {
+  const nextLoginSecurity = {
     failedAttempts: nextAttempts >= MAX_LOGIN_ATTEMPTS ? 0 : nextAttempts,
     lockedUntil: nextAttempts >= MAX_LOGIN_ATTEMPTS
       ? new Date(Date.now() + LOGIN_LOCK_MINUTES * 60 * 1000)
       : null,
   };
-  await user.save();
+  user.loginSecurity = nextLoginSecurity;
+  await User.updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        'loginSecurity.failedAttempts': nextLoginSecurity.failedAttempts,
+        'loginSecurity.lockedUntil': nextLoginSecurity.lockedUntil,
+      },
+    }
+  );
 };
 
 const clearFailedLogins = (user) => {
@@ -299,6 +308,36 @@ const getRichTextPlainText = (value) =>
     .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'");
+
+const sanitizeRichTextForStorage = (value = '') => {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+
+  const allowedTags = new Set([
+    'b', 'strong', 'i', 'em', 'u', 'p', 'div', 'br',
+    'ul', 'ol', 'li', 'h1', 'h2', 'blockquote',
+  ]);
+  const alignmentTags = new Set(['p', 'div', 'ul', 'ol', 'li', 'h1', 'h2', 'blockquote']);
+
+  return clean
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (tagSource, tagName) => {
+      const tag = String(tagName || '').toLowerCase();
+      if (!allowedTags.has(tag)) return '';
+      if (/^<\//.test(tagSource)) return `</${tag}>`;
+      if (tag === 'br') return '<br>';
+
+      const alignmentMatch = tagSource.match(
+        /(?:text-align\s*:\s*|align\s*=\s*["']?)(left|center|right|justify)/i
+      );
+      const alignment = alignmentMatch?.[1]?.toLowerCase();
+
+      return alignment && alignmentTags.has(tag)
+        ? `<${tag} style="text-align: ${alignment};">`
+        : `<${tag}>`;
+    });
+};
 
 const sendBrevoSms = async ({ to, message }) => {
   const apiKey = process.env.BREVO_API_KEY;
@@ -1585,7 +1624,10 @@ exports.login = async (req, res) => {
       user = await User.findOne({ username: usernameNorm }).select('+loginSecurity.failedAttempts +loginSecurity.lockedUntil +emailVerification.tokenHash');
     }
 
-    if (!user) return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
+    if (!user) {
+      res.locals.loginAttemptFailed = true;
+      return res.status(400).json({ code: 'INVALID_CREDENTIALS', message: INVALID_LOGIN_MESSAGE });
+    }
 
     if (isLoginLocked(user)) {
       return res.status(429).json({
@@ -1596,8 +1638,9 @@ exports.login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      res.locals.loginAttemptFailed = true;
       await recordFailedLogin(user);
-      return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
+      return res.status(400).json({ code: 'INVALID_CREDENTIALS', message: INVALID_LOGIN_MESSAGE });
     }
 
     if (role && user.role !== role) {
@@ -1656,10 +1699,22 @@ exports.login = async (req, res) => {
 
     const isFirstLogin = user.role === 'jobseeker' && !user.lastLogin;
 
-    ensureRegisteredJobseekerPhoneVerified(user);
-    user.lastLogin = Date.now();
+    const loginAt = new Date();
+    const repairedPhoneVerification = ensureRegisteredJobseekerPhoneVerified(user);
+    const loginUpdates = {
+      lastLogin: loginAt,
+      'loginSecurity.failedAttempts': 0,
+      'loginSecurity.lockedUntil': null,
+    };
+
+    if (user.status === 'active') loginUpdates.status = 'active';
+    if (repairedPhoneVerification) {
+      loginUpdates['settingsVerification.phoneVerified'] = true;
+    }
+
+    await User.updateOne({ _id: user._id }, { $set: loginUpdates });
+    user.lastLogin = loginAt;
     clearFailedLogins(user);
-    await user.save();
 
     const token = signToken({ userId: user._id, role: user.role });
 
@@ -1694,7 +1749,11 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    res.status(500).json({
+      code: 'LOGIN_SERVER_ERROR',
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 
@@ -1711,10 +1770,16 @@ exports.loginEmployer = async (req, res) => {
     }
 
     const user = await User.findOne({ email: emailLower, role: 'employer' });
-    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
+    if (!user) {
+      res.locals.loginAttemptFailed = true;
+      return res.status(400).json({ code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
+    if (!isMatch) {
+      res.locals.loginAttemptFailed = true;
+      return res.status(400).json({ code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' });
+    }
 
     if (!user.isActive) return res.status(400).json({ message: 'Account is deactivated. Please contact support.' });
 
@@ -1740,9 +1805,18 @@ exports.loginEmployer = async (req, res) => {
       user.status = 'active';
     }
 
-    ensureApprovedEmployerContactsVerified(user);
-    user.lastLogin = Date.now();
-    await user.save();
+    const loginAt = new Date();
+    const repairedEmployerContacts = ensureApprovedEmployerContactsVerified(user);
+    const employerLoginUpdates = { lastLogin: loginAt };
+
+    if (user.status === 'active') employerLoginUpdates.status = 'active';
+    if (repairedEmployerContacts) {
+      employerLoginUpdates['settingsVerification.emailVerified'] = Boolean(user.settingsVerification?.emailVerified);
+      employerLoginUpdates['settingsVerification.phoneVerified'] = Boolean(user.settingsVerification?.phoneVerified);
+    }
+
+    await User.updateOne({ _id: user._id }, { $set: employerLoginUpdates });
+    user.lastLogin = loginAt;
 
     const token = signToken({ userId: user._id, role: user.role });
 
@@ -1765,7 +1839,11 @@ exports.loginEmployer = async (req, res) => {
     });
   } catch (error) {
     console.error('Employer login error:', error);
-    res.status(500).json({ message: 'Server error', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    res.status(500).json({
+      code: 'LOGIN_SERVER_ERROR',
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 
@@ -1997,13 +2075,47 @@ exports.updateProfile = async (req, res) => {
       const existingProfile = user.jobSeekerProfile || {};
 
       if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'aboutMe')) {
-        const objectiveText = getRichTextPlainText(updateData.jobSeekerProfile.aboutMe);
+        const sanitizedObjective = sanitizeRichTextForStorage(updateData.jobSeekerProfile.aboutMe);
+        const objectiveText = getRichTextPlainText(sanitizedObjective);
         if (objectiveText.length > 500) {
           return res.status(400).json({
             success: false,
             message: 'Objective must not exceed 500 characters.',
           });
         }
+        updateData.jobSeekerProfile.aboutMe = sanitizedObjective;
+      }
+
+      const richTextEntryKeys = [
+        'educationEntries',
+        'projects',
+        'seminars',
+        'awards',
+        'affiliations',
+        'cocurricular',
+      ];
+
+      for (const entryKey of richTextEntryKeys) {
+        if (!Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, entryKey)) continue;
+        if (!Array.isArray(updateData.jobSeekerProfile[entryKey])) continue;
+
+        const sanitizedEntries = [];
+        for (const entry of updateData.jobSeekerProfile[entryKey]) {
+          const nextEntry = { ...(entry || {}) };
+          if (Object.prototype.hasOwnProperty.call(nextEntry, 'description')) {
+            const sanitizedDescription = sanitizeRichTextForStorage(nextEntry.description);
+            if (getRichTextPlainText(sanitizedDescription).length > 1000) {
+              return res.status(400).json({
+                success: false,
+                message: 'Description must not exceed 1,000 characters.',
+              });
+            }
+            nextEntry.description = sanitizedDescription;
+          }
+          sanitizedEntries.push(nextEntry);
+        }
+
+        updateData.jobSeekerProfile[entryKey] = sanitizedEntries;
       }
 
       if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'addedResumeSections')) {
@@ -2252,6 +2364,14 @@ exports.createWorkExperience = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Start date cannot be later than end date.' });
     }
 
+    const sanitizedDescription = sanitizeRichTextForStorage(description);
+    if (getRichTextPlainText(sanitizedDescription).length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Description must not exceed 1,000 characters.',
+      });
+    }
+
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
@@ -2269,7 +2389,7 @@ exports.createWorkExperience = async (req, res) => {
       startDate: start,
       endDate: present ? null : normalizedEndDate,
       isPresent: present,
-      description: String(description || '').trim(),
+      description: sanitizedDescription,
     };
 
     user.jobSeekerProfile.workExperiences.push(newEntry);
@@ -2333,6 +2453,14 @@ exports.updateWorkExperience = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Start date cannot be later than end date.' });
     }
 
+    const sanitizedDescription = sanitizeRichTextForStorage(description);
+    if (getRichTextPlainText(sanitizedDescription).length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Description must not exceed 1,000 characters.',
+      });
+    }
+
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
@@ -2348,7 +2476,7 @@ exports.updateWorkExperience = async (req, res) => {
     target.startDate = start;
     target.endDate = present ? null : normalizedEndDate;
     target.isPresent = present;
-    target.description = String(description || '').trim();
+    target.description = sanitizedDescription;
 
     await user.save();
 

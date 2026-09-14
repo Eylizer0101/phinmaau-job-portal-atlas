@@ -1311,6 +1311,42 @@ const BulletTextArea = ({
     emitChange();
   };
 
+  const handlePlainTextPaste = (event) => {
+    event.preventDefault();
+
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const clipboardText = String(event.clipboardData?.getData('text/plain') || '');
+    if (!clipboardText) return;
+
+    const selection = window.getSelection?.();
+    let selectedTextLength = 0;
+
+    if (selection?.rangeCount) {
+      const range = selection.getRangeAt(0);
+      if (editor.contains(range.commonAncestorContainer)) {
+        selectedTextLength = range.toString().length;
+      }
+    }
+
+    const currentTextLength = (editor.innerText || '').length;
+    const numericMaxLength = Number(maxLength);
+    const hasTextLimit = Number.isFinite(numericMaxLength);
+    const availableCharacters = hasTextLimit
+      ? Math.max(0, numericMaxLength - currentTextLength + selectedTextLength)
+      : clipboardText.length;
+    const plainTextToInsert = clipboardText.slice(0, availableCharacters);
+
+    if (!plainTextToInsert) return;
+
+    // Insert only text/plain so copied font, color, background, spans, and other
+    // external HTML formatting never become part of the saved profile value.
+    document.execCommand('insertText', false, plainTextToInsert);
+    saveSelection();
+    emitChange();
+  };
+
   const minHeight = Math.max(112, Number(rows || 5) * 24);
 
   return (
@@ -1407,6 +1443,7 @@ const BulletTextArea = ({
           suppressContentEditableWarning
           role="textbox"
           aria-multiline="true"
+          onPaste={handlePlainTextPaste}
           onInput={() => {
             const editor = editorRef.current;
             if (
@@ -2343,6 +2380,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
+            maxLength={1000}
             className="rounded-b-[5px]"
           />
         </div>
@@ -2379,6 +2417,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
+            maxLength={1000}
             className="rounded-b-[5px]"
           />
         </div>
@@ -2407,6 +2446,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
+            maxLength={1000}
             className="rounded-b-[5px]"
           />
         </div>
@@ -2432,6 +2472,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
+            maxLength={1000}
             className="rounded-b-[5px]"
           />
         </div>

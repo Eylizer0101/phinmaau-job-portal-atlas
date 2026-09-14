@@ -35,6 +35,24 @@ const normalizeCampusValue = (value) => {
   return text;
 };
 
+const getRichTextPlainLength = (value) =>
+  String(value || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(div|p|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .length;
+
+const richTextLengthValidator = (maximum, message) => ({
+  validator: (value) => getRichTextPlainLength(value) <= maximum,
+  message,
+});
+
 // ---------------------------
 // Shared document schema
 // ---------------------------
@@ -289,7 +307,12 @@ const educationEntrySchema = new mongoose.Schema(
     endMonth: { type: String, default: '', trim: true },
     endYear: { type: String, default: '', trim: true },
     yearGraduated: { type: String, default: '', trim: true },
-    description: { type: String, default: '', trim: true, maxlength: 1000 },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+      validate: richTextLengthValidator(1000, 'Description must not exceed 1,000 characters.'),
+    },
   },
   { _id: false }
 );
@@ -304,7 +327,12 @@ const workExperienceSchema = new mongoose.Schema(
     startDate: { type: Date, required: true },
     endDate: { type: Date, default: null },
     isPresent: { type: Boolean, default: false },
-    description: { type: String, default: '', trim: true, maxlength: 1000 },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+      validate: richTextLengthValidator(1000, 'Description must not exceed 1,000 characters.'),
+    },
   },
   { _id: true, timestamps: true }
 );
@@ -321,7 +349,12 @@ const profileMoreEntrySchema = new mongoose.Schema(
     date: { type: String, default: '', trim: true },
     startDate: { type: String, default: '', trim: true },
     endDate: { type: String, default: '', trim: true },
-    description: { type: String, default: '', trim: true },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+      validate: richTextLengthValidator(1000, 'Description must not exceed 1,000 characters.'),
+    },
     url: { type: String, default: '', trim: true },
     name: { type: String, default: '', trim: true },
     position: { type: String, default: '', trim: true },
@@ -481,7 +514,12 @@ const userSchema = new mongoose.Schema(
 
       phoneNumber: { type: String, default: '', trim: true, maxlength: 11 },
 
-      aboutMe: { type: String, default: '', trim: true },
+      aboutMe: {
+        type: String,
+        default: '',
+        trim: true,
+        validate: richTextLengthValidator(500, 'Objective must not exceed 500 characters.'),
+      },
       minimumSalary: { type: String, default: '', trim: true, maxlength: 7 },
       maximumSalary: { type: String, default: '', trim: true, maxlength: 7 },
       salaryCurrency: { type: String, default: 'PHP', trim: true },
