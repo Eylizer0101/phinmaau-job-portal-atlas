@@ -2065,7 +2065,7 @@ const UserManagement = () => {
                   })}
                 </div>
 
-                {Number(totalUsers) >= 10 ? (
+                {Number(totalUsers) > 10 ? (
                   <Pagination
                     currentPage={currentPage}
                     totalItems={totalUsers}

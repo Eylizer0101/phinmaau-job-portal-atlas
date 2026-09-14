@@ -1463,7 +1463,7 @@ const AdminJobApplicants = () => {
             </div>
           ) : paginatedApplicants.length > 0 ? (
             <>
-              <div className="mt-8 max-max-h-[508px] space-y-5 overflow-y-auto overscroll-auto pr-1">
+              <div className={cn("mt-8 space-y-5 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[2300px] overflow-y-auto overscroll-auto")}> 
                 {paginatedApplicants.map(
                   ({ application, user, profile, level, matchScore }) => {
                     const name =
@@ -1603,7 +1603,7 @@ const AdminJobApplicants = () => {
                 )}
               </div>
 
-              {Number(filteredApplicants.length) >= 10 ? (
+              {Number(filteredApplicants.length) > 10 ? (
                 <Pagination
                   currentPage={currentPage}
                   totalItems={filteredApplicants.length}

@@ -1511,7 +1511,12 @@ const UserManagementDetails = () => {
           className={cn(
             "mt-5 flex-1",
             showAllActivity
-              ? "max-h-[500px] divide-y divide-[#e5edf5] overflow-y-auto overscroll-auto pr-1"
+              ? cn(
+                  "divide-y divide-[#e5edf5] pr-1",
+                  activityPageSize === 10
+                    ? "overflow-y-visible"
+                    : "max-h-[900px] overflow-y-auto overscroll-auto"
+                )
               : "max-w-4xl space-y-5"
           )}
         >
@@ -1544,7 +1549,7 @@ const UserManagementDetails = () => {
           No recent activity is available for this jobseeker.
         </div>
       )}
-      {showAllActivity && activityItems.length >= 10 ? (
+      {showAllActivity && activityItems.length > 10 ? (
         <Pagination
           currentPage={activityPage}
           totalItems={activityItems.length}
@@ -1614,7 +1619,7 @@ const UserManagementDetails = () => {
 
       {applications.length ? (
         <div className="mt-5">
-          <div className="max-h-[510px] space-y-3 overflow-y-auto overscroll-auto pr-1">
+          <div className="space-y-3 pr-1">
             {paginatedApplications.map((application) => (
               <ApplicationHistoryCard
                 key={application._id}
@@ -1624,7 +1629,7 @@ const UserManagementDetails = () => {
             ))}
           </div>
 
-          {applications.length >= 10 ? (
+          {applications.length > 10 ? (
             <Pagination
               currentPage={applicationPage}
               totalItems={applications.length}

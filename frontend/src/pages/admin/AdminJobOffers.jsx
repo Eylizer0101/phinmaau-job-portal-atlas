@@ -661,7 +661,7 @@ const AdminJobOffers = () => {
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-            <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
+            <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
               <table className="w-full min-w-[1060px] table-fixed divide-y divide-slate-200">
                 <colgroup>
                   <col className="w-[11%]" />
@@ -765,7 +765,7 @@ const AdminJobOffers = () => {
               </table>
             </div>
 
-            {Number(total) >= 10 ? (
+            {Number(total) > 10 ? (
               <Pagination
                 currentPage={page}
                 totalItems={total}

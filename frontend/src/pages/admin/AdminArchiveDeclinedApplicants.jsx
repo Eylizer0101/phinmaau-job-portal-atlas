@@ -292,7 +292,7 @@ const AdminArchiveDeclinedApplicants = () => {
             </select>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className={pageSize === 10 ? "overflow-x-auto overflow-y-visible" : "max-h-[812px] overflow-x-auto overflow-y-auto overscroll-auto"}> 
             <div className="min-w-[980px]">
               <div className="grid grid-cols-[1fr_1.35fr_1fr_1fr_0.9fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 <span>Applied Date</span>
@@ -364,13 +364,15 @@ const AdminArchiveDeclinedApplicants = () => {
             </div>
           </div>
 
-          <Pagination
-            currentPage={safePage}
-            totalItems={filteredApplicants.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-          />
+          {filteredApplicants.length > 10 ? (
+            <Pagination
+              currentPage={safePage}
+              totalItems={filteredApplicants.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
+          ) : null}
         </section>
       </main>
     </AdminLayout>

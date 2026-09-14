@@ -891,7 +891,7 @@ const AdminApplications = () => {
             <div className="p-6 text-sm font-semibold text-red-600">{error}</div>
           ) : (
             <>
-              <div className="max-h-[508px] max-w-full overflow-x-auto overflow-y-auto overscroll-auto lg:overflow-x-hidden">
+              <div className={cn("max-w-full overflow-x-auto overscroll-auto lg:overflow-x-hidden", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
                 <table className="w-full min-w-[900px] table-fixed divide-y divide-slate-200 text-left lg:min-w-0">
                   <colgroup>
                     <col className="w-[27%]" />
@@ -1023,7 +1023,7 @@ const AdminApplications = () => {
                 </table>
               </div>
 
-              {Number(filteredApplications.length) >= 10 ? (
+              {Number(filteredApplications.length) > 10 ? (
                 <Pagination
                   currentPage={currentPage}
                   totalItems={filteredApplications.length}

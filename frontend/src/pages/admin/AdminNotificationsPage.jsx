@@ -308,7 +308,7 @@ const AdminNotificationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="max-h-[508px] divide-y divide-gray-100 overflow-y-auto overscroll-auto">
+            <div className={`divide-y divide-gray-100 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[840px] overflow-y-auto overscroll-auto"}`}> 
               {paginatedNotifications.map((notification) => (
                 <div
                   key={notification._id}
@@ -350,7 +350,7 @@ const AdminNotificationsPage = () => {
             </div>
           )}
 
-          {!loading ? (
+          {!loading && filteredNotifications.length > 10 ? (
             <Pagination
               currentPage={currentPage}
               totalItems={filteredNotifications.length}

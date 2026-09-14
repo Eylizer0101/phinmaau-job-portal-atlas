@@ -788,7 +788,7 @@ const AdminEmployerPostingHistory = () => {
               </section>
 
               <section className="overflow-hidden rounded-2xl border border-[#dfe5ec] bg-white p-5 shadow-sm">
-                <div className="max-h-[508px] overflow-x-auto overflow-y-auto overscroll-auto">
+                <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
                   <table className="min-w-[920px] w-full table-fixed text-left text-[15px]">
                     <colgroup>
                       <col className="w-[16%]" />
@@ -921,7 +921,7 @@ const AdminEmployerPostingHistory = () => {
                   </table>
                 </div>
 
-                {Number(filteredJobs.length) >= 10 ? (
+                {Number(filteredJobs.length) > 10 ? (
                   <Pagination
                     currentPage={currentPage}
                     totalItems={filteredJobs.length}
