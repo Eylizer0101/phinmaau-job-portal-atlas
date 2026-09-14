@@ -929,7 +929,7 @@ const AdminEmployerPostingHistory = () => {
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
                   
-                  className="sticky bottom-0 z-20 shrink-0"
+                  className="shrink-0"
                                 />
                 ) : null}
               </section>
