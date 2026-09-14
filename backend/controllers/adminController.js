@@ -1375,7 +1375,6 @@ exports.getAdminAnalytics = async (req, res) => {
       editRequestStatus: analyticsLower(req.query.editRequestStatus || 'all'),
       messageType: analyticsLower(req.query.messageType || 'all'),
       notificationType: analyticsLower(req.query.notificationType || 'all'),
-      communityCategory: analyticsLower(req.query.communityCategory || 'all'),
       logStatus: analyticsLower(req.query.logStatus || 'all'),
       logModule: analyticsText(req.query.logModule || 'all'),
     };
@@ -1387,7 +1386,7 @@ exports.getAdminAnalytics = async (req, res) => {
     });
 
     const [usersAll, jobsAll, applicationsAll, editRequestsAll, messagesAll, conversationPreferencesAll,
-      notificationsAll, communityPostsAll, verificationRequestsAll, systemLogsAll] = await Promise.all([
+      notificationsAll, verificationRequestsAll, systemLogsAll] = await Promise.all([
       User.find({ status: { $ne: 'deleted' } })
         .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.educationEntries jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
@@ -1397,7 +1396,6 @@ exports.getAdminAnalytics = async (req, res) => {
       Message.find({}).select('conversationId sender receiver messageType isRead readAt job application createdAt updatedAt').lean(),
       ConversationPreference.find({}).select('user conversationId otherUser archived hiddenCompany deleted createdAt updatedAt').lean(),
       Notification.find({}).select('user type relatedModel isRead isArchived createdAt updatedAt').lean(),
-      CommunityPost.find({}).select('category topics likes comments commentsCount reports isSensitive moderationFlags isDeleted deletedAt createdAt updatedAt').lean(),
       PendingEmailVerification.find({}).select('role otpRequestedAt otpExpiresAt verifiedAt consumedAt deleteAfterAt createdAt updatedAt').lean(),
       SystemLog.find({}).select('actorRole action module status method statusCode durationMs createdAt updatedAt').lean(),
     ]);
@@ -1443,7 +1441,6 @@ exports.getAdminAnalytics = async (req, res) => {
     const editRequests = editRequestsAll.filter((item) => dateMatches('editRequest', item) && same(item.status, filters.editRequestStatus));
     const messages = messagesAll.filter((item) => dateMatches('message', item) && same(item.messageType, filters.messageType));
     const notifications = notificationsAll.filter((item) => dateMatches('notification', item) && same(item.type, filters.notificationType));
-    const communityPosts = communityPostsAll.filter((item) => dateMatches('community', item) && same(item.category, filters.communityCategory));
     const verificationRequests = verificationRequestsAll.filter((item) => dateMatches('verification', item) && same(item.role, filters.role));
     const systemLogs = systemLogsAll.filter((item) => dateMatches('log', item) && same(item.status, filters.logStatus) && same(item.module, filters.logModule));
     const conversationPreferences = conversationPreferencesAll.filter((item) => dateMatches('conversationPreference', item));
@@ -1452,12 +1449,6 @@ exports.getAdminAnalytics = async (req, res) => {
     const pendingVerification = users.filter((item) => ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
     const activeJobs = jobs.filter((item) => !item.isArchived && item.isActive !== false && item.isPublished !== false && ['published', 'open'].includes(analyticsLower(item.status))).length;
     const failedLogs = systemLogs.filter((item) => analyticsLower(item.status) === 'failed').length;
-    const totalCommunityReports = communityPosts.reduce((total, post) => {
-      const commentReports = (post.comments || []).reduce((sum, comment) => sum + (comment.reports || []).length +
-        (comment.replies || []).reduce((replySum, reply) => replySum + (reply.reports || []).length, 0), 0);
-      return total + (post.reports || []).length + commentReports;
-    }, 0);
-
     const applicationStatuses = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'];
     const applicationFunnel = applicationStatuses.map((name) => ({
       name,
@@ -1485,7 +1476,6 @@ exports.getAdminAnalytics = async (req, res) => {
           editRequestStatuses: analyticsUnique(editRequestsAll.map((item) => item.status)),
           messageTypes: analyticsUnique(messagesAll.map((item) => item.messageType)),
           notificationTypes: analyticsUnique(notificationsAll.map((item) => item.type)),
-          communityCategories: analyticsUnique(communityPostsAll.map((item) => item.category)),
           logStatuses: analyticsUnique(systemLogsAll.map((item) => item.status)),
           logModules: analyticsUnique(systemLogsAll.map((item) => item.module)),
         },
@@ -1547,14 +1537,6 @@ exports.getAdminAnalytics = async (req, res) => {
             { name: 'Unread', value: notifications.filter((item) => !item.isRead).length },
             { name: 'Archived', value: notifications.filter((item) => item.isArchived).length },
           ],
-          community: {
-            categories: analyticsCountRows(communityPosts, (item) => item.category),
-            posts: communityPosts.length,
-            deleted: communityPosts.filter((item) => item.isDeleted).length,
-            sensitive: communityPosts.filter((item) => item.isSensitive).length,
-            reports: totalCommunityReports,
-            engagement: communityPosts.reduce((sum, item) => sum + (item.likes || []).length + Number(item.commentsCount || (item.comments || []).length), 0),
-          },
           system: {
             statuses: analyticsCountRows(systemLogs, (item) => item.status),
             modules: analyticsCountRows(systemLogs, (item) => item.module, 10),

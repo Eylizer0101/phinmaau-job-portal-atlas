@@ -54,7 +54,6 @@ const emptyAnalytics = {
     operations: {
       editRequests: [], editRequestSections: [], messages: [], messageRead: [],
       conversationPreferences: [], notifications: [], notificationRead: [],
-      community: { categories: [], posts: 0, deleted: 0, sensitive: 0, reports: 0, engagement: 0 },
       system: { statuses: [], modules: [], methods: [], p95DurationMs: 0, serverErrors: 0 },
     },
   },
@@ -79,7 +78,6 @@ const initialFilters = {
   editRequestStatus: "all",
   messageType: "all",
   notificationType: "all",
-  communityCategory: "all",
   logStatus: "all",
   logModule: "all",
 };
@@ -419,7 +417,6 @@ const AdminAnalytics = () => {
               <FilterSelect label="Edit Request" value={filters.editRequestStatus} onChange={(value) => updateFilter("editRequestStatus", value)} values={options.editRequestStatuses} allLabel="All Edit Requests" />
               <FilterSelect label="Message Type" value={filters.messageType} onChange={(value) => updateFilter("messageType", value)} values={options.messageTypes} allLabel="All Message Types" />
               <FilterSelect label="Notification Type" value={filters.notificationType} onChange={(value) => updateFilter("notificationType", value)} values={options.notificationTypes} allLabel="All Notification Types" />
-              <FilterSelect label="Community Category" value={filters.communityCategory} onChange={(value) => updateFilter("communityCategory", value)} values={options.communityCategories} allLabel="All Community Categories" />
               <FilterSelect label="Log Status" value={filters.logStatus} onChange={(value) => updateFilter("logStatus", value)} values={options.logStatuses} allLabel="All Log Statuses" />
               <FilterSelect label="Log Module" value={filters.logModule} onChange={(value) => updateFilter("logModule", value)} values={options.logModules} allLabel="All Log Modules" />
             </div>
@@ -487,15 +484,6 @@ const AdminAnalytics = () => {
             <ChartCard title="Message Read State" subtitle="Read and unread messages"><DonutChart data={sections.operations?.messageRead} /></ChartCard>
             <ChartCard title="Notification Types" subtitle="System notifications by workflow"><HorizontalBars data={sections.operations?.notifications} /></ChartCard>
             <ChartCard title="Notification State" subtitle="Read, unread, and archived counts"><DonutChart data={sections.operations?.notificationRead} /></ChartCard>
-            <ChartCard title="Community Moderation" subtitle="Engagement and moderation indicators">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <MetricTile label="Posts" value={sections.operations?.community?.posts} icon={MessageSquare} />
-                <MetricTile label="Engagement" value={sections.operations?.community?.engagement} icon={Activity} />
-                <MetricTile label="Reports" value={sections.operations?.community?.reports} icon={ShieldAlert} />
-                <MetricTile label="Sensitive" value={sections.operations?.community?.sensitive} icon={ShieldAlert} />
-                <MetricTile label="Deleted" value={sections.operations?.community?.deleted} icon={RefreshCw} />
-              </div>
-            </ChartCard>
             <ChartCard title="System Reliability" subtitle="Log outcome and request performance">
               <HorizontalBars data={sections.operations?.system?.statuses} />
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
