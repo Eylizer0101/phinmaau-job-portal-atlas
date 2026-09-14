@@ -2,19 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   BriefcaseBusiness,
-  Building2,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
   Download,
-  FileCheck2,
   Filter,
   Mail,
-  MessageSquare,
   RefreshCw,
   ShieldAlert,
   UserRoundCheck,
-  Users,
   X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -139,7 +135,7 @@ const titleCase = (value) =>
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const StatCard = ({ label, value, suffix = "", imageSrc, icon: Icon }) => (
+const StatCard = ({ label, value, suffix = "", imageSrc }) => (
   <div className="group relative min-h-[132px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-6 py-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
     <div
       className="pointer-events-none absolute right-8 top-1/2 h-[70px] w-[70px] -translate-y-1/2 rounded-full blur-[35px]"
@@ -147,10 +143,6 @@ const StatCard = ({ label, value, suffix = "", imageSrc, icon: Icon }) => (
         background:
           "radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,.14) 45%, transparent 75%)",
       }}
-    />
-    <Icon
-      className="pointer-events-none absolute right-5 top-1/2 h-16 w-16 -translate-y-1/2 text-white/10"
-      aria-hidden="true"
     />
     <img
       src={imageSrc}
@@ -1077,55 +1069,47 @@ const AdminAnalytics = () => {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Total Users"
             value={kpis.totalUsers}
             imageSrc={statCardImages.users}
-            icon={Users}
           />
           <StatCard
             label="Active Jobs"
             value={kpis.activeJobs}
             imageSrc={statCardImages.jobs}
-            icon={BriefcaseBusiness}
           />
           <StatCard
             label="Applications"
             value={kpis.applications}
             imageSrc={statCardImages.applications}
-            icon={FileCheck2}
           />
           <StatCard
             label="Hired"
             value={kpis.hired}
             imageSrc={statCardImages.hired}
-            icon={UserRoundCheck}
           />
           <StatCard
             label="Hire Rate"
             value={kpis.hireRate}
             suffix="%"
             imageSrc={statCardImages.rate}
-            icon={CheckCircle2}
           />
           <StatCard
             label="Pending Verification"
             value={kpis.pendingVerification}
             imageSrc={statCardImages.verification}
-            icon={Building2}
           />
           <StatCard
             label="Unread Messages"
             value={kpis.unreadMessages}
             imageSrc={statCardImages.messages}
-            icon={MessageSquare}
           />
           <StatCard
             label="System Failures"
             value={kpis.systemFailures}
             imageSrc={statCardImages.failures}
-            icon={ShieldAlert}
           />
         </div>
 
