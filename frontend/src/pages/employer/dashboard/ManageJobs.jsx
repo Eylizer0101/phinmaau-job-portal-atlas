@@ -1515,7 +1515,7 @@ const ManageJobs = () => {
                 <div
                   className={cn(
                     'space-y-4 overscroll-auto md:hidden',
-                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto'
+                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[640px] overflow-y-auto'
                   )}
                 >
                   {paginatedJobs.map((job) => {
@@ -1709,7 +1709,7 @@ const ManageJobs = () => {
                 <div
                   className={cn(
                     'hidden overflow-x-auto overscroll-auto md:block',
-                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'
+                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[640px] overflow-y-auto'
                   )}
                 >
                 <div className="">
