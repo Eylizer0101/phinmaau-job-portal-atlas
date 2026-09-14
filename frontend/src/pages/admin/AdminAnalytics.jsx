@@ -130,29 +130,6 @@ const colors = [
   "#0891b2",
 ];
 
-const useChartAnimation = (dependency) => {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    setVisible(false);
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-    ) {
-      setVisible(true);
-      return undefined;
-    }
-    if (typeof requestAnimationFrame === "function") {
-      const frame = requestAnimationFrame(() => setVisible(true));
-      return () => cancelAnimationFrame(frame);
-    }
-    const timer = setTimeout(() => setVisible(true), 16);
-    return () => clearTimeout(timer);
-  }, [dependency]);
-
-  return visible;
-};
-
 const titleCase = (value) =>
   String(value || "")
     .replace(/[_-]+/g, " ")
@@ -634,20 +611,15 @@ const DateFilterDropdown = ({
 
 const ChartCard = ({ title, subtitle, children, className = "" }) => (
   <section
-    className={`group/chart min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-0.5 hover:border-[#2e66a6]/30 hover:shadow-[0_12px_30px_rgba(46,102,166,0.10)] ${className}`}
+    className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}
   >
-    <div className="flex items-start gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white px-4 py-3.5">
-      <span className="mt-0.5 h-8 w-1 shrink-0 rounded-full bg-[#2e66a6] transition-all duration-300 group-hover/chart:h-10" />
-      <div className="min-w-0">
-        <h2 className="text-sm font-bold leading-5 text-slate-800">{title}</h2>
-        {subtitle ? (
-          <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
-            {subtitle}
-          </p>
-        ) : null}
-      </div>
+    <div className="mb-3 border-b border-slate-100 pb-3">
+      <h2 className="text-sm font-bold text-slate-800">{title}</h2>
+      {subtitle ? (
+        <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
+      ) : null}
     </div>
-    <div className="p-4">{children}</div>
+    {children}
   </section>
 );
 
@@ -660,17 +632,13 @@ const EmptyChart = () => (
 const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
   const rows = data.slice(0, maxItems);
   const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
-  const visible = useChartAnimation(JSON.stringify(rows));
-  const [activeIndex, setActiveIndex] = useState(null);
   if (!rows.length) return <EmptyChart />;
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {rows.map((item, index) => (
         <div
           key={`${item.name}-${index}`}
-          onMouseEnter={() => setActiveIndex(index)}
-          onMouseLeave={() => setActiveIndex(null)}
-          className={`grid grid-cols-[minmax(90px,132px)_1fr_44px] items-center gap-2.5 rounded-lg px-2 py-1.5 text-xs transition-colors ${activeIndex === index ? "bg-[#2e66a6]/5" : "bg-transparent"}`}
+          className="grid grid-cols-[minmax(90px,140px)_1fr_auto] items-center gap-3 text-xs"
         >
           <span
             className="truncate text-right font-semibold text-slate-600"
@@ -678,24 +646,16 @@ const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
           >
             {titleCase(item.name)}
           </span>
-          <div className="relative h-7 overflow-hidden rounded-lg bg-slate-100 shadow-inner">
+          <div className="h-6 overflow-hidden rounded-md bg-slate-100">
             <div
-              className="relative h-full min-w-[3px] overflow-hidden rounded-lg shadow-sm transition-[width,filter] duration-700 ease-out"
+              className="h-full min-w-[3px] rounded-lg transition-all"
               style={{
-                width: visible
-                  ? `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`
-                  : "0%",
-                background: `linear-gradient(90deg, ${colors[index % colors.length]}, ${colors[index % colors.length]}cc)`,
-                transitionDelay: `${index * 70}ms`,
-                filter: activeIndex === index ? "brightness(1.08)" : "none",
+                width: `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`,
+                backgroundColor: colors[index % colors.length],
               }}
-            >
-              <span className="absolute inset-y-0 right-0 w-10 -skew-x-12 bg-white/15" />
-            </div>
+            />
           </div>
-          <span
-            className={`text-right font-bold tabular-nums transition-colors ${activeIndex === index ? "text-[#2e66a6]" : "text-slate-700"}`}
-          >
+          <span className="w-10 text-right font-bold text-slate-700">
             {numberFormat.format(Number(item.value || 0))}
             {percentage ? "%" : ""}
           </span>
@@ -708,69 +668,33 @@ const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
 const DonutChart = ({ data = [] }) => {
   const rows = data.filter((item) => Number(item.value || 0) > 0);
   const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
-  const visible = useChartAnimation(JSON.stringify(rows));
-  const [activeIndex, setActiveIndex] = useState(null);
   if (!rows.length || !total) return <EmptyChart />;
-  const radius = 48;
-  const circumference = 2 * Math.PI * radius;
-  let offset = 0;
+  let cursor = 0;
+  const stops = rows.map((item, index) => {
+    const start = cursor;
+    cursor += (Number(item.value || 0) / total) * 100;
+    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+  });
   return (
-    <div className="grid min-h-40 items-center gap-3 sm:grid-cols-[142px_1fr]">
-      <div className="relative mx-auto h-32 w-32">
-        <svg
-          viewBox="0 0 120 120"
-          className="h-full w-full -rotate-90 drop-shadow-sm"
-        >
-          <circle
-            cx="60"
-            cy="60"
-            r={radius}
-            fill="none"
-            stroke="#eef2f7"
-            strokeWidth="14"
-          />
-          {rows.map((item, index) => {
-            const length = (Number(item.value || 0) / total) * circumference;
-            const currentOffset = offset;
-            offset += length;
-            return (
-              <circle
-                key={item.name}
-                cx="60"
-                cy="60"
-                r={radius}
-                fill="none"
-                stroke={colors[index % colors.length]}
-                strokeWidth={activeIndex === index ? 17 : 14}
-                strokeLinecap="round"
-                strokeDasharray={`${visible ? Math.max(0, length - 2) : 0} ${circumference}`}
-                strokeDashoffset={-currentOffset}
-                className="cursor-pointer transition-all duration-700 ease-out"
-                style={{ transitionDelay: `${index * 80}ms` }}
-                onMouseEnter={() => setActiveIndex(index)}
-                onMouseLeave={() => setActiveIndex(null)}
-              />
-            );
-          })}
-        </svg>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center rounded-full">
+    <div className="grid min-h-40 items-center gap-4 sm:grid-cols-[150px_1fr]">
+      <div
+        className="relative mx-auto h-32 w-32 rounded-full"
+        style={{ background: `conic-gradient(${stops.join(",")})` }}
+      >
+        <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
           <span className="text-2xl font-extrabold text-slate-800">
-            {activeIndex === null
-              ? numberFormat.format(total)
-              : numberFormat.format(rows[activeIndex].value)}
+            {numberFormat.format(total)}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-            {activeIndex === null ? "Total" : titleCase(rows[activeIndex].name)}
+            Total
           </span>
         </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {rows.slice(0, 8).map((item, index) => (
           <div
             key={item.name}
-            onMouseEnter={() => setActiveIndex(index)}
-            onMouseLeave={() => setActiveIndex(null)}
-            className={`flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-xs transition ${activeIndex === index ? "bg-[#2e66a6]/5" : "bg-transparent"}`}
+            className="flex items-center justify-between gap-3 text-xs"
           >
             <span className="flex min-w-0 items-center gap-2 text-slate-600">
               <i
@@ -779,9 +703,8 @@ const DonutChart = ({ data = [] }) => {
               />
               <span className="truncate">{titleCase(item.name)}</span>
             </span>
-            <strong className="whitespace-nowrap tabular-nums text-slate-800">
-              {numberFormat.format(item.value)} ·{" "}
-              {Math.round((Number(item.value || 0) / total) * 100)}%
+            <strong className="text-slate-800">
+              {numberFormat.format(item.value)}
             </strong>
           </div>
         ))}
@@ -797,8 +720,6 @@ const TrendChart = ({ data = [] }) => {
     ["applications", "Applications", "#dc9300"],
     ["hires", "Hires", "#6366f1"],
   ];
-  const visible = useChartAnimation(JSON.stringify(data));
-  const [activePoint, setActivePoint] = useState(null);
   if (!data.length) return <EmptyChart />;
   const width = 760;
   const height = 250;
@@ -817,10 +738,10 @@ const TrendChart = ({ data = [] }) => {
         ? plotWidth / 2
         : (index / (data.length - 1)) * plotWidth);
     const y = top + plotHeight - (Number(item[key] || 0) / max) * plotHeight;
-    return { x, y };
+    return `${x},${y}`;
   };
   return (
-    <div className="relative">
+    <div>
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="h-[220px] w-full"
@@ -844,61 +765,18 @@ const TrendChart = ({ data = [] }) => {
             </g>
           );
         })}
-        {series.map(([key, label, color], seriesIndex) => (
-          <g key={key}>
-            <polyline
-              fill="none"
-              stroke={color}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              pathLength="1"
-              strokeDasharray="1"
-              strokeDashoffset={visible ? "0" : "1"}
-              className="transition-all duration-1000 ease-out"
-              style={{ transitionDelay: `${seriesIndex * 120}ms` }}
-              points={data
-                .map((item, index) => {
-                  const current = point(item, index, key);
-                  return `${current.x},${current.y}`;
-                })
-                .join(" ")}
-            />
-            {data.map((item, index) => {
-              const current = point(item, index, key);
-              const isActive =
-                activePoint?.key === key && activePoint?.index === index;
-              return (
-                <circle
-                  key={`${key}-${index}`}
-                  cx={current.x}
-                  cy={current.y}
-                  r={isActive ? 5 : 3}
-                  fill="white"
-                  stroke={color}
-                  strokeWidth={isActive ? 3 : 2}
-                  className="cursor-pointer transition-all duration-200"
-                  style={{
-                    opacity: visible ? 1 : 0,
-                    transitionDelay: `${250 + index * 35}ms`,
-                  }}
-                  onMouseEnter={() =>
-                    setActivePoint({
-                      key,
-                      label,
-                      color,
-                      index,
-                      x: current.x,
-                      y: current.y,
-                      value: item[key],
-                      period: item.label,
-                    })
-                  }
-                  onMouseLeave={() => setActivePoint(null)}
-                />
-              );
-            })}
-          </g>
+        {series.map(([key, , color]) => (
+          <polyline
+            key={key}
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points={data
+              .map((item, index) => point(item, index, key))
+              .join(" ")}
+          />
         ))}
         {data.map((item, index) => {
           if (
@@ -926,29 +804,11 @@ const TrendChart = ({ data = [] }) => {
           );
         })}
       </svg>
-      {activePoint ? (
-        <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] shadow-lg"
-          style={{
-            left: `${(activePoint.x / width) * 100}%`,
-            top: `${(activePoint.y / height) * 220}px`,
-          }}
-        >
-          <p className="font-bold text-slate-800">{activePoint.period}</p>
-          <p
-            className="mt-0.5 whitespace-nowrap font-semibold"
-            style={{ color: activePoint.color }}
-          >
-            {activePoint.label}:{" "}
-            {numberFormat.format(Number(activePoint.value || 0))}
-          </p>
-        </div>
-      ) : null}
-      <div className="mt-1 flex flex-wrap justify-center gap-2">
+      <div className="flex flex-wrap justify-center gap-4">
         {series.map(([, label, color]) => (
           <span
             key={label}
-            className="flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600"
           >
             <i
               className="h-2.5 w-2.5 rounded-full"
@@ -965,33 +825,22 @@ const TrendChart = ({ data = [] }) => {
 const FunnelChart = ({ data = [] }) => {
   const rows = data.filter((item) => Number(item.value || 0) > 0);
   const max = Math.max(1, ...rows.map((item) => item.value));
-  const visible = useChartAnimation(JSON.stringify(rows));
-  const [activeIndex, setActiveIndex] = useState(null);
   if (!rows.length) return <EmptyChart />;
   return (
-    <div className="mx-auto flex max-w-2xl flex-col items-center gap-1.5 py-1">
+    <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 py-1">
       {rows.map((item, index) => {
         const proportionalWidth = (Number(item.value || 0) / max) * 100;
         const width = Math.max(44, Math.min(100, proportionalWidth));
         return (
-          <div
-            key={item.name}
-            className="w-full rounded-lg py-0.5 text-center"
-            onMouseEnter={() => setActiveIndex(index)}
-            onMouseLeave={() => setActiveIndex(null)}
-          >
+          <div key={item.name} className="w-full text-center">
             <div
-              className="relative mx-auto flex h-9 items-center justify-center overflow-hidden rounded-lg px-3 text-xs font-bold text-white shadow-sm transition-[width,transform,filter] duration-700 ease-out"
+              className="mx-auto flex h-8 items-center justify-center rounded-lg px-3 text-xs font-bold text-white shadow-sm"
               style={{
-                width: visible ? `${width}%` : "18%",
-                background: `linear-gradient(100deg, ${colors[index % colors.length]}, ${colors[index % colors.length]}cc)`,
-                transitionDelay: `${index * 85}ms`,
-                transform: activeIndex === index ? "scale(1.015)" : "scale(1)",
-                filter: activeIndex === index ? "brightness(1.08)" : "none",
+                width: `${width}%`,
+                backgroundColor: colors[index % colors.length],
               }}
             >
-              <span className="absolute inset-y-0 right-0 w-16 -skew-x-12 bg-white/10" />
-              <span className="relative truncate">
+              <span className="truncate">
                 {titleCase(item.name)} · {numberFormat.format(item.value)}
               </span>
             </div>
