@@ -153,29 +153,15 @@ const attachEmploymentStatus = async (applications = []) => {
     const plain = application?.toObject ? application.toObject() : application;
     const jobseekerId = String(plain?.jobseeker?._id || plain?.jobseeker || '');
     const currentApplicationId = String(plain?._id || '');
-    const currentEmployerId = String(
-      plain?.employer?._id ||
-      plain?.employer ||
-      plain?.job?.employer?._id ||
-      plain?.job?.employer ||
-      ''
-    );
+    const currentJobId = String(plain?.job?._id || plain?.job || '');
 
     const otherHiredApplication = (hiredByJobseeker.get(jobseekerId) || []).find((hiredApplication) => {
       const hiredApplicationId = String(hiredApplication?._id || '');
-      const hiredEmployerId = String(
-        hiredApplication?.employer?._id ||
-        hiredApplication?.employer ||
-        hiredApplication?.job?.employer?._id ||
-        hiredApplication?.job?.employer ||
-        ''
-      );
+      const hiredJobId = String(hiredApplication?.job?._id || hiredApplication?.job || '');
 
       return (
         hiredApplicationId !== currentApplicationId &&
-        Boolean(currentEmployerId) &&
-        Boolean(hiredEmployerId) &&
-        hiredEmployerId !== currentEmployerId
+        hiredJobId !== currentJobId
       );
     });
 
@@ -317,18 +303,12 @@ const buildCurrentEmploymentPayload = (application = {}) => {
   };
 };
 
-const findActiveEmployment = async (jobseekerId, excludedEmployerId = null) => {
-  const query = {
+const findActiveEmployment = async (jobseekerId) => {
+  return Application.findOne({
     jobseeker: jobseekerId,
     status: 'hired',
     employmentStatus: { $ne: 'inactive' }
-  };
-
-  if (excludedEmployerId) {
-    query.employer = { $ne: excludedEmployerId };
-  }
-
-  return Application.findOne(query)
+  })
     .populate({
       path: 'job',
       select: 'title companyName companyLogo employer'
@@ -1099,12 +1079,12 @@ exports.applyForJob = async (req, res) => {
       return res.status(400).json({ success: false, message: 'You have already applied for this job' });
     }
 
-    const activeEmployment = await findActiveEmployment(req.user._id, job.employer);
+    const activeEmployment = await findActiveEmployment(req.user._id);
     if (activeEmployment) {
       return res.status(409).json({
         success: false,
         code: 'ACTIVE_EMPLOYMENT_CONFIRMATION_REQUIRED',
-        message: 'Your employment with another company is still active. Please update it before applying for a new job with a different company.',
+        message: 'Your previous employment record is still active. Please update it before applying for a new job.',
         employment: buildCurrentEmploymentPayload(activeEmployment)
       });
     }
@@ -1593,14 +1573,13 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
     const existingApplication = await Application.findOne({
       _id: applicationId,
       employer: req.user._id,
-      status: 'hired',
-      'employmentStatusRequest.status': 'pending'
+      status: 'hired'
     });
 
     if (!existingApplication) {
       return res.status(409).json({
         success: false,
-        message: 'This employment status request is not pending or does not belong to your company.'
+        message: 'This employment status request does not belong to your company.'
       });
     }
 
@@ -1618,25 +1597,40 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       return res.status(200).json({
         success: true,
         alreadySubmitted: true,
-        message: 'Your Employer response was already submitted and is waiting for final Admin review.',
+        message: 'This employment status request has already been processed.',
         application: existingApplication
+      });
+    }
+
+    if (String(existingApplication.employmentStatusRequest?.status || '').toLowerCase() !== 'pending') {
+      return res.status(409).json({
+        success: false,
+        message: 'This employment status request is no longer pending.'
       });
     }
 
     const reviewedAt = new Date();
     const update = {
-      // The Employer response is recorded separately. The request remains
-      // Pending until the Admin makes the final decision.
-      'employmentStatusRequest.status': 'pending',
+      'employmentStatusRequest.status': decision,
       'employmentStatusRequest.reviewedAt': reviewedAt,
       'employmentStatusRequest.reviewedBy': req.user._id,
       'employmentStatusRequest.employerResponse.decision': decision,
       'employmentStatusRequest.employerResponse.respondedAt': reviewedAt,
       'employmentStatusRequest.employerResponse.respondedBy': req.user._id,
       'employmentStatusRequest.employerResponse.declineReason': decision === 'declined' ? declineReason : '',
-      'employmentStatusRequest.employerResponse.explanation': decision === 'declined' ? explanation : ''
+      'employmentStatusRequest.employerResponse.explanation': decision === 'declined' ? explanation : '',
+      'employmentStatusRequest.adminDecision.decision': 'pending',
+      'employmentStatusRequest.adminDecision.decidedAt': null,
+      'employmentStatusRequest.adminDecision.decidedBy': null
     };
-    if (decision === 'declined') {
+    if (decision === 'approved') {
+      update.employmentStatus = 'inactive';
+      update.employmentEndReason = existingApplication.employmentStatusRequest.reason;
+      update.employmentEndedAt = reviewedAt;
+      update.employmentUpdatedBy = 'jobseeker';
+    } else {
+      update.employmentStatus = 'active';
+      update.employmentStatusCheckedAt = reviewedAt;
       update['employmentStatusRequest.declineReason'] = declineReason;
       update['employmentStatusRequest.explanation'] = explanation;
     }
@@ -1647,7 +1641,7 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
         employer: req.user._id,
         status: 'hired',
         'employmentStatusRequest.status': 'pending',
-        'employmentStatusRequest.employerResponse.decision': 'pending'
+        'employmentStatusRequest.employerResponse.decision': { $in: ['pending', null] }
       },
       { $set: update },
       { new: true, runValidators: true }
@@ -1663,11 +1657,13 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       });
     }
 
-    await notificationController.createAdminEmploymentStatusResponseNotification(application, decision);
+    await notificationController.createEmploymentStatusDecisionNotification(application, decision);
 
     return res.status(200).json({
       success: true,
-      message: 'Employer response submitted for Admin review.',
+      message: decision === 'approved'
+        ? 'Employment status request approved successfully.'
+        : 'Employment status request declined successfully.',
       application
     });
   } catch (error) {
@@ -1701,11 +1697,14 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
       },
       {
         $set: {
-          employmentStatus: 'active',
+          employmentStatus: 'inactive',
           employmentStatusCheckedAt: employmentEndedAt,
+          employmentEndReason: reason,
+          employmentEndedAt,
+          employmentUpdatedBy: 'employer',
           employmentStatusRequest: {
             reason,
-            status: 'pending',
+            status: 'approved',
             requestedAt: employmentEndedAt,
             reviewedAt: employmentEndedAt,
             reviewedBy: req.user._id,
@@ -1741,11 +1740,11 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
       });
     }
 
-    await notificationController.createAdminEmploymentStatusResponseNotification(application, 'approved', true);
+    await notificationController.createEmployerEmploymentStatusUpdateNotification(application);
 
     return res.status(200).json({
       success: true,
-      message: 'Employment status update submitted for Admin review.',
+      message: 'Employment status updated successfully.',
       application
     });
   } catch (error) {
@@ -3070,7 +3069,7 @@ exports.updateApplicationStatus = async (req, res) => {
       const otherHiredApplication = await Application.findOne({
         _id: { $ne: application._id },
         jobseeker: application.jobseeker,
-        employer: { $ne: application.employer },
+        job: { $ne: application.job?._id || application.job },
         status: 'hired',
         employmentStatus: { $ne: 'inactive' }
       }).select('_id job employer');
@@ -3079,7 +3078,7 @@ exports.updateApplicationStatus = async (req, res) => {
         return res.status(409).json({
           success: false,
           code: 'APPLICANT_ALREADY_EMPLOYED',
-          message: 'This applicant is already employed by another company. You may only decline this application.'
+          message: 'This applicant is already employed through another job application. You may only decline this application.'
         });
       }
     }

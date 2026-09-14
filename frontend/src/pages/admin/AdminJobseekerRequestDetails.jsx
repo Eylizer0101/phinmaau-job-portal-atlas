@@ -40,37 +40,27 @@ export default function AdminJobseekerRequestDetails() {
   const navigate = useNavigate();
   const [request, setRequest] = useState(null);
   const [error, setError] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState('');
   const load = () => api.get(`/applications/admin/employment-status-requests/jobseeker/${jobseekerId}/${requestId}`).then(({data})=>setRequest(data.request)).catch(err=>setError(err.response?.data?.message || 'Unable to load request.'));
   useEffect(() => {
     load();
   }, [jobseekerId, requestId]);
-  const decide = async () => { try { setSaving(true); const {data}=await api.put(`/applications/admin/employment-status-requests/${requestId}/final-decision`, { decision: confirm }); setRequest(data.application); setSuccess(confirm === 'approved' ? "Request Approved Successfully\nThe job seeker's employment status request has been approved." : "Request Declined Successfully\nThe job seeker's employment status request has been declined."); setConfirm(''); } catch(err){ setError(err.response?.data?.message || 'Unable to save decision.'); } finally { setSaving(false); } };
   if (!request) return <div className="p-10 text-center">{error || 'Loading request...'}</div>;
 
   const statusRequest = request.employmentStatusRequest || {};
   const employerResponse = statusRequest.employerResponse || {};
-  const adminDecision = statusRequest.adminDecision || {};
   const employerDecision = String(employerResponse.decision || 'pending').toLowerCase();
   const employerAnswered = ['approved','declined','no_response'].includes(employerDecision) || statusRequest.status === 'no_response';
-  const final = ['approved','declined'].includes(adminDecision.decision);
-  const status = final
-    ? adminDecision.decision
-    : (statusRequest.status === 'no_response' ? 'no_response' : 'pending');
+  const status = String(statusRequest.status || 'pending').toLowerCase();
   const isApproved = status === 'approved';
   const isDeclined = status === 'declined';
   const isWaiting = status === 'pending';
-  const showDecisionDetails = final || (employerAnswered && employerDecision !== 'no_response');
+  const showDecisionDetails = employerAnswered && employerDecision !== 'no_response';
   const showDeclineDetails = employerDecision === 'declined';
   const companyName = request.job?.companyName || request.employer?.employerProfile?.companyName || '—';
   const responseReason = String(employerResponse.declineReason || employerResponse.reason || '').trim();
   const responseComment = String(employerResponse.explanation || employerResponse.comment || '').trim();
-  const decisionPerson = final ? adminDecision.decidedBy : employerResponse.respondedBy || request.employer;
-  const decisionDate = final
-    ? (adminDecision.decidedAt || statusRequest.reviewedAt || employerResponse.respondedAt)
-    : (employerResponse.respondedAt || statusRequest.reviewedAt);
+  const decisionPerson = employerResponse.respondedBy || request.employer;
+  const decisionDate = employerResponse.respondedAt || statusRequest.reviewedAt;
 
   return <div className="mx-auto max-w-[1450px] space-y-5 px-1 py-8">
     <header className="flex flex-wrap items-center justify-between gap-4 px-1">
@@ -85,25 +75,8 @@ export default function AdminJobseekerRequestDetails() {
         </button>
         <div>
           <h1 className="text-[22px] font-bold leading-tight text-slate-900">Employment Status Update Request</h1>
-          <p className="mt-1 text-sm text-slate-500">Review the details below and take action on the request.</p>
+          <p className="mt-1 text-sm text-slate-500">View the Employer's response to this employment status request.</p>
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <button
-          disabled={!employerAnswered || final}
-          onClick={()=>setConfirm('approved')}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          <Check size={17}/>Approve Request
-        </button>
-        <button
-          disabled={!employerAnswered || final}
-          onClick={()=>setConfirm('declined')}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          <X size={17}/>Decline Case
-        </button>
       </div>
     </header>
 
@@ -152,9 +125,7 @@ export default function AdminJobseekerRequestDetails() {
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
               {status === 'pending'
-                ? (employerAnswered
-                    ? `The employer ${employerDecision} the request. Waiting for final Admin confirmation.`
-                    : 'Waiting for the employer to respond to this request.')
+                ? 'Waiting for the employer to respond to this request.'
                 : status === 'no_response'
                   ? 'The employer did not respond to this request within 7 days.'
                   : status === 'approved'
@@ -167,7 +138,7 @@ export default function AdminJobseekerRequestDetails() {
         {showDecisionDetails && <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <DetailItem
             icon={<UserRound size={16}/>} 
-            label={final ? (adminDecision.decision === 'approved' ? 'Approved By' : 'Declined By') : (employerResponse.decision === 'declined' ? 'Declined By' : 'Approved By')}
+            label={employerResponse.decision === 'declined' ? 'Declined By' : 'Approved By'}
             value={name(decisionPerson)}
           />
           <DetailItem
@@ -186,7 +157,7 @@ export default function AdminJobseekerRequestDetails() {
           Reason
         </h2>
         <div className="mt-4 rounded-xl border border-purple-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
-          {responseReason || 'No reason was provided for this request.'}
+          {responseReason || 'No decline reason was provided.'}
         </div>
       </section>
 
@@ -196,13 +167,11 @@ export default function AdminJobseekerRequestDetails() {
           Comment
         </h2>
         <div className="mt-4 min-h-[64px] rounded-xl border border-amber-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
-          {responseComment || 'No additional comments were provided.'}
+          {responseComment || 'No additional comment was provided.'}
         </div>
       </section>
     </div>}
 
-    {confirm && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-bold capitalize">{confirm === 'approved' ? 'Approve Request?' : 'Decline Case?'}</h2><p className="mt-3 text-slate-600">{confirm === 'approved' ? "Are you sure you want to approve this request to end the job seeker's current employment status? The status will change from Active to Inactive." : "Are you sure you want to decline the job seeker's request? The current employment status will remain Active."}</p><p className="mt-4 rounded-xl bg-slate-50 p-4"><b>Request Reason:</b> {reason(statusRequest.reason)}</p><div className="mt-5 grid grid-cols-2 gap-3"><button onClick={()=>setConfirm('')} className="rounded-xl border py-3 font-semibold">Cancel</button><button disabled={saving} onClick={decide} className={`rounded-xl py-3 font-semibold text-white ${confirm === 'approved' ? 'bg-[#2e66a6]' : 'bg-red-600'}`}>{saving ? 'Processing...' : (confirm === 'approved' ? 'Approve Request' : 'Decline Case')}</button></div></div></div>}
-    {success && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-7 text-center shadow-2xl"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/>{success.split('\n').map(line=><p key={line} className="mt-3 first:text-xl first:font-bold">{line}</p>)}<button onClick={()=>setSuccess('')} className="mt-5 rounded-xl bg-[#2e66a6] px-8 py-3 font-semibold text-white">Close</button></div></div>}
   </div>;
 }
 

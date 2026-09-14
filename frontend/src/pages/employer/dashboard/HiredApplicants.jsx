@@ -520,6 +520,7 @@ const HiredApplicants = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewStep, setReviewStep] = useState('actions');
   const [declineReason, setDeclineReason] = useState('');
+  const [customDeclineReason, setCustomDeclineReason] = useState('');
   const [declineExplanation, setDeclineExplanation] = useState('');
   const [reviewResult, setReviewResult] = useState(null);
   const [updateApplication, setUpdateApplication] = useState(null);
@@ -963,8 +964,9 @@ const HiredApplicants = () => {
   const handleReviewStatusRequest = async (decision) => {
     if (!reviewApplication?._id || reviewLoading) return;
 
-    if (decision === 'declined' && (!declineReason || !declineExplanation.trim())) {
-      setError('Select a decline reason and enter an Explanation.');
+    const finalDeclineReason = declineReason === 'Other' ? customDeclineReason.trim() : declineReason;
+    if (decision === 'declined' && (!finalDeclineReason || !declineExplanation.trim())) {
+      setError('Select or enter a decline reason and add a comment.');
       return;
     }
 
@@ -973,7 +975,7 @@ const HiredApplicants = () => {
       setError('');
       const response = await axios.put(
         `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${reviewApplication._id}/employment-status-request/review`,
-        { decision, declineReason, explanation: declineExplanation.trim() },
+        { decision, declineReason: finalDeclineReason, explanation: declineExplanation.trim() },
         { headers: getAuthHeaders() }
       );
 
@@ -989,11 +991,14 @@ const HiredApplicants = () => {
         setReviewApplication(null);
         setReviewStep('actions');
         setDeclineReason('');
+        setCustomDeclineReason('');
         setDeclineExplanation('');
         setReviewResult({
           decision,
-          title: 'Response Submitted Successfully',
-          description: 'Your response was sent to the Admin for final review. The employment status remains Active until the Admin makes a final decision.'
+          title: decision === 'approved' ? 'Request Approved Successfully' : 'Request Declined Successfully',
+          description: decision === 'approved'
+            ? "The Jobseeker's employment status has been updated from Active to Inactive."
+            : "The request was declined. The Jobseeker's employment status remains Active."
         });
       }
     } catch (reviewError) {
@@ -1340,7 +1345,7 @@ const selectBase =
                                 String(app.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase() === 'pending' && (
                                 <button
                                   type="button"
-                                  onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
+                                  onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setCustomDeclineReason(''); setDeclineExplanation(''); setError(''); }}
                                   className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#2e66a6]/25 bg-[#2e66a6]/5 text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`Review employment status request from ${name}`}
                                   title="Review employment status request"
@@ -1461,7 +1466,7 @@ const selectBase =
                           String(app.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase() === 'pending' && (
                           <button
                             type="button"
-                            onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
+                            onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setCustomDeclineReason(''); setDeclineExplanation(''); setError(''); }}
                             className="relative mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/5 px-4 py-2 text-sm font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/10"
                           >
                             <Icon name="request" className="h-4 w-4" />
@@ -1778,17 +1783,23 @@ const selectBase =
                 {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other'].map((reason) => <option key={reason} value={reason}>{reason}</option>)}
               </select>
             </label>
+            {declineReason === 'Other' && (
+              <label className="mt-4 block text-sm font-semibold text-gray-800">
+                Other Reason
+                <input value={customDeclineReason} onChange={(event) => setCustomDeclineReason(event.target.value)} maxLength={120} placeholder="Enter the decline reason" className="mt-2 h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+              </label>
+            )}
             <label className="mt-4 block text-sm font-semibold text-gray-800">
-              Explanation
+              Comment
               <div className="relative mt-2">
-                <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={4} placeholder="Enter your explanation" className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+                <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={4} placeholder="Enter your comment" className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
                 <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineExplanation.length}/500</span>
               </div>
             </label>
             {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
-              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || !declineExplanation.trim() || reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
+              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || (declineReason === 'Other' && !customDeclineReason.trim()) || !declineExplanation.trim() || reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
             </div>
           </div>
         </div>

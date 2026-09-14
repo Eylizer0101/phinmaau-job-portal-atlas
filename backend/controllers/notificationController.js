@@ -622,19 +622,6 @@ exports.createEmploymentStatusRequestNotification = async (application) => {
 
         await notification.save();
 
-        const admins = await User.find({ role: 'admin', status: { $ne: 'deleted' } }).select('_id');
-        if (admins.length) {
-            await Notification.insertMany(admins.map((admin) => ({
-                user: admin._id,
-                type: 'employment_status_request',
-                title: 'Jobseeker Status Request Submitted',
-                message: `${jobseekerName} submitted an employment status update request to the employer.`,
-                relatedId: application._id,
-                relatedModel: 'Application',
-                link: `/admin/jobseeker-status-requests/${jobseekerId}/${application._id}`,
-                metadata: { applicationId: application._id, jobseekerId, jobseekerName }
-            })));
-        }
         return notification;
     } catch (error) {
         console.error('Error creating employment status request notification:', error);
@@ -671,8 +658,8 @@ exports.createEmploymentStatusDecisionNotification = async (application, decisio
     }
 };
 
-// Notify every Admin after an Employer responds. The Jobseeker is intentionally
-// not notified here because the Admin still has to make the final decision.
+// Legacy helper retained for compatibility with older callers. New employment
+// status request responses are completed directly by the Employer.
 exports.createAdminEmploymentStatusResponseNotification = async (application, decision, employerInitiated = false) => {
     try {
         const admins = await User.find({ role: 'admin', status: { $ne: 'deleted' } }).select('_id');

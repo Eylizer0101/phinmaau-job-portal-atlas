@@ -128,17 +128,17 @@ exports.processNoResponseRequests = async () => {
     application.employmentStatusRequest.employerResponse.decision = 'no_response';
     await application.save();
 
-    const admins = await User.find({ role: 'admin', status: { $ne: 'deleted' } }).select('_id');
     const name = fullName(application.jobseeker);
-    if (admins.length) await Notification.insertMany(admins.map((admin) => ({
-      user: admin._id,
-      type: 'employment_status_request',
-      title: 'Employer Response Overdue',
-      message: `The employer did not respond to ${name}'s employment status update request within 7 days.`,
+    await Notification.create({
+      user: application.jobseeker._id || application.jobseeker,
+      type: 'employment_status_update',
+      title: 'No Response to Status Request',
+      message: 'The employer did not respond to this request within 7 days.',
       relatedId: application._id,
       relatedModel: 'Application',
-      link: `/admin/jobseeker-status-requests/${application.jobseeker._id}/${application._id}`
-    })));
+      link: `/jobseeker/my-applications?status=hired&application=${application._id}`,
+      metadata: { applicationId: application._id, decision: 'no_response' }
+    });
 
     const employer = application.employer || {};
     if (employer.email) {

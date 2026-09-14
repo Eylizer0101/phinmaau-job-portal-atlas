@@ -1587,7 +1587,7 @@ const MyApplications = () => {
                                 disabled={employmentRequestStatus === 'pending'}
                                 className={`${UI.btnBase} ${UI.btnMd} min-w-[140px] w-auto whitespace-nowrap text-[13px] border border-[#2e66a6]/25 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/5 ${UI.ring}`}
                                 title={employmentRequestStatus === 'pending'
-                                  ? (employerRequestDecision === 'pending' ? 'Your request is awaiting employer review' : 'Your request is awaiting final Admin review')
+                                  ? 'Your request is awaiting employer review'
                                   : 'Request an employment status change'}
                               >
                                 <SvgIcon name="statusRequest" className="h-4 w-4 flex-shrink-0" />
@@ -2062,7 +2062,7 @@ const MyApplications = () => {
                   <p>By continuing, you confirm that the employment information and reason you selected accurately reflect your current employment situation.</p>
                   <p>Once submitted, your request will be sent to the company or employer associated with your employment record. The employer will review the request and may <strong>approve or decline</strong> it based on their review.</p>
                   <p>The employer has <strong>7 days</strong> from the date the request is submitted to respond. If the employer does not respond, the <strong>Admin</strong> will review and follow up on the request.</p>
-                  <p>By submitting this request, you acknowledge that you understand how your information will be shared, how the employer review process works, and when an Admin review may be requested.</p>
+                  <p>By submitting this request, you acknowledge that the Employer will directly review and decide your employment status request.</p>
                 </div>
               </div>
 

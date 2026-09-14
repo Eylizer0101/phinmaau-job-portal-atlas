@@ -2217,7 +2217,7 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
   );
 };
 
-const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, onReasonChange, onModeChange, onReview, onUpdate, onClose }) => {
+const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, declineReason, customDeclineReason, declineComment, onReasonChange, onDeclineReasonChange, onCustomDeclineReasonChange, onDeclineCommentChange, onModeChange, onReview, onUpdate, onClose }) => {
   const choices = [
     { value: 'contract_ended', title: 'Contract Ended', description: 'Previous contract has finished' },
     { value: 'employment_ended', title: 'Employment Ended', description: 'No longer employed in this role' },
@@ -2244,8 +2244,38 @@ const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, 
           <p className="mt-2 text-sm leading-6 text-gray-600">Are you sure you want to approve the job seeker's request to end their current employment? Their employment status will change from Active to Inactive.</p>
           <p className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Request reason: <strong className="text-gray-900">{reasonLabel(requestReason)}</strong></p>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <button type="button" onClick={() => onReview('declined')} disabled={loading} className="h-11 rounded-xl border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">Decline Request</button>
+            <button type="button" onClick={() => onModeChange('decline')} disabled={loading} className="h-11 rounded-xl border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">Decline Request</button>
             <button type="button" onClick={() => onReview('approved')} disabled={loading} className="h-11 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">{loading ? 'Processing...' : 'Approve Request'}</button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    {mode === 'decline' ? (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4">
+        <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+          <CloseButton label="Close decline request modal" />
+          <h2 className="pr-10 text-lg font-bold text-gray-900">Decline Request?</h2>
+          <p className="mt-2 text-sm leading-6 text-gray-600">Select a reason and add a comment. The Job Seeker's employment status will remain Active.</p>
+          <label className="mt-5 block text-sm font-semibold text-gray-800">
+            Decline Reason
+            <select value={declineReason} onChange={(event) => onDeclineReasonChange(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6]">
+              <option value="">Choose a reason</option>
+              {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other'].map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          {declineReason === 'Other' ? (
+            <label className="mt-4 block text-sm font-semibold text-gray-800">
+              Other Reason
+              <input value={customDeclineReason} onChange={(event) => onCustomDeclineReasonChange(event.target.value)} maxLength={120} placeholder="Enter the decline reason" className="mt-2 h-11 w-full rounded-xl border border-gray-300 px-3 font-normal outline-none focus:border-[#2e66a6]" />
+            </label>
+          ) : null}
+          <label className="mt-4 block text-sm font-semibold text-gray-800">
+            Comment
+            <textarea value={declineComment} onChange={(event) => onDeclineCommentChange(event.target.value)} maxLength={500} rows={4} placeholder="Enter your comment" className="mt-2 w-full resize-none rounded-xl border border-gray-300 p-3 font-normal outline-none focus:border-[#2e66a6]" />
+          </label>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button type="button" onClick={() => onModeChange('review')} disabled={loading} className="h-11 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 disabled:opacity-50">Back</button>
+            <button type="button" onClick={() => onReview('declined')} disabled={loading || !declineReason || (declineReason === 'Other' && !customDeclineReason.trim()) || !declineComment.trim()} className="h-11 rounded-xl bg-red-600 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Processing...' : 'Decline Request'}</button>
           </div>
         </div>
       </div>
@@ -2323,6 +2353,9 @@ const ApplicationDetails = () => {
   const [confirmationAction, setConfirmationAction] = useState('');
   const [employmentModal, setEmploymentModal] = useState('');
   const [employmentReason, setEmploymentReason] = useState('');
+  const [employmentDeclineReason, setEmploymentDeclineReason] = useState('');
+  const [employmentCustomDeclineReason, setEmploymentCustomDeclineReason] = useState('');
+  const [employmentDeclineComment, setEmploymentDeclineComment] = useState('');
   const [employmentLoading, setEmploymentLoading] = useState(false);
   const [employmentResult, setEmploymentResult] = useState(null);
   const [avatarBroken, setAvatarBroken] = useState(false);
@@ -2403,18 +2436,28 @@ const ApplicationDetails = () => {
     try {
       setEmploymentLoading(true);
       setError('');
+      const finalDeclineReason = employmentDeclineReason === 'Other'
+        ? employmentCustomDeclineReason.trim()
+        : employmentDeclineReason;
+      if (decision === 'declined' && (!finalDeclineReason || !employmentDeclineComment.trim())) {
+        setError('Select or enter a decline reason and add a comment.');
+        return;
+      }
       const response = await axios.put(
         `${API_HOST}/api/applications/${applicationId}/employment-status-request/review`,
-        { decision },
+        { decision, declineReason: finalDeclineReason, explanation: employmentDeclineComment.trim() },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
       if (response.data?.application) applyEmploymentResponse(response.data.application);
       setEmploymentModal('');
+      setEmploymentDeclineReason('');
+      setEmploymentCustomDeclineReason('');
+      setEmploymentDeclineComment('');
       setEmploymentResult({
-        title: 'Response Submitted Successfully',
+        title: decision === 'approved' ? 'Request Approved Successfully' : 'Request Declined Successfully',
         description: decision === 'approved'
-          ? 'Your approval was sent to the Admin for final review. The employment status remains Active until the Admin approves the request.'
-          : 'Your decline response was sent to the Admin for final review. The employment status remains Active.'
+          ? "The Job Seeker's employment status has been updated from Active to Inactive."
+          : "The request was declined. The Job Seeker's employment status remains Active."
       });
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failed to review the status change request.');
@@ -2437,8 +2480,8 @@ const ApplicationDetails = () => {
       setEmploymentModal('');
       setEmploymentReason('');
       setEmploymentResult({
-        title: 'Employment Status Update Submitted',
-        description: 'The update was sent to the Admin for final review. The employment status remains Active until the Admin approves it.'
+        title: 'Employment Status Updated Successfully',
+        description: "The Job Seeker's employment status has been updated from Active to Inactive."
       });
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failed to update the employment status.');
@@ -2496,18 +2539,11 @@ const ApplicationDetails = () => {
   const employmentStatus = String(application.employmentStatus || 'active').toLowerCase();
   const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
   const employerRequestDecision = String(application.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase();
-  const adminRequestDecision = String(application.employmentStatusRequest?.adminDecision?.decision || 'pending').toLowerCase();
   const isActiveHiredEmployment = currentStatus === 'hired' && employmentStatus === 'active';
   const canReviewEmploymentRequest =
     isActiveHiredEmployment &&
     employmentRequestStatus === 'pending' &&
-    employerRequestDecision === 'pending' &&
-    adminRequestDecision === 'pending';
-  const isAwaitingAdminDecision =
-    isActiveHiredEmployment &&
-    employmentRequestStatus === 'pending' &&
-    ['approved', 'declined'].includes(employerRequestDecision) &&
-    adminRequestDecision === 'pending';
+    employerRequestDecision === 'pending';
   const canUpdateEmploymentStatus =
     isActiveHiredEmployment &&
     (employmentRequestStatus !== 'pending' || employerRequestDecision === 'declined');
@@ -2896,7 +2932,7 @@ const ApplicationDetails = () => {
             <h2 className="text-lg font-bold">
               {currentStatus === 'withdrawn' ? 'Application Withdrawn' : 'Employer Actions'}
             </h2>
-            {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed by another company.</p> : null}
+            {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}
             <div className="mt-5 space-y-3">
               {currentStatus === 'withdrawn' ? (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
@@ -2908,14 +2944,9 @@ const ApplicationDetails = () => {
               {!isAlreadyEmployed && isFromForInterviewPage && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
               {!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}
               {canReviewEmploymentRequest ? (
-                <button onClick={() => setEmploymentModal('review')} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
+                <button onClick={() => { setEmploymentDeclineReason(''); setEmploymentCustomDeclineReason(''); setEmploymentDeclineComment(''); setEmploymentModal('review'); }} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
                   <SvgIcon name="check" /> Approve Request
                 </button>
-              ) : null}
-              {isAwaitingAdminDecision ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-800">
-                  Response submitted — awaiting final Admin review
-                </div>
               ) : null}
               {canUpdateEmploymentStatus ? (
                 <button onClick={() => { setEmploymentReason(''); setEmploymentModal('reason'); }} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91] hover:bg-blue-50 disabled:opacity-50">
@@ -3245,9 +3276,15 @@ const ApplicationDetails = () => {
         mode={employmentModal}
         reason={employmentReason}
         requestReason={application.employmentStatusRequest?.reason}
+        declineReason={employmentDeclineReason}
+        customDeclineReason={employmentCustomDeclineReason}
+        declineComment={employmentDeclineComment}
         loading={employmentLoading}
         result={employmentResult}
         onReasonChange={setEmploymentReason}
+        onDeclineReasonChange={setEmploymentDeclineReason}
+        onCustomDeclineReasonChange={setEmploymentCustomDeclineReason}
+        onDeclineCommentChange={setEmploymentDeclineComment}
         onModeChange={setEmploymentModal}
         onReview={reviewEmploymentRequest}
         onUpdate={updateEmploymentByEmployer}
@@ -3256,6 +3293,9 @@ const ApplicationDetails = () => {
           setEmploymentModal('');
           setEmploymentResult(null);
           setEmploymentReason('');
+          setEmploymentDeclineReason('');
+          setEmploymentCustomDeclineReason('');
+          setEmploymentDeclineComment('');
         }}
       />
       <DeclineReasonModal open={declineOpen} applicantName={name} reasons={declineReasons} selectedReason={declineReason} comment={declineComment} onReasonChange={setDeclineReason} onCommentChange={setDeclineComment} onClose={() => { setDeclineOpen(false); setDeclineReason(''); setDeclineComment(''); }} onConfirm={async () => { const from = currentStatus === 'for interview' ? 'forInterview' : 'applicants'; setDeclineOpen(false); await updateStatus('declined', { declineReason, declineComment, declinedFrom: from }); }} submitting={statusUpdating} />
