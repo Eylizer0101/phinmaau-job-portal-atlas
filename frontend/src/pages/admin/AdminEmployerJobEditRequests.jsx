@@ -194,7 +194,7 @@ const AdminEmployerJobEditRequests = () => {
   const [company, setCompany] = useState('all');
   const [industry, setIndustry] = useState('all');
   const [jobTitle, setJobTitle] = useState('all');
-  const [status, setStatus] = useState('all');
+  const [status, setStatus] = useState('pending');
   const [time, setTime] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -259,13 +259,35 @@ const AdminEmployerJobEditRequests = () => {
     setDateTo('');
   };
 
+  const hasActiveFilters =
+    Boolean(search.trim()) ||
+    company !== 'all' ||
+    industry !== 'all' ||
+    jobTitle !== 'all' ||
+    status !== 'pending' ||
+    time !== 'all' ||
+    Boolean(dateFrom) ||
+    Boolean(dateTo);
+
+  const clearFilters = () => {
+    setSearch('');
+    setCompany('all');
+    setIndustry('all');
+    setJobTitle('all');
+    setStatus('pending');
+    setTime('all');
+    setDateFrom('');
+    setDateTo('');
+    setShowCustomDate(false);
+  };
+
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
     <header>
       <h1 className="text-[33px] font-semibold leading-[40px] text-slate-950">Edit Requests</h1>
       <p className="mt-1 text-sm text-[#526d91]">Review employer requests and grant temporary edit access to locked job postings.</p>
     </header>
 
-    <section className="grid gap-3 rounded-2xl border border-[#dbe3ee] bg-white p-4 shadow-[0_2px_5px_rgba(15,23,42,0.08)] md:grid-cols-2 xl:grid-cols-[1.45fr_repeat(5,minmax(0,1fr))]">
+    <section className={cn('grid gap-3 rounded-2xl border border-[#dbe3ee] bg-white p-4 shadow-[0_2px_5px_rgba(15,23,42,0.08)] md:grid-cols-2', hasActiveFilters ? 'xl:grid-cols-[1.45fr_repeat(5,minmax(0,1fr))_96px]' : 'xl:grid-cols-[1.45fr_repeat(5,minmax(0,1fr))]')}> 
       <label className="relative block min-w-0">
         <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#667f9f]" size={18} />
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company, job title..." className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-[#526d91] focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10" />
@@ -306,6 +328,16 @@ const AdminEmployerJobEditRequests = () => {
         </select>
         <CalendarDays className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#667f9f]" size={17} />
       </div>
+
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm font-medium text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f4f8fc] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/10"
+        >
+          Clear
+        </button>
+      )}
     </section>
 
     {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
