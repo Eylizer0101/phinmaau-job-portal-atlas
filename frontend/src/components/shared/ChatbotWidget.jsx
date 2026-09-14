@@ -217,7 +217,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
         >
           <header className="flex items-center justify-between bg-[#212C61] px-4 py-3 text-white">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 shadow-sm">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden">
                 <img
                   src="/images/Agap_Ai.png"
                   alt="AGAPAY"
@@ -365,7 +365,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
           setIsOpen(true);
           setIsMinimized(false);
         }}
-        className="ml-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+        className="ml-auto flex h-16 w-16 items-center justify-center overflow-hidden bg-transparent p-0 transition hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
         aria-label={isOpen && isMinimized ? 'Restore Agap-AI' : 'Open Agap-AI'}
         aria-expanded={isOpen && !isMinimized}
       >
