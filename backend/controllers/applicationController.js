@@ -153,15 +153,29 @@ const attachEmploymentStatus = async (applications = []) => {
     const plain = application?.toObject ? application.toObject() : application;
     const jobseekerId = String(plain?.jobseeker?._id || plain?.jobseeker || '');
     const currentApplicationId = String(plain?._id || '');
-    const currentJobId = String(plain?.job?._id || plain?.job || '');
+    const currentEmployerId = String(
+      plain?.employer?._id ||
+      plain?.employer ||
+      plain?.job?.employer?._id ||
+      plain?.job?.employer ||
+      ''
+    );
 
     const otherHiredApplication = (hiredByJobseeker.get(jobseekerId) || []).find((hiredApplication) => {
       const hiredApplicationId = String(hiredApplication?._id || '');
-      const hiredJobId = String(hiredApplication?.job?._id || hiredApplication?.job || '');
+      const hiredEmployerId = String(
+        hiredApplication?.employer?._id ||
+        hiredApplication?.employer ||
+        hiredApplication?.job?.employer?._id ||
+        hiredApplication?.job?.employer ||
+        ''
+      );
 
       return (
         hiredApplicationId !== currentApplicationId &&
-        hiredJobId !== currentJobId
+        Boolean(currentEmployerId) &&
+        Boolean(hiredEmployerId) &&
+        hiredEmployerId !== currentEmployerId
       );
     });
 
@@ -303,12 +317,18 @@ const buildCurrentEmploymentPayload = (application = {}) => {
   };
 };
 
-const findActiveEmployment = async (jobseekerId) => {
-  return Application.findOne({
+const findActiveEmployment = async (jobseekerId, excludedEmployerId = null) => {
+  const query = {
     jobseeker: jobseekerId,
     status: 'hired',
     employmentStatus: { $ne: 'inactive' }
-  })
+  };
+
+  if (excludedEmployerId) {
+    query.employer = { $ne: excludedEmployerId };
+  }
+
+  return Application.findOne(query)
     .populate({
       path: 'job',
       select: 'title companyName companyLogo employer'
@@ -1079,12 +1099,12 @@ exports.applyForJob = async (req, res) => {
       return res.status(400).json({ success: false, message: 'You have already applied for this job' });
     }
 
-    const activeEmployment = await findActiveEmployment(req.user._id);
+    const activeEmployment = await findActiveEmployment(req.user._id, job.employer);
     if (activeEmployment) {
       return res.status(409).json({
         success: false,
         code: 'ACTIVE_EMPLOYMENT_CONFIRMATION_REQUIRED',
-        message: 'Your previous employment record is still active. Please update it before applying for a new job.',
+        message: 'Your employment with another company is still active. Please update it before applying for a new job with a different company.',
         employment: buildCurrentEmploymentPayload(activeEmployment)
       });
     }
@@ -3050,7 +3070,7 @@ exports.updateApplicationStatus = async (req, res) => {
       const otherHiredApplication = await Application.findOne({
         _id: { $ne: application._id },
         jobseeker: application.jobseeker,
-        job: { $ne: application.job?._id || application.job },
+        employer: { $ne: application.employer },
         status: 'hired',
         employmentStatus: { $ne: 'inactive' }
       }).select('_id job employer');
@@ -3059,7 +3079,7 @@ exports.updateApplicationStatus = async (req, res) => {
         return res.status(409).json({
           success: false,
           code: 'APPLICANT_ALREADY_EMPLOYED',
-          message: 'This applicant is already employed through another job application. You may only decline this application.'
+          message: 'This applicant is already employed by another company. You may only decline this application.'
         });
       }
     }

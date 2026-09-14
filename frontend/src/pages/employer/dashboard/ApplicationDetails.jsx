@@ -2896,7 +2896,7 @@ const ApplicationDetails = () => {
             <h2 className="text-lg font-bold">
               {currentStatus === 'withdrawn' ? 'Application Withdrawn' : 'Employer Actions'}
             </h2>
-            {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}
+            {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed by another company.</p> : null}
             <div className="mt-5 space-y-3">
               {currentStatus === 'withdrawn' ? (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">

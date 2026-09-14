@@ -2723,6 +2723,21 @@ const CompanyProfile = () => {
                           <span className="text-[15px] text-[#6b7280]">No website added yet.</span>
                         )}
                       </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[14px] text-[#4b5563]">
+                        <span className="inline-flex items-center gap-0.5" aria-label={`${companyReviewSummary.rating.toFixed(1)} out of 5 stars`}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={`company-header-star-${star}`}
+                              className={star <= Math.round(companyReviewSummary.rating) ? 'text-[#f2b313]' : 'text-[#d9e0e8]'}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </span>
+                        <span className="font-semibold text-[#374151]">{companyReviewSummary.rating.toFixed(1)}</span>
+                        <span className="text-[#6b7280]">({companyReviewSummary.count} {companyReviewSummary.count === 1 ? 'review' : 'reviews'})</span>
+                      </div>
                     </div>
                   </div>
 

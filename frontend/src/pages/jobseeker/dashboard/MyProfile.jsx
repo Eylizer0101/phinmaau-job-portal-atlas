@@ -25,21 +25,14 @@ import {
   FaTimesCircle,
   FaExclamationTriangle,
   FaInfoCircle,
-  FaEnvelope,
-  FaPhoneAlt,
   FaGraduationCap,
-  FaMapMarkerAlt,
   FaDownload,
   FaEye,
   FaEyeSlash,
   FaPen,
   FaFileAlt,
-  FaUniversity,
-  FaUser,
-  FaBriefcase,
   FaTrash,
   FaPlus,
-  FaArrowLeft,
   FaCamera,
   FaFolderOpen,
   FaBookOpen,
@@ -1168,7 +1161,7 @@ const RichTextDisplay = ({ value, className = '' }) => {
   return (
     <div
       className={[
-        'rich-profile-text',
+        'rich-profile-text min-w-0 max-w-full break-words',
         '[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:leading-tight',
         '[&_h2]:text-xl [&_h2]:font-bold [&_h2]:leading-tight',
         '[&_p]:my-1 [&_div]:my-1',
@@ -1178,6 +1171,7 @@ const RichTextDisplay = ({ value, className = '' }) => {
         '[&_blockquote]:ml-6 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4',
         className,
       ].join(' ')}
+      style={{ overflowWrap: 'anywhere' }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -2792,8 +2786,12 @@ const ProfilePhotoCropModal = ({ source, fileName, onCancel, onApply }) => {
   const [positionX, setPositionX] = useState(50);
   const [positionY, setPositionY] = useState(50);
   const [saving, setSaving] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const previewCanvasRef = useRef(null);
   const imageRef = useRef(null);
+  const dragStateRef = useRef(null);
+
+  const clampPosition = (value) => Math.max(0, Math.min(100, value));
 
   const getCropArea = (image) => {
     const size = Math.min(image.naturalWidth, image.naturalHeight) / zoom;
@@ -2826,6 +2824,40 @@ const ProfilePhotoCropModal = ({ source, fileName, onCancel, onApply }) => {
 
   if (!source) return null;
 
+  const handlePointerDown = (event) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const bounds = event.currentTarget.getBoundingClientRect();
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      positionX,
+      positionY,
+      width: bounds.width || 300,
+      height: bounds.height || 300,
+    };
+    setDragging(true);
+  };
+
+  const handlePointerMove = (event) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+
+    setPositionX(clampPosition(dragState.positionX - (deltaX / dragState.width) * 100));
+    setPositionY(clampPosition(dragState.positionY - (deltaY / dragState.height) * 100));
+  };
+
+  const endPointerDrag = (event) => {
+    if (dragStateRef.current?.pointerId !== event.pointerId) return;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    dragStateRef.current = null;
+    setDragging(false);
+  };
+
   const createCrop = async () => {
     setSaving(true);
     try {
@@ -2854,14 +2886,37 @@ const ProfilePhotoCropModal = ({ source, fileName, onCancel, onApply }) => {
     <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="profile-crop-title">
       <div className="w-full max-w-[500px] rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between"><h2 id="profile-crop-title" className="text-xl font-bold">Crop Profile Photo</h2><button type="button" onClick={onCancel} className="p-2 text-2xl text-gray-500" aria-label="Close">×</button></div>
-        <p className="mt-1 text-sm text-gray-500">Adjust the zoom and position before saving.</p>
-        <div className="mx-auto mt-5 h-[300px] w-[300px] overflow-hidden rounded-full bg-gray-100 ring-4 ring-white shadow-lg">
-          <canvas ref={previewCanvasRef} width="600" height="600" aria-label="Crop preview" className="h-full w-full" />
+        <p className="mt-1 text-sm text-gray-500">Use the zoom slider, then drag the photo inside the circle to position it before saving.</p>
+        <div
+          className={`mx-auto mt-5 h-[300px] w-[300px] touch-none overflow-hidden rounded-full bg-gray-100 ring-4 ring-white shadow-lg ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          role="application"
+          tabIndex={0}
+          aria-label="Drag profile photo to reposition it. Use arrow keys for fine adjustment."
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={endPointerDrag}
+          onPointerCancel={endPointerDrag}
+          onKeyDown={(event) => {
+            const step = event.shiftKey ? 5 : 1;
+            if (event.key === 'ArrowLeft') {
+              event.preventDefault();
+              setPositionX((current) => clampPosition(current + step));
+            } else if (event.key === 'ArrowRight') {
+              event.preventDefault();
+              setPositionX((current) => clampPosition(current - step));
+            } else if (event.key === 'ArrowUp') {
+              event.preventDefault();
+              setPositionY((current) => clampPosition(current + step));
+            } else if (event.key === 'ArrowDown') {
+              event.preventDefault();
+              setPositionY((current) => clampPosition(current - step));
+            }
+          }}
+        >
+          <canvas ref={previewCanvasRef} width="600" height="600" aria-label="Crop preview" className="pointer-events-none h-full w-full select-none" />
         </div>
         <div className="mt-5 space-y-3 text-sm text-gray-700">
           <label className="block">Zoom<input type="range" min="1" max="3" step="0.05" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="mt-1 w-full" /></label>
-          <label className="block">Horizontal position<input type="range" min="0" max="100" value={positionX} onChange={(e) => setPositionX(Number(e.target.value))} className="mt-1 w-full" /></label>
-          <label className="block">Vertical position<input type="range" min="0" max="100" value={positionY} onChange={(e) => setPositionY(Number(e.target.value))} className="mt-1 w-full" /></label>
         </div>
         <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600">Cancel</button><button type="button" onClick={createCrop} disabled={saving} className="rounded-lg bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Applying...' : 'Apply Photo'}</button></div>
       </div>
@@ -7100,6 +7155,15 @@ const MyProfile = () => {
 
     if (sectionKey === 'career') {
       const salaryText = [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ');
+      const renderCareerRow = (label, value) => {
+        const displayValue = textOrEmpty(value, 'Not provided');
+        return (
+          <div className="flex min-w-0 items-baseline gap-1">
+            <b className="shrink-0">{label}:</b>
+            <span className="min-w-0 truncate" title={String(displayValue)}>{displayValue}</span>
+          </div>
+        );
+      };
       const hasCareerData = [
         formData.preferredWorkMode,
         formData.employmentType,
@@ -7122,28 +7186,28 @@ const MyProfile = () => {
 
       return (
         <div className="px-0 pb-5 pt-2 grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-4 font-serif text-[13px] leading-5 text-gray-900">
-          <div className="space-y-1">
-            <div><b>Preferred Work Mode:</b> {textOrEmpty(formData.preferredWorkMode, 'Not provided')}</div>
-            <div><b>Employment Type:</b> {textOrEmpty(formData.employmentType, 'Not provided')}</div>
-            <div><b>Willing to Relocate:</b> {textOrEmpty(formData.willingToRelocate, 'Not provided')}</div>
-            <div><b>How Soon Can Start:</b> {textOrEmpty(formData.howSoonCanYouStart, 'Not provided')}</div>
-            <div><b>Experience:</b> {textOrEmpty(formData.experience, 'Not provided')}</div>
+          <div className="min-w-0 space-y-1">
+            {renderCareerRow('Preferred Work Mode', formData.preferredWorkMode)}
+            {renderCareerRow('Employment Type', formData.employmentType)}
+            {renderCareerRow('Willing to Relocate', formData.willingToRelocate)}
+            {renderCareerRow('How Soon Can Start', formData.howSoonCanYouStart)}
+            {renderCareerRow('Experience', formData.experience)}
           </div>
 
-          <div className="space-y-1">
-            <div><b>Preferred Language:</b> {textOrEmpty(formData.preferredLanguage, 'Not provided')}</div>
-            <div><b>Educational Attainment:</b> {textOrEmpty(formData.educationalAttainment, 'Not provided')}</div>
-            <div><b>Double Degree:</b> {textOrEmpty(formData.studyField, 'Not provided')}</div>
-            <div><b>Salary:</b> {salaryText || 'Not provided'}</div>
-            <div><b>Nationality:</b> {textOrEmpty(formData.nationality, 'Not provided')}</div>
+          <div className="min-w-0 space-y-1">
+            {renderCareerRow('Preferred Language', formData.preferredLanguage)}
+            {renderCareerRow('Educational Attainment', formData.educationalAttainment)}
+            {renderCareerRow('Double Degree', formData.studyField)}
+            {renderCareerRow('Salary', salaryText || 'Not provided')}
+            {renderCareerRow('Nationality', formData.nationality)}
           </div>
 
-          <div className="space-y-1">
-            <div><b>Height:</b> {formatDisplayHeight(formData.height)}</div>
-            <div><b>Weight:</b> {formatDisplayWeight(formData.weight)}</div>
-            <div><b>Gender:</b> {textOrEmpty(formData.gender, 'Not provided')}</div>
-            <div><b>Civil Status:</b> {textOrEmpty(formData.civilStatus, 'Not provided')}</div>
-            <div><b>Birthday:</b> {textOrEmpty(formatBirthdayDisplay(formData.birthday), 'Not provided')}</div>
+          <div className="min-w-0 space-y-1">
+            {renderCareerRow('Height', formatDisplayHeight(formData.height))}
+            {renderCareerRow('Weight', formatDisplayWeight(formData.weight))}
+            {renderCareerRow('Gender', formData.gender)}
+            {renderCareerRow('Civil Status', formData.civilStatus)}
+            {renderCareerRow('Birthday', formatBirthdayDisplay(formData.birthday))}
           </div>
         </div>
       );
@@ -7153,7 +7217,7 @@ const MyProfile = () => {
       if (workExperienceLoading) return <div className="pb-5"><Spinner size="small" /></div>;
       if (!workExperiences.length) return renderEmptyLine(EMPTY_SECTION_MESSAGES.work);
       return (
-        <div className="px-0 pb-5 pt-2 space-y-4 font-serif text-[13px] leading-5 text-gray-900">
+        <div className="min-w-0 px-0 pb-5 pt-2 space-y-4 break-words font-serif text-[13px] leading-5 text-gray-900" style={{ overflowWrap: 'anywhere' }}>
           {workExperiences.map((item, index) => {
             const startDateText = formatWorkExperienceMonthYear(item.startDate);
             const endDateText = item.isPresent
@@ -7225,9 +7289,9 @@ const MyProfile = () => {
               return (
                 <span
                   key={`skill-display-${index}`}
-                  className="inline-flex items-center overflow-hidden whitespace-nowrap rounded-full border border-[#d8e2ee] bg-white text-[12px] font-medium text-gray-700"
+                  className="inline-flex max-w-full min-w-0 items-center overflow-hidden rounded-full border border-[#d8e2ee] bg-white text-[12px] font-medium text-gray-700"
                 >
-                  <span className="px-3 py-1">{parsedSkill.skill}</span>
+                  <span className="min-w-0 truncate px-3 py-1" title={parsedSkill.skill}>{parsedSkill.skill}</span>
                   <span className={`border-l px-2.5 py-1 font-semibold ${getProficiencyLevelStyle(parsedSkill.proficiency)}`}>
                     {parsedSkill.proficiency}
                   </span>
@@ -7244,7 +7308,7 @@ const MyProfile = () => {
       const hasAny = items.some((item) => item.school || item.campus || item.level || item.educationalAttainment || item.startMonth || item.startYear || item.endMonth || item.endYear || item.description);
       if (!hasAny) return renderEmptyLine(EMPTY_SECTION_MESSAGES.education);
       return (
-        <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
+        <div className="min-w-0 px-0 pb-5 pt-2 space-y-3 break-words font-serif text-[13px] leading-5 text-gray-900" style={{ overflowWrap: 'anywhere' }}>
           {items.map((item, index) => (
             <div
               key={item._id || `education-${index}`}

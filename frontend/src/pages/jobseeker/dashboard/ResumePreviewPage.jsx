@@ -636,6 +636,25 @@ const ResumePreviewPage = () => {
 
         .info-value {
           min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .objective-text,
+        .dated-main,
+        .item-title,
+        .item-subtitle,
+        .item-meta,
+        .resume-rich-text,
+        .resume-rich-text p,
+        .resume-rich-text div,
+        .resume-rich-text li,
+        .resume-education-summary {
+          min-width: 0;
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
 
         .dated-item {
