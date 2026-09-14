@@ -7390,9 +7390,10 @@ const MyProfile = () => {
         <div
           className={
             sectionKey === 'references'
-              ? 'grid grid-cols-1 gap-x-6 gap-y-5 px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 sm:grid-cols-2 lg:grid-cols-3'
-              : 'px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900'
+              ? 'grid min-w-0 grid-cols-1 gap-x-6 gap-y-5 px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 sm:grid-cols-2 lg:grid-cols-3'
+              : 'min-w-0 px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900'
           }
+          style={{ overflowWrap: 'anywhere' }}
         >
           {items.map((item, index) => {
             const dateText = formatProfileEntryDate(item);
@@ -7404,13 +7405,15 @@ const MyProfile = () => {
                   key={item._id || `${sectionKey}-${index}`}
                   className="group relative min-w-0 py-1 pr-12"
                 >
-                  <div className="font-bold">{getProfileEntryTitle(sectionKey, item)}</div>
+                  <div className="min-w-0 max-w-full break-words font-bold" style={{ overflowWrap: 'anywhere' }}>
+                    {getProfileEntryTitle(sectionKey, item)}
+                  </div>
 
-                  <div className="mt-0.5 space-y-0.5 text-gray-800">
-                    {item.position ? <div>{item.position}</div> : null}
-                    {item.company ? <div>{item.company}</div> : null}
-                    {item.phone ? <div>{item.phone}</div> : null}
-                    {item.email ? <div className="break-all text-[#2e66a6]">{item.email}</div> : null}
+                  <div className="mt-0.5 min-w-0 max-w-full space-y-0.5 break-words text-gray-800" style={{ overflowWrap: 'anywhere' }}>
+                    {item.position ? <div className="min-w-0 max-w-full break-words" style={{ overflowWrap: 'anywhere' }}>{item.position}</div> : null}
+                    {item.company ? <div className="min-w-0 max-w-full break-words" style={{ overflowWrap: 'anywhere' }}>{item.company}</div> : null}
+                    {item.phone ? <div className="min-w-0 max-w-full break-words" style={{ overflowWrap: 'anywhere' }}>{item.phone}</div> : null}
+                    {item.email ? <div className="min-w-0 max-w-full break-all text-[#2e66a6]">{item.email}</div> : null}
                   </div>
 
                   <div className="absolute right-0 top-0 flex items-center gap-1 opacity-100">
@@ -7441,12 +7444,19 @@ const MyProfile = () => {
             return (
               <div
                 key={item._id || `${sectionKey}-${index}`}
-                className="group py-1"
+                className="group min-w-0 max-w-full py-1"
+                style={{ overflowWrap: 'anywhere' }}
               >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="font-bold">{getProfileEntryTitle(sectionKey, item)}</div>
-                    {subLine ? <div className="italic">{subLine}</div> : null}
+                <div className="flex min-w-0 max-w-full flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 max-w-full flex-1">
+                    <div className="min-w-0 max-w-full break-words font-bold" style={{ overflowWrap: 'anywhere' }}>
+                      {getProfileEntryTitle(sectionKey, item)}
+                    </div>
+                    {subLine ? (
+                      <div className="min-w-0 max-w-full break-words italic" style={{ overflowWrap: 'anywhere' }}>
+                        {subLine}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1 sm:justify-end">
@@ -7479,7 +7489,12 @@ const MyProfile = () => {
                   </div>
                 </div>
 
-                {item.description ? <RichTextDisplay value={item.description} className="mt-2" /> : null}
+                {item.description ? (
+                  <RichTextDisplay
+                    value={item.description}
+                    className="mt-2 min-w-0 max-w-full break-words"
+                  />
+                ) : null}
               </div>
             );
           })}
