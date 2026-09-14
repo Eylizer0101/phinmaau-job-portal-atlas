@@ -219,7 +219,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 shadow-sm">
                 <img
-                  src="/images/agpay.png"
+                  src="/images/Agap_Ai.png"
                   alt="AGAPAY"
                   className="h-full w-full object-contain"
                   draggable="false"
@@ -370,7 +370,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
         aria-expanded={isOpen && !isMinimized}
       >
         <img
-          src="/images/agpay.png"
+          src="/images/Agap_Ai.png"
           alt="AGAPAY"
           className="h-full w-full object-contain"
           draggable="false"
