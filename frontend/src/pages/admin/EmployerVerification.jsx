@@ -1275,7 +1275,7 @@ const EmployerVerification = () => {
                                   size="sm"
                                   leftIcon={<Icon name="eye" className="h-4 w-4" />}
                                   onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
-                                  className="h-10 w-16 !p-0"
+                                  className="h-10 w-16 !gap-0 !p-0"
                                   title="View"
                                 >
                                 
@@ -1287,7 +1287,7 @@ const EmployerVerification = () => {
                                     leftIcon={<Icon name="restore" className="h-4 w-4" />}
                                     onClick={() => setRestoreTarget(item)}
                                     disabled={restoringId === item._id}
-                                    className="h-10 w-16 !p-0"
+                                    className="h-10 w-16 !gap-0 !p-0"
                                     title="Restore"
                                     aria-label={`Restore ${companyName}`}
                                   />
@@ -1361,7 +1361,7 @@ const EmployerVerification = () => {
                                   leftIcon={<Icon name="restore" className="h-4 w-4" />}
                                   onClick={() => setRestoreTarget(item)}
                                   disabled={restoringId === item._id}
-                                  className="h-10 w-16 !p-0"
+                                  className="h-10 w-16 !gap-0 !p-0"
                                   title="Restore"
                                   aria-label={`Restore ${companyName}`}
                                 />
