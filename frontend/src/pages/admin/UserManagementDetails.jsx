@@ -1567,13 +1567,13 @@ const UserManagementDetails = () => {
 
   const ApplicationHistory = () => (
     <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-      <div className="grid gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start sm:gap-x-10">
+      <div className="grid gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start sm:gap-x-6">
         <div>
           <h2 className="text-lg font-bold text-black">Application History</h2>
           <p className="mt-1 text-xs text-gray-500">Track where this user has applied and their progress.</p>
         </div>
 
-        <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap sm:justify-self-end">
+        <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 shadow-sm sm:justify-self-center">
           <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
             <Icon name={isCurrentlyEmployed ? "search" : "briefcase"} className="h-5 w-5" />
           </span>

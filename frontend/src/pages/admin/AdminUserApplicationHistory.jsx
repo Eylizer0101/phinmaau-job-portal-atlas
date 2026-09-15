@@ -604,7 +604,7 @@ const AdminUserApplicationHistory = () => {
           </button>
 
           <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-            <div className="grid gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start sm:gap-x-10">
+            <div className="grid gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start sm:gap-x-6">
               <div>
                 <h1 className="text-2xl font-bold text-black sm:text-3xl">
                   Full Application History
@@ -614,19 +614,18 @@ const AdminUserApplicationHistory = () => {
                 </p>
               </div>
 
-              <div className="inline-flex items-center gap-2 whitespace-nowrap sm:justify-self-end">
+              <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 shadow-sm sm:justify-self-center">
                 <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
                   <Icon name={isCurrentlyEmployed ? "search" : "briefcase"} className="h-5 w-5" />
                 </span>
-                <p className="text-left text-sm">
+                <div className="inline-flex items-center justify-center text-sm">
                   <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>
                     {isCurrentlyEmployed ? "Employed" : "Unemployed"}
                   </span>
-                  <span className="mx-2 text-gray-300" aria-hidden="true">|</span>
-                  <span className="text-gray-500">
+                  <span className="ml-3 border-l border-gray-300 pl-3 text-gray-500">
                     {isCurrentlyEmployed ? "Currently working in a role" : "Not working at the moment"}
                   </span>
-                </p>
+                </div>
               </div>
 
               <span className="text-sm font-medium text-gray-500 sm:justify-self-end">
