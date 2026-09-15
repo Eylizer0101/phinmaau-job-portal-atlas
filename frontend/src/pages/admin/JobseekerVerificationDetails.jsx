@@ -325,15 +325,14 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     dangerTriangle: (
-      <svg className={className} viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" fill="#FEE4E2" />
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" strokeWidth="2.2" />
         <path
-          d="M12 8v5"
-          stroke="currentColor"
-          strokeWidth="1.8"
+          d="M12 7.5v6"
+          strokeWidth="2.2"
           strokeLinecap="round"
         />
-        <circle cx="12" cy="16" r="1" fill="currentColor" />
+        <circle cx="12" cy="17" r="1.15" fill="currentColor" stroke="none" />
       </svg>
     ),
   };
@@ -2230,10 +2229,10 @@ const JobseekerVerificationDetails = () => {
               </button>
               <div className="px-6 pb-5 pt-6 sm:px-7">
                 <div className="flex items-start gap-3 pr-6">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE4E2] text-[#D92D20]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
                     <SvgIcon
                       name="dangerTriangle"
-                      className="h-5 w-5 text-[#D92D20]"
+                      className="h-6 w-6"
                     />
                   </div>
 

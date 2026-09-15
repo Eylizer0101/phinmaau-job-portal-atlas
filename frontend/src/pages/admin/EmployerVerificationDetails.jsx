@@ -150,10 +150,10 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     warning: (
-      <svg className={className} viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" fill="#EEF2FF" />
-        <path d="M12 7v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <circle cx="12" cy="15.5" r="1" fill="currentColor" />
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" strokeWidth="2.2" />
+        <path d="M12 7.5v6" strokeWidth="2.2" strokeLinecap="round" />
+        <circle cx="12" cy="17" r="1.15" fill="currentColor" stroke="none" />
       </svg>
     ),
   };
@@ -1755,8 +1755,8 @@ const EmployerVerificationDetails = () => {
 
               <div className="px-8 pb-6 pt-8 sm:px-10">
                 <div className="flex items-start gap-3 pr-6">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
-                    <SvgIcon name="warning" className="h-5 w-5" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
+                    <SvgIcon name="warning" className="h-6 w-6" />
                   </div>
 
                   <div className="min-w-0">
