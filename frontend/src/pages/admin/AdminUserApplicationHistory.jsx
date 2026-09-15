@@ -688,7 +688,7 @@ const AdminUserApplicationHistory = () => {
             </div>
 
             {filteredApplications.length ? (
-              <div className={cn("mt-5 flex-1 space-y-4 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[1900px] overflow-y-auto overscroll-auto")}> 
+              <div className={cn("mt-5 flex-1 space-y-4 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-contain")}> 
                 {paginatedApplications.map(({ application }) => (
                   <ApplicationHistoryCard
                     key={application._id}
@@ -707,7 +707,7 @@ const AdminUserApplicationHistory = () => {
                 </p>
               </div>
             )}
-            {filteredApplications.length > 10 ? (
+            {filteredApplications.length >= 10 ? (
               <Pagination
                 currentPage={currentPage}
                 totalItems={filteredApplications.length}
@@ -715,7 +715,7 @@ const AdminUserApplicationHistory = () => {
                 onPageChange={setCurrentPage}
                 onPageSizeChange={setPageSize}
               
-                  className="shrink-0"
+                  className="!min-h-[50px] !py-2"
                 />
             ) : null}
           </section>

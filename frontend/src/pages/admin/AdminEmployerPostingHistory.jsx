@@ -929,7 +929,7 @@ const AdminEmployerPostingHistory = () => {
                   </table>
                 </div>
 
-                {Number(filteredJobs.length) > 10 ? (
+                {Number(filteredJobs.length) >= 10 ? (
                   <Pagination
                     currentPage={currentPage}
                     totalItems={filteredJobs.length}
@@ -937,7 +937,7 @@ const AdminEmployerPostingHistory = () => {
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
                   
-                  className="shrink-0"
+                  className="!min-h-[50px] !py-2"
                                 />
                 ) : null}
               </section>

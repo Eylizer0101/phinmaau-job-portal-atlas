@@ -1204,7 +1204,13 @@ const EmployerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden max-h-[508px] overflow-x-hidden overflow-y-auto overscroll-auto lg:block">
+                <div
+                  className={`hidden overflow-x-hidden lg:block ${
+                    Number(filters.limit) === 10
+                      ? "overflow-y-visible"
+                      : "max-h-[812px] overflow-y-auto overscroll-contain"
+                  }`}
+                >
                   <table className="w-full table-fixed">
                     <thead className="border-b border-gray-100 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
@@ -1317,7 +1323,13 @@ const EmployerVerification = () => {
                   </table>
                 </div>
 
-                <div className="max-max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
+                <div
+                  className={`space-y-3 p-4 lg:hidden ${
+                    Number(filters.limit) === 10
+                      ? "overflow-y-visible"
+                      : "max-h-[506px] overflow-y-auto overscroll-contain"
+                  }`}
+                >
                   {mobileRows.map((item) => {
                     const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
                     const companyEmail = item.businessEmail || item.email || "—";
@@ -1406,7 +1418,7 @@ const EmployerVerification = () => {
                     onPageChange={(page) => onChangeFilter("page", page)}
                     onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
                   
-                  className="sticky bottom-0 z-20 shrink-0"
+                  className="!min-h-[50px] !py-2"
                                 />
                 ) : null}
               </>

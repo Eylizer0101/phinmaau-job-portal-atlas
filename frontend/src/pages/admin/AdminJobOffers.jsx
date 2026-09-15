@@ -771,7 +771,7 @@ const AdminJobOffers = () => {
               </table>
             </div>
 
-            {Number(total) > 10 ? (
+            {Number(total) >= 10 ? (
               <Pagination
                 currentPage={page}
                 totalItems={total}
@@ -779,7 +779,7 @@ const AdminJobOffers = () => {
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
               
-                  className="sticky bottom-0 z-20 shrink-0"
+                  className="!min-h-[50px] !py-2"
                 />
             ) : null}
           </section>

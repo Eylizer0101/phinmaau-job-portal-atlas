@@ -228,7 +228,8 @@ const AdminEmployerReviews = () => {
                 {!reviews.length ? <p className="mt-1 text-sm text-black/50">This company has not received any hiring process reviews.</p> : null}
               </div>
             ) : (
-              <div className={`mt-8 space-y-5 pr-1 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[2600px] overflow-y-auto overscroll-auto"}`}> 
+              <>
+              <div className={`mt-8 space-y-5 pr-1 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-contain"}`}> 
                 {paginatedReviews.map((review, index) => (
                   <article
                     key={review?._id || index}
@@ -273,7 +274,8 @@ const AdminEmployerReviews = () => {
                     </div>
                   </article>
                 ))}
-                {Number(filteredReviews.length) > 10 ? (
+              </div>
+                {Number(filteredReviews.length) >= 10 ? (
                   <Pagination
                     currentPage={safePage}
                     totalItems={filteredReviews.length}
@@ -281,10 +283,10 @@ const AdminEmployerReviews = () => {
                     onPageChange={setCurrentPage}
                     onPageSizeChange={setPageSize}
                   
-                  className="sticky bottom-0 z-20 shrink-0"
+                  className="!min-h-[50px] !py-2"
                                 />
                 ) : null}
-              </div>
+              </>
             )}
           </section>
         </div>

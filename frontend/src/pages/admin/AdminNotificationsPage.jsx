@@ -313,7 +313,7 @@ const AdminNotificationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className={`divide-y divide-gray-100 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[840px] overflow-y-auto overscroll-auto"}`}> 
+            <div className={`divide-y divide-gray-100 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-contain"}`}> 
               {paginatedNotifications.map((notification) => (
                 <div
                   key={notification._id}
@@ -355,7 +355,7 @@ const AdminNotificationsPage = () => {
             </div>
           )}
 
-          {!loading && filteredNotifications.length > 10 ? (
+          {!loading && filteredNotifications.length >= 10 ? (
             <Pagination
               currentPage={currentPage}
               totalItems={filteredNotifications.length}
@@ -364,7 +364,7 @@ const AdminNotificationsPage = () => {
               onPageSizeChange={setPageSize}
               ariaLabel="Admin notifications pagination"
             
-                className="sticky bottom-0 z-20 shrink-0"
+                className="!min-h-[50px] !py-2"
               />
           ) : null}
         </div>

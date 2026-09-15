@@ -1022,7 +1022,13 @@ const JobseekerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden max-h-[508px] overflow-auto overscroll-auto lg:block">
+                <div
+                  className={`hidden overflow-x-auto lg:block ${
+                    Number(filters.limit) === 10
+                      ? "overflow-y-visible"
+                      : "max-h-[812px] overflow-y-auto overscroll-contain"
+                  }`}
+                >
                   <table className="w-full min-w-[1000px]">
                     <thead className="border-b border-gray-100 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
@@ -1126,7 +1132,13 @@ const JobseekerVerification = () => {
                   </table>
                 </div>
 
-                <div className="max-max-h-[506px] space-y-3 overflow-y-auto overscroll-auto p-4 lg:hidden">
+                <div
+                  className={`space-y-3 p-4 lg:hidden ${
+                    Number(filters.limit) === 10
+                      ? "overflow-y-visible"
+                      : "max-h-[506px] overflow-y-auto overscroll-contain"
+                  }`}
+                >
                   {visibleRows.map((item) => {
                     const fullName = item.fullName || "No Name";
                     const email = item.email || "—";
@@ -1205,7 +1217,7 @@ const JobseekerVerification = () => {
                     onPageChange={(page) => onChangeFilter("page", page)}
                     onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
                     ariaLabel="Jobseeker verification pagination"
-                    className="sticky bottom-0 z-20 shrink-0"
+                    className="!min-h-[50px] !py-2"
                     />
                 ) : null}
               </>

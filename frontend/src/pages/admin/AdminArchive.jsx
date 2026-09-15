@@ -890,7 +890,7 @@ const AdminArchive = () => {
             </div>
           </div>
 
-          {Number(archiveGroups.length) > 10 ? (
+          {Number(archiveGroups.length) >= 10 ? (
             <Pagination
               currentPage={safePage}
               totalItems={archiveGroups.length}
@@ -898,7 +898,7 @@ const AdminArchive = () => {
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
             
-                  className="sticky bottom-0 z-20 shrink-0"
+                  className="!min-h-[50px] !py-2"
                 />
           ) : null}
         </section>

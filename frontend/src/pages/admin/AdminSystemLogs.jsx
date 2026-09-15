@@ -604,7 +604,7 @@ const AdminSystemLogs = () => {
           })}</div>}
         </div>
       </div></div>
-      {Number(pagination.total || 0) > 10 ? (
+      {Number(pagination.total || 0) >= 10 ? (
         <Pagination
           currentPage={pagination.page || page}
           totalItems={pagination.total || 0}
@@ -612,7 +612,7 @@ const AdminSystemLogs = () => {
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
           ariaLabel="Activity logs pagination"
-          className={`sticky bottom-0 z-20 ${loading ? 'pointer-events-none opacity-60' : ''}`}
+          className={`!min-h-[50px] !py-2 ${loading ? 'pointer-events-none opacity-60' : ''}`}
         />
       ) : null}
     </section>

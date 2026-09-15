@@ -571,13 +571,14 @@ const AdminArchiveDeclinedApplicants = () => {
             </div>
           </div>
 
-          {filteredApplicants.length > 10 ? (
+          {filteredApplicants.length >= 10 ? (
             <Pagination
               currentPage={safePage}
               totalItems={filteredApplicants.length}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
+              className="!min-h-[50px] !py-2"
             />
           ) : null}
         </section>

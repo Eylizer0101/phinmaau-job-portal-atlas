@@ -1515,7 +1515,7 @@ const UserManagementDetails = () => {
                   "divide-y divide-[#e5edf5] pr-1",
                   activityPageSize === 10
                     ? "overflow-y-visible"
-                    : "max-h-[900px] overflow-y-auto overscroll-auto"
+                    : "max-h-[812px] overflow-y-auto overscroll-contain"
                 )
               : "max-w-4xl space-y-5"
           )}
@@ -1549,7 +1549,7 @@ const UserManagementDetails = () => {
           No recent activity is available for this jobseeker.
         </div>
       )}
-      {showAllActivity && activityItems.length > 10 ? (
+      {showAllActivity && activityItems.length >= 10 ? (
         <Pagination
           currentPage={activityPage}
           totalItems={activityItems.length}
@@ -1559,7 +1559,7 @@ const UserManagementDetails = () => {
             setActivityPageSize(value);
             setActivityPage(1);
           }}
-          className="!static"
+          className="!min-h-[50px] !py-2"
         />
       ) : null}
     </section>
@@ -1628,7 +1628,7 @@ const UserManagementDetails = () => {
             ))}
           </div>
 
-          {applications.length > 10 ? (
+          {applications.length >= 10 ? (
             <Pagination
               currentPage={applicationPage}
               totalItems={applications.length}
@@ -1636,7 +1636,7 @@ const UserManagementDetails = () => {
               onPageChange={setApplicationPage}
               onPageSizeChange={() => {}}
               showPageSize={false}
-              className="!static mt-4 px-0"
+              className="mt-4 !min-h-[50px] !px-0 !py-2"
             />
           ) : null}
         </div>

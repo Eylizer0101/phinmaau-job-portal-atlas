@@ -1023,7 +1023,7 @@ const AdminApplications = () => {
                 </table>
               </div>
 
-              {Number(filteredApplications.length) > 10 ? (
+              {Number(filteredApplications.length) >= 10 ? (
                 <Pagination
                   currentPage={currentPage}
                   totalItems={filteredApplications.length}
@@ -1031,7 +1031,7 @@ const AdminApplications = () => {
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                 
-                  className="sticky bottom-0 z-20 shrink-0"
+                  className="!min-h-[50px] !py-2"
                 />
               ) : null}
             </>

@@ -403,14 +403,14 @@ const AdminEmployerJobEditRequests = () => {
         </table>
       </div>
 
-      {!loading && rows.length > 10 && (
+      {!loading && rows.length >= 10 && (
         <Pagination
           currentPage={currentPage}
           totalItems={rows.length}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          className="sticky bottom-0 z-20 shrink-0"
+          className="!min-h-[50px] !py-2"
         />
       )}
     </section>

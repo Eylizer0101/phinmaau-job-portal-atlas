@@ -2044,14 +2044,14 @@ const UserManagement = () => {
                   })}
                 </div>
 
-                {Number(totalUsers) > 10 ? (
+                {Number(totalUsers) >= 10 ? (
                   <Pagination
                     currentPage={currentPage}
                     totalItems={totalUsers}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}
                     onPageSizeChange={setPageSize}
-                    className="sticky bottom-0 z-20 -mx-4 mt-0 shrink-0 !min-h-[58px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5"
+                    className="-mx-4 mt-0 !min-h-[50px] !px-4 !py-2 shadow-[0_-1px_0_rgba(226,232,240,1)] sm:-mx-6 sm:!px-5"
                   />
                 ) : null}
               </>

@@ -1470,7 +1470,7 @@ const AdminJobApplicants = () => {
             </div>
           ) : paginatedApplicants.length > 0 ? (
             <>
-              <div className={cn("mt-8 space-y-5 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[2300px] overflow-y-auto overscroll-auto")}> 
+              <div className={cn("mt-8 space-y-5 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-contain")}> 
                 {paginatedApplicants.map(
                   ({ application, user, profile, level, matchScore }) => {
                     const name =
@@ -1604,7 +1604,7 @@ const AdminJobApplicants = () => {
                 )}
               </div>
 
-              {Number(filteredApplicants.length) > 10 ? (
+              {Number(filteredApplicants.length) >= 10 ? (
                 <Pagination
                   currentPage={currentPage}
                   totalItems={filteredApplicants.length}
@@ -1613,7 +1613,7 @@ const AdminJobApplicants = () => {
                   onPageSizeChange={setPageSize}
                   ariaLabel="Admin job applicants pagination"
                 
-                  className="sticky bottom-0 z-20 shrink-0"
+                  className="!min-h-[50px] !py-2"
                 />
               ) : null}
             </>
