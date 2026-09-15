@@ -1768,7 +1768,7 @@ exports.getAdminApplications = async (req, res) => {
     }
 
     const applications = await Application.find({
-      status: { $in: ['pending', 'for interview', 'hired', 'declined'] }
+      status: { $in: VALID_APPLICATION_STATUSES }
     })
       .populate({
         path: 'job',
@@ -3338,7 +3338,7 @@ exports.getApplicationDetails = async (req, res) => {
     const application = await Application.findById(applicationId)
       .populate({
         path: 'job',
-        select: 'title jobTitle companyName location address jobType workMode experienceLevel requirements qualification description companyLogo salaryMin salaryMax educationLevel educationalRequirements skillsRequired perksAndBenefits otherBenefits vacancies applicationDeadline createdAt locationImage locationLatitude locationLongitude'
+        select: 'title jobTitle companyName location address jobType workMode experienceLevel requirements qualification description companyLogo category salaryMin salaryMax educationLevel educationalRequirements skillsRequired perksAndBenefits otherBenefits vacancies applicationDeadline createdAt locationImage locationLatitude locationLongitude'
       })
       .populate({
         path: 'jobseeker',
@@ -3357,7 +3357,7 @@ exports.getApplicationDetails = async (req, res) => {
       })
       .populate({
         path: 'employer',
-        select: 'fullName employerProfile.companyName employerProfile.companyWebsiteUrl employerProfile.companyWebsite employerProfile.companyLogo employerProfile.companyAddress companyAddress'
+        select: 'fullName employerProfile.companyName employerProfile.companyWebsiteUrl employerProfile.companyWebsite employerProfile.companyLogo employerProfile.companyAddress employerProfile.industry companyAddress'
       })
       .populate({
         path: 'interviewSchedule.interviewer',
