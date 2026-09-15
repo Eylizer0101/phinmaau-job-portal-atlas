@@ -1520,7 +1520,12 @@ const ManageJobs = () => {
               </div>
             ) : (
               <>
-                <div className="space-y-4 md:hidden">
+                <div
+                  className={cn(
+                    'space-y-4 overscroll-auto md:hidden',
+                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto'
+                  )}
+                >
                   {paginatedJobs.map((job) => {
                     const title = safeTitle(job);
                     const busyThisRow = action.jobId === job._id;
@@ -1709,7 +1714,12 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div className="hidden overflow-x-auto md:block">
+              <div
+                className={cn(
+                  'hidden overflow-x-auto overscroll-auto md:block',
+                  pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'
+                )}
+              >
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
@@ -1989,7 +1999,7 @@ const ManageJobs = () => {
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                   ariaLabel="Manage jobs pagination"
-                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                  className="!min-h-[50px] !py-2"
                 />
               ) : null}
 
