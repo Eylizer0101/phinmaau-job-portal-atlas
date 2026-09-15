@@ -1620,7 +1620,7 @@ const JobseekerVerificationDetails = () => {
                   <img
                     src={buildFileUrl(jobseeker.profileImage)}
                     alt={`${fullName} registration`}
-                    className="h-28 w-28 rounded-full bg-[#F1F5F9] object-cover"
+                    className="h-28 w-28 rounded-full object-cover"
                   />
                 ) : (
                   <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">

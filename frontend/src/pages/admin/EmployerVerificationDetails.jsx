@@ -1272,7 +1272,7 @@ const EmployerVerificationDetails = () => {
               </div>
 
               <div className="flex flex-col items-center justify-center text-center">
-                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#F1F5F9]">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-transparent">
                   {logoUrl && !logoFailed ? (
                     <img
                       src={logoUrl}
