@@ -1721,7 +1721,7 @@ const ManageJobs = () => {
                 )}
               >
                 <div className="">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="min-w-full border-separate border-spacing-0">
                     <colgroup>
                       <col className="w-[12%]" />
                       <col className="w-[22%]" />
