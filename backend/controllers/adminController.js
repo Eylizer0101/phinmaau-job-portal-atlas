@@ -4760,17 +4760,72 @@ exports.getAdminArchiveDetails = async (req, res) => {
               isDeclinedArchived: true,
             })
               .populate('job', 'title companyName companyLogo vacancies status statusBeforeArchive applicationDeadline isActive isPublished isArchived')
-              .populate(
-                'jobseeker',
-                'email firstName middleName lastName fullName profileImage jobSeekerProfile'
-              )
               .select(
-                'job jobseeker employer status hiringStage lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt activityHistory isDeclinedArchived declinedArchivedAt'
+                'job jobseeker employer status hiringStage lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt activityHistory isDeclinedArchived declinedArchivedAt resumeSnapshot'
               )
               .sort({ declinedArchivedAt: -1, updatedAt: -1 })
               .lean()
           : [],
       ]);
+
+      // Keep the raw Application.jobseeker ObjectId instead of relying on populate().
+      // Archived applications can outlive profile changes, so resolve the current
+      // Jobseeker account by ObjectId first and then by the stored resume snapshot email.
+      const archivedJobseekerIds = [
+        ...new Set(
+          archivedDeclinedApplications
+            .map((application) => String(application?.jobseeker || '').trim())
+            .filter(Boolean)
+        ),
+      ];
+
+      const getSnapshotUser = (application = {}) => {
+        const snapshot = application?.resumeSnapshot || {};
+        return snapshot?.user && typeof snapshot.user === 'object'
+          ? snapshot.user
+          : {};
+      };
+
+      const snapshotEmails = [
+        ...new Set(
+          archivedDeclinedApplications
+            .map((application) =>
+              String(getSnapshotUser(application)?.email || '')
+                .trim()
+                .toLowerCase()
+            )
+            .filter(Boolean)
+        ),
+      ];
+
+      const [archivedJobseekersById, archivedJobseekersByEmail] = await Promise.all([
+        archivedJobseekerIds.length
+          ? User.find({
+              _id: { $in: archivedJobseekerIds },
+              role: 'jobseeker',
+            })
+              .select('email firstName middleName lastName fullName profileImage jobSeekerProfile')
+              .lean()
+          : [],
+        snapshotEmails.length
+          ? User.find({
+              role: 'jobseeker',
+              email: { $in: snapshotEmails },
+            })
+              .select('email firstName middleName lastName fullName profileImage jobSeekerProfile')
+              .lean()
+          : [],
+      ]);
+
+      const archivedJobseekerByIdMap = new Map(
+        archivedJobseekersById.map((user) => [String(user._id), user])
+      );
+      const archivedJobseekerByEmailMap = new Map(
+        archivedJobseekersByEmail.map((user) => [
+          String(user.email || '').trim().toLowerCase(),
+          user,
+        ])
+      );
 
       const archivedJobIds = archivedJobs.map((job) => job._id);
       const applicantCountRows = archivedJobIds.length
@@ -4831,8 +4886,18 @@ exports.getAdminArchiveDetails = async (req, res) => {
           group.archivedAt = archivedAt;
         }
 
-        const jobseeker = application.jobseeker || {};
+        const rawJobseekerId = String(application?.jobseeker || '').trim();
+        const snapshotUser = getSnapshotUser(application);
+        const snapshotEmail = String(snapshotUser?.email || '').trim().toLowerCase();
+        const resolvedJobseeker =
+          archivedJobseekerByIdMap.get(rawJobseekerId) ||
+          archivedJobseekerByEmailMap.get(snapshotEmail) ||
+          null;
+        const jobseeker = resolvedJobseeker || snapshotUser || {};
         const profile = jobseeker.jobSeekerProfile || {};
+        const resolvedJobseekerId = String(
+          resolvedJobseeker?._id || ''
+        ).trim();
         const declinedActivity = [...(Array.isArray(application.activityHistory)
           ? application.activityHistory
           : [])]
@@ -4851,7 +4916,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
         group.applicants.push({
           applicationId: String(application._id),
           _id: String(application._id),
-          jobseekerId: String(jobseeker._id || ''),
+          jobseekerId: resolvedJobseekerId,
           applicantName:
             jobseeker.fullName ||
             [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
@@ -4859,8 +4924,8 @@ exports.getAdminArchiveDetails = async (req, res) => {
               .join(' ') ||
             jobseeker.email ||
             'Jobseeker',
-          email: jobseeker.email || '',
-          profileImage: jobseeker.profileImage || profile.profileImage || '',
+          email: jobseeker.email || snapshotUser.email || '',
+          profileImage: jobseeker.profileImage || profile.profileImage || snapshotUser.profileImage || '',
           jobTitle,
           jobSeekerLevel: getArchiveJobSeekerLevel(jobseeker),
           declinedStage,
