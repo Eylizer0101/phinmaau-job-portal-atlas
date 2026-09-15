@@ -1732,8 +1732,8 @@ const ManageJobs = () => {
                       <col className="w-[24%]" />
                     </colgroup>
 
-                    <thead className="sticky top-0 z-20 bg-gray-50">
-                      <tr >
+                    <thead className="bg-gray-50">
+                      <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-gray-50 [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Posted
                         </th>
