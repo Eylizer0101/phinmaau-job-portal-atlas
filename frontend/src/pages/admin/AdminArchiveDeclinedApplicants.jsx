@@ -513,9 +513,7 @@ const AdminArchiveDeclinedApplicants = () => {
               </div>
 
               {loading ? (
-                <div className="flex min-h-[240px] items-center justify-center text-sm text-slate-500">
-                  Loading declined applicants...
-                </div>
+                <div className="min-h-[240px] bg-white" aria-hidden="true" />
               ) : errorMessage ? (
                 <div className="flex min-h-[240px] items-center justify-center px-6 text-center text-sm text-red-600">
                   {errorMessage}

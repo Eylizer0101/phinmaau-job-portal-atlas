@@ -454,7 +454,7 @@ const statusMeta = (status) => {
   if (s === 'open' || s === 'active') {
     return {
       label: 'Open',
-      className: 'border-green-200 bg-green-50 text-green-700',
+      className: 'border-blue-200 bg-blue-50 text-[#2e66a6]',
     };
   }
   if (s === 'closed') {
@@ -466,7 +466,13 @@ const statusMeta = (status) => {
   if (s === 'expired') {
     return {
       label: 'Expired',
-      className: 'border-red-200 bg-red-50 text-red-700',
+      className: 'border-amber-200 bg-amber-50 text-amber-700',
+    };
+  }
+  if (s === 'filled') {
+    return {
+      label: 'Filled',
+      className: 'border-orange-200 bg-orange-50 text-orange-700',
     };
   }
   return {
@@ -639,7 +645,7 @@ const AdminJobOffers = () => {
               <Select value={filters.company} onChange={(v) => updateFilter('company', v)} options={['All Company', ...options.companies]} />
               <Select value={filters.industry} onChange={(v) => updateFilter('industry', v)} options={['All Industry', ...options.industries]} />
               <Select value={filters.jobTitle} onChange={(v) => updateFilter('jobTitle', v)} options={['All Job Title', ...options.jobTitles]} />
-              <Select value={filters.status} onChange={(v) => updateFilter('status', v)} options={['All Status', 'Open', 'Closed', 'Expired']} />
+              <Select value={filters.status} onChange={(v) => updateFilter('status', v)} options={['All Status', 'Open', 'Closed', 'Expired', 'Filled']} />
 
               <DateFilterDropdown
                 value={filters.date}

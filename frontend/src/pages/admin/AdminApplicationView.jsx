@@ -468,12 +468,7 @@ const MetricCard = ({ icon, title, value, isPeso = false }) => (
 
 const LoadingState = () => (
   <AdminLayout>
-    <div className={UI.page}>
-      <div className="flex flex-col items-center justify-center rounded-[24px] border border-gray-200 bg-white py-20 shadow-sm">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#2e66a6]" />
-        <p className="mt-4 text-sm font-medium text-slate-600">Loading application details...</p>
-      </div>
-    </div>
+    <div className={`${UI.page} min-h-[70vh] bg-white`} aria-hidden="true" />
   </AdminLayout>
 );
 
@@ -537,7 +532,7 @@ const AdminApplicationView = () => {
   const employerProfile = employer?.employerProfile || {};
   const jobseeker = application?.jobseeker || {};
   const companyName = job.companyName || employerProfile.companyName || employer.fullName || "Company";
-  const industryName = job.industry || employerProfile.industry || "Industry not specified";
+  const industryName = job.industry || job.category || employerProfile.industry || "Industry not specified";
   const location = job.location || job.address || employerProfile.companyAddress || employer.companyAddress || "—";
   const requiredSkills = useMemo(() => getList(job.skillsRequired), [job.skillsRequired]);
   const perksAndBenefits = useMemo(() => {

@@ -880,7 +880,7 @@ const AdminJobView = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <Skeleton />
+        <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />
       </AdminLayout>
     );
   }

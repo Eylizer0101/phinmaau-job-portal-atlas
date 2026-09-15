@@ -951,9 +951,7 @@ const DeclinedApplicantDetailsModal = ({
           </button>
 
           {loading ? (
-            <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
-              Loading applicant decline details...
-            </div>
+            <div className="min-h-[260px] rounded-xl bg-white" aria-hidden="true" />
           ) : (
             <>
               {errorMessage ? (
@@ -1373,9 +1371,7 @@ const AdminArchiveDetails = () => {
               </div>
 
               {loading ? (
-                <div className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">
-                  Loading archived account details...
-                </div>
+                <div className="min-h-[230px] bg-white" aria-hidden="true" />
               ) : errorMessage ? (
                 <div className="flex min-h-[230px] items-center justify-center px-6 text-center text-sm text-red-600">
                   {errorMessage}

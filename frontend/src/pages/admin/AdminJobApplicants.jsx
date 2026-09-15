@@ -1456,9 +1456,7 @@ const AdminJobApplicants = () => {
           </div>
 
           {loading ? (
-            <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center text-[#6b7280] shadow-sm">
-              Loading applicants...
-            </div>
+            <div className="mt-8 min-h-[320px] rounded-3xl bg-white" aria-hidden="true" />
           ) : error ? (
             <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center shadow-sm">
               <p className="text-sm font-semibold text-red-600">{error}</p>
@@ -1519,15 +1517,9 @@ const AdminJobApplicants = () => {
                                 </h2>
 
                                 <span
-                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                    application.alreadyEmployed
-                                      ? "bg-amber-100 text-amber-800"
-                                      : statusStyle(application.status)
-                                  }`}
+                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(application.status)}`}
                                 >
-                                  {application.alreadyEmployed
-                                    ? "Already Employed"
-                                    : statusLabel(application.status)}
+                                  {statusLabel(application.status)}
                                 </span>
                               </div>
 

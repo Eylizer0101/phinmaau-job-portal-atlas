@@ -357,7 +357,7 @@ const AdminEmployerJobEditRequests = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#dbe3ee]">
-            {loading && <tr><td colSpan="7" className="px-6 py-16 text-center text-sm text-slate-500">Loading edit requests...</td></tr>}
+            {loading && <tr aria-hidden="true"><td colSpan="7" className="h-56 bg-white" /></tr>}
 
             {!loading && paginatedRows.map((item) => {
               const name = companyName(item);

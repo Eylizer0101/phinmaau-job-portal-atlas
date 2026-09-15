@@ -1620,8 +1620,8 @@ const UserManagement = () => {
               className={cn(
                 'grid grid-cols-1 gap-3 md:grid-cols-2 2xl:items-center',
                 roleFilter === 'all'
-                  ? '2xl:grid-cols-[minmax(300px,1.45fr)_repeat(3,minmax(180px,1fr))_auto]'
-                  : '2xl:grid-cols-[minmax(300px,1.4fr)_repeat(4,minmax(160px,1fr))_auto]'
+                  ? '2xl:grid-cols-[minmax(460px,2fr)_minmax(180px,0.8fr)_minmax(180px,0.9fr)_auto]'
+                  : '2xl:grid-cols-[minmax(360px,1.6fr)_repeat(4,minmax(160px,1fr))_auto]'
               )}
             >
               <div className="relative min-w-0">
@@ -1639,7 +1639,7 @@ const UserManagement = () => {
                     setCurrentPage(1);
                   }}
                   className={inputBase}
-                  placeholder="Search name, email, company, or student ID"
+                  placeholder="Search name, email..."
                   disabled={loading}
                   autoComplete="off"
                 />
@@ -1761,32 +1761,12 @@ const UserManagement = () => {
                 onSelect={handleDateFilterChange}
               />
 
-              {roleFilter === 'all' && (
-                <select
-                  value={sort}
-                  onChange={(e) => {
-                    setSort(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className={selectBase}
-                  disabled={loading}
-                  aria-label="Sort users"
-                >
-                  <option value="newest">Sort By</option>
-                  <option value="newest">Most Recent Newest to Oldest</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="name_asc">A to Z</option>
-                  <option value="name_desc">Z to A</option>
-                </select>
-              )}
-
               {(query.trim() !== '' ||
                 roleFilter !== 'all' ||
                 campusFilter !== 'all' ||
                 courseFilter !== 'all' ||
                 companyFilter !== 'all' ||
                 industryFilter !== 'all' ||
-                sort !== 'newest' ||
                 dateFilter !== 'all' ||
                 dateFrom !== '' ||
                 dateTo !== '') && (

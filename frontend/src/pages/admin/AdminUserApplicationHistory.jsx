@@ -174,13 +174,13 @@ const getApplicationPresentation = (application = {}) => {
 
   if (normalizedStatus === "declined" || normalizedStatus === "vacancy full") {
     return {
-      label: "Declined",
+      label: normalizedStatus === "vacancy full" ? "Vacancy Full" : "Declined",
       progress: 100,
       description:
         application.declineReason ||
         (normalizedStatus === "vacancy full"
           ? "Position filled"
-          : "Application was not selected"),
+          : "Application was declined"),
       badgeClass: "border-rose-200 bg-rose-50 text-rose-700",
       barClass: "bg-rose-400",
     };
@@ -188,25 +188,18 @@ const getApplicationPresentation = (application = {}) => {
 
   if (normalizedStatus === "withdrawn" || normalizedStatus === "cancelled") {
     return {
-      label: "Withdrawn",
+      label: normalizedStatus === "cancelled" ? "Cancelled" : "Withdrawn",
       progress: 30,
-      description: "Application withdrawn by the applicant",
+      description:
+        normalizedStatus === "cancelled"
+          ? "Application cancelled"
+          : "Application withdrawn by the applicant",
       badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
       barClass: "bg-slate-400",
     };
   }
 
   if (normalizedStatus === "for interview") {
-    if (isOfferStage(hiringStage)) {
-      return {
-        label: "Offered",
-        progress: 90,
-        description: "Applicant reached the job offer stage",
-        badgeClass: "border-violet-200 bg-violet-50 text-violet-700",
-        barClass: "bg-violet-500",
-      };
-    }
-
     return {
       label: "For Interview",
       progress: getInterviewProgress(application),
@@ -488,7 +481,7 @@ const AdminUserApplicationHistory = () => {
     const unique = (values) => [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
     return {
       companies: unique(applications.map((item) => item.job?.companyName || item.employer?.employerProfile?.companyName)),
-      industries: unique(applications.map((item) => item.job?.industry || item.employer?.employerProfile?.industry)),
+      industries: unique(applications.map((item) => item.job?.industry || item.job?.category || item.employer?.employerProfile?.industry)),
       jobTitles: unique(applications.map((item) => item.job?.title || item.job?.jobTitle)),
     };
   }, [applications]);
@@ -571,16 +564,7 @@ const AdminUserApplicationHistory = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
-          <div className="flex min-h-[420px] items-center justify-center rounded-[20px] border border-[#d8e2ee] bg-white">
-            <div className="text-center">
-              <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-[#2e66a6]" />
-              <p className="mt-4 text-sm text-gray-600">
-                Loading application history...
-              </p>
-            </div>
-          </div>
-        </div>
+        <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />
       </AdminLayout>
     );
   }
@@ -674,7 +658,7 @@ const AdminUserApplicationHistory = () => {
                   [industryFilter, setIndustryFilter, "All Industry", filterOptions.industries],
                   [jobTitleFilter, setJobTitleFilter, "All Job Title", filterOptions.jobTitles],
                 ].map(([value, setter, label, options]) => <select key={label} value={value} onChange={(event) => setter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">{label}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>)}
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option><option value="withdrawn">Withdrawn</option></select>
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option><option value="withdrawn">Withdrawn</option><option value="cancelled">Cancelled</option><option value="vacancy full">Vacancy Full</option></select>
                 <ApplicationDateFilter
                   value={timeFilter}
                   dateFrom={dateFrom}

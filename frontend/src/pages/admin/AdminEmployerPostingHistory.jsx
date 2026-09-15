@@ -676,7 +676,13 @@ const AdminEmployerPostingHistory = () => {
     ? filteredJobs
     : filteredJobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

@@ -44,7 +44,10 @@ export default function AdminJobseekerRequestDetails() {
   useEffect(() => {
     load();
   }, [jobseekerId, requestId]);
-  if (!request) return <div className="p-10 text-center">{error || 'Loading request...'}</div>;
+  if (!request) {
+    if (error) return <div className="p-10 text-center">{error}</div>;
+    return <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />;
+  }
 
   const statusRequest = request.employmentStatusRequest || {};
   const employerResponse = statusRequest.employerResponse || {};

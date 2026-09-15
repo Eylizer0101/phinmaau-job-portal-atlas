@@ -184,7 +184,7 @@ const JobSeekerLevelBadgeCard = ({
       <button
         type="button"
         onClick={() => setShowLevelModal(true)}
-        className="group inline-flex w-fit items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="group inline-flex w-fit items-center gap-3 rounded-xl px-2 py-1.5 text-center transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
         aria-label="View all job seeker levels"
         aria-haspopup="dialog"
       >
@@ -196,7 +196,7 @@ const JobSeekerLevelBadgeCard = ({
           />
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 text-center">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-gray-500 sm:text-[13px]">
             Jobseeker Level
           </p>
@@ -1016,7 +1016,7 @@ const UserManagementDetails = () => {
 
     if (normalizedStatus === "for interview") {
       return {
-        label: "Interview",
+        label: "For Interview",
         progress: 75,
         barClass: "bg-blue-500",
         badgeClass: "border-blue-200 bg-blue-50 text-blue-700",
@@ -1031,7 +1031,7 @@ const UserManagementDetails = () => {
 
     if (normalizedStatus === "hired") {
       return {
-        label: "Offered",
+        label: "Hired",
         progress: 100,
         barClass: "bg-emerald-500",
         badgeClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -1044,7 +1044,7 @@ const UserManagementDetails = () => {
       normalizedStatus === "vacancy full"
     ) {
       return {
-        label: "Not Selected",
+        label: normalizedStatus === "vacancy full" ? "Vacancy Full" : "Declined",
         progress: 100,
         barClass: "bg-rose-400",
         badgeClass: "border-rose-200 bg-rose-50 text-rose-700",
@@ -1052,7 +1052,7 @@ const UserManagementDetails = () => {
           application.declineReason ||
           (normalizedStatus === "vacancy full"
             ? "Position filled"
-            : "Application was not selected"),
+            : "Application was declined"),
       };
     }
 
@@ -1074,7 +1074,7 @@ const UserManagementDetails = () => {
 
     if (application.reviewedAt || application.isViewedByEmployer) {
       return {
-        label: "In Review",
+        label: "Pending",
         progress: 40,
         barClass: "bg-blue-500",
         badgeClass: "border-amber-200 bg-amber-50 text-amber-700",
@@ -1083,7 +1083,7 @@ const UserManagementDetails = () => {
     }
 
     return {
-      label: "Submitted",
+      label: "Pending",
       progress: 15,
       barClass: "bg-blue-500",
       badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
@@ -1573,19 +1573,18 @@ const UserManagementDetails = () => {
           <p className="mt-1 text-xs text-gray-500">Track where this user has applied and their progress.</p>
         </div>
 
-        <div className="inline-flex items-center gap-2 whitespace-nowrap sm:justify-self-end">
+        <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap sm:justify-self-end">
           <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
             <Icon name={isCurrentlyEmployed ? "search" : "briefcase"} className="h-5 w-5" />
           </span>
-          <p className="text-left text-sm">
+          <div className="inline-flex items-center justify-center text-sm">
             <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>
               {isCurrentlyEmployed ? "Employed" : "Unemployed"}
             </span>
-            <span className="mx-2 text-gray-300" aria-hidden="true">|</span>
-            <span className="text-gray-500">
+            <span className="ml-3 border-l border-gray-300 pl-3 text-gray-500">
               {isCurrentlyEmployed ? "Currently working in a role" : "Not working at the moment"}
             </span>
-          </p>
+          </div>
         </div>
 
         <div className="text-right">
@@ -1650,13 +1649,7 @@ const UserManagementDetails = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="w-full px-0 py-10">
-          <button onClick={handleBack} className="mb-6 rounded-full p-2 hover:bg-slate-100" aria-label="Back"><Icon name="arrowLeft" className="h-5 w-5" /></button>
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-            <p className="mt-4 text-sm text-slate-600">Loading user profile...</p>
-          </div>
-        </div>
+        <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />
       </AdminLayout>
     );
   }

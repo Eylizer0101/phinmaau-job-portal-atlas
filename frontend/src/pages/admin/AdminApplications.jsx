@@ -4,7 +4,7 @@ import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
-const STATUS_OPTIONS = ['Pending', 'For Interview', 'Hired', 'Declined'];
+const STATUS_OPTIONS = ['Pending', 'For Interview', 'Hired', 'Declined', 'Withdrawn', 'Cancelled', 'Vacancy Full'];
 const SORT_OPTIONS = [
   'Newest First',
   'Oldest First',

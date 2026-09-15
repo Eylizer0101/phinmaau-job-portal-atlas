@@ -310,7 +310,7 @@ const AdminProfile = () => {
     [Building2, "Department Office", profile.departmentOffice || "Not provided"],
   ];
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-sm font-semibold text-slate-500">Loading admin profile...</div>;
+  if (loading) return <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />;
 
   return (
     <div className="mx-auto max-w-7xl">

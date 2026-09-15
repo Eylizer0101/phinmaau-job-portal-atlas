@@ -1884,7 +1884,7 @@ exports.getUserById = async (req, res) => {
     const applications =
       user.role === 'jobseeker'
         ? await Application.find({ jobseeker: user._id })
-            .populate('job', 'title jobTitle companyName companyLogo location address workMode jobType industry salaryMin salaryMax hideSalary employmentType createdAt')
+            .populate('job', 'title jobTitle companyName companyLogo location address workMode jobType industry category salaryMin salaryMax hideSalary employmentType createdAt')
             .populate('employer', 'firstName lastName email employerProfile.companyName employerProfile.regionCity employerProfile.industry employerProfile.companyLogo')
             .sort({ appliedAt: -1, createdAt: -1 })
             .lean()
@@ -3914,11 +3914,15 @@ exports.downloadEmployerVerificationDocument = async (req, res) => streamVerific
 // ✅ ADMIN JOB OFFERS
 // ==========================
 const getAdminJobOfferStatus = (job) => {
+  const storedStatus = String(job?.status || '').trim().toLowerCase();
   const deadline = job?.applicationDeadline ? new Date(job.applicationDeadline) : null;
   const isExpired = deadline && !Number.isNaN(deadline.getTime()) && deadline < new Date();
 
+  if (storedStatus === 'filled') return 'Filled';
+  if (storedStatus === 'closed') return 'Closed';
+  if (storedStatus === 'draft' || job?.isPublished === false) return 'Closed';
   if (isExpired) return 'Expired';
-  if (job?.isActive === false || job?.isPublished === false || job?.status === 'draft') return 'Closed';
+  if (job?.isActive === false) return 'Closed';
   return 'Open';
 };
 
@@ -4026,9 +4030,10 @@ exports.getAdminJobOffers = async (req, res) => {
         if (job.adminStatus === 'Open') acc.active += 1;
         if (job.adminStatus === 'Closed') acc.closed += 1;
         if (job.adminStatus === 'Expired') acc.expired += 1;
+        if (job.adminStatus === 'Filled') acc.filled += 1;
         return acc;
       },
-      { totalJobs: 0, active: 0, closed: 0, expired: 0 }
+      { totalJobs: 0, active: 0, closed: 0, expired: 0, filled: 0 }
     );
 
     const statusFilteredJobs = status

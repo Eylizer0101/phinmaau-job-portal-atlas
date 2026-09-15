@@ -1049,7 +1049,7 @@ const AdminAnalytics = () => {
               disabled={loading}
               className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-60"
             >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
+              <RefreshCw size={14} />{" "}
               Refresh
             </button>
             <button
@@ -1294,7 +1294,7 @@ const AdminAnalytics = () => {
           ))}
         </nav>
 
-        {loading ? <AnalyticsSkeleton /> : null}
+        {loading ? <div className="min-h-[420px] w-full bg-white" aria-hidden="true" /> : null}
 
         {!loading && activeTab === "overview" ? (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
