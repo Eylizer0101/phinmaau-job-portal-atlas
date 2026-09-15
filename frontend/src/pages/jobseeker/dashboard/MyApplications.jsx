@@ -1431,7 +1431,13 @@ const MyApplications = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="grid gap-6">
+              <div
+                className={`grid gap-6 ${
+                  pageSize === 10
+                    ? 'overflow-y-visible'
+                    : 'max-h-[506px] overflow-y-auto overscroll-contain pr-1 md:max-h-[812px]'
+                }`}
+              >
                 {paginatedApplications.map((application) => {
                   const statusValue = (application.status || '').toLowerCase();
                   const statusText = getStatusText(application);
@@ -1659,7 +1665,7 @@ const MyApplications = () => {
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                   ariaLabel="Application pagination"
-                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                  className="!min-h-[50px] !py-2"
                 />
               ) : null}
             </div>

@@ -336,7 +336,13 @@ const CompanyAllJobs = () => {
               {jobs.length === 0 ? "No open positions available." : "No jobs found matching your search."}
             </div>
           ) : (
-            <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div
+              className={`mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 ${
+                pageSize === 10
+                  ? "overflow-y-visible"
+                  : "max-h-[506px] overflow-y-auto overscroll-contain pr-1 md:max-h-[812px]"
+              }`}
+            >
               {visibleJobs.map((job) => {
                 const applied = appliedIds.includes(job._id);
                 const jobId = job._id || job.id;
@@ -553,7 +559,7 @@ const CompanyAllJobs = () => {
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
               ariaLabel="Company jobs pagination"
-              className="fixed bottom-[64px] left-1/2 z-30 w-[calc(100%-2rem)] max-w-[1280px] -translate-x-1/2 md:bottom-0 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+              className="-mx-5 -mb-5 !min-h-[50px] !px-5 !py-2 sm:-mx-7 sm:-mb-7 sm:!px-7 lg:-mx-8 lg:-mb-8 lg:!px-8"
             />
           ) : null}
         </section>
