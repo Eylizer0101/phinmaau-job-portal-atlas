@@ -1112,14 +1112,7 @@ const EmployerVerificationDetails = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className={UI.page}>
-          <div className={cn(UI.card, "p-10")}>
-            <div className="flex flex-col items-center justify-center gap-3">
-              <Spinner className="w-10 h-10 text-[#2e66a6]" />
-              <p className="text-sm text-black/70">Loading employer details…</p>
-            </div>
-          </div>
-        </div>
+        <div className="min-h-[calc(100vh-8rem)]" aria-hidden="true" />
       </AdminLayout>
     );
   }
