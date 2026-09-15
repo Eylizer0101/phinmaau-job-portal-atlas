@@ -1492,8 +1492,8 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
-          <div className="flex min-h-0 flex-col p-6">
+        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
+          <div className="p-6">
             {loading ? (
               <div className="py-14 text-center">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1520,12 +1520,7 @@ const ManageJobs = () => {
               </div>
             ) : (
               <>
-                <div
-                  className={cn(
-                    'space-y-4 overscroll-auto md:hidden',
-                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto'
-                  )}
-                >
+                <div className="space-y-4 md:hidden">
                   {paginatedJobs.map((job) => {
                     const title = safeTitle(job);
                     const busyThisRow = action.jobId === job._id;
@@ -1714,12 +1709,7 @@ const ManageJobs = () => {
                   })}
                 </div>
 
-                <div
-                  className={cn(
-                    'hidden overflow-x-auto overscroll-auto md:block',
-                    pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'
-                  )}
-                >
+                <div className="hidden overflow-x-auto md:block">
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
