@@ -5,6 +5,35 @@ import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
+
+const resolveMediaUrl = (url) => {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw) || /^data:/i.test(raw) || /^blob:/i.test(raw)) return raw;
+  if (raw.startsWith('/uploads')) return `${API_BASE_URL}${raw}`;
+  if (raw.startsWith('uploads/')) return `${API_BASE_URL}/${raw}`;
+  return raw;
+};
+
+const ActorAvatar = ({ image, name }) => {
+  const [imageError, setImageError] = useState(false);
+  const fallbackImage = '/images/profile.png';
+  const source = image && !imageError ? resolveMediaUrl(image) : fallbackImage;
+
+  return (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-[#2e66a6]/10 shadow-sm">
+      <img
+        src={source}
+        alt={`${name || 'User'} profile`}
+        className="h-full w-full bg-white object-cover"
+        loading="lazy"
+        onError={() => setImageError(true)}
+      />
+    </span>
+  );
+};
 const ROLE_OPTIONS = [['all', 'All Roles'], ['jobseeker', 'Jobseeker'], ['employer', 'Employer']];
 const ACTION_CODES = {
   'auth.login': 'LOGIN', 'auth.register_jobseeker': 'REGISTER', 'auth.register_employer': 'REGISTER',
@@ -568,7 +597,7 @@ const AdminSystemLogs = () => {
             const employer = String(log.actorRole).toLowerCase() === 'employer';
             return <div key={log.id} className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] items-center gap-5 px-5 py-4 transition-colors hover:bg-[#2e66a6]/[0.045]">
               <div><p className="text-sm font-bold text-slate-800">{created}</p></div>
-              <div className="flex min-w-0 items-center gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#212C61]/10 text-[11px] font-bold text-[#212C61]">{getInitials(log.actorName)}</span><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{log.actorEmail || 'No email recorded'}</p></div></div>
+              <div className="flex min-w-0 items-center gap-3"><ActorAvatar image={log.actorImage} name={log.actorName} /><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{log.actorEmail || 'No email recorded'}</p></div></div>
               <span className={`w-fit rounded-full border px-3 py-1 text-[11px] font-bold capitalize ${employer ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{log.actorRole}</span>
               <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900" title={getActionCode(log.action)}>{getActionLabel(log.action)}</p><p className="truncate text-[11px] font-medium text-[#212C61]/70">{log.module || 'Activity'}</p></div>
             </div>;
