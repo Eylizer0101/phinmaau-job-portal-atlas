@@ -1540,7 +1540,7 @@ const RegisterPage = () => {
                 <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">Thank you for signing up!</h3>
 
                 <div className="mt-5 rounded-xl bg-[#eaf1fb] px-6 py-5 text-center">
-                  <p className="text-sm font-semibold text-gray-900">Your account is under review</p>
+                  <p className="text-sm font-semibold text-gray-900">Your account is awaiting review</p>
 
                   <p className="mt-3 text-sm text-gray-800">
                  Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. 

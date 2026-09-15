@@ -1239,7 +1239,7 @@ const EmployerRegisterPage = () => {
               <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">Thank you for signing up!</h3>
 
               <div className="mt-5 bg-[#eef3fb] rounded-xl px-6 py-5">
-                <p className="text-sm font-semibold text-gray-900 mb-3">You're account is under review</p>
+                <p className="text-sm font-semibold text-gray-900 mb-3">Your account is awaiting review</p>
                 <p className="text-sm text-gray-800">
                   Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. This verification process usually takes 24 to 48 hours.
 

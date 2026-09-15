@@ -1136,6 +1136,30 @@ const AdminArchiveDetails = () => {
     setFilters((previous) => ({ ...previous, [key]: value }));
   };
 
+  const hasActiveFilters = useMemo(
+    () =>
+      filters.search.trim() !== "" ||
+      filters.title !== "all" ||
+      filters.type !== "all" ||
+      filters.date !== "all" ||
+      filters.dateFrom !== "" ||
+      filters.dateTo !== "",
+    [filters]
+  );
+
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      title: "all",
+      type: "all",
+      date: "all",
+      dateFrom: "",
+      dateTo: "",
+    });
+    setShowCustomDateModal(false);
+    setCurrentPage(1);
+  };
+
   const handleDateFilterChange = (value) => {
     if (value === "custom") {
       setShowCustomDateModal(true);
@@ -1278,7 +1302,7 @@ const AdminArchiveDetails = () => {
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1180px] px-1 py-8">
+      <main className="w-full max-w-none px-1 py-8">
         <header className="mb-5 flex flex-wrap items-center gap-4">
           <button
             type="button"
@@ -1313,7 +1337,14 @@ const AdminArchiveDetails = () => {
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(300px,1.35fr)_minmax(190px,0.85fr)_minmax(190px,0.8fr)_minmax(180px,0.8fr)]">
+          <div
+            className={cn(
+              "grid gap-3 border-b border-slate-200 p-4",
+              hasActiveFilters
+                ? "lg:grid-cols-[minmax(260px,1.45fr)_minmax(150px,0.85fr)_minmax(150px,0.8fr)_minmax(160px,0.85fr)_auto]"
+                : "lg:grid-cols-[minmax(300px,1.5fr)_minmax(170px,0.85fr)_minmax(170px,0.8fr)_minmax(180px,0.85fr)]"
+            )}
+          >
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
               <Icon
@@ -1357,6 +1388,16 @@ const AdminArchiveDetails = () => {
               disabled={loading}
               onSelect={handleDateFilterChange}
             />
+
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+              >
+                Clear
+              </button>
+            ) : null}
           </div>
 
           <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
@@ -1395,9 +1436,22 @@ const AdminArchiveDetails = () => {
                     }}
                     className="grid cursor-pointer grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] items-center gap-4 border-b border-slate-200 px-5 py-4 transition last:border-b-0 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#212C61]/30"
                   >
-                    <span className="truncate text-sm font-semibold text-black">
-                      {record.title || "Archived record"}
-                    </span>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-[#212C61] shadow-sm">
+                        {resolveMediaUrl(record.companyLogo || avatarUrl) ? (
+                          <img
+                            src={resolveMediaUrl(record.companyLogo || avatarUrl)}
+                            alt={`${record.companyName || companyName} logo`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          getInitials(record.companyName || companyName)
+                        )}
+                      </div>
+                      <span className="truncate text-sm font-semibold text-black">
+                        {record.title || "Archived record"}
+                      </span>
+                    </div>
                     <div><TypeBadge type={record.archiveType} label={record.typeLabel} /></div>
                     <span className="text-sm text-slate-600">
                       {record.vacancies ?? "—"}

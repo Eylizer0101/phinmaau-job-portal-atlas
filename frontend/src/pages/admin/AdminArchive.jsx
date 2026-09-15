@@ -576,6 +576,32 @@ const AdminArchive = () => {
     setFilters((previous) => ({ ...previous, [key]: value }));
   };
 
+  const hasActiveFilters = useMemo(
+    () =>
+      filters.search.trim() !== "" ||
+      filters.company !== "all" ||
+      filters.industry !== "all" ||
+      filters.type !== "all" ||
+      filters.date !== "all" ||
+      filters.dateFrom !== "" ||
+      filters.dateTo !== "",
+    [filters]
+  );
+
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      company: "all",
+      industry: "all",
+      type: "all",
+      date: "all",
+      dateFrom: "",
+      dateTo: "",
+    });
+    setShowCustomDateModal(false);
+    setCurrentPage(1);
+  };
+
   const handleDateFilterChange = (value) => {
     if (value === "custom") {
       setShowCustomDateModal(true);
@@ -691,7 +717,7 @@ const AdminArchive = () => {
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1480px] px-1 py-7 sm:py-8">
+      <main className="w-full max-w-none px-1 py-7 sm:py-8">
         <header className="mb-5">
           <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">
             Archived
@@ -702,7 +728,14 @@ const AdminArchive = () => {
         </header>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-          <div className="grid gap-3 lg:grid-cols-[minmax(300px,1.6fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)]">
+          <div
+            className={cn(
+              "grid gap-3",
+              hasActiveFilters
+                ? "lg:grid-cols-[minmax(240px,1.55fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)_minmax(140px,0.85fr)_auto]"
+                : "lg:grid-cols-[minmax(260px,1.6fr)_minmax(140px,0.8fr)_minmax(140px,0.8fr)_minmax(140px,0.8fr)_minmax(150px,0.85fr)]"
+            )}
+          >
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
               <Icon
@@ -757,6 +790,16 @@ const AdminArchive = () => {
               disabled={loading}
               onSelect={handleDateFilterChange}
             />
+
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+              >
+                Clear
+              </button>
+            ) : null}
           </div>
 
         </section>
