@@ -2125,7 +2125,6 @@ const UserManagementDetails = () => {
                     }
                     className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-[#1e4ba0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1b4290] active:bg-[#163879] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e4ba0] focus-visible:ring-offset-2"
                   >
-                    <Icon name="eye" className="h-4 w-4" />
                     View Job
                   </button>
                 </article>
@@ -2462,7 +2461,7 @@ const UserManagementDetails = () => {
             </div>
           ) : (
             <div className="mt-6">
-              <EmployerEmptyState icon="starOutline" title="No reviews yet." subtitle="Be the first to share your hiring process experience with this company." />
+              <EmployerEmptyState icon="starOutline" title="No reviews yet." subtitle="This company has not received any hiring process reviews." />
             </div>
           )}
         </section>
@@ -2531,9 +2530,10 @@ const UserManagementDetails = () => {
                               href={normalizeUrl(employerProfile.companyWebsiteUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex min-w-0 items-center gap-1.5 text-[15px] text-[#2e66a6] hover:underline"
+                              title={employerProfile.companyWebsiteUrl}
+                              className="inline-flex min-w-0 max-w-[360px] items-center gap-1.5 text-[15px] text-[#2e66a6] hover:underline"
                             >
-                              <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
+                              <span className="min-w-0 truncate">{employerProfile.companyWebsiteUrl}</span>
                               <ExternalIcon className="h-3.5 w-3.5 shrink-0" />
                             </a>
                           ) : (
@@ -2557,7 +2557,7 @@ const UserManagementDetails = () => {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex w-full flex-col items-center gap-3 pb-4 lg:mt-6 lg:w-[290px] lg:pb-0">
+                  <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 pb-4 lg:mt-0 lg:min-h-[185px] lg:w-[290px] lg:pb-0">
                     <button
                       type="button"
                       disabled={!jobPosts.length}

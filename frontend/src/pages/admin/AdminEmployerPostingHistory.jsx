@@ -48,6 +48,14 @@ const Icon = ({ name, className = "h-5 w-5" }) => {
     );
   }
 
+  if (name === "refresh") {
+    return (
+      <svg {...common}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6M5.5 14A7 7 0 0018 17.5M18.5 10A7 7 0 006 6.5" />
+      </svg>
+    );
+  }
+
   if (name === "x") {
     return (
       <svg {...common}>
@@ -81,18 +89,11 @@ const getJobStatus = (job) => {
     !Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now();
 
   if (job?.isArchived) return "archived";
+  if (storedStatus === "draft" || job?.isPublished === false) return "draft";
   if (storedStatus === "filled") return "filled";
   if (storedStatus === "closed") return "closed";
   if (isExpired) return "expired";
-  if (
-    storedStatus === "draft" ||
-    job?.isPublished === false ||
-    job?.isActive === false
-  ) {
-    return "draft";
-  }
-
-  return "open";
+  return job?.isActive ? "open" : "closed";
 };
 
 const DATE_FILTER_OPTIONS = [
@@ -501,9 +502,9 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
 const StatusBadge = ({ status }) => {
   const classes = {
     open: "border-blue-200 bg-blue-50 text-[#2e66a6]",
-    draft: "border-gray-200 bg-gray-100 text-gray-600",
-    closed: "border-slate-200 bg-slate-100 text-slate-600",
-    filled: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    draft: "border-gray-200 bg-gray-100 text-gray-700",
+    closed: "border-gray-300 bg-gray-50 text-gray-700",
+    filled: "border-orange-200 bg-orange-50 text-orange-700",
     expired: "border-amber-200 bg-amber-50 text-amber-700",
     archived: "border-violet-200 bg-violet-50 text-violet-700",
   };
@@ -743,7 +744,7 @@ const AdminEmployerPostingHistory = () => {
                   >
                     <option value="all">All Status</option>
                     <option value="open">Open</option>
-                    <option value="draft">Draft</option>
+                    <option value="filled">Filled</option>
                     <option value="closed">Closed</option>
                     <option value="expired">Expired</option>
                   </select>
@@ -776,10 +777,10 @@ const AdminEmployerPostingHistory = () => {
                     <button
                       type="button"
                       onClick={clearFilters}
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-bold text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                      className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-3 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                     >
-                      <Icon name="x" className="h-4 w-4" />
-                      Clear
+                      <Icon name="refresh" className="h-4 w-4" />
+                      Clear All
                     </button>
                   )}
                 </div>

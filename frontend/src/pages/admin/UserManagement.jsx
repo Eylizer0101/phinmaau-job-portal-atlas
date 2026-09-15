@@ -1793,10 +1793,10 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="h-11 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-5 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
+                  className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-3 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
                   disabled={loading}
                 >
-                  Clear
+                  <Icon name="refresh" /> Clear All
                 </button>
               )}
             </div>
@@ -1908,8 +1908,7 @@ const UserManagement = () => {
                             </td>
 
                             <td className="px-5 py-4">
-                              <div className="inline-flex items-center gap-2 text-sm text-gray-700">
-                                <Icon name={roleInfo.icon} className="h-4 w-4 text-gray-500" />
+                              <div className="inline-flex items-center text-sm text-gray-700">
                                 <span>{roleInfo.label}</span>
                               </div>
                             </td>

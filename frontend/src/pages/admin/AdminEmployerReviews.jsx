@@ -225,7 +225,7 @@ const AdminEmployerReviews = () => {
                   <Icon name="starOutline" className="h-5 w-5" />
                 </span>
                 <p className="mt-4 font-semibold text-black">{reviews.length ? "No reviews match your search." : "No reviews yet"}</p>
-                {!reviews.length ? <p className="mt-1 text-sm text-black/50">Candidate feedback will appear here once submitted.</p> : null}
+                {!reviews.length ? <p className="mt-1 text-sm text-black/50">This company has not received any hiring process reviews.</p> : null}
               </div>
             ) : (
               <div className={`mt-8 space-y-5 pr-1 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[2600px] overflow-y-auto overscroll-auto"}`}> 

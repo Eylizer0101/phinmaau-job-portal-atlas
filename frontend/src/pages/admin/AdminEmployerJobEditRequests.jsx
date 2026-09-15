@@ -333,9 +333,9 @@ const AdminEmployerJobEditRequests = () => {
         <button
           type="button"
           onClick={clearFilters}
-          className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm font-medium text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f4f8fc] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/10"
+          className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-3 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
         >
-          Clear
+          <RefreshCw size={16} /> Clear All
         </button>
       )}
     </section>
