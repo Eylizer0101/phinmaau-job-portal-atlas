@@ -60,7 +60,7 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
   if (name === "restore") {
     return (
       <img
-        src="/images/restorists.png"
+        src="/images/restorist.png"
         alt=""
         className={`${className} scale-125 object-contain`}
         aria-hidden="true"
