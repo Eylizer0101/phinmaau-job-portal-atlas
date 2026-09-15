@@ -569,7 +569,7 @@ const TopMetricCard = ({ title, value, icon, isPeso = false, href = '' }) => (
       <div className="min-w-0">
         <p className={UI.label}>{title}</p>
         {href ? (
-          <a href={href} target="_blank" rel="noopener noreferrer" className="mt-1.5 block break-all text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline">
+          <a href={href} target="_blank" rel="noopener noreferrer" className="mt-1.5 block w-full min-w-0 truncate whitespace-nowrap text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline" title={value}>
             {value}
           </a>
         ) : (

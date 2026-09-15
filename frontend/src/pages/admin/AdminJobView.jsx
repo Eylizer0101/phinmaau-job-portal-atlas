@@ -575,8 +575,8 @@ const TopMetricCard = ({ icon, title, value, isPeso = false, href = '' }) => (
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`mt-1.5 block break-all text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline ${UI.ring} rounded`}
-            title={`Open ${title}`}
+            className={`mt-1.5 block w-full min-w-0 truncate whitespace-nowrap text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline ${UI.ring} rounded`}
+            title={String(value || "")}
           >
             {value}
           </a>

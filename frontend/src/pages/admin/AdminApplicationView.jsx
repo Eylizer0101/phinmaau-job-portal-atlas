@@ -781,7 +781,7 @@ const AdminApplicationView = () => {
                         href={companyWebsiteUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="break-all text-[#2e66a6] hover:underline"
+                        className="block w-full min-w-0 truncate whitespace-nowrap text-[#2e66a6] hover:underline"
                         title={companyWebsite}
                       >
                         {companyWebsite}
