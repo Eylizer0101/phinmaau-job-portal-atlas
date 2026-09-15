@@ -85,10 +85,10 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     restore: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h6V4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
-      </>
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h6V4" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
+      </svg>
     ),
     x: (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1272,7 +1272,7 @@ const EmployerVerificationDetails = () => {
               </div>
 
               <div className="flex flex-col items-center justify-center text-center">
-                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-transparent">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#F1F5F9]">
                   {logoUrl && !logoFailed ? (
                     <img
                       src={logoUrl}
