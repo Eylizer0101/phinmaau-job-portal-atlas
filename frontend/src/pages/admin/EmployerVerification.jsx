@@ -11,7 +11,7 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
   if (name === "restore") {
     return (
       <img
-        src="/images/restorists.png"
+        src="/images/restorist.png"
         alt=""
         className={`${className} scale-125 object-contain`}
         aria-hidden="true"
