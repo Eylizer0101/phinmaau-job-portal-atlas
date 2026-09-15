@@ -1492,8 +1492,8 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
-          <div className="p-6">
+        <div className="relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
+          <div className="flex min-h-0 flex-col p-6">
             {loading ? (
               <div className="py-14 text-center">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
