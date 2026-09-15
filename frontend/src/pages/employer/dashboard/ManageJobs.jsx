@@ -859,6 +859,14 @@ const ManageJobs = () => {
       };
     }
 
+    if (status === 'rejected') {
+      return {
+        label: 'Edit Request Declined',
+        icon: 'x',
+        className: 'border-red-200 bg-red-50 text-red-700',
+      };
+    }
+
     return null;
   };
 

@@ -251,7 +251,17 @@ exports.getAdminRequestDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Edit request not found.' });
     }
 
-    return res.json({ success: true, request: serializeRequest(request) });
+    const history = await JobEditRequest.find({ job: request.job._id })
+      .populate('job')
+      .populate('employer', 'firstName lastName fullName email employerProfile')
+      .populate('reviewedBy', 'firstName lastName fullName')
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      request: serializeRequest(request),
+      history: history.map(serializeRequest),
+    });
   } catch (error) {
     console.error('Get admin edit request details error:', error);
     return res.status(500).json({ success: false, message: 'Unable to load edit request details.' });

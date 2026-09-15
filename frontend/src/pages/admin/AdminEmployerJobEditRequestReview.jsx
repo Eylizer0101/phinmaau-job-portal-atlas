@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
-  CalendarClock,
+  BriefcaseBusiness,
   Check,
   Clock3,
   FileEdit,
@@ -44,10 +44,11 @@ const AdminEmployerJobEditRequestReview = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
   const [request, setRequest] = useState(null);
+  const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
   const [sort, setSort] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -61,7 +62,11 @@ const AdminEmployerJobEditRequestReview = () => {
     api
       .get(`/job-edit-requests/admin/${requestId}`)
       .then(({ data }) => {
-        if (active) setRequest(data?.request || null);
+        if (active) {
+          const currentRequest = data?.request || null;
+          setRequest(currentRequest);
+          setRequestHistory(Array.isArray(data?.history) && data.history.length ? data.history : currentRequest ? [currentRequest] : []);
+        }
       })
       .catch((requestError) => {
         if (active) setError(requestError.response?.data?.message || 'Unable to load edit request details.');
@@ -94,16 +99,9 @@ const AdminEmployerJobEditRequestReview = () => {
   const employerProfile = request?.employer?.employerProfile || {};
   const companyName = job.companyName || employerProfile.companyName || 'Employer';
   const industry = job.industry || employerProfile.industry || employerProfile.companyIndustry || 'Industry not specified';
-  const sections = Array.isArray(request?.requestedSections) ? request.requestedSections : [];
 
-  const requestMatches = useMemo(() => {
-    if (!request) return false;
-
+  const filteredRequests = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const normalizedStatus = String(request.status || '').toLowerCase();
-    const statusMatches = status === 'all' || normalizedStatus === status;
-    const createdAt = request.createdAt ? new Date(request.createdAt) : null;
-    const validCreatedAt = createdAt && !Number.isNaN(createdAt.getTime());
     const today = startOfDay(new Date());
     let from = null;
     let to = null;
@@ -128,17 +126,28 @@ const AdminEmployerJobEditRequestReview = () => {
       to = dateTo ? new Date(`${dateTo}T23:59:59.999`) : null;
     }
 
-    const timeMatches =
-      (!from || (validCreatedAt && createdAt >= from)) &&
-      (!to || (validCreatedAt && createdAt <= to));
-    const textMatches =
-      !query ||
-      sections.some((section) => String(section).toLowerCase().includes(query)) ||
-      String(request.reason || '').toLowerCase().includes(query) ||
-      String(job.title || '').toLowerCase().includes(query);
+    const matches = requestHistory.filter((item) => {
+      const normalizedStatus = String(item.status || '').toLowerCase();
+      const statusMatches = status === 'all' || normalizedStatus === status;
+      const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+      const validCreatedAt = createdAt && !Number.isNaN(createdAt.getTime());
+      const timeMatches =
+        (!from || (validCreatedAt && createdAt >= from)) &&
+        (!to || (validCreatedAt && createdAt <= to));
+      const itemSections = Array.isArray(item.requestedSections) ? item.requestedSections : [];
+      const textMatches =
+        !query ||
+        itemSections.some((section) => String(section).toLowerCase().includes(query)) ||
+        String(item.reason || '').toLowerCase().includes(query) ||
+        String(item.job?.title || job.title || '').toLowerCase().includes(query);
+      return statusMatches && timeMatches && textMatches;
+    });
 
-    return statusMatches && timeMatches && textMatches;
-  }, [dateFrom, dateTo, job.title, request, search, sections, status, time]);
+    return [...matches].sort((a, b) => {
+      const difference = new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      return sort === 'oldest' ? -difference : difference;
+    });
+  }, [dateFrom, dateTo, job.title, requestHistory, search, sort, status, time]);
 
   const submitDecision = async () => {
     if (!confirmation || submitting || request?.status !== 'pending') return;
@@ -149,6 +158,7 @@ const AdminEmployerJobEditRequestReview = () => {
       const endpoint = confirmation === 'approve' ? 'approve' : 'decline';
       const { data } = await api.patch(`/job-edit-requests/admin/${request._id}/${endpoint}`);
       setRequest((current) => ({ ...current, ...data?.request }));
+      setRequestHistory((items) => items.map((item) => item._id === request._id ? { ...item, ...data?.request } : item));
       setConfirmation(null);
       setStatus('all');
       setSuccess(
@@ -183,9 +193,6 @@ const AdminEmployerJobEditRequestReview = () => {
     );
   }
 
-  const isPending = request.status === 'pending';
-  const statusLabel = request.status === 'rejected' ? 'Declined' : request.status;
-
   return (
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto max-w-7xl px-1 py-8">
@@ -210,9 +217,13 @@ const AdminEmployerJobEditRequestReview = () => {
 
           <div className="min-w-0">
             <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold text-black sm:text-2xl">
-              <JobDetailsSvgIcon name="building" className="h-5 w-5 shrink-0 text-[#55708f]" />
-              <span className="truncate">{companyName}</span>
+              <BriefcaseBusiness className="h-5 w-5 shrink-0 text-[#55708f]" />
+              <span className="truncate">{job.title || 'Untitled Job'}</span>
             </h1>
+            <p className="mt-1 flex items-center gap-2 text-sm text-[#55708f]">
+              <JobDetailsSvgIcon name="building" className="h-4 w-4 shrink-0" />
+              <span className="truncate">{companyName}</span>
+            </p>
             <p className="mt-1 flex items-center gap-2 text-sm text-[#55708f]">
               <BookmarksSvgIcon name="industry" className="h-4 w-4 shrink-0" />
               <span className="truncate">{industry}</span>
@@ -228,11 +239,7 @@ const AdminEmployerJobEditRequestReview = () => {
 
         <section className="overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
           <div className="border-b border-[#e6edf5] px-5 py-5 sm:px-6">
-            <h2 className="flex items-center gap-2 text-xl font-semibold text-black">
-              <FileEdit size={21} className="text-[#2e66a6]" /> Edit Request
-            </h2>
-
-            <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1.55fr)_145px_145px_145px]">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1.55fr)_145px_145px_145px]">
               <label className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7890aa]" size={17} />
                 <input
@@ -282,22 +289,38 @@ const AdminEmployerJobEditRequestReview = () => {
           </div>
 
           <div className="bg-[#fbfdff] p-5 sm:p-6">
-            {requestMatches ? (
-              <article className="rounded-xl border border-[#75aef0] bg-white p-5 shadow-sm">
+            {filteredRequests.length ? (
+              <div className="space-y-4">
+              {filteredRequests.map((item) => {
+                const itemSections = Array.isArray(item.requestedSections) ? item.requestedSections : [];
+                const itemIsPending = item.status === 'pending';
+                const itemStatusLabel = item.status === 'rejected' ? 'Declined' : item.status;
+                const chronologicalNumber = requestHistory
+                  .slice()
+                  .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
+                  .findIndex((entry) => entry._id === item._id) + 1;
+                const isLatest = requestHistory[0]?._id === item._id;
+
+                return (
+              <article key={item._id} className="rounded-xl border border-[#75aef0] bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#55708f]">Job title</p>
-                    <h3 className="mt-1 truncate text-lg font-semibold text-[#2e66a6]">{job.title || 'Untitled Job'}</h3>
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-black">
+                      #{chronologicalNumber} Edit Request
+                      {isLatest ? <span className="text-[11px] font-bold uppercase tracking-wide text-[#2e66a6]">New</span> : null}
+                    </h3>
                   </div>
-                  <span className={`w-fit rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase ${isPending ? 'border-[#f5c979] bg-[#fff7e8] text-[#b55c00]' : request.status === 'approved' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                    {statusLabel}
+                  <span className={`w-fit rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase ${itemIsPending ? 'border-[#f5c979] bg-[#fff7e8] text-[#b55c00]' : item.status === 'approved' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                    {itemStatusLabel}
                   </span>
                 </div>
 
                 <div className="mt-5">
-                  <h4 className="text-sm font-semibold text-black">Sections to Edit</h4>
+                  <h4 className="flex items-center gap-2 text-sm font-semibold text-black">
+                    <FileEdit size={16} className="shrink-0 text-[#2e66a6]" /> Sections to Edit
+                  </h4>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {sections.length ? sections.map((section) => (
+                    {itemSections.length ? itemSections.map((section) => (
                       <span key={section} className="rounded-lg border border-[#80b3ed] bg-[#f3f8fe] px-3 py-2 text-xs font-semibold text-[#2e66a6]">
                         {section}
                       </span>
@@ -309,15 +332,15 @@ const AdminEmployerJobEditRequestReview = () => {
                   <p className="flex items-center gap-2 text-sm font-semibold text-black">
                     <FileEdit size={15} className="text-[#2e66a6]" /> Reason
                   </p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#55708f]">{request.reason || 'No reason provided.'}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#55708f]">{item.reason || 'No reason provided.'}</p>
                 </div>
 
                 <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <p className="flex items-center gap-1.5 text-xs text-[#55708f]">
-                    <Clock3 size={15} /> Request On: {formatDateTime(request.createdAt)}
+                    <Clock3 size={15} /> Request On: {formatDateTime(item.createdAt)}
                   </p>
 
-                  {isPending && (
+                  {itemIsPending && item._id === request._id && (
                     <div className="flex flex-col gap-3 sm:flex-row">
                       <button type="button" onClick={() => setConfirmation('decline')} className="inline-flex h-11 min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 transition hover:bg-red-50">
                         <XCircle size={17} /> Decline Request
@@ -329,6 +352,9 @@ const AdminEmployerJobEditRequestReview = () => {
                   )}
                 </div>
               </article>
+                );
+              })}
+              </div>
             ) : (
               <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-white py-12 text-center text-sm text-[#64748b]">
                 No request matches the selected filters.

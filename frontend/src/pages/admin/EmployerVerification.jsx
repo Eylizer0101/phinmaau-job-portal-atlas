@@ -1077,7 +1077,9 @@ const EmployerVerification = () => {
             <div
               className={cn(
                 "grid grid-cols-1 gap-3 xl:items-end",
-                hasActiveFilters ? "xl:grid-cols-6" : "xl:grid-cols-5"
+                hasActiveFilters
+                  ? "xl:grid-cols-[minmax(210px,1.3fr)_minmax(145px,1fr)_minmax(160px,1fr)_minmax(140px,.9fr)_minmax(125px,.75fr)_auto]"
+                  : "xl:grid-cols-[minmax(220px,1.35fr)_minmax(150px,1fr)_minmax(170px,1fr)_minmax(145px,.9fr)_minmax(125px,.75fr)]"
               )}
             >
               <div className={archiveMode ? "xl:col-span-2" : ""}>
@@ -1273,6 +1275,7 @@ const EmployerVerification = () => {
                                   size="sm"
                                   leftIcon={<Icon name="eye" className="h-4 w-4" />}
                                   onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
+                                  className="h-10 w-16 !p-0"
                                   title="View"
                                 >
                                 
@@ -1284,6 +1287,7 @@ const EmployerVerification = () => {
                                     leftIcon={<Icon name="restore" className="h-4 w-4" />}
                                     onClick={() => setRestoreTarget(item)}
                                     disabled={restoringId === item._id}
+                                    className="h-10 w-16 !p-0"
                                     title="Restore"
                                     aria-label={`Restore ${companyName}`}
                                   />
@@ -1357,6 +1361,7 @@ const EmployerVerification = () => {
                                   leftIcon={<Icon name="restore" className="h-4 w-4" />}
                                   onClick={() => setRestoreTarget(item)}
                                   disabled={restoringId === item._id}
+                                  className="h-10 w-16 !p-0"
                                   title="Restore"
                                   aria-label={`Restore ${companyName}`}
                                 />

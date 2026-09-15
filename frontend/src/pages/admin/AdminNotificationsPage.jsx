@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Bell, Check, RefreshCw, Search, Trash2, UserRound } from "lucide-react";
+import { Bell, Check, ChevronLeft, Search, Trash2, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
@@ -18,7 +18,8 @@ const formatNotificationTime = (value) => {
   if (diff < minute) return "Just now";
   if (diff < hour) return `${Math.floor(diff / minute)} minute${Math.floor(diff / minute) === 1 ? "" : "s"} ago`;
   if (diff < day) return `${Math.floor(diff / hour)} hour${Math.floor(diff / hour) === 1 ? "" : "s"} ago`;
-  if (diff < day * 2) return "Yesterday";
+  const days = Math.floor(diff / day);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
 
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
@@ -189,6 +190,10 @@ const AdminNotificationsPage = () => {
           ? { backPath: "/admin/applications", backLabel: "Applications", fromNotification: true }
           : link.startsWith("/admin/employer-job-edit-requests/")
           ? { backPath: "/admin/employer-job-edit-requests", backLabel: "Edit Requests", fromNotification: true }
+          : link.startsWith("/admin/employer-verification/")
+          ? { backPath: "/admin/employer-verification", backLabel: "Employer Verification", fromNotification: true }
+          : link.startsWith("/admin/jobseeker-verification/")
+          ? { backPath: "/admin/jobseeker-verification", backLabel: "Jobseeker Verification", fromNotification: true }
           : undefined;
 
         navigate(link, navigationState ? { state: navigationState } : undefined);
@@ -207,7 +212,7 @@ const AdminNotificationsPage = () => {
             onClick={() => navigate("/admin/dashboard")}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
           >
-            <span aria-hidden="true">←</span>
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             Back
           </button>
         </div>

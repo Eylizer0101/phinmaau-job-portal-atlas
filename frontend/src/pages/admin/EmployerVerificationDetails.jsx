@@ -648,11 +648,10 @@ const EmployerVerificationDetails = () => {
 
   const [confirm, setConfirm] = useState({ open: false, nextStatus: null });
 
-  const fetchDetails = useCallback(async () => {
+  const fetchDetails = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError("");
-      setSuccess("");
 
       const res = await api.get(`/admin/employers/verification/${employerId}`);
       if (res.data?.success) {
@@ -670,7 +669,7 @@ const EmployerVerificationDetails = () => {
       setEmployer(null);
       setError(e.response?.data?.message || "Failed to load employer details.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [employerId]);
 
@@ -1042,7 +1041,7 @@ const EmployerVerificationDetails = () => {
       );
       setVerifyCredential(null);
       setApprovalPassword("");
-      await fetchDetails();
+      await fetchDetails({ silent: true });
     } catch (approveError) {
       setError(approveError.response?.data?.message || "Unable to approve this company requirement.");
     } finally {
@@ -1620,7 +1619,7 @@ const EmployerVerificationDetails = () => {
             <div className="fixed inset-0 bg-black/45 backdrop-blur-[1px]" onClick={() => !action && resetHoldModal()} aria-hidden="true" />
 
             <div
-              className="relative w-full max-w-[650px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[570px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="hold-modal-title"
