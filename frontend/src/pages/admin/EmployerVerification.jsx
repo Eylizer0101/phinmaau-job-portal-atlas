@@ -8,6 +8,17 @@ import Pagination from "../../components/shared/Pagination";
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const Icon = ({ name, className = "h-5 w-5", ...props }) => {
+  if (name === "restore") {
+    return (
+      <img
+        src="/images/restorists.png"
+        alt=""
+        className={`${className} scale-125 object-contain`}
+        aria-hidden="true"
+      />
+    );
+  }
+
   const common = {
     className,
     fill: "none",
