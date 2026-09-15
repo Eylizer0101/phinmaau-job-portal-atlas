@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
@@ -523,6 +523,7 @@ const StatusBadge = ({ status }) => {
 const AdminEmployerPostingHistory = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -684,7 +685,7 @@ const AdminEmployerPostingHistory = () => {
           <div>
             <button
               type="button"
-              onClick={() => navigate(`/admin/users/${userId}`)}
+              onClick={() => location.state?.fromArchive ? navigate(-1) : navigate(`/admin/users/${userId}`)}
               className="inline-flex items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
             >
               <Icon name="arrowLeft" className="h-4 w-4" />

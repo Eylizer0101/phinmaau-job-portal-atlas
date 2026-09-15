@@ -1331,11 +1331,20 @@ const AdminJobApplicants = () => {
     const applicantUserId = getApplicantUserId(application);
     if (!applicantUserId) return;
 
-    navigate(`/admin/users/${applicantUserId}?tab=resume`, {
-      state: {
-        backPath: `/admin/jobs/${jobId}/applicants`,
-        backLabel: "Applicant List",
-      },
+    const isArchivedView = location.state?.isArchivedView === true;
+
+    navigate(`/admin/users/${applicantUserId}?tab=resume${isArchivedView ? "&archive=1" : ""}`, {
+      state: isArchivedView
+        ? {
+            fromArchive: true,
+            archiveBackPath: `/admin/jobs/${jobId}/applicants`,
+            backPath: `/admin/jobs/${jobId}/applicants`,
+            backLabel: "Applicant List",
+          }
+        : {
+            backPath: `/admin/jobs/${jobId}/applicants`,
+            backLabel: "Applicant List",
+          },
     });
   };
 

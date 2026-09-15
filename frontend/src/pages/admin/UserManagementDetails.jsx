@@ -322,10 +322,10 @@ const JOBSEEKER_CREDENTIAL_DESCRIPTIONS = {
   cv: "Curriculum Vitae / Resume",
   diploma: "Diploma",
   tor: "Transcript of Records",
-  sss: "SSS credential",
-  philhealth: "PhilHealth credential",
-  pagibig: "Pag-IBIG credential",
-  tin: "TIN credential",
+  sss: "Social Security System",
+  philhealth: "Philippine Health Insurance Corporation",
+  pagibig: "Home Development Mutual Fund (HDMF)",
+  tin: "Tax Identification Number",
 };
 
 const APPLICATIONS_PER_PAGE = 10;
@@ -1726,36 +1726,39 @@ const UserManagementDetails = () => {
     return (
       <section className="rounded-[18px] border border-[#d1d5db] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.05)] sm:p-7">
         <h2 className="text-[30px] font-semibold text-black">Jobseeker Credentials</h2>
-        <p className="mt-1 text-[13px] text-[#6b7280]">Submitted verification credentials</p>
 
-        <div className="mt-5 space-y-3">
-          {credentialItems.map((item) => {
-            const hasFile = Boolean(item.verification?.url || item.verification?.fileUrl);
-            return (
-              <div key={item.key} className="flex min-h-[90px] items-center gap-4 rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] px-5 py-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
-                  <Icon name="document" className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-black">{item.label}</p>
-                  <p className="mt-1 text-xs text-[#6b7280]">{item.description}</p>
-                </div>
-                {hasFile ? (
-                  <button
-                    type="button"
-                    onClick={() => handleViewCredential(item.key)}
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-                    title={`View ${item.label}`}
-                    aria-label={`View ${item.label}`}
-                  >
-                    <Icon name="eye" className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <span className="text-xs font-medium text-[#6b7280]">Not submitted</span>
-                )}
-              </div>
-            );
-          })}
+        <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
+          {[credentialItems.slice(0, 4), credentialItems.slice(4)].map((column, columnIndex) => (
+            <div key={columnIndex} className="space-y-3">
+              {column.map((item) => {
+                const hasFile = Boolean(item.verification?.url || item.verification?.fileUrl);
+                return (
+                  <div key={item.key} className="flex min-h-[90px] items-center gap-4 rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] px-5 py-4">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
+                      <Icon name="document" className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-black">{item.label}</p>
+                      <p className="mt-1 text-xs text-[#6b7280]">{item.description}</p>
+                    </div>
+                    {hasFile ? (
+                      <button
+                        type="button"
+                        onClick={() => handleViewCredential(item.key)}
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                        title={`View ${item.label}`}
+                        aria-label={`View ${item.label}`}
+                      >
+                        <Icon name="eye" className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <span className="text-xs font-medium text-[#6b7280]">Not submitted</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </section>
     );
@@ -1979,7 +1982,11 @@ const UserManagementDetails = () => {
           {activeJobs.length > 6 ? (
             <button
               type="button"
-              onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
+              onClick={() =>
+                navigate(`/admin/users/${userId}/posting-history`, {
+                  state: isArchiveView ? { fromArchive: true } : undefined,
+                })
+              }
               className="inline-flex w-fit items-center gap-2 text-[15px] font-medium text-[#2e66a6] transition hover:text-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
               View all jobs
@@ -2561,7 +2568,11 @@ const UserManagementDetails = () => {
                     <button
                       type="button"
                       disabled={!jobPosts.length}
-                      onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
+                      onClick={() =>
+                navigate(`/admin/users/${userId}/posting-history`, {
+                  state: isArchiveView ? { fromArchive: true } : undefined,
+                })
+              }
                       className={cn(
                         "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
                         jobPosts.length

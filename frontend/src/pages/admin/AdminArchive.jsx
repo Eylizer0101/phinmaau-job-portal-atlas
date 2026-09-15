@@ -697,7 +697,7 @@ const AdminArchive = () => {
             Archived
           </h1>
           <p className="mt-1.5 text-sm text-slate-600">
-            Manage archived employer accounts, job posts, declined applicants, and inactive accounts.
+            Manage archived employers, job posts, and inactive accounts.
           </p>
         </header>
 
@@ -759,9 +759,6 @@ const AdminArchive = () => {
             />
           </div>
 
-          <p className="mt-3 text-xs text-slate-500">
-            Showing <span className="font-semibold text-slate-800">{archiveGroups.length}</span> result(s).
-          </p>
         </section>
 
         <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">

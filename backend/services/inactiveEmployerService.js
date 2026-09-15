@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Job = require('../models/Job');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_INACTIVE_MONTHS = 6;
@@ -45,33 +46,66 @@ const archiveInactiveEmployers = async () => {
     const cutoff = subtractMonths(now, thresholdMonths);
     const reason = `No employer login for ${thresholdMonths} month${thresholdMonths === 1 ? '' : 's'}`;
 
-    const result = await User.updateMany(
-      {
-        role: 'employer',
-        status: 'active',
-        isActive: true,
-        inactiveBySystem: { $ne: true },
-        $or: [
-          { lastLogin: { $lte: cutoff } },
-          {
-            $and: [
-              { $or: [{ lastLogin: null }, { lastLogin: { $exists: false } }] },
-              { createdAt: { $lte: cutoff } },
-            ],
-          },
-        ],
-      },
-      {
-        $set: {
-          status: 'inactive',
-          isActive: false,
-          inactiveBySystem: true,
-          inactiveAt: now,
-          inactiveReason: reason,
-          inactiveThresholdMonths: thresholdMonths,
+    const inactiveQuery = {
+      role: 'employer',
+      status: 'active',
+      isActive: true,
+      inactiveBySystem: { $ne: true },
+      $or: [
+        { lastLogin: { $lte: cutoff } },
+        {
+          $and: [
+            { $or: [{ lastLogin: null }, { lastLogin: { $exists: false } }] },
+            { createdAt: { $lte: cutoff } },
+          ],
         },
-      }
-    );
+      ],
+    };
+
+    const employersToArchive = await User.find(inactiveQuery).select('_id').lean();
+    const employerIds = employersToArchive.map((employer) => employer._id);
+
+    const result = employerIds.length
+      ? await User.updateMany(
+          { _id: { $in: employerIds } },
+          {
+            $set: {
+              status: 'inactive',
+              isActive: false,
+              inactiveBySystem: true,
+              inactiveAt: now,
+              inactiveReason: reason,
+              inactiveThresholdMonths: thresholdMonths,
+            },
+          }
+        )
+      : { modifiedCount: 0 };
+
+    const inactiveEmployers = await User.find({
+      role: 'employer',
+      status: 'inactive',
+      isActive: false,
+      inactiveBySystem: true,
+    }).select('_id').lean();
+
+    const inactiveEmployerIds = inactiveEmployers.map((employer) => employer._id);
+
+    if (inactiveEmployerIds.length) {
+      await Job.updateMany(
+        {
+          employer: { $in: inactiveEmployerIds },
+          isArchived: { $ne: true },
+          status: 'published',
+          isActive: true,
+        },
+        {
+          $set: {
+            status: 'closed',
+            isActive: false,
+          },
+        }
+      );
+    }
 
     const archivedCount = Number(result.modifiedCount || 0);
 

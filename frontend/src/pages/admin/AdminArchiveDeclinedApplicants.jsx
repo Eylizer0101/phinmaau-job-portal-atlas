@@ -37,16 +37,181 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
 const DATE_OPTIONS = [
   { value: "all", label: "All Time" },
   { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "thisWeek", label: "This Week" },
   { value: "7days", label: "Last 7 Days" },
-  { value: "30days", label: "Last 30 Days" },
+  { value: "thisMonth", label: "This Month" },
+  { value: "lastMonth", label: "Last Month" },
+  { value: "thisYear", label: "This Year" },
+  { value: "lastYear", label: "Last Year" },
+  { value: "custom", label: "Custom Range" },
 ];
 
-const getDateStart = (value) => {
-  const now = new Date();
-  if (value === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (value === "7days") return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
-  if (value === "30days") return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
-  return null;
+const formatDateInput = (date) => {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return "";
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getPresetRange = (value) => {
+  const today = new Date();
+  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (value === "today") return { dateFrom: formatDateInput(current), dateTo: formatDateInput(current) };
+  if (value === "yesterday") {
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    return { dateFrom: formatDateInput(yesterday), dateTo: formatDateInput(yesterday) };
+  }
+  if (value === "thisWeek") {
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset)),
+      dateTo: formatDateInput(current),
+    };
+  }
+  if (value === "7days") {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)),
+      dateTo: formatDateInput(current),
+    };
+  }
+  if (value === "thisMonth") {
+    return { dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 1)), dateTo: formatDateInput(current) };
+  }
+  if (value === "lastMonth") {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+      dateTo: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 0)),
+    };
+  }
+  if (value === "thisYear") {
+    return { dateFrom: formatDateInput(new Date(today.getFullYear(), 0, 1)), dateTo: formatDateInput(current) };
+  }
+  if (value === "lastYear") {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear() - 1, 0, 1)),
+      dateTo: formatDateInput(new Date(today.getFullYear() - 1, 11, 31)),
+    };
+  }
+  return { dateFrom: "", dateTo: "" };
+};
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const addCalendarMonths = (date, amount) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+};
+
+const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const gridStart = new Date(year, month, 1 - new Date(year, month, 1).getDay());
+  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const day = new Date(gridStart);
+    day.setDate(gridStart.getDate() + index);
+    return day;
+  });
+  const years = Array.from({ length: new Date().getFullYear() - 1949 }, (_, index) => 1950 + index);
+  const sameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
+        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, -1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-700 hover:bg-slate-100">‹</button>
+        <div className="grid grid-cols-[1fr_86px] gap-2">
+          <select value={month} onChange={(e) => onChangeMonth(new Date(year, Number(e.target.value), 1))} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#212C61]">
+            {MONTH_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
+          </select>
+          <select value={year} onChange={(e) => onChangeMonth(new Date(Number(e.target.value), month, 1))} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#212C61]">
+            {years.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </div>
+        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, 1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-700 hover:bg-slate-100">›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
+        {["SU","MO","TU","WE","TH","FR","SA"].map((day) => <div key={day}>{day}</div>)}
+      </div>
+      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm">
+        {days.map((day) => {
+          const value = formatDateInput(day);
+          const outside = day.getMonth() !== month;
+          const selected = sameDay(day, start) || sameDay(day, end);
+          const ranged = start && end && day >= start && day <= end;
+          return (
+            <button type="button" key={value} onClick={() => onPickDate(value)}
+              className={`mx-auto flex h-9 w-full items-center justify-center transition ${outside ? "text-slate-300" : "text-slate-700"} ${ranged ? "bg-[#212C61]/10 text-[#212C61]" : ""} ${selected ? "rounded-lg bg-[#212C61] font-extrabold text-white shadow-md" : "hover:bg-[#212C61]/10"}`}>
+              {day.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
+  const todayValue = formatDateInput(new Date());
+  const [draftStart, setDraftStart] = useState(startDate || todayValue);
+  const [draftEnd, setDraftEnd] = useState(endDate || todayValue);
+  const [leftMonth, setLeftMonth] = useState(new Date(`${startDate || todayValue}T00:00:00`));
+  const [rightMonth, setRightMonth] = useState(new Date(`${endDate || todayValue}T00:00:00`));
+
+  useEffect(() => {
+    if (!open) return;
+    const nextStart = startDate || todayValue;
+    const nextEnd = endDate || todayValue;
+    setDraftStart(nextStart);
+    setDraftEnd(nextEnd);
+    setLeftMonth(new Date(`${nextStart}T00:00:00`));
+    setRightMonth(new Date(`${nextEnd}T00:00:00`));
+  }, [open, startDate, endDate, todayValue]);
+
+  if (!open) return null;
+
+  const pickDate = (value) => {
+    if (!draftStart || (draftStart && draftEnd)) {
+      setDraftStart(value);
+      setDraftEnd("");
+    } else if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
+      setDraftEnd(draftStart);
+      setDraftStart(value);
+    } else {
+      setDraftEnd(value);
+    }
+  };
+
+  const formatLabel = (value) => new Date(`${value}T00:00:00`).toLocaleDateString("en-PH", { month: "short", day: "2-digit", year: "numeric" });
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true">
+      <div className="w-full max-w-[920px] overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="grid gap-6 px-6 pb-5 pt-6 md:grid-cols-[1fr_auto_1fr] md:items-end">
+          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Start Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#212C61]">{formatLabel(draftStart)}</div></div>
+          <div className="hidden pb-4 text-3xl text-slate-500 md:block">→</div>
+          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">End Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#212C61]">{draftEnd ? formatLabel(draftEnd) : "Select date"}</div></div>
+        </div>
+        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
+          <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
+          <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
+        </div>
+        <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
+          <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600 hover:text-slate-900">Cancel</button>
+          <button type="button" onClick={() => draftStart && draftEnd && onApply(draftStart, draftEnd)} disabled={!draftStart || !draftEnd} className="h-12 rounded-xl bg-[#212C61] px-9 text-base font-extrabold text-white shadow-lg disabled:opacity-60">Apply Range</button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const AdminArchiveDeclinedApplicants = () => {
@@ -60,6 +225,9 @@ const AdminArchiveDeclinedApplicants = () => {
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState("all");
   const [date, setDate] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [openingProfileId, setOpeningProfileId] = useState("");
@@ -117,7 +285,8 @@ const AdminArchiveDeclinedApplicants = () => {
 
   const filteredApplicants = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const startDate = getDateStart(date);
+    const startDate = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+    const endDate = dateTo ? new Date(`${dateTo}T23:59:59.999`) : null;
 
     return applicants.filter((applicant) => {
       if (level !== "all" && String(applicant.jobSeekerLevel || "") !== level) return false;
@@ -136,14 +305,16 @@ const AdminArchiveDeclinedApplicants = () => {
         if (!searchable.includes(query)) return false;
       }
 
-      if (startDate) {
+      if (date !== "all") {
         const declinedAt = new Date(applicant.declinedAt || applicant.archivedAt || 0);
-        if (Number.isNaN(declinedAt.getTime()) || declinedAt < startDate) return false;
+        if (Number.isNaN(declinedAt.getTime())) return false;
+        if (startDate && declinedAt < startDate) return false;
+        if (endDate && declinedAt > endDate) return false;
       }
 
       return true;
     });
-  }, [applicants, date, level, search]);
+  }, [applicants, date, dateFrom, dateTo, level, search]);
 
   const pageCount = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filteredApplicants.length / pageSize));
   const safePage = Math.min(currentPage, pageCount);
@@ -237,6 +408,26 @@ const AdminArchiveDeclinedApplicants = () => {
     }
   };
 
+  const handleDateChange = (value) => {
+    if (value === "custom") {
+      setShowCustomDateModal(true);
+      return;
+    }
+    const range = getPresetRange(value);
+    setDate(value);
+    setDateFrom(range.dateFrom);
+    setDateTo(range.dateTo);
+    setCurrentPage(1);
+  };
+
+  const applyCustomDateRange = (startDate, endDate) => {
+    setDate("custom");
+    setDateFrom(startDate);
+    setDateTo(endDate);
+    setShowCustomDateModal(false);
+    setCurrentPage(1);
+  };
+
   return (
     <AdminLayout>
       <main className="mx-auto w-full max-w-[1180px] px-1 py-8">
@@ -283,7 +474,7 @@ const AdminArchiveDeclinedApplicants = () => {
 
             <select
               value={date}
-              onChange={(event) => setDate(event.target.value)}
+              onChange={(event) => handleDateChange(event.target.value)}
               className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"
             >
               {DATE_OPTIONS.map((option) => (
@@ -331,7 +522,7 @@ const AdminArchiveDeclinedApplicants = () => {
                     <span className="text-sm text-slate-600">{applicant.jobSeekerLevel || "Not specified"}</span>
 
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-red-600">{applicant.declinedStage || "Declined"}</p>
+                      <p className="text-sm font-semibold text-red-600">{String(applicant.declinedStage || "").toLowerCase().includes("interview") ? "Interview" : "Screening"}</p>
                       <p className="mt-1 text-xs text-slate-500">{formatDate(applicant.declinedAt)}</p>
                     </div>
 
@@ -375,6 +566,13 @@ const AdminArchiveDeclinedApplicants = () => {
           ) : null}
         </section>
       </main>
+      <CustomDateRangeModal
+        open={showCustomDateModal}
+        startDate={dateFrom}
+        endDate={dateTo}
+        onCancel={() => setShowCustomDateModal(false)}
+        onApply={applyCustomDateRange}
+      />
     </AdminLayout>
   );
 };

@@ -4681,6 +4681,29 @@ exports.getAdminArchive = async (req, res) => {
 };
 
 
+
+const getAdminArchivedJobStatus = (job = {}) => {
+  const statusBeforeArchive = String(job?.statusBeforeArchive || '').trim().toLowerCase();
+  if (['open', 'closed', 'filled', 'expired'].includes(statusBeforeArchive)) {
+    return statusBeforeArchive;
+  }
+
+  const storedStatus = String(job?.status || '').trim().toLowerCase();
+  if (storedStatus === 'filled') return 'filled';
+  if (storedStatus === 'closed') return 'closed';
+
+  const deadline = new Date(job?.applicationDeadline || 0);
+  if (!Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now()) {
+    return 'expired';
+  }
+
+  if (storedStatus === 'published' || job?.isPublished === true) {
+    return 'open';
+  }
+
+  return 'closed';
+};
+
 exports.getAdminArchiveDetails = async (req, res) => {
   try {
     const type = String(req.params.type || '').toLowerCase();
@@ -4726,7 +4749,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
               $or: [{ isArchived: true }, { archivedAt: { $ne: null } }],
             })
               .select(
-                'title companyName companyLogo employer status vacancies applicationDeadline isActive isPublished isArchived archivedAt createdAt updatedAt'
+                'title companyName companyLogo employer status statusBeforeArchive vacancies applicationDeadline isActive isPublished isArchived archivedAt createdAt updatedAt'
               )
               .lean()
           : [],
@@ -4736,7 +4759,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
               status: 'declined',
               isDeclinedArchived: true,
             })
-              .populate('job', 'title companyName companyLogo vacancies status')
+              .populate('job', 'title companyName companyLogo vacancies status statusBeforeArchive applicationDeadline isActive isPublished isArchived')
               .populate(
                 'jobseeker',
                 'email firstName middleName lastName fullName profileImage jobSeekerProfile'
@@ -4774,7 +4797,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
           companyName: job.companyName || getArchiveUserName(account),
           vacancies: Number(job.vacancies || 0),
           applicantCount: applicantCountByJob.get(String(job._id)) || 0,
-          status: String(job.status || (job.isPublished ? 'published' : 'draft')),
+          status: getAdminArchivedJobStatus(job),
         });
       });
 
@@ -4798,7 +4821,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
             companyName: application.job?.companyName || getArchiveUserName(account),
             vacancies: Number(application.job?.vacancies || 0),
             applicantCount: 0,
-            status: 'declined',
+            status: getAdminArchivedJobStatus(application.job || {}),
             applicants: [],
           });
         }
@@ -4820,14 +4843,10 @@ exports.getAdminArchiveDetails = async (req, res) => {
               String(activity?.toStatus || '').toLowerCase() === 'declined'
           );
         const declinedStage =
-          String(application.hiringStage || '').trim() ||
-          (application.declinedFrom === 'forInterview'
-            ? 'For Interview'
-            : application.declinedFrom === 'applicants'
-              ? 'Initial Screening'
-              : application.lastActiveStatus === 'for interview'
-                ? 'For Interview'
-                : 'Application Review');
+          application.declinedFrom === 'forInterview' ||
+          application.lastActiveStatus === 'for interview'
+            ? 'Interview'
+            : 'Screening';
 
         group.applicants.push({
           applicationId: String(application._id),
@@ -5044,13 +5063,10 @@ exports.getAdminArchiveDetails = async (req, res) => {
             profile.careerLevel ||
             'Not specified',
           declinedStage:
-            application.declinedFrom === 'forInterview'
-              ? 'For Interview'
-              : application.declinedFrom === 'applicants'
-                ? 'Initial Screening'
-                : application.lastActiveStatus === 'for interview'
-                  ? 'For Interview'
-                  : 'Application Review',
+            application.declinedFrom === 'forInterview' ||
+            application.lastActiveStatus === 'for interview'
+              ? 'Interview'
+              : 'Screening',
           declineReason: application.declineReason || '',
           declineComment: application.declineComment || '',
           appliedAt: application.appliedAt,

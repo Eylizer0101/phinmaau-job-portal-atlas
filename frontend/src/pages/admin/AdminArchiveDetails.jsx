@@ -1098,6 +1098,7 @@ const AdminArchiveDetails = () => {
   const [filters, setFilters] = useState({
     search: "",
     title: "all",
+    type: "all",
     date: "all",
     dateFrom: "",
     dateTo: "",
@@ -1181,6 +1182,7 @@ const AdminArchiveDetails = () => {
       .filter((record) => ["job-post", "declined-applicants", "inactive-account"].includes(record.archiveType))
       .filter((record) => {
         if (filters.title !== "all" && String(record.title || "").trim() !== filters.title) return false;
+        if (filters.type !== "all" && record.archiveType !== filters.type) return false;
 
         if (query) {
           const searchable = [
@@ -1313,7 +1315,7 @@ const AdminArchiveDetails = () => {
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(320px,1.5fr)_minmax(220px,0.9fr)_minmax(180px,0.8fr)]">
+          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(300px,1.35fr)_minmax(190px,0.85fr)_minmax(190px,0.8fr)_minmax(180px,0.8fr)]">
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
               <Icon
@@ -1338,6 +1340,16 @@ const AdminArchiveDetails = () => {
               {jobTitleOptions.map((value) => (
                 <option key={value} value={value}>{value}</option>
               ))}
+            </SelectField>
+
+            <SelectField
+              value={filters.type}
+              onChange={(event) => updateFilter("type", event.target.value)}
+              ariaLabel="Filter by archived type"
+            >
+              <option value="all">All Type</option>
+              <option value="job-post">Job Post</option>
+              <option value="declined-applicants">Declined Applicants</option>
             </SelectField>
 
             <DateFilterDropdown
