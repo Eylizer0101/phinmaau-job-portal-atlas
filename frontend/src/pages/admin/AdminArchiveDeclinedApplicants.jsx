@@ -409,7 +409,7 @@ const AdminArchiveDeclinedApplicants = () => {
         return;
       }
 
-      navigate(`/admin/users/${resolvedUserId}?tab=resume`, {
+      navigate(`/admin/users/${resolvedUserId}`, {
         state: {
           fromArchive: true,
           archiveBackPath: location.pathname,
