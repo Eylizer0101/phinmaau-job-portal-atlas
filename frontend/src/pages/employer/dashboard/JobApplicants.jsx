@@ -640,7 +640,7 @@ const JobApplicants = () => {
           <div className="mt-8 rounded-3xl bg-white p-12 text-center text-red-600">{error}</div>
         ) : paginatedApplicants.length ? (
           <>
-            <div className="mt-8 space-y-5">
+            <div className={`mt-8 space-y-5 overscroll-auto ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto pr-1 md:max-h-[812px]'}`}>
               {paginatedApplicants.map(({ application, user, profile, level, matchScore }) => {
                 const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ') || 'Applicant';
                 const image = user.profileImage ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`) : '';
@@ -682,7 +682,7 @@ const JobApplicants = () => {
               })}
             </div>
             {totalItems >= 10 ? (
-              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Job applicants pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Job applicants pagination" className="!min-h-[50px] !py-2" />
             ) : null}
           </>
         ) : (

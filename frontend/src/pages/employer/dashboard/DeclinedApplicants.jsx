@@ -1094,8 +1094,8 @@ const DeclinedApplicants = () => {
           </div>
         </div>
 
-        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
-          <div className="p-6">
+        <div className="relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
+          <div className="flex min-h-0 flex-col p-6">
             {loading ? (
               <div className="py-14 text-center" role="status" aria-live="polite">
                 <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1108,10 +1108,10 @@ const DeclinedApplicants = () => {
               </div>
             ) : (
               <>
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="sticky top-0 z-20 bg-gray-50">
-                      <tr>
+                <div className={`hidden overflow-x-auto overscroll-auto md:block ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'}`}>
+                  <table className="min-w-full border-separate border-spacing-0">
+                    <thead className="bg-gray-50">
+                      <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-gray-50 [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
                         <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Applied Date
                         </th>
@@ -1230,7 +1230,7 @@ const DeclinedApplicants = () => {
                   </table>
                 </div>
 
-                <div className="space-y-3 md:hidden">
+                <div className={`space-y-3 overscroll-auto md:hidden ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto'}`}>
                   {paginatedApplications.map((app) => {
                     const name = buildApplicantName(app.jobseeker);
                     const email = app.jobseeker?.email || '—';
@@ -1301,7 +1301,7 @@ const DeclinedApplicants = () => {
                 </div>
 
               {totalItems >= 10 ? (
-                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Declined applicants pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Declined applicants pagination" className="!min-h-[50px] !py-2" />
               ) : null}
 
               </>

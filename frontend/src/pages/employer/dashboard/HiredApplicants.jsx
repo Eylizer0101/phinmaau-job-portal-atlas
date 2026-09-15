@@ -1216,7 +1216,7 @@ const selectBase =
         </div>
 
         {/* Table */}
-        <div className="relative overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
+        <div className="relative flex flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
           {loading ? (
             <div className="py-14 text-center" role="status" aria-live="polite">
               <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1230,10 +1230,10 @@ const selectBase =
           ) : (
             <>
               {/* Desktop */}
-              <div className="hidden overflow-x-auto md:block">
-                <table className="min-w-full">
-                  <thead className="sticky top-px z-20 border-b border-gray-200 bg-[#fafafa]">
-                    <tr>
+              <div className={`hidden overflow-x-auto overscroll-auto md:block ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'}`}>
+                <table className="min-w-full border-separate border-spacing-0">
+                  <thead className="border-b border-gray-200 bg-[#fafafa]">
+                    <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-[#fafafa] [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Applied Date
                       </th>
@@ -1389,7 +1389,7 @@ const selectBase =
               </div>
 
               {/* Mobile */}
-              <div className="space-y-3 p-4 md:hidden">
+              <div className={`space-y-3 overscroll-auto p-4 md:hidden ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto'}`}>
                 {paginatedApplications.map((app) => {
                   const name = buildApplicantName(app.jobseeker);
                   const email = app.jobseeker?.email || '—';
@@ -1510,7 +1510,7 @@ const selectBase =
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                   ariaLabel="Hired applicants pagination"
-                  className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+                  className="!min-h-[50px] !py-2"
                 />
               ) : null}
 

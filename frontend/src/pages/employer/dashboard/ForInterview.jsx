@@ -2239,8 +2239,8 @@ const selectBase =
           </div>
         </div>
 
-        <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
-          <div className="p-6">
+        <div className="relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
+          <div className="flex min-h-0 flex-col p-6">
             {loading ? (
               <div className="py-14 text-center" role="status" aria-live="polite">
                 <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -2253,8 +2253,8 @@ const selectBase =
               </div>
             ) : (
               <>
-                <div className="hidden md:block">
-                  <table className="w-full table-fixed divide-y divide-gray-200">
+                <div className={`hidden overflow-x-auto overscroll-auto md:block ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'}`}>
+                  <table className="w-full table-fixed border-separate border-spacing-0">
                     <colgroup>
                       <col className="w-[12%]" />
                       <col className="w-[25%]" />
@@ -2263,8 +2263,8 @@ const selectBase =
                       <col className="w-[17%]" />
                       <col className="w-[15%]" />
                     </colgroup>
-                    <thead className="sticky top-0 z-20 bg-gray-50">
-                      <tr>
+                    <thead className="bg-gray-50">
+                      <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-gray-50 [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
                         {['Applied Date', 'Applicant', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
                             key={heading}
@@ -2387,7 +2387,7 @@ const selectBase =
                   </table>
                 </div>
 
-                <div className="space-y-3 md:hidden">
+                <div className={`space-y-3 overscroll-auto md:hidden ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto'}`}>
                   {paginatedApplications.map((app) => {
                     const name = buildApplicantName(app.jobseeker);
                     const email = app.jobseeker?.email || '—';
@@ -2451,7 +2451,7 @@ const selectBase =
                 </div>
 
               {totalItems >= 10 ? (
-                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="For interview pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="For interview pagination" className="!min-h-[50px] !py-2" />
               ) : null}
 
               </>

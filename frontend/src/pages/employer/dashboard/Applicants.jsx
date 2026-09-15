@@ -2230,7 +2230,7 @@ const Applicants = () => {
           </div>
         ) : paginatedApplications.length ? (
           <>
-            <div className="space-y-5">
+            <div className={cn('space-y-5 overscroll-auto', pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto pr-1 md:max-h-[812px]')}>
               {paginatedApplications.map((app) => {
                 const user = app.jobseeker || {};
                 const profile = user.jobSeekerProfile || {};
@@ -2359,7 +2359,7 @@ const Applicants = () => {
             </div>
 
             {totalItems >= 10 ? (
-              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Applicants pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" />
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Applicants pagination" className="!min-h-[50px] !py-2" />
             ) : null}
           </>
         ) : (

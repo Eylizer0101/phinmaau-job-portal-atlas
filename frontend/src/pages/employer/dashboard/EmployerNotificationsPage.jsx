@@ -455,7 +455,7 @@ const EmployerNotificationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className={`divide-y divide-gray-100 overscroll-auto ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto md:max-h-[812px]'}`}>
               {paginatedNotifications.map((notification) => (
                 <div
                   key={notification._id}
@@ -573,7 +573,7 @@ const EmployerNotificationsPage = () => {
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
             ariaLabel="Notification pagination"
-            className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]"
+            className="!min-h-[50px] !py-2"
           />
         ) : null}
       </div>

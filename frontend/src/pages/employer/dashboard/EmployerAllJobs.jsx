@@ -130,7 +130,7 @@ const EmployerAllJobs = () => {
             {loading ? <p className="py-16 text-center text-black/60">Loading job posts...</p> : error ? <p className="py-16 text-center text-red-600">{error}</p> : visibleJobs.length === 0 ? (
               <div className="mt-7 rounded-2xl border border-dashed border-[#d8e2ee] px-6 py-14 text-center text-black/55">{jobs.length ? 'No job posts match your search.' : 'No active job posts yet.'}</div>
             ) : (
-              <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className={`mt-7 grid grid-cols-1 gap-6 overscroll-auto md:grid-cols-2 xl:grid-cols-3 ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[506px] overflow-y-auto pr-1 md:max-h-[812px]'}`}>
                 {visibleJobs.map((job) => (
                   <article key={job._id} className="flex min-h-[315px] flex-col rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)]">
                     <div className="flex items-start gap-4">
@@ -168,7 +168,7 @@ const EmployerAllJobs = () => {
               </div>
             )}
 
-            {!loading && !error && filteredJobs.length >= 10 ? <Pagination currentPage={safePage} totalItems={filteredJobs.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} ariaLabel="Employer job posts pagination" className="sticky bottom-0 z-30 !min-h-[50px] !py-2 shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.45)]" /> : null}
+            {!loading && !error && filteredJobs.length >= 10 ? <Pagination currentPage={safePage} totalItems={filteredJobs.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} ariaLabel="Employer job posts pagination" className="!min-h-[50px] !py-2" /> : null}
           </section>
         </div>
       </main>
