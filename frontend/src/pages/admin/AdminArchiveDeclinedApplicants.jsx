@@ -341,50 +341,68 @@ const AdminArchiveDeclinedApplicants = () => {
   };
 
   const viewProfile = async (applicant) => {
-    const directUserId = getDirectJobseekerId(applicant);
-
-    if (directUserId) {
-      navigate(`/admin/users/${directUserId}?tab=resume`, {
-        state: {
-          fromArchive: true,
-          archiveBackPath: location.pathname,
-        },
-      });
-      return;
-    }
-
     const applicantEmail = String(applicant?.email || "").trim().toLowerCase();
-    if (!applicantEmail) return;
-
+    const applicationId = String(
+      applicant?.applicationId || applicant?._id || ""
+    ).trim();
     const loadingKey = String(
-      applicant?.applicationId || applicant?._id || applicantEmail
+      applicationId || getDirectJobseekerId(applicant) || applicantEmail || "profile"
     );
 
     try {
       setOpeningProfileId(loadingKey);
 
-      const response = await api.get("/admin/users", {
-        params: {
-          role: "jobseeker",
-          search: applicantEmail,
-          page: 1,
-          limit: 100,
-        },
-      });
+      let resolvedUserId = getDirectJobseekerId(applicant);
 
-      const users = Array.isArray(response.data?.users)
-        ? response.data.users
-        : [];
+      if (!resolvedUserId && applicationId) {
+        try {
+          const applicationResponse = await api.get(`/applications/${applicationId}`);
+          const applicationData =
+            applicationResponse.data?.application ||
+            applicationResponse.data?.data ||
+            applicationResponse.data ||
+            {};
 
-      const matchedUser =
-        users.find(
-          (user) =>
-            String(user?.email || "").trim().toLowerCase() === applicantEmail
-        ) || users[0];
+          resolvedUserId = String(
+            applicationData?.jobseeker?._id ||
+              applicationData?.jobseeker?.id ||
+              applicationData?.jobseeker ||
+              applicationData?.jobseekerId ||
+              applicationData?.jobSeekerId ||
+              ""
+          ).trim();
+        } catch (applicationError) {
+          console.warn(
+            "Unable to resolve Jobseeker from archived application:",
+            applicationError
+          );
+        }
+      }
 
-      const resolvedUserId = String(
-        matchedUser?._id || matchedUser?.id || ""
-      ).trim();
+      if (!resolvedUserId && applicantEmail) {
+        const response = await api.get("/admin/users", {
+          params: {
+            role: "jobseeker",
+            search: applicantEmail,
+            page: 1,
+            limit: 100,
+          },
+        });
+
+        const users = Array.isArray(response.data?.users)
+          ? response.data.users
+          : [];
+
+        const matchedUser =
+          users.find(
+            (user) =>
+              String(user?.email || "").trim().toLowerCase() === applicantEmail
+          ) || users[0];
+
+        resolvedUserId = String(
+          matchedUser?._id || matchedUser?.id || ""
+        ).trim();
+      }
 
       if (!resolvedUserId) {
         window.alert("Unable to find this Jobseeker profile.");
@@ -534,15 +552,15 @@ const AdminArchiveDeclinedApplicants = () => {
                         onClick={() => viewProfile(applicant)}
                         disabled={
                           openingProfileId ===
-                            String(
-                              applicant.applicationId ||
-                                applicant._id ||
-                                applicant.email ||
-                                ""
-                            ) ||
-                          (!getDirectJobseekerId(applicant) && !applicant.email)
+                          String(
+                            applicant.applicationId ||
+                              applicant._id ||
+                              getDirectJobseekerId(applicant) ||
+                              applicant.email ||
+                              "profile"
+                          )
                         }
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff] disabled:cursor-wait disabled:opacity-60"
                         aria-label={`View ${applicant.applicantName || "applicant"} profile`}
                         title="View profile"
                       >
