@@ -1015,7 +1015,7 @@ const JobseekerVerification = () => {
 
         <Card className="flex min-h-0 flex-1 flex-col overflow-hidden" padding={false}>
           <div className="flex min-h-0 flex-1 flex-col border-t border-gray-100">
-            {loading ? null : visibleRows.length === 0 ? (
+            {!loading && visibleRows.length === 0 ? (
               <div className="py-14 text-center">
                 <h3 className="text-lg font-semibold text-gray-900">No jobseekers found</h3>
                 <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>
@@ -1043,7 +1043,11 @@ const JobseekerVerification = () => {
                     </thead>
 
                     <tbody className="divide-y divide-gray-100 bg-white">
-                      {visibleRows.map((item) => {
+                      {loading && visibleRows.length === 0 ? (
+                        <tr aria-hidden="true">
+                          <td colSpan={archiveMode ? 7 : 6} className="h-56 bg-white" />
+                        </tr>
+                      ) : visibleRows.map((item) => {
                         const fullName = item.fullName || "No Name";
                         const email = item.email || "—";
                         const campus = item.campus || item.jobSeekerProfile?.campus || "—";

@@ -887,7 +887,7 @@ const AdminApplications = () => {
         </div>
 
         <div className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-          {loading ? null : error ? (
+          {error ? (
             <div className="p-6 text-sm font-semibold text-red-600">{error}</div>
           ) : (
             <>
@@ -926,7 +926,11 @@ const AdminApplications = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {paginatedApplications.length ? paginatedApplications.map((app) => {
+                    {loading && paginatedApplications.length === 0 ? (
+                      <tr aria-hidden="true">
+                        <td colSpan="7" className="h-56 bg-white" />
+                      </tr>
+                    ) : paginatedApplications.length ? paginatedApplications.map((app) => {
                       const applicantName = getName(app.jobseeker);
                       const campus = getCampus(app);
                       const course = getCourse(app);

@@ -1197,7 +1197,7 @@ const EmployerVerification = () => {
 
         <Card className="overflow-hidden" padding={false}>
           <div>
-            {loading ? null : visibleRows.length === 0 ? (
+            {!loading && visibleRows.length === 0 ? (
               <div className="py-14 text-center">
                 <h3 className="text-lg font-semibold text-gray-900">No employers found</h3>
                 <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>
@@ -1225,7 +1225,11 @@ const EmployerVerification = () => {
                     </thead>
 
                     <tbody className="divide-y divide-gray-100 bg-white">
-                      {desktopRows.map((item) => {
+                      {loading && desktopRows.length === 0 ? (
+                        <tr aria-hidden="true">
+                          <td colSpan={archiveMode ? 7 : 6} className="h-56 bg-white" />
+                        </tr>
+                      ) : desktopRows.map((item) => {
                         const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
                         const contactName =
                           item.fullName ||

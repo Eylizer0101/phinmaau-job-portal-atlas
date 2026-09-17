@@ -676,14 +676,6 @@ const AdminEmployerPostingHistory = () => {
     ? filteredJobs
     : filteredJobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />
-      </AdminLayout>
-    );
-  }
-
   return (
     <AdminLayout>
       <div className="min-h-screen bg-[#f7f9fc] py-8">
@@ -820,7 +812,11 @@ const AdminEmployerPostingHistory = () => {
                     </thead>
 
                     <tbody className="divide-y divide-[#e5e7eb]">
-                      {paginatedJobs.length ? (
+                      {loading && paginatedJobs.length === 0 ? (
+                        <tr aria-hidden="true">
+                          <td colSpan={7} className="h-56 bg-white" />
+                        </tr>
+                      ) : paginatedJobs.length ? (
                         paginatedJobs.map((job) => {
                           const jobStatus = getJobStatus(job);
 
