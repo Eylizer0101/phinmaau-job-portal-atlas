@@ -900,14 +900,6 @@ const JobseekerMessages = () => {
                       </button>
                     ))}
 
-                    <button
-                      type="button"
-                      onClick={() => navigate('/jobseeker/community')}
-                      className="rounded-full px-3 py-2 text-sm font-semibold text-black/65 transition hover:bg-[#f7faff]"
-                    >
-                      Community
-                    </button>
-
                   </div>
 
                 </div>
