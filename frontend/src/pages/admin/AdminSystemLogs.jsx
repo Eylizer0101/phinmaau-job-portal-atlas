@@ -589,7 +589,7 @@ const AdminSystemLogs = () => {
           <span>Date & Time</span><span>Performed By</span><span>Role</span><span>Action</span>
         </div>
         <div className={pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-auto"}> 
-        {loading ? null
+        {loading && logs.length === 0 ? <div className="min-h-[300px] bg-white" aria-hidden="true" />
           : error ? <div className="p-16 text-center"><p className="font-bold text-rose-600">{error}</p><button type="button" onClick={loadLogs} className="mt-4 rounded-xl bg-[#212C61] px-4 py-2 text-sm font-bold text-white">Retry</button></div>
           : logs.length === 0 ? <div className="flex min-h-[300px] flex-col items-center justify-center text-center"><Icon name="activity" className="h-8 w-8 text-[#212C61]" /><h2 className="mt-3 font-bold text-slate-900">No activity logs found</h2><p className="mt-1 text-sm text-slate-500">Jobseeker and Employer activities will appear here.</p></div>
           : <div className="divide-y divide-slate-100">{logs.map((log) => {
