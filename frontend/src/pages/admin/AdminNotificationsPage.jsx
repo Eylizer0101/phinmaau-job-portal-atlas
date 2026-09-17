@@ -146,6 +146,20 @@ const AdminNotificationsPage = () => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
 
+  const handleMarkAsRead = async (notificationId) => {
+    if (!notificationId) return;
+
+    try {
+      await api.put(`/notifications/${notificationId}/read`);
+      setNotifications((items) =>
+        items.map((item) => (item._id === notificationId ? { ...item, isRead: true } : item))
+      );
+      setUnreadCount((count) => Math.max(count - 1, 0));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
   const handleMarkAllAsRead = async () => {
     try {
       setActionLoading(true);
@@ -321,35 +335,54 @@ const AdminNotificationsPage = () => {
                     !notification.isRead ? "bg-blue-50/70" : "bg-white"
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleOpenNotification(notification)}
-                    className="flex min-w-0 flex-1 items-start gap-4 text-left"
-                  >
-                    <span className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                      !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
-                    }`}>
-                      <UserRound size={22} />
-                    </span>
+                  <span className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                    !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
+                  }`}>
+                    <UserRound size={22} />
+                  </span>
 
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold leading-5 text-gray-900">
-                        {notification.title}
-                      </span>
-                      <span className="mt-1 block break-words text-sm leading-5 text-gray-700">
-                        {notification.message}
-                      </span>
-                    </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold leading-5 text-gray-900">
+                          {notification.title}
+                        </p>
+                        <p className="mt-1 break-words text-sm leading-5 text-gray-700">
+                          {notification.message}
+                        </p>
+                      </div>
 
-                    <span className="ml-4 flex shrink-0 items-center gap-3 pt-1">
-                      <span className="whitespace-nowrap text-xs font-medium text-gray-500">
-                        {formatNotificationTime(notification.createdAt)}
-                      </span>
+                      <div className="ml-4 flex shrink-0 items-center gap-3 pt-1">
+                        <span className="whitespace-nowrap text-xs font-medium text-gray-500">
+                          {formatNotificationTime(notification.createdAt)}
+                        </span>
+                        {!notification.isRead ? (
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#2e66a6]" aria-label="Unread" />
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenNotification(notification)}
+                        className="text-sm font-semibold text-[#2e66a6] transition hover:text-[#1f4a7a] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                      >
+                        View Details →
+                      </button>
+
                       {!notification.isRead ? (
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#2e66a6]" aria-label="Unread" />
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsRead(notification._id)}
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                        >
+                          <Check size={16} />
+                          Mark as read
+                        </button>
                       ) : null}
-                    </span>
-                  </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
