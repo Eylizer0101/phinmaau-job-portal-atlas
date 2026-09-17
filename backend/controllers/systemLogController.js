@@ -130,10 +130,28 @@ const getSort = (sortValue) => {
   return { createdAt: -1, _id: -1 };
 };
 
+const getActorImage = (log = {}) => {
+  const actor = log.actor && typeof log.actor === 'object' ? log.actor : null;
+  if (!actor) return '';
+
+  const role = String(log.actorRole || actor.role || '').toLowerCase();
+
+  if (role === 'employer') {
+    return actor.employerProfile?.companyLogo || actor.profileImage || '';
+  }
+
+  if (role === 'jobseeker') {
+    return actor.profileImage || '';
+  }
+
+  return actor.profileImage || '';
+};
+
 const normalizeLog = (log = {}) => ({
   id: String(log._id || ''),
   requestId: log.requestId || '',
-  actor: log.actor || null,
+  actor: log.actor?._id || log.actor || null,
+  actorImage: getActorImage(log),
   actorName: log.actorName || 'Unknown user',
   actorEmail: log.actorEmail || '',
   actorRole: log.actorRole || 'unknown',
@@ -169,7 +187,12 @@ exports.getSystemLogs = async (req, res) => {
     const query = buildQuery(req.query);
     const sort = getSort(req.query.sort);
 
-    let logsQuery = SystemLog.find(query).sort(sort);
+    let logsQuery = SystemLog.find(query)
+      .populate({
+        path: 'actor',
+        select: 'role profileImage employerProfile.companyLogo',
+      })
+      .sort(sort);
     if (!showAll) logsQuery = logsQuery.skip(skip).limit(limit);
 
     const [logs, total] = await Promise.all([
@@ -270,7 +293,12 @@ exports.getSystemLogById = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid system log ID.' });
     }
 
-    const log = await SystemLog.findById(req.params.id).lean();
+    const log = await SystemLog.findById(req.params.id)
+      .populate({
+        path: 'actor',
+        select: 'role profileImage employerProfile.companyLogo',
+      })
+      .lean();
     if (!log) {
       return res.status(404).json({ success: false, message: 'System log not found.' });
     }
