@@ -2342,7 +2342,7 @@ const CompanyViewDetails = () => {
 
         {activeTab === "reviews" && (
           <div className={`${UI.card} ${UI.pad} mt-6`}>
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[430px_440px] xl:items-start xl:justify-start">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[430px_440px_minmax(0,1fr)] xl:items-start xl:justify-start">
               <div>
                 <h2 className="text-[24px] font-bold text-black">
                   Application Process at {company.companyName || "Company"}
@@ -2383,28 +2383,28 @@ const CompanyViewDetails = () => {
                   </div>
                 </div>
               </div>
-            </div>
 
-            {reviewCount > 6 ? (
-              <div className="mt-5 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/jobseeker/company-details/${id}/reviews`)}
-                  className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
-                >
-                  See all reviews
-                  <svg
-                            className="w-[18px] h-[18px] shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg>
-                </button>
-              </div>
-            ) : null}
+              {reviewCount > 6 ? (
+                <div className="flex justify-start xl:h-full xl:items-end xl:justify-end xl:pb-1">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/jobseeker/company-details/${id}/reviews`)}
+                    className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
+                  >
+                    See all reviews
+                    <svg
+                      className="w-[18px] h-[18px] shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              ) : null}
+            </div>
 
             <div ref={reviewsListRef} className="mt-6 space-y-5 scroll-mt-24">
               {reviews.length === 0 ? (
