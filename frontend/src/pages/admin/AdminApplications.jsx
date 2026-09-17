@@ -894,13 +894,13 @@ const AdminApplications = () => {
               <div className={cn("max-w-full overflow-x-auto overscroll-auto lg:overflow-x-hidden", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
                 <table className="w-full min-w-[900px] table-fixed divide-y divide-slate-200 text-left lg:min-w-0">
                   <colgroup>
-                    <col className="w-[27%]" />
+                    <col className="w-[26%]" />
                     <col className="w-[11%]" />
                     <col className="w-[15%]" />
                     <col className="w-[16%]" />
-                    <col className="w-[16%]" />
+                    <col className="w-[15%]" />
                     <col className="w-[9%]" />
-                    <col className="w-[6%]" />
+                    <col className="w-[8%]" />
                   </colgroup>
                   <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                     <tr>
@@ -916,8 +916,8 @@ const AdminApplications = () => {
                         <th
                           key={head}
                           className={cn(
-                            'whitespace-nowrap px-4 py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600',
-                            head === 'Actions' ? 'text-center' : ''
+                            'whitespace-nowrap py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600',
+                            head === 'Actions' ? 'px-2 text-center' : 'px-4'
                           )}
                         >
                           {head}
@@ -1001,7 +1001,7 @@ const AdminApplications = () => {
                             </span>
                           </td>
 
-                          <td className="px-3 py-4 text-center">
+                          <td className="px-2 py-4 text-center">
                             <button
                               onClick={() => navigate(`/admin/applications/${app._id}`)}
                               type="button"
