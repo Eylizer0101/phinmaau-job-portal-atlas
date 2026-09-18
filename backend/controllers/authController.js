@@ -71,6 +71,18 @@ const findExistingUserByEmail = (email) => {
     ],
   }).collation({ locale: 'en', strength: 2 });
 };
+const findExistingUserByContactNumber = (contactNumber) => {
+  const cleanContactNumber = String(contactNumber || '').trim();
+  if (!cleanContactNumber) return Promise.resolve(null);
+
+  return User.findOne({
+    $or: [
+      { registrationContactNumber: cleanContactNumber },
+      { 'jobSeekerProfile.phoneNumber': cleanContactNumber },
+      { 'employerProfile.mobileNumber': cleanContactNumber },
+    ],
+  });
+};
 const isDuplicateKeyError = (error) => Number(error?.code) === 11000;
 const isApprovedJobseekerAccount = (user) => {
   if (!user || user.role !== 'jobseeker') return false;
@@ -177,6 +189,7 @@ const LOGIN_LOCK_MINUTES = 2;
 const INVALID_LOGIN_MESSAGE = 'The email/username or password you entered is incorrect.';
 const REGISTRATION_OTP_EXPIRES_MINUTES = 10;
 const REGISTRATION_TOKEN_EXPIRES_MINUTES = 15;
+const REGISTRATION_OTP_RESEND_COOLDOWN_SECONDS = 120;
 
 const getRegistrationRole = (value) => {
   const role = String(value || '').trim().toLowerCase();
@@ -1000,6 +1013,14 @@ exports.register = async (req, res) => {
       });
     }
 
+    const existingContactNumber = await findExistingUserByContactNumber(cleanPhoneNumber);
+    if (existingContactNumber) {
+      return res.status(409).json({
+        code: 'CONTACT_NUMBER_ALREADY_REGISTERED',
+        message: 'Contact Number is already registered.',
+      });
+    }
+
     const claimedVerification = await PendingEmailVerification.findOneAndUpdate(
       {
         _id: req.registrationVerification.id,
@@ -1060,6 +1081,7 @@ exports.register = async (req, res) => {
     const userData = {
       username: usernameUnique,
       email: emailLower,
+      registrationContactNumber: cleanPhoneNumber,
       password: hashedPassword,
       role: 'jobseeker',
       status: 'pending',
@@ -1164,6 +1186,12 @@ exports.register = async (req, res) => {
     await releasePendingVerificationClaim(claimedPendingVerificationId);
     console.error('Registration error:', error);
     if (isDuplicateKeyError(error)) {
+      if (error?.keyPattern?.registrationContactNumber || error?.keyValue?.registrationContactNumber) {
+        return res.status(409).json({
+          code: 'CONTACT_NUMBER_ALREADY_REGISTERED',
+          message: 'Contact Number is already registered.',
+        });
+      }
       return res.status(409).json({
         code: 'EMAIL_ALREADY_REGISTERED',
         message: 'This email address is already registered. Please sign in or contact support instead.',
@@ -1278,6 +1306,15 @@ exports.registerEmployer = async (req, res) => {
       });
     }
 
+
+    const existingContactNumber = await findExistingUserByContactNumber(cleanMobileNumber);
+    if (existingContactNumber) {
+      return res.status(409).json({
+        code: 'CONTACT_NUMBER_ALREADY_REGISTERED',
+        message: 'Contact Number is already registered.',
+      });
+    }
+
     const claimedVerification = await PendingEmailVerification.findOneAndUpdate(
       {
         _id: req.registrationVerification.id,
@@ -1327,6 +1364,7 @@ exports.registerEmployer = async (req, res) => {
       role: 'employer',
 
       email: emailLower,
+      registrationContactNumber: cleanMobileNumber,
       password: hashedPassword,
 
       firstName: cleanFirstName,
@@ -1422,6 +1460,12 @@ exports.registerEmployer = async (req, res) => {
     await releasePendingVerificationClaim(claimedPendingVerificationId);
     console.error('Employer registration error:', error);
     if (isDuplicateKeyError(error)) {
+      if (error?.keyPattern?.registrationContactNumber || error?.keyValue?.registrationContactNumber) {
+        return res.status(409).json({
+          code: 'CONTACT_NUMBER_ALREADY_REGISTERED',
+          message: 'Contact Number is already registered.',
+        });
+      }
       return res.status(409).json({
         code: 'EMAIL_ALREADY_REGISTERED',
         message: 'This email address is already registered. Please sign in or contact support instead.',
@@ -1441,6 +1485,7 @@ exports.checkRegistrationEmail = async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
     const role = getRegistrationRole(req.body?.role);
+    const contactNumber = String(req.body?.contactNumber || '').trim();
 
     if (!email || !role) {
       return res.status(400).json({ message: 'A valid email and registration role are required.' });
@@ -1454,6 +1499,12 @@ exports.checkRegistrationEmail = async (req, res) => {
     if (role === 'employer' && !isValidBusinessEmail(email)) {
       return res.status(400).json({ message: 'Please enter a valid business email address.' });
     }
+    if (contactNumber && !/^09\d{9}$/.test(contactNumber)) {
+      return res.status(400).json({
+        code: 'INVALID_CONTACT_NUMBER',
+        message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.',
+      });
+    }
 
     const existingUser = await findExistingUserByEmail(email);
     if (existingUser) {
@@ -1463,9 +1514,19 @@ exports.checkRegistrationEmail = async (req, res) => {
       });
     }
 
+    if (contactNumber) {
+      const existingContactNumber = await findExistingUserByContactNumber(contactNumber);
+      if (existingContactNumber) {
+        return res.status(409).json({
+          code: 'CONTACT_NUMBER_ALREADY_REGISTERED',
+          message: 'Contact Number is already registered.',
+        });
+      }
+    }
+
     return res.status(200).json({
       available: true,
-      message: 'Email address is available.',
+      message: 'Email address and contact number are available.',
     });
   } catch (error) {
     console.error('Check registration email error:', error);
@@ -1588,7 +1649,38 @@ exports.verifyRegistrationEmail = async (req, res) => {
 };
 
 exports.resendRegistrationEmailOtp = async (req, res) => {
-  return exports.requestRegistrationEmailOtp(req, res);
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const role = getRegistrationRole(req.body?.role);
+
+    if (!email || !role) {
+      return res.status(400).json({ message: 'A valid email and registration role are required.' });
+    }
+
+    const pendingVerification = await PendingEmailVerification.findOne({ email, role });
+    if (!pendingVerification) {
+      return res.status(400).json({ message: 'Please request a verification code first.' });
+    }
+
+    const requestedAt = pendingVerification.otpRequestedAt
+      ? new Date(pendingVerification.otpRequestedAt).getTime()
+      : 0;
+    const cooldownEndsAt = requestedAt + REGISTRATION_OTP_RESEND_COOLDOWN_SECONDS * 1000;
+    const retryAfterSeconds = Math.max(0, Math.ceil((cooldownEndsAt - Date.now()) / 1000));
+
+    if (retryAfterSeconds > 0) {
+      return res.status(429).json({
+        code: 'OTP_RESEND_COOLDOWN',
+        message: `Please wait ${retryAfterSeconds} seconds before requesting another code.`,
+        retryAfterSeconds,
+      });
+    }
+
+    return exports.requestRegistrationEmailOtp(req, res);
+  } catch (error) {
+    console.error('Resend registration email OTP error:', error);
+    return res.status(500).json({ message: 'Unable to send a new verification code right now.' });
+  }
 };
 
 // ---------------------------

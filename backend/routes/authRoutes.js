@@ -76,10 +76,14 @@ router.post(
 
 router.post('/employer/login', loginLimiter, authController.loginEmployer);
 
-router.post('/check-registration-email', passwordRecoveryLimiter, authController.checkRegistrationEmail);
-router.post('/request-registration-email-otp', passwordRecoveryLimiter, authController.requestRegistrationEmailOtp);
-router.post('/verify-registration-email', passwordRecoveryLimiter, authController.verifyRegistrationEmail);
-router.post('/resend-registration-email-otp', passwordRecoveryLimiter, authController.resendRegistrationEmailOtp);
+// Registration validation must not share the password-recovery limiter. In
+// particular, repeatedly checking an already registered email should continue
+// returning the field-specific registration message instead of a password
+// recovery error.
+router.post('/check-registration-email', authController.checkRegistrationEmail);
+router.post('/request-registration-email-otp', registrationLimiter, authController.requestRegistrationEmailOtp);
+router.post('/verify-registration-email', registrationLimiter, authController.verifyRegistrationEmail);
+router.post('/resend-registration-email-otp', registrationLimiter, authController.resendRegistrationEmailOtp);
 
 // -------------------------------
 // FORGOT / RESET PASSWORD

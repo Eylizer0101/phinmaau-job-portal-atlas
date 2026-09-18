@@ -414,6 +414,17 @@ const userSchema = new mongoose.Schema(
       maxlength: 100,
     },
 
+    // Canonical registration contact number. The unique sparse index protects
+    // new Jobseeker and Employer registrations from concurrent duplicate
+    // submissions while the role-specific profile fields remain unchanged.
+    registrationContactNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      match: [/^09\d{9}$/, 'Contact Number must be an 11-digit Philippine mobile number starting with 09.'],
+    },
+
     password: { type: String, required: true },
 
     role: {

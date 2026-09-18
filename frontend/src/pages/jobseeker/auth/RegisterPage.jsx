@@ -1,5 +1,5 @@
 // src/pages/jobseeker/auth/RegisterPage.jsx
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -87,6 +87,15 @@ const RegisterPage = () => {
   const [emailOtp, setEmailOtp] = useState('');
   const [emailOtpError, setEmailOtpError] = useState('');
   const [emailOtpMessage, setEmailOtpMessage] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setResendCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
 
   const [formData, setFormData] = useState({
     // Step 1: Basic Information
@@ -437,6 +446,7 @@ const RegisterPage = () => {
       setEmailOtp('');
       setEmailOtpError('');
       setEmailOtpMessage(response.data?.message || 'We sent a 6-digit verification code to your Gmail address.');
+      setResendCooldown(120);
       setShowEmailVerificationModal(true);
     } catch (err) {
       setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -472,6 +482,7 @@ const RegisterPage = () => {
   };
 
   const resendRegistrationEmailOtp = async () => {
+    if (loading || resendCooldown > 0) return;
     setLoading(true);
     setEmailOtpError('');
     try {
@@ -481,7 +492,10 @@ const RegisterPage = () => {
       });
       setEmailOtp('');
       setEmailOtpMessage(response.data?.message || 'A new verification code has been sent.');
+      setResendCooldown(120);
     } catch (err) {
+      const retryAfterSeconds = Number(err.response?.data?.retryAfterSeconds || 0);
+      if (retryAfterSeconds > 0) setResendCooldown(retryAfterSeconds);
       setEmailOtpError(err.response?.data?.message || 'Unable to send a new code right now.');
     } finally {
       setLoading(false);
@@ -1156,10 +1170,20 @@ const RegisterPage = () => {
       await axios.post(CHECK_EMAIL_API_URL, {
         email,
         role: 'jobseeker',
+        contactNumber: String(formData.phoneNumber || '').trim(),
       });
       return true;
     } catch (err) {
       if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_ALREADY_REGISTERED') {
+        if (err.response?.data?.code === 'CONTACT_NUMBER_ALREADY_REGISTERED') {
+          setFormErrors((prev) => ({
+            ...prev,
+            phoneNumber: 'Contact Number is already registered.',
+          }));
+          setServerError('');
+          document.getElementById('phoneNumber')?.focus?.();
+          return false;
+        }
         setFormErrors((prev) => ({
           ...prev,
           email: 'Email address is already registered.',
@@ -1603,8 +1627,8 @@ If you don’t receive a confirmation email within 48 hours or have any question
             <button type="button" onClick={verifyRegistrationEmail} disabled={loading} className="mt-5 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">
               {loading ? 'Verifying...' : 'Verify Email'}
             </button>
-            <button type="button" onClick={resendRegistrationEmailOtp} disabled={loading} className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:opacity-50">
-              Resend code
+            <button type="button" onClick={resendRegistrationEmailOtp} disabled={loading || resendCooldown > 0} className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-50">
+              {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
             </button>
           </div>
         </div>

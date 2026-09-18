@@ -1,5 +1,5 @@
 // src/pages/employer/auth/EmployerRegisterPage.jsx
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -135,6 +135,15 @@ const EmployerRegisterPage = () => {
   const [emailOtp, setEmailOtp] = useState('');
   const [emailOtpError, setEmailOtpError] = useState('');
   const [emailOtpMessage, setEmailOtpMessage] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setResendCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
 
   const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
@@ -572,6 +581,7 @@ const EmployerRegisterPage = () => {
       setEmailOtp('');
       setEmailOtpError('');
       setEmailOtpMessage(response.data?.message || 'We sent a 6-digit verification code to your business email.');
+      setResendCooldown(120);
       setShowEmailVerificationModal(true);
     } catch (err) {
       setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -607,6 +617,7 @@ const EmployerRegisterPage = () => {
   };
 
   const resendRegistrationEmailOtp = async () => {
+    if (loading || resendCooldown > 0) return;
     setLoading(true);
     setEmailOtpError('');
     try {
@@ -616,7 +627,10 @@ const EmployerRegisterPage = () => {
       });
       setEmailOtp('');
       setEmailOtpMessage(response.data?.message || 'A new verification code has been sent.');
+      setResendCooldown(120);
     } catch (err) {
+      const retryAfterSeconds = Number(err.response?.data?.retryAfterSeconds || 0);
+      if (retryAfterSeconds > 0) setResendCooldown(retryAfterSeconds);
       setEmailOtpError(err.response?.data?.message || 'Unable to send a new code right now.');
     } finally {
       setLoading(false);
@@ -862,10 +876,20 @@ const EmployerRegisterPage = () => {
       await axios.post(CHECK_EMAIL_API_URL, {
         email,
         role: 'employer',
+        contactNumber: String(formData.mobileNumber || '').trim(),
       });
       return true;
     } catch (err) {
       if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_ALREADY_REGISTERED') {
+        if (err.response?.data?.code === 'CONTACT_NUMBER_ALREADY_REGISTERED') {
+          setFieldErrors((prev) => ({
+            ...prev,
+            mobileNumber: 'Contact Number is already registered.',
+          }));
+          setServerError('');
+          focusField('mobileNumber');
+          return false;
+        }
         setFieldErrors((prev) => ({
           ...prev,
           businessEmail: 'Email address is already registered.',
@@ -1286,7 +1310,7 @@ const EmployerRegisterPage = () => {
             <input value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" className="mt-6 h-12 w-full rounded-xl border border-gray-300 text-center font-mono text-xl tracking-[0.35em] focus:border-[#2e66a6] focus:outline-none" />
             {emailOtpError && <p className="mt-2 text-center text-sm text-red-600" role="alert">{emailOtpError}</p>}
             <button type="button" onClick={verifyRegistrationEmail} disabled={loading} className="mt-5 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">{loading ? 'Verifying...' : 'Verify Email'}</button>
-            <button type="button" onClick={resendRegistrationEmailOtp} disabled={loading} className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:opacity-50">Resend code</button>
+            <button type="button" onClick={resendRegistrationEmailOtp} disabled={loading || resendCooldown > 0} className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-50">{resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}</button>
           </div>
         </div>
       )}
