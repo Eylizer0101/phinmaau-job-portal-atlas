@@ -1393,7 +1393,7 @@ const EmployerVerificationDetails = () => {
                           <button
                             type="button"
                             onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
-                            disabled={action !== null || credentialApproved}
+                            disabled={action !== null || credentialApproved || credentialOnHold}
                             className={cn(
                               "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9] disabled:cursor-not-allowed",
                               credentialApproved
