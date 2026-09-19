@@ -1492,7 +1492,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
                     <img src="/images/phinma-logo.png" alt="PHINMA AU" className="h-8 w-8 object-contain" />
                     <div>
                       <h2 className="text-base font-bold leading-tight text-gray-900 tracking-tight">AGAPAY</h2>
-                      <p className="mt-0.5 text-[11px] text-gray-400">Let's set up your profile!</p>
+                      <p className="mt-0.5 text-[13px] text-gray-400">Let's set up your profile!</p>
                     </div>
                   </div>
                   <p className="pt-1 text-xs font-medium text-gray-500">Step {currentStep} of 3</p>
