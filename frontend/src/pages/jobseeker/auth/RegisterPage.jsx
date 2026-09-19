@@ -599,7 +599,7 @@ const RegisterPage = () => {
   };
 
  const Stepper = () => (
-    <div className="mt-5 mb-6">
+    <div className="mt-4 mb-5">
       <div className="flex items-start w-full" aria-label="Registration progress">
         {steps.map((step, index) => {
           const isActive = step.id === currentStep;
@@ -607,8 +607,8 @@ const RegisterPage = () => {
           const hasError = stepHasError(step.id);
           return (
             <React.Fragment key={step.id}>
-              <div className="flex min-w-[92px] flex-col items-center text-center">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors ${
+              <div className="flex min-w-[82px] flex-col items-center text-center">
+                <div className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors ${
                   hasError
                     ? 'border-red-400 bg-red-50 text-red-600'
                     : isActive
@@ -619,12 +619,12 @@ const RegisterPage = () => {
                 }`}>
                   {isDone ? '✓' : step.id}
                 </div>
-                <span className={`mt-2 text-[11px] sm:text-xs font-semibold leading-tight ${isActive ? 'text-[#2e66a6]' : 'text-gray-500'}`}>
+                <span className={`mt-1.5 text-[10px] sm:text-[11px] font-semibold leading-tight ${isActive ? 'text-[#2e66a6]' : 'text-gray-500'}`}>
                   {step.label}
                 </span>
               </div>
               {index < steps.length - 1 && (
-                <div className={`mt-[17px] h-[2px] flex-1 ${step.id < currentStep ? 'bg-[#2e66a6]' : 'bg-gray-200'}`} aria-hidden="true" />
+                <div className={`mt-[13px] h-px flex-1 ${step.id < currentStep ? 'bg-[#2e66a6]' : 'bg-gray-200'}`} aria-hidden="true" />
               )}
             </React.Fragment>
           );
@@ -721,7 +721,7 @@ const RegisterPage = () => {
       // ✅ Step 1: Basic Information
       case 1:
         return (
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+          <div className="px-0 py-1">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className={labelBase} htmlFor="firstName">
@@ -884,7 +884,7 @@ const RegisterPage = () => {
       // ✅ Step 2: Career Profile
       case 2:
         return (
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+          <div className="px-0 py-1">
             <div className="space-y-4">
                 {/* Campus */}
                 <div className="space-y-1 md:col-span-2">
@@ -1113,7 +1113,7 @@ const RegisterPage = () => {
       // ✅ UPDATED: Step 3 with correct required/optional docs
       case 3:
         return (
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 space-y-4">
+          <div className="px-0 py-1 space-y-4">
             {/* Upload rules (Instruction Text Only) */}
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-start gap-3">
@@ -1449,9 +1449,9 @@ If you don’t receive a confirmation email within 48 hours or have any question
           </svg>
         </button>
 
-        <div className="flex flex-col lg:flex-row items-stretch justify-center gap-5 lg:gap-7">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-8">
             {/* LEFT CARD: HOW IT WORKS */}
-            <div className="relative lg:w-[44%] flex items-stretch justify-center">
+            <div className="relative lg:w-[48%] flex items-stretch justify-center">
 
 
               <div className="h-full w-full flex flex-col justify-center">
@@ -1483,10 +1483,17 @@ If you don’t receive a confirmation email within 48 hours or have any question
             </div>
 
             {/* RIGHT CARD: REGISTRATION FORM */}
-            <div className="lg:w-[56%] p-4 sm:p-6 lg:p-7 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-center">
-              <div className="mx-auto w-full max-w-2xl">
-                <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">AGAPAY</h2><p className="mt-1 text-sm text-gray-500">Let's set up your profile!</p>
+            <div className="lg:w-[52%] max-w-[620px] p-5 sm:p-6 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-center">
+              <div className="mx-auto w-full">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-2.5">
+                    <img src="/logo192.png" alt="AGAPAY" className="h-8 w-8 object-contain" />
+                    <div>
+                      <h2 className="text-base font-bold leading-tight text-gray-900 tracking-tight">AGAPAY</h2>
+                      <p className="mt-0.5 text-[11px] text-gray-400">Let's set up your profile!</p>
+                    </div>
+                  </div>
+                  <p className="pt-1 text-xs font-medium text-gray-500">Step {currentStep} of 3</p>
                 </div>
 
                 <Stepper />
@@ -1498,9 +1505,9 @@ If you don’t receive a confirmation email within 48 hours or have any question
                     {renderStepContent()}
 
                     {/* ACTIONS (Step 1-3 buttons only) */}
-                    <div className="flex items-center justify-center pt-2">
-                      <div className="flex items-center gap-3">
-                        {currentStep > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex w-full items-center justify-between gap-3">
+                        {currentStep > 1 ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -1508,18 +1515,18 @@ If you don’t receive a confirmation email within 48 hours or have any question
                               setCurrentStep((s) => Math.max(s - 1, 1));
                             }}
                             disabled={loading}
-                            className="h-11 px-8 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50
+                            className="h-10 px-6 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50
                               focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
                               disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             ← Back
                           </button>
-                        )}
+                        ) : <span aria-hidden="true" />}
 
                         <button
                           type="submit"
                           disabled={loading}
-                          className="h-11 px-8 rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#245387]
+                          className="h-10 px-7 rounded-lg text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#245387]
                             focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
                             disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -1529,7 +1536,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
                     </div>
                   </form>
 
-                  <div className="mt-7">
+                  <div className="mt-5">
                     <div className="h-px bg-gray-100 mb-4" />
                     <p className="text-center text-sm text-gray-700">
                       Already have an account?{' '}
