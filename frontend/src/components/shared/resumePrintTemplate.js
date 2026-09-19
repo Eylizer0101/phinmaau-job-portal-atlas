@@ -499,10 +499,9 @@ const resumeStyles = `
 
   .info-value {
     min-width: 0;
-    max-width: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .objective-text,
@@ -568,13 +567,6 @@ const resumeStyles = `
     text-align: right;
     font-style: italic;
     white-space: nowrap;
-  }
-
-  .three-column-rows > *,
-  .references-grid > *,
-  .dated-header > * {
-    min-width: 0;
-    max-width: 100%;
   }
 
   .resume-bullets {

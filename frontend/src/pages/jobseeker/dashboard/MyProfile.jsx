@@ -2177,14 +2177,11 @@ const FormLabel = ({ children, required = false }) => (
   </label>
 );
 
-const PlainInput = ({ value, onChange, placeholder = '', type = 'text', inputMode, maxLength }) => (
+const PlainInput = ({ value, onChange, placeholder = '' }) => (
   <input
-    type={type}
     value={value || ''}
     onChange={onChange}
     placeholder={placeholder}
-    inputMode={inputMode}
-    maxLength={maxLength}
     className="w-full h-11 px-3 border border-gray-300 rounded-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
   />
 );
@@ -2494,11 +2491,11 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Contact Number</FormLabel>
-          <PlainInput value={item.phone} onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="11-digit phone number" inputMode="numeric" maxLength={11} />
+          <PlainInput value={item.phone} onChange={(e) => change('phone', e.target.value)} placeholder="Phone number" />
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
-          <PlainInput type="email" value={item.email} onChange={(e) => change('email', e.target.value)} placeholder="Email address" />
+          <PlainInput value={item.email} onChange={(e) => change('email', e.target.value)} placeholder="Email address" />
         </div>
       </>
     );
@@ -3609,8 +3606,8 @@ const ProfileEditModal = ({
           <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" inputMode="numeric" />
           <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" inputMode="numeric" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
-          <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="Height" maxLength={10} inputMode="numeric" />
-          <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="Weight" maxLength={10} inputMode="numeric" />
+          <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" maxLength={10} />
+          <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" maxLength={10} />
           <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
           <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
           <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
@@ -3982,12 +3979,6 @@ const getProfileEntryValidationError = (sectionKey, item = {}) => {
   if (sectionKey === 'references') {
     if (!value('name') || !value('position') || !value('company') || !value('phone') || !value('email')) {
       return 'Please complete all required reference fields before saving.';
-    }
-    if (!/^\d{11}$/.test(value('phone'))) {
-      return 'Reference contact number must contain exactly 11 digits.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('email'))) {
-      return 'Please enter a valid reference email address.';
     }
   }
 
@@ -5714,17 +5705,6 @@ const MyProfile = () => {
 
       if (missingBasicFields.length) {
         setError(`Please complete the required fields before saving: ${missingBasicFields.join(', ')}.`);
-        return false;
-      }
-    }
-
-    if (sectionKey === 'personal' || sectionKey === 'career') {
-      if (activeDrafts.height && !/^\d+$/.test(String(activeDrafts.height))) {
-        setError('Height must contain numbers only.');
-        return false;
-      }
-      if (activeDrafts.weight && !/^\d+$/.test(String(activeDrafts.weight))) {
-        setError('Weight must contain numbers only.');
         return false;
       }
     }
