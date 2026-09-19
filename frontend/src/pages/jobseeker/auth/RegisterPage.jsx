@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { RegistrationGuideIcon } from '../../../components/jobseeker/JobseekerIcons';
+import { RegistrationGuideIcon } from '../../../components/shared/JobseekerIcons';
 
 // ✅ Use existing dropdown options (course dropdown)
 import { MAJOR_COURSE_OPTIONS } from '../../../constants/jobseekerEducationOptions';
