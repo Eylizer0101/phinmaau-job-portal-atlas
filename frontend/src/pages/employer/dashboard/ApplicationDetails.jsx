@@ -2732,7 +2732,7 @@ const ApplicationDetails = () => {
 
           {activeTab === 'resume' ? (
             <div className="relative max-h-[clamp(520px,calc(100vh-300px),820px)] overflow-hidden border-t border-[#d8e2ee] bg-white px-5 pb-16 pt-3 sm:px-7 lg:px-8">
-              <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
+              <article className="mx-auto w-full min-w-0 overflow-hidden bg-white font-serif text-[10px] leading-[1.22] text-black [overflow-wrap:anywhere] [&_*]:min-w-0">
                 <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 text-center">
                   <AutoFitResumeHeaderName profileImageRef={resumeProfileImageRef}>
                     {name}

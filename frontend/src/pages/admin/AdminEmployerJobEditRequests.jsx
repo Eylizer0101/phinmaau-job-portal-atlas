@@ -313,7 +313,6 @@ const AdminEmployerJobEditRequests = () => {
         <option value="pending">Pending</option>
         <option value="approved">Approved</option>
         <option value="rejected">Declined</option>
-        <option value="expired">Expired</option>
       </select>
 
       <div className="relative min-w-0">
@@ -321,9 +320,12 @@ const AdminEmployerJobEditRequests = () => {
           <option value="all">All Time</option>
           <option value="today">Today</option>
           <option value="yesterday">Yesterday</option>
+          <option value="week">This Week</option>
           <option value="sevenDays">Last 7 Days</option>
           <option value="month">This Month</option>
           <option value="lastMonth">Last Month</option>
+          <option value="year">This Year</option>
+          <option value="lastYear">Last Year</option>
           <option value="custom">Custom Range</option>
         </select>
         <CalendarDays className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#667f9f]" size={17} />

@@ -2725,7 +2725,7 @@ const CompanyProfile = () => {
                       </div>
 
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[14px] text-[#4b5563]">
-                        <span className="inline-flex items-center gap-0.5" aria-label={`${companyReviewSummary.rating.toFixed(1)} out of 5 stars`}>
+                        <span className="inline-flex items-center gap-1 text-[18px] leading-none" aria-label={`${companyReviewSummary.rating.toFixed(1)} out of 5 stars`}>
                           {[1, 2, 3, 4, 5].map((star) => (
                             <span
                               key={`company-header-star-${star}`}

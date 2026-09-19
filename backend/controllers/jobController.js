@@ -271,10 +271,10 @@ const validateJobRules = (data, requireComplete = false) => {
     if (!/^\d+$/.test(vacanciesText) || Number(vacanciesText) < 1 || Number(vacanciesText) > 50) return 'Vacancies must be a whole number from 1 to 50.';
   }
 
-  for (const [field, label] of [['description', 'Job description'], ['requirements', 'Qualifications']]) {
+  for (const [field, label, minimum] of [['description', 'Job description', 500], ['requirements', 'Qualifications', 1000]]) {
     const text = stripHtmlToText(data[field]);
     if (requireComplete && !text) return `${label} is required.`;
-    if ((requireComplete && text && text.length < 1000) || text.length > 2000) return `${label} must contain 1,000 to 2,000 text characters.`;
+    if ((requireComplete && text && text.length < minimum) || text.length > 2000) return `${label} must contain ${minimum.toLocaleString()} to 2,000 text characters.`;
   }
 
   const deadlineText = String(data.applicationDeadline || '').trim();

@@ -54,11 +54,6 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [serviceStatus, setServiceStatus] = useState({
-    loaded: false,
-    aiReady: false,
-    knowledgeReady: false,
-  });
   const [messages, setMessages] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey) || 'null');
@@ -75,43 +70,6 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
   );
 
   const isMessagesPage = location.pathname.toLowerCase().includes('/messages');
-
-  useEffect(() => {
-    let isMounted = true;
-
-    api.get('/chatbot/status')
-      .then((response) => {
-        if (!isMounted) return;
-        setServiceStatus({
-          loaded: true,
-          aiReady: Boolean(response?.data?.aiReady),
-          knowledgeReady: Boolean(response?.data?.knowledgeReady),
-        });
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        setServiceStatus({
-          loaded: true,
-          aiReady: false,
-          knowledgeReady: false,
-        });
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [normalizedRole]);
-
-  const serviceStatusText = useMemo(() => {
-    if (!serviceStatus.loaded) return 'Checking Agap-AI service...';
-    if (serviceStatus.aiReady && serviceStatus.knowledgeReady) {
-      return 'AI answers general questions and uses official AGAPAY knowledge when relevant.';
-    }
-    if (serviceStatus.aiReady) {
-      return 'AI service is active for general questions.';
-    }
-    return 'Static AGAPAY guides are available while AI service is inactive.';
-  }, [serviceStatus]);
 
   useEffect(() => {
     try {
@@ -341,11 +299,8 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
               </button>
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-3 px-1">
-              <p className="text-[11px] text-slate-400">
-                {serviceStatusText}
-              </p>
-              {messages.length > 1 && (
+            {messages.length > 1 && (
+              <div className="mt-2 flex justify-end px-1">
                 <button
                   type="button"
                   onClick={clearConversation}
@@ -353,8 +308,8 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
                 >
                   Clear chat
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </form>
         </section>
       )}

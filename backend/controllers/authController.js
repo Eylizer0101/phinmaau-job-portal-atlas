@@ -2166,6 +2166,30 @@ exports.updateProfile = async (req, res) => {
 
       const existingProfile = user.jobSeekerProfile || {};
 
+      for (const [field, label] of [['height', 'Height'], ['weight', 'Weight']]) {
+        if (!requestedProfileKeys.includes(field)) continue;
+        const value = String(updateData.jobSeekerProfile[field] || '').trim();
+        if (value && !/^\d+$/.test(value)) {
+          return res.status(400).json({ success: false, message: `${label} must contain numbers only.` });
+        }
+        updateData.jobSeekerProfile[field] = value;
+      }
+
+      if (requestedProfileKeys.includes('references') && Array.isArray(updateData.jobSeekerProfile.references)) {
+        for (const reference of updateData.jobSeekerProfile.references) {
+          const phone = String(reference?.phone || '').trim();
+          const email = String(reference?.email || '').trim();
+          if (!/^\d{11}$/.test(phone)) {
+            return res.status(400).json({ success: false, message: 'Reference contact number must contain exactly 11 digits.' });
+          }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid reference email address.' });
+          }
+          reference.phone = phone;
+          reference.email = email.toLowerCase();
+        }
+      }
+
       if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'aboutMe')) {
         const sanitizedObjective = sanitizeRichTextForStorage(updateData.jobSeekerProfile.aboutMe);
         const objectiveText = getRichTextPlainText(sanitizedObjective);

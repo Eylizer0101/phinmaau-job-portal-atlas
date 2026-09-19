@@ -558,8 +558,8 @@ const userSchema = new mongoose.Schema(
       gender: { type: String, default: '', trim: true },
       nationality: { type: String, default: '', trim: true },
       civilStatus: { type: String, default: '', trim: true },
-      height: { type: String, default: '', trim: true, maxlength: 10 },
-      weight: { type: String, default: '', trim: true, maxlength: 10 },
+      height: { type: String, default: '', trim: true, maxlength: 10, match: [/^\d*$/, 'Height must contain numbers only.'] },
+      weight: { type: String, default: '', trim: true, maxlength: 10, match: [/^\d*$/, 'Weight must contain numbers only.'] },
       preferredLanguage: { type: String, default: '', trim: true, maxlength: 50 },
 
       employmentType: { type: String, default: '', trim: true },

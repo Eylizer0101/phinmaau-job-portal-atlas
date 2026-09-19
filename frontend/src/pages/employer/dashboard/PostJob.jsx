@@ -110,7 +110,8 @@ const getRichTextPlainText = (value = '') => {
     .trim();
 };
 
-const JOB_TEXT_MIN = 1000;
+const JOB_DESCRIPTION_MIN = 500;
+const JOB_REQUIREMENTS_MIN = 1000;
 const JOB_TEXT_MAX = 2000;
 const MAX_SALARY = 999999;
 const INVALID_JOB_TITLE_WORDS = [
@@ -1402,8 +1403,8 @@ const PostJob = () => {
       String(formData.jobType || '').trim() &&
       String(formData.workMode || '').trim() &&
       Number.isInteger(Number(formData.vacancies)) && Number(formData.vacancies) >= 1 && Number(formData.vacancies) <= 50 &&
-      getRichTextPlainText(formData.description).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
-      getRichTextPlainText(formData.requirements).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
+      getRichTextPlainText(formData.description).length >= JOB_DESCRIPTION_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
+      getRichTextPlainText(formData.requirements).length >= JOB_REQUIREMENTS_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
       formData.location.trim() &&
       EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
       String(formData.educationLevel || '').trim() &&
@@ -1425,8 +1426,8 @@ const PostJob = () => {
       salaryValid
     ),
     2: Boolean(
-      getRichTextPlainText(formData.description).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
-      getRichTextPlainText(formData.requirements).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
+      getRichTextPlainText(formData.description).length >= JOB_DESCRIPTION_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
+      getRichTextPlainText(formData.requirements).length >= JOB_REQUIREMENTS_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
       EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
       String(formData.educationLevel || '').trim()
     ),
@@ -1504,8 +1505,8 @@ const PostJob = () => {
     const descriptionText = getRichTextPlainText(formData.description);
     const requirementsText = getRichTextPlainText(formData.requirements);
 
-    if ((touched.description || submitted) && descriptionText.length > 0 && descriptionText.length < JOB_TEXT_MIN) {
-      errors.description = `Job description must be at least ${JOB_TEXT_MIN.toLocaleString()} characters.`;
+    if ((touched.description || submitted) && descriptionText.length > 0 && descriptionText.length < JOB_DESCRIPTION_MIN) {
+      errors.description = `Job description must be at least ${JOB_DESCRIPTION_MIN.toLocaleString()} characters.`;
     } else if ((touched.description || submitted) && descriptionText.length > JOB_TEXT_MAX) {
       errors.description = `Job description must not exceed ${JOB_TEXT_MAX.toLocaleString()} characters.`;
     }
@@ -1513,8 +1514,8 @@ const PostJob = () => {
       errors.description = 'Job description is required.';
     }
 
-    if ((touched.requirements || submitted) && requirementsText.length > 0 && requirementsText.length < JOB_TEXT_MIN) {
-      errors.requirements = `Qualifications must be at least ${JOB_TEXT_MIN.toLocaleString()} characters.`;
+    if ((touched.requirements || submitted) && requirementsText.length > 0 && requirementsText.length < JOB_REQUIREMENTS_MIN) {
+      errors.requirements = `Qualifications must be at least ${JOB_REQUIREMENTS_MIN.toLocaleString()} characters.`;
     } else if ((touched.requirements || submitted) && requirementsText.length > JOB_TEXT_MAX) {
       errors.requirements = `Qualifications must not exceed ${JOB_TEXT_MAX.toLocaleString()} characters.`;
     }
@@ -1595,9 +1596,9 @@ const PostJob = () => {
     const descriptionText = getRichTextPlainText(formData.description);
     const requirementsText = getRichTextPlainText(formData.requirements);
     if (!descriptionText) return 'Job description is required';
-    if (descriptionText.length < JOB_TEXT_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 1,000 to 2,000 characters';
+    if (descriptionText.length < JOB_DESCRIPTION_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 500 to 2,000 characters';
     if (!requirementsText) return 'Job requirements are required';
-    if (requirementsText.length < JOB_TEXT_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 1,000 to 2,000 characters';
+    if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 1,000 to 2,000 characters';
     if (!formData.location.trim()) return 'Complete work address is required';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be from today through 6 months from today';
@@ -1929,7 +1930,7 @@ const PostJob = () => {
   const descLen = getRichTextPlainText(formData.description).length;
   const reqLen = getRichTextPlainText(formData.requirements).length;
 
-  const showDescCounterRed = (touched.description || submitted) && descLen > 0 && descLen < 80;
+  const showDescCounterRed = (touched.description || submitted) && descLen > 0 && descLen < JOB_DESCRIPTION_MIN;
   const showReqCounterRed = (touched.requirements || submitted) && reqLen > 0 && reqLen < 40;
 
   return (

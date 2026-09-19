@@ -43,8 +43,8 @@ const jobSchema = new mongoose.Schema({
         type: String,
         required: function () { return this.isPublished === true; },
         validate: {
-            validator: function (value) { const count = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length; return !this.isPublished || (count >= 1000 && count <= 2000); },
-            message: 'Job description must contain 1,000 to 2,000 text characters.'
+            validator: function (value) { const count = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length; return !this.isPublished || (count >= 500 && count <= 2000); },
+            message: 'Job description must contain 500 to 2,000 text characters.'
         }
     },
     requirements: {
