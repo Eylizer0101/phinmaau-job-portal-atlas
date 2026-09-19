@@ -1433,33 +1433,29 @@ If you don’t receive a confirmation email within 48 hours or have any question
         </div>
       )}
 
-      <div className="w-full max-w-[1340px]">
-        <div className="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 overflow-hidden">
-          <div className="flex flex-col lg:flex-row">
-            {/* LEFT BRAND PANEL */}
-            <div className="relative lg:w-[44%] p-4 pt-14 sm:p-6 sm:pt-16 lg:p-8 bg-white flex items-center justify-center">
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.history.length > 1) navigate(-1);
-                  else navigate('/');
-                }}
-                className="absolute left-4 top-4 sm:left-6 sm:top-6 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition
-    focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
-                aria-label="Go back"
-                title="Go back"
-              >
-                <svg className="w-4 h-4 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path
-                    fillRule="evenodd"
-                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
+      <div className="w-full max-w-[1340px] relative">
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) navigate(-1);
+            else navigate('/');
+          }}
+          className="absolute left-0 -top-12 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
+          aria-label="Go back"
+          title="Go back"
+        >
+          <svg className="w-4 h-4 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+
+        <div className="flex flex-col lg:flex-row items-stretch justify-center gap-5 lg:gap-7">
+            {/* LEFT CARD: HOW IT WORKS */}
+            <div className="relative lg:w-[44%] flex items-stretch justify-center">
+
 
               <div className="h-full w-full flex flex-col justify-center">
-                <div className="w-full max-w-[520px] mx-auto relative lg:mt-10">
+                <div className="w-full max-w-[520px] mx-auto relative">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
@@ -1486,13 +1482,8 @@ If you don’t receive a confirmation email within 48 hours or have any question
               </div>
             </div>
 
-            {/* CENTER DIVIDER */}
-            <div className="hidden lg:flex items-center justify-center" aria-hidden="true">
-              <div className="w-px h-[85%] bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
-            </div>
-
-            {/* RIGHT FORM PANEL */}
-            <div className="lg:w-[56%] p-4 sm:p-7 lg:p-8 bg-white flex flex-col justify-center">
+            {/* RIGHT CARD: REGISTRATION FORM */}
+            <div className="lg:w-[56%] p-4 sm:p-6 lg:p-7 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-center">
               <div className="mx-auto w-full max-w-2xl">
                 <div className="text-center">
                   <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">AGAPAY</h2><p className="mt-1 text-sm text-gray-500">Let's set up your profile!</p>
@@ -1552,7 +1543,6 @@ If you don’t receive a confirmation email within 48 hours or have any question
             </div>
             {/* end right */}
           </div>
-        </div>
       </div>
     </div>
   );
