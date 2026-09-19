@@ -136,9 +136,12 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
                   key={card.id}
                   type="button"
                   onClick={() => setRole(card.id)}
-                  className="relative min-h-[300px] overflow-hidden rounded-[18px] border-2 bg-white p-5 text-left transition focus:outline-none focus:ring-2 focus:ring-offset-2 sm:p-6"
+                  className="relative min-h-[300px] overflow-hidden rounded-[18px] border-2 p-5 text-left transition focus:outline-none focus:ring-2 focus:ring-offset-2 sm:p-6"
                   style={{
                     borderColor: selected ? BLUE.primary : "#d9e1e8",
+                    background: selected
+                      ? "linear-gradient(135deg, #eaf4ff 0%, #ffffff 48%, #dff3fb 100%)"
+                      : "linear-gradient(135deg, #ffffff 0%, #f7fbff 55%, #edf7fb 100%)",
                     "--tw-ring-color": BLUE.ring,
                   }}
                   aria-pressed={selected}
