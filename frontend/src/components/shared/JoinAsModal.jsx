@@ -72,9 +72,9 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
     return (
       <div
-        className="w-full bg-white shadow-lg border border-gray-200 sm:-mt-16"
+        className="w-full bg-white shadow-lg border border-gray-200"
         style={{
-          maxWidth: "520px",
+          maxWidth: "900px",
           borderRadius: "18px",
         }}
       >
@@ -103,40 +103,75 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
         </div>
 
         {/* body */}
-        <div className="px-7 pb-7">
-          <div className="mt-2 flex justify-center">
-            <img
-              src="/images/createacc.png"
-              alt="Create account"
-              className="h-[200px] w-auto object-contain select-none pointer-events-none"
-              draggable="false"
-            />
-          </div>
+        <div className="px-6 pb-8 sm:px-10 sm:pb-10">
+          <h2 className="mt-2 text-center text-2xl font-bold text-slate-900 sm:text-3xl">
+            How would you like to use the platform?
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-sm leading-6 text-slate-500">
+            Choose your role to get started and enjoy a personalized experience tailored to your goals.
+          </p>
 
-          <h2 className="mt-3 text-center text-xl font-semibold text-gray-900">Create Account As</h2>
-
-          <div className="mt-4">
-            <div className="relative">
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 shadow-sm
-                 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                style={{ "--tw-ring-color": BLUE.ring }}
-                aria-label="Choose role"
-              >
-                <option value="">Choose Role</option>
-                <option value="jobseeker">Jobseeker</option>
-                <option value="employer">Employer</option>
-              </select>
-            </div>
+          <div className="mt-7 grid grid-cols-1 gap-5 md:grid-cols-2">
+            {[
+              {
+                value: "jobseeker",
+                title: "Job Seeker",
+                description: "Find opportunities, apply for positions, build your profile, and connect with employers.",
+                items: ["Browse available jobs", "Submit applications", "Track applications"],
+              },
+              {
+                value: "employer",
+                title: "Employer",
+                description: "Post job opportunities, manage applicants, and find the right candidates for your company.",
+                items: ["Post job vacancies", "Review applicants", "Connect with candidates"],
+              },
+            ].map((option) => {
+              const selected = role === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setRole(option.value)}
+                  className={`relative rounded-2xl border-2 p-5 text-left transition focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    selected
+                      ? "border-[#2e66a6] bg-[#2e66a6]/[0.03] shadow-[0_10px_28px_rgba(46,102,166,0.12)]"
+                      : "border-slate-200 bg-white hover:border-[#2e66a6]/45"
+                  }`}
+                  style={{ "--tw-ring-color": BLUE.ring }}
+                  aria-pressed={selected}
+                >
+                  <span
+                    className={`absolute right-5 top-5 h-5 w-5 rounded-full border-2 ${
+                      selected ? "border-[#2e66a6] bg-[#2e66a6] shadow-[inset_0_0_0_4px_white]" : "border-slate-300 bg-white"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6]" aria-hidden="true">
+                    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-9 0h10a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2zm3 4h4" />
+                    </svg>
+                  </span>
+                  <h3 className="mt-4 text-lg font-bold text-slate-900">{option.title}</h3>
+                  <p className="mt-2 min-h-[48px] text-sm leading-6 text-slate-500">{option.description}</p>
+                  <div className="my-4 h-px bg-slate-100" />
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    {option.items.map((item) => (
+                      <li key={item} className="flex items-center gap-2">
+                        <span className="text-[#2e66a6]" aria-hidden="true">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </button>
+              );
+            })}
           </div>
 
           <button
             type="button"
             onClick={proceedFromRole}
             disabled={disabled}
-            className="mt-4 w-full h-11 rounded-xl text-sm font-semibold text-white transition
+            className="mx-auto mt-7 block h-11 w-full max-w-md rounded-xl text-sm font-semibold text-white transition
                        focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{
               backgroundColor: disabled ? "#93a6c9" : BLUE.primary,
@@ -156,12 +191,12 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
               if (!disabled) e.currentTarget.style.backgroundColor = BLUE.hover;
             }}
           >
-            Proceed
+            Continue
           </button>
 
           <p className="mt-4 text-center text-sm text-gray-700">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold underline underline-offset-2" style={{ color: BLUE.primary }}>
+            <Link to="/login" className="font-semibold" style={{ color: BLUE.primary }}>
               Sign In here
             </Link>
           </p>
@@ -348,8 +383,14 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
  
     {/* CONTENT */}
     <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-1.5rem)] items-center justify-center sm:min-h-[calc(100dvh-3rem)]">
-      {step === "role" ? <RolePage /> : <PrivacyPage />}
+      <RolePage />
     </div>
+
+    {step === "privacy" && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/45 p-4 backdrop-blur-[1px]">
+        <PrivacyPage />
+      </div>
+    )}
 
   </div>
 );

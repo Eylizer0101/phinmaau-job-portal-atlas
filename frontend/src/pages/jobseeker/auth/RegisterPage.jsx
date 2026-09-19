@@ -16,6 +16,16 @@ const ALLOWED_CREDENTIAL_MIME_TYPES = new Set([
 ]);
 const MAX_CREDENTIAL_FILE_SIZE = 5 * 1024 * 1024;
 const INVALID_CREDENTIAL_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
+const REGISTRATION_DRAFT_KEY = 'agapay:jobseeker:registration-draft';
+
+const getSavedRegistrationDraft = () => {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(REGISTRATION_DRAFT_KEY) || '{}');
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch {
+    return {};
+  }
+};
 
 const getCredentialSignatureType = async (file) => {
   const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
@@ -63,6 +73,7 @@ const validateCredentialFile = async (file) => {
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const savedRegistrationDraft = useMemo(getSavedRegistrationDraft, []);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/register`;
@@ -72,7 +83,10 @@ const RegisterPage = () => {
   const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
 
   // ✅ 3 steps na lang (Step 4 removed; replaced with modal confirmations)
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const savedStep = Number(savedRegistrationDraft.currentStep);
+    return [1, 2, 3].includes(savedStep) ? savedStep : 1;
+  });
   const [currentHowItWorksSlide, setCurrentHowItWorksSlide] = useState(0);
 
   const [loading, setLoading] = useState(false);
@@ -97,7 +111,7 @@ const RegisterPage = () => {
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     // Step 1: Basic Information
     firstName: '',
     middleName: '',
@@ -126,7 +140,22 @@ const RegisterPage = () => {
     philhealthFile: null,
     pagibigFile: null,
     tinFile: null,
-  });
+
+    ...Object.fromEntries(
+      Object.entries(savedRegistrationDraft.formData || {}).filter(([, value]) => typeof value === 'string')
+    ),
+  }));
+
+  useEffect(() => {
+    const persistableFormData = Object.fromEntries(
+      Object.entries(formData).filter(([, value]) => typeof value === 'string')
+    );
+
+    sessionStorage.setItem(
+      REGISTRATION_DRAFT_KEY,
+      JSON.stringify({ currentStep, formData: persistableFormData })
+    );
+  }, [currentStep, formData]);
 
   const setFieldFocus = (name, isFocused) => setFocused((p) => ({ ...p, [name]: isFocused }));
 
@@ -322,7 +351,7 @@ const RegisterPage = () => {
       if (!allowedProfileTypes.includes(formData.profileImageFile.type)) {
         errors.profileImageFile = 'Accepted formats: JPG, PNG, WEBP';
       } else if (formData.profileImageFile.size > maxProfileSize) {
-        errors.profileImageFile = 'Profile photo must be 5MB or smaller';
+        errors.profileImageFile = 'Graduation photo must be 5MB or smaller';
       }
     }
 
@@ -472,6 +501,7 @@ const RegisterPage = () => {
       const registrationVerificationToken = response.data?.registrationVerificationToken;
       if (!registrationVerificationToken) throw new Error('Missing registration verification token.');
       await submitVerifiedRegistration(registrationVerificationToken);
+      sessionStorage.removeItem(REGISTRATION_DRAFT_KEY);
       setShowEmailVerificationModal(false);
       setShowSuccessModal(true);
     } catch (err) {
@@ -1059,7 +1089,7 @@ const RegisterPage = () => {
                         <option value="On-site">On-site</option>
                         <option value="Blended">Blended</option>
                         <option value="Remote">Remote</option>
-                        <option value="Work from home">Work from home</option>
+                        <option value="Work from Home">Work from Home</option>
                       </select>
                     </div>
                     {errorText('preferredWorkMode-error', formErrors.preferredWorkMode)}
@@ -1136,8 +1166,12 @@ const RegisterPage = () => {
                       <strong>For your Resume:</strong> We highly recommend using a PDF format. It keeps your layout looking perfect on every recruiter's
                       screen!
                     </li>
-                    <li><strong>Diploma &amp; TOR:</strong> Upload clear scans or well-lit photos of the complete document.</li>
-                    <li><strong>Valid ID:</strong> Use an Alumni ID or an unexpired government-issued ID where possible.</li>
+                    <li>
+                      <strong>Diploma &amp; TOR:</strong> Upload a clear scan or well-lit photo of the complete document. If your Diploma or TOR is not yet available, you may upload proof of request or a claim document from the Registrar&apos;s Office.
+                    </li>
+                    <li>
+                      <strong>Valid ID:</strong> Upload a clear, unexpired government-issued valid ID, if available.
+                    </li>
                     <li><strong>Before You Submit:</strong> Double-check every upload to avoid verification delays.</li>
                   </ul>
                 </div>

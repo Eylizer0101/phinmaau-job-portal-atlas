@@ -457,7 +457,7 @@ const SortDropdown = ({
       {isOpen && (
         <div
           id={`${id}-menu`}
-          className="absolute left-0 top-full z-[999] mt-2 w-[280px] max-w-[92vw] bg-white border border-[#212C61]/20 rounded-xl shadow-xl p-3"
+          className="absolute right-0 top-full z-[999] mt-2 w-[240px] max-w-[calc(100vw-2rem)] bg-white border border-[#212C61]/20 rounded-xl shadow-xl p-3"
           role="dialog"
           aria-label={`${label} filter`}
         >
@@ -1103,9 +1103,8 @@ const JobOffers = () => {
 
     const hasSearchTerm = Boolean(String(debouncedSearch || '').trim());
 
-    const filtered = hasSearchTerm
-      ? (allJobs || []).filter((job) => jobMatchesSearch(job, debouncedSearch))
-      : (allJobs || [])
+    const filtered = (allJobs || [])
+          .filter((job) => jobMatchesSearch(job, debouncedSearch))
           .filter((job) => jobMatchesSelectedLocations(job, selectedLocations))
           .filter((job) =>
             selectedJobTitles.length ? selectedJobTitles.includes(String(job.title || "").replaceAll('"', "").trim()) : true
@@ -1120,7 +1119,7 @@ const JobOffers = () => {
             selectedCompanies.length ? selectedCompanies.includes(String(job.companyName || "").trim()) : true
           )
           .filter((job) =>
-            selectedWorkModes.length ? selectedWorkModes[0] === normalizeWorkModeLabel(job.workMode) : true
+            selectedWorkModes.length ? selectedWorkModes.includes(normalizeWorkModeLabel(job.workMode)) : true
           )
           .filter((job) => {
             if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
@@ -1346,7 +1345,9 @@ const JobOffers = () => {
   const filterRowClass = "flex flex-wrap items-center gap-3";
 
   const toggleWorkMode = (label) => {
-    setSelectedWorkModes((prev) => (prev[0] === label ? [] : [label]));
+    setSelectedWorkModes((prev) =>
+      prev.includes(label) ? prev.filter((item) => item !== label) : [...prev, label]
+    );
   };
 
   const isCompanyVerified = (job) => {
@@ -1354,11 +1355,11 @@ const JobOffers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       <MainNavbar />
 
       <div className="pt-24 pb-14">
-        <div className="max-w-[1500px] mx-auto px-3 lg:px-4 2xl:px-6">
+        <div className="min-w-0 max-w-[1500px] mx-auto px-3 lg:px-4 2xl:px-6">
           <div className="bg-transparent">
             <div
               ref={filterBoxRef}
