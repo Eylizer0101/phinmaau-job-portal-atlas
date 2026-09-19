@@ -1507,7 +1507,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
 
                     {/* ACTIONS (Step 1-3 buttons only) */}
                     <div className="flex items-center justify-between pt-2">
-                      <div className="flex w-full items-center justify-between gap-3">
+                      <div className={`flex w-full items-center gap-3 ${currentStep === 1 ? 'justify-center' : 'justify-between'}`}>
                         {currentStep > 1 ? (
                           <button
                             type="button"
