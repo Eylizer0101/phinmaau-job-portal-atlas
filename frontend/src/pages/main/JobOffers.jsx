@@ -5,10 +5,7 @@ import MainNavbar from "../../components/shared/MainNavbar";
 import AboutUsModal from "../../components/shared/AboutUsModal";
 import api from "../../services/api";
 import { EDUCATION_LEVELS } from "../../constants/postJobDropdownOptions";
-import {
-  PH_PROVINCES_BY_REGION,
-  PH_CITIES_BY_PROVINCE,
-} from "../../constants/phLocations";
+import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from "../../constants/phLocations";
 import { filterOpenJobListings } from "../../utils/jobVisibility";
 
 const normalizeAmount = (value) => String(value || "").replace(/[^\d]/g, "");
@@ -18,23 +15,24 @@ const formatAmountInput = (value) => {
   return digits ? Number(digits).toLocaleString("en-PH") : "";
 };
 
-const normalizeLocationPart = (value) => String(value || "").trim();
+
+const normalizeLocationPart = (value) => String(value || '').trim();
 
 const normalizeLocationKey = (value) =>
   normalizeLocationPart(value)
     .toLowerCase()
-    .replace(/\bcity of\b/g, "")
-    .replace(/\bcity\b/g, "")
-    .replace(/[^a-z0-9ñ\s-]/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/\bcity of\b/g, '')
+    .replace(/\bcity\b/g, '')
+    .replace(/[^a-z0-9ñ\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
 const PROVINCE_OPTIONS = Array.from(
-  new Set(Object.values(PH_PROVINCES_BY_REGION).flat().filter(Boolean)),
+  new Set(Object.values(PH_PROVINCES_BY_REGION).flat().filter(Boolean))
 );
 
 const CITY_OPTIONS = Array.from(
-  new Set(Object.values(PH_CITIES_BY_PROVINCE).flat().filter(Boolean)),
+  new Set(Object.values(PH_CITIES_BY_PROVINCE).flat().filter(Boolean))
 );
 
 const buildCanonicalLocationMap = (items) => {
@@ -51,17 +49,17 @@ const buildCanonicalLocationMap = (items) => {
 const PROVINCE_BY_KEY = buildCanonicalLocationMap(PROVINCE_OPTIONS);
 const CITY_BY_KEY = buildCanonicalLocationMap(CITY_OPTIONS);
 
-const findCanonicalLocation = (value, preferredType = "") => {
+const findCanonicalLocation = (value, preferredType = '') => {
   const raw = normalizeLocationPart(value);
-  if (!raw || /^\d+$/.test(raw)) return "";
+  if (!raw || /^\d+$/.test(raw)) return '';
 
   const key = normalizeLocationKey(raw);
-  if (!key) return "";
+  if (!key) return '';
 
-  if (preferredType === "city") return CITY_BY_KEY.get(key) || "";
-  if (preferredType === "province") return PROVINCE_BY_KEY.get(key) || "";
+  if (preferredType === 'city') return CITY_BY_KEY.get(key) || '';
+  if (preferredType === 'province') return PROVINCE_BY_KEY.get(key) || '';
 
-  return CITY_BY_KEY.get(key) || PROVINCE_BY_KEY.get(key) || "";
+  return CITY_BY_KEY.get(key) || PROVINCE_BY_KEY.get(key) || '';
 };
 
 const getJobLocationLabels = (job) => {
@@ -71,41 +69,32 @@ const getJobLocationLabels = (job) => {
 
   if (address) {
     const parts = address
-      .split(",")
+      .split(',')
       .map((part) => part.trim())
       .filter(Boolean)
       .reverse();
 
-    const addressProvince =
-      parts
-        .map((part) => findCanonicalLocation(part, "province"))
-        .find(Boolean) || "";
+    const addressProvince = parts
+      .map((part) => findCanonicalLocation(part, 'province'))
+      .find(Boolean) || '';
 
-    const addressCity =
-      parts
-        .map((part) => findCanonicalLocation(part, "city"))
-        .find(
-          (label) =>
-            label &&
-            normalizeLocationKey(label) !==
-              normalizeLocationKey(addressProvince),
-        ) || "";
+    const addressCity = parts
+      .map((part) => findCanonicalLocation(part, 'city'))
+      .find((label) =>
+        label && normalizeLocationKey(label) !== normalizeLocationKey(addressProvince)
+      ) || '';
 
-    const addressLabels = Array.from(
-      new Set(
-        [
-          ...parts.map((part) => normalizeLocationPart(part)).filter(Boolean),
-          addressCity,
-          addressProvince,
-        ].filter(Boolean),
-      ),
-    );
+    const addressLabels = Array.from(new Set([
+      ...parts.map((part) => normalizeLocationPart(part)).filter(Boolean),
+      addressCity,
+      addressProvince,
+    ].filter(Boolean)));
 
     if (addressLabels.length) return addressLabels;
   }
 
-  const city = findCanonicalLocation(job?.locationCity, "city");
-  const province = findCanonicalLocation(job?.locationProvince, "province");
+  const city = findCanonicalLocation(job?.locationCity, 'city');
+  const province = findCanonicalLocation(job?.locationProvince, 'province');
 
   return Array.from(new Set([city, province].filter(Boolean)));
 };
@@ -117,9 +106,7 @@ const jobMatchesSelectedLocations = (job, selectedLocations) => {
   const labels = getJobLocationLabels(job).map(normalizeLocationKey);
   return selectedLocations.some((selected) => {
     const query = normalizeLocationKey(selected);
-    return (
-      address.includes(query) || labels.some((label) => label.includes(query))
-    );
+    return address.includes(query) || labels.some((label) => label.includes(query));
   });
 };
 
@@ -133,7 +120,7 @@ const buildLocationGroups = (jobs) => {
   });
 
   const ranked = Array.from(counts.entries()).sort(
-    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
   );
 
   const topLocations = ranked
@@ -152,16 +139,11 @@ const buildLocationGroups = (jobs) => {
 
 const normalizeBoolean = (value) => {
   if (typeof value === "boolean") return value;
-  const v = String(value || "")
-    .trim()
-    .toLowerCase();
+  const v = String(value || "").trim().toLowerCase();
   return v === "true" || v === "1" || v === "yes" || v === "on";
 };
 
-const normalizeExperienceLevel = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
+const normalizeExperienceLevel = (value) => String(value || "").trim().toLowerCase();
 
 const isFreshGraduateJob = (job) => {
   return normalizeBoolean(job?.openToFreshGraduates);
@@ -178,43 +160,10 @@ const getExperienceBadgeLabel = (experienceLevel) => {
   const normalized = normalizeExperienceLevel(raw);
 
   if (normalized === "no experience required") return "No Experience";
-  if (
-    [
-      "less than 1 yr",
-      "less than 1 year",
-      "less than 1 yr exp",
-      "less than 1 year exp",
-    ].includes(normalized)
-  )
-    return "Less than 1 Yr Exp";
-  if (
-    [
-      "1 year",
-      "1 years",
-      "2 year",
-      "2 years",
-      "3 year",
-      "3 years",
-      "1-3 years",
-      "1-3 years exp",
-    ].includes(normalized)
-  )
-    return "1-3 Years Exp";
-  if (
-    [
-      "4 year",
-      "4 years",
-      "5 year",
-      "5 years",
-      "4-5 years",
-      "4-5 years exp",
-    ].includes(normalized)
-  )
-    return "4-5 Years Exp";
-  if (
-    ["6+ year", "6+ years", "6+ year exp", "6+ years exp"].includes(normalized)
-  )
-    return "6+ Years Exp";
+  if (["less than 1 yr", "less than 1 year", "less than 1 yr exp", "less than 1 year exp"].includes(normalized)) return "Less than 1 Yr Exp";
+  if (["1 year", "1 years", "2 year", "2 years", "3 year", "3 years", "1-3 years", "1-3 years exp"].includes(normalized)) return "1-3 Years Exp";
+  if (["4 year", "4 years", "5 year", "5 years", "4-5 years", "4-5 years exp"].includes(normalized)) return "4-5 Years Exp";
+  if (["6+ year", "6+ years", "6+ year exp", "6+ years exp"].includes(normalized)) return "6+ Years Exp";
 
   return raw;
 };
@@ -253,16 +202,12 @@ const CheckboxDropdown = ({
   const filterItems = (values) =>
     enableSearch
       ? (values || []).filter((item) =>
-          String(item || "")
-            .toLowerCase()
-            .includes(searchValue),
+          String(item || '').toLowerCase().includes(searchValue)
         )
       : values || [];
 
   const hasGroupedItems = topItems.length > 0 || allItems.length > 0;
-  const searchableGroupedItems = Array.from(
-    new Set([...topItems, ...allItems]),
-  );
+  const searchableGroupedItems = Array.from(new Set([...topItems, ...allItems]));
   const isSearchingGroupedItems = hasGroupedItems && Boolean(searchValue);
   const filteredSearchResults = filterItems(searchableGroupedItems);
   const filtered = filterItems(items);
@@ -294,12 +239,7 @@ const CheckboxDropdown = ({
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -320,9 +260,7 @@ const CheckboxDropdown = ({
             />
           )}
 
-          <div
-            className={`${enableSearch ? "mt-4" : ""} max-h-[280px] overflow-auto pr-1`}
-          >
+          <div className={`${enableSearch ? 'mt-4' : ''} max-h-[280px] overflow-auto pr-1`}>
             {hasGroupedItems ? (
               isSearchingGroupedItems ? (
                 filteredSearchResults.length > 0 ? (
@@ -331,26 +269,19 @@ const CheckboxDropdown = ({
                       Search Results
                     </div>
                     {filteredSearchResults.map((opt) => (
-                      <label
-                        key={`search-${opt}`}
-                        className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer"
-                      >
+                      <label key={`search-${opt}`} className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selected.includes(opt)}
                           onChange={() => toggleValue(opt)}
                           className="h-4 w-4"
                         />
-                        <span className="select-none whitespace-nowrap">
-                          {opt}
-                        </span>
+                        <span className="select-none whitespace-nowrap">{opt}</span>
                       </label>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-black/55 py-4">
-                    No location found
-                  </div>
+                  <div className="text-sm text-black/55 py-4">No location found</div>
                 )
               ) : topItems.length > 0 ? (
                 <div>
@@ -358,35 +289,25 @@ const CheckboxDropdown = ({
                     Top Locations
                   </div>
                   {topItems.map((opt) => (
-                    <label
-                      key={`top-${opt}`}
-                      className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer"
-                    >
+                    <label key={`top-${opt}`} className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selected.includes(opt)}
                         onChange={() => toggleValue(opt)}
                         className="h-4 w-4"
                       />
-                      <span className="select-none whitespace-nowrap">
-                        {opt}
-                      </span>
+                      <span className="select-none whitespace-nowrap">{opt}</span>
                     </label>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-black/55 py-4">
-                  No top locations available
-                </div>
+                <div className="text-sm text-black/55 py-4">No top locations available</div>
               )
             ) : filtered.length === 0 ? (
               <div className="text-sm text-black/55 py-4">No results</div>
             ) : (
               filtered.map((opt) => (
-                <label
-                  key={opt}
-                  className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer"
-                >
+                <label key={opt} className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selected.includes(opt)}
@@ -439,12 +360,7 @@ const SalaryDropdown = ({
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -464,9 +380,7 @@ const SalaryDropdown = ({
                 type="text"
                 inputMode="numeric"
                 value={formatAmountInput(value)}
-                onChange={(e) =>
-                  setValue(normalizeAmount(e.target.value).slice(0, 7))
-                }
+                onChange={(e) => setValue(normalizeAmount(e.target.value).slice(0, 7))}
                 placeholder="Indicate minimum salary"
                 className="w-full px-4 py-3 outline-none text-sm text-black/75 bg-white"
               />
@@ -536,12 +450,7 @@ const SortDropdown = ({
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -554,10 +463,7 @@ const SortDropdown = ({
         >
           <div className="space-y-2">
             {options.map((section) => (
-              <div
-                key={section.group}
-                className="rounded-lg border border-[#212C61]/10 overflow-hidden"
-              >
+              <div key={section.group} className="rounded-lg border border-[#212C61]/10 overflow-hidden">
                 <div className="px-3 py-2 bg-[#212C61]/5 text-xs font-bold uppercase tracking-wide text-black/55">
                   {section.group}
                 </div>
@@ -589,12 +495,7 @@ const SortDropdown = ({
                             viewBox="0 0 24 24"
                             aria-hidden="true"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M5 13l4 4L19 7"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </button>
@@ -644,154 +545,128 @@ const MainFooter = () => {
 
   return (
     <>
-      <footer className="bg-[#212C61] border-t-4 border-[#FFD000]">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-12 md:py-14">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-            <div>
-              <img
-                src="/images/agapay.png"
-                alt="AGAPAY"
-                className="h-10 w-auto brightness-0 invert"
-              />
+    <footer className="bg-[#212C61] border-t-4 border-[#FFD000]">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-12 md:py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div>
+            <img src="/images/agapay.png" alt="AGAPAY" className="h-10 w-auto brightness-0 invert" />
 
-              <h3 className="mt-6 text-[20px] md:text-[22px] font-bold text-white leading-tight max-w-[320px]">
-                Your Future Employer is Looking for Someone Exactly Like You!
-              </h3>
+            <h3 className="mt-6 text-[20px] md:text-[22px] font-bold text-white leading-tight max-w-[320px]">
+              Your Future Employer is Looking for Someone Exactly Like You!
+            </h3>
 
-              <p className="mt-4 text-white/80 text-base leading-relaxed max-w-[340px]">
-                The job market is competitive but you are prepared.
-              </p>
-
-              <div className="mt-6 space-y-3 text-white/80 text-sm md:text-[15px]">
-                <p>✉ agapay@au.phinma.edu.ph</p>
-                <p>☎ +63 (2) 8123-4567</p>
-
-                <p className="flex items-start gap-2">
-                  <svg
-                    className="w-5 h-5 text-[#FFD000] mt-0.5 flex-shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" />
-                  </svg>
-                  <span>
-                    PHINMA - Araullo University, Cabanatuan City, Nueva Ecija
-                  </span>
-                </p>
-              </div>
-
-              <div className="mt-6 flex items-center gap-4">
-                <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                  <svg
-                    className="w-4 h-4 text-[#212C61]"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.6v-2.9h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6v2h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12z" />
-                  </svg>
-                </div>
-
-                <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                  <svg
-                    className="w-4 h-4 text-[#212C61]"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8h4v12h-4V8zm7.5 0h3.6v1.6h.1c.5-.9 1.7-1.8 3.5-1.8 3.7 0 4.4 2.4 4.4 5.6V20h-4v-5.3c0-1.3 0-3-1.9-3s-2.2 1.5-2.2 2.9V20h-4V8z" />
-                  </svg>
-                </div>
-
-                <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                  <svg
-                    className="w-4 h-4 text-[#212C61]"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M24 4.6a9.8 9.8 0 0 1-2.8.8 4.9 4.9 0 0 0 2.2-2.7 9.8 9.8 0 0 1-3.1 1.2 4.9 4.9 0 0 0-8.4 4.5A13.9 13.9 0 0 1 1.7 3.1 4.9 4.9 0 0 0 3.2 9a4.8 4.8 0 0 1-2.2-.6v.1a4.9 4.9 0 0 0 3.9 4.8 4.9 4.9 0 0 1-2.2.1 4.9 4.9 0 0 0 4.6 3.4A9.9 9.9 0 0 1 0 19.5 13.9 13.9 0 0 0 7.5 22c9 0 13.9-7.5 13.9-14v-.6A9.7 9.7 0 0 0 24 4.6z" />
-                  </svg>
-                </div>
-
-                <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                  <svg
-                    className="w-4 h-4 text-[#212C61]"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8zM9.8 15.5v-7l6.2 3.5-6.2 3.5z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
-                Job Seeker
-              </h4>
-
-              <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
-                <li>Job Search</li>
-                <li>Job Offers</li>
-                <li>Job Application</li>
-                <li>Saved Jobs</li>
-                <li>Companies</li>
-                <li>Job Seeker Profile</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
-                Employers
-              </h4>
-
-              <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
-                <li>Post Job</li>
-                <li>Find Talent</li>
-                <li>Company Profile</li>
-                <li>Manage Talent</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
-                About Agapay
-              </h4>
-
-              <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setShowAboutUsModal(true)}
-                    className="text-left transition hover:text-[#FFD000] focus-visible:outline-none focus-visible:text-[#FFD000] focus-visible:underline"
-                  >
-                    About Us
-                  </button>
-                </li>
-                <li>Contact Us</li>
-                <li>Careers</li>
-                <li>Partners with Us</li>
-                <li>Help Center</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-10 border-t border-white/30 pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <p className="text-white/70 text-sm">
-              © 2026 PHINMA ARAULLO UNIVERSITY. All rights reserved.
+            <p className="mt-4 text-white/80 text-base leading-relaxed max-w-[340px]">
+              The job market is competitive but you are prepared.
             </p>
 
-            <div className="flex items-center gap-4 text-white/70 text-sm">
-              <span>Privacy Policy</span>
-              <span>|</span>
-              <span>Terms of Use</span>
+            <div className="mt-6 space-y-3 text-white/80 text-sm md:text-[15px]">
+              <p>✉ agapay@au.phinma.edu.ph</p>
+              <p>☎ +63 (2) 8123-4567</p>
+
+              <p className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-[#FFD000] mt-0.5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" />
+                </svg>
+                <span>PHINMA - Araullo University, Cabanatuan City, Nueva Ecija</span>
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center gap-4">
+              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#212C61]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.6v-2.9h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6v2h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12z" />
+                </svg>
+              </div>
+
+              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#212C61]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8h4v12h-4V8zm7.5 0h3.6v1.6h.1c.5-.9 1.7-1.8 3.5-1.8 3.7 0 4.4 2.4 4.4 5.6V20h-4v-5.3c0-1.3 0-3-1.9-3s-2.2 1.5-2.2 2.9V20h-4V8z" />
+                </svg>
+              </div>
+
+              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#212C61]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M24 4.6a9.8 9.8 0 0 1-2.8.8 4.9 4.9 0 0 0 2.2-2.7 9.8 9.8 0 0 1-3.1 1.2 4.9 4.9 0 0 0-8.4 4.5A13.9 13.9 0 0 1 1.7 3.1 4.9 4.9 0 0 0 3.2 9a4.8 4.8 0 0 1-2.2-.6v.1a4.9 4.9 0 0 0 3.9 4.8 4.9 4.9 0 0 1-2.2.1 4.9 4.9 0 0 0 4.6 3.4A9.9 9.9 0 0 1 0 19.5 13.9 13.9 0 0 0 7.5 22c9 0 13.9-7.5 13.9-14v-.6A9.7 9.7 0 0 0 24 4.6z" />
+                </svg>
+              </div>
+
+              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#212C61]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8zM9.8 15.5v-7l6.2 3.5-6.2 3.5z" />
+                </svg>
+              </div>
             </div>
           </div>
+
+          <div>
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
+              Job Seeker
+            </h4>
+
+            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
+              <li>Job Search</li>
+              <li>Job Offers</li>
+              <li>Job Application</li>
+              <li>Saved Jobs</li>
+              <li>Companies</li>
+              <li>Job Seeker Profile</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
+              Employers
+            </h4>
+
+            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
+              <li>Post Job</li>
+              <li>Find Talent</li>
+              <li>Company Profile</li>
+              <li>Manage Talent</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
+              About Agapay
+            </h4>
+
+            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowAboutUsModal(true)}
+                  className="text-left transition hover:text-[#FFD000] focus-visible:outline-none focus-visible:text-[#FFD000] focus-visible:underline"
+                >
+                  About Us
+                </button>
+              </li>
+              <li>Contact Us</li>
+              <li>Careers</li>
+              <li>Partners with Us</li>
+              <li>Help Center</li>
+            </ul>
+          </div>
         </div>
-      </footer>
+
+        <div className="mt-10 border-t border-white/30 pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <p className="text-white/70 text-sm">
+            © 2026 PHINMA ARAULLO UNIVERSITY. All rights reserved.
+          </p>
+
+          <div className="flex items-center gap-4 text-white/70 text-sm">
+            <span>Privacy Policy</span>
+            <span>|</span>
+            <span>Terms of Use</span>
+          </div>
+        </div>
+      </div>
+    </footer>
 
       <AboutUsModal
         open={showAboutUsModal}
@@ -805,9 +680,7 @@ const JobOffers = () => {
   const navigate = useNavigate();
   const savedFilterState = useMemo(() => {
     try {
-      return JSON.parse(
-        sessionStorage.getItem("agapay:public:job-offers-filters") || "{}",
-      );
+      return JSON.parse(sessionStorage.getItem('agapay:public:job-offers-filters') || '{}');
     } catch {
       return {};
     }
@@ -815,9 +688,7 @@ const JobOffers = () => {
 
   const [allJobs, setAllJobs] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [visibleJobCount, setVisibleJobCount] = useState(
-    () => Number(savedFilterState.visibleJobCount) || 16,
-  );
+  const [visibleJobCount, setVisibleJobCount] = useState(() => Number(savedFilterState.visibleJobCount) || 16);
   const [loadingMoreJobs, setLoadingMoreJobs] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -828,63 +699,29 @@ const JobOffers = () => {
 
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const [search, setSearch] = useState(() =>
-    String(savedFilterState.search || ""),
-  );
+  const [search, setSearch] = useState(() => String(savedFilterState.search || ""));
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [selectedLocations, setSelectedLocations] = useState(() =>
-    Array.isArray(savedFilterState.selectedLocations)
-      ? savedFilterState.selectedLocations
-      : [],
-  );
-  const [selectedJobTitles, setSelectedJobTitles] = useState(() =>
-    Array.isArray(savedFilterState.selectedJobTitles)
-      ? savedFilterState.selectedJobTitles
-      : [],
-  );
-  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState(() =>
-    Array.isArray(savedFilterState.selectedEmploymentTypes)
-      ? savedFilterState.selectedEmploymentTypes
-      : [],
-  );
-  const [selectedEducationLevels, setSelectedEducationLevels] = useState(() =>
-    Array.isArray(savedFilterState.selectedEducationLevels)
-      ? savedFilterState.selectedEducationLevels
-      : [],
-  );
-  const [selectedCompanies, setSelectedCompanies] = useState(() =>
-    Array.isArray(savedFilterState.selectedCompanies)
-      ? savedFilterState.selectedCompanies
-      : [],
-  );
-  const [selectedWorkModes, setSelectedWorkModes] = useState(() =>
-    Array.isArray(savedFilterState.selectedWorkModes)
-      ? savedFilterState.selectedWorkModes
-      : [],
-  );
+  const [selectedLocations, setSelectedLocations] = useState(() => Array.isArray(savedFilterState.selectedLocations) ? savedFilterState.selectedLocations : []);
+  const [selectedJobTitles, setSelectedJobTitles] = useState(() => Array.isArray(savedFilterState.selectedJobTitles) ? savedFilterState.selectedJobTitles : []);
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState(() => Array.isArray(savedFilterState.selectedEmploymentTypes) ? savedFilterState.selectedEmploymentTypes : []);
+  const [selectedEducationLevels, setSelectedEducationLevels] = useState(() => Array.isArray(savedFilterState.selectedEducationLevels) ? savedFilterState.selectedEducationLevels : []);
+  const [selectedCompanies, setSelectedCompanies] = useState(() => Array.isArray(savedFilterState.selectedCompanies) ? savedFilterState.selectedCompanies : []);
+  const [selectedWorkModes, setSelectedWorkModes] = useState(() => Array.isArray(savedFilterState.selectedWorkModes) ? savedFilterState.selectedWorkModes : []);
 
-  const [salaryMinInput, setSalaryMinInput] = useState(() =>
-    String(savedFilterState.salaryMinInput || ""),
-  );
+  const [salaryMinInput, setSalaryMinInput] = useState(() => String(savedFilterState.salaryMinInput || ""));
 
-  const [sortBy, setSortBy] = useState(() =>
-    String(savedFilterState.sortBy || ""),
-  );
+  const [sortBy, setSortBy] = useState(() => String(savedFilterState.sortBy || ""));
 
-  const [freshGraduate, setFreshGraduate] = useState(() =>
-    Boolean(savedFilterState.freshGraduate),
-  );
-  const [noExperience, setNoExperience] = useState(() =>
-    Boolean(savedFilterState.noExperience),
-  );
+  const [freshGraduate, setFreshGraduate] = useState(() => Boolean(savedFilterState.freshGraduate));
+  const [noExperience, setNoExperience] = useState(() => Boolean(savedFilterState.noExperience));
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const filterBoxRef = useRef(null);
 
   useEffect(() => {
     sessionStorage.setItem(
-      "agapay:public:job-offers-filters",
+      'agapay:public:job-offers-filters',
       JSON.stringify({
         search,
         selectedLocations,
@@ -898,7 +735,7 @@ const JobOffers = () => {
         freshGraduate,
         noExperience,
         visibleJobCount,
-      }),
+      })
     );
   }, [
     search,
@@ -943,7 +780,7 @@ const JobOffers = () => {
       text: "#000000",
       subtext: "#000000",
     }),
-    [],
+    []
   );
 
   const formatLocationDisplay = (loc) => {
@@ -953,17 +790,15 @@ const JobOffers = () => {
 
   const normalizeJobsResponse = (response) => {
     let jobsData = [];
-    if (response.data?.success && response.data?.jobs)
-      jobsData = response.data.jobs;
+    if (response.data?.success && response.data?.jobs) jobsData = response.data.jobs;
     else if (response.data?.data) jobsData = response.data.data;
     else if (Array.isArray(response.data)) jobsData = response.data;
-    else if (response.data?.success && response.data?.data)
-      jobsData = response.data.data;
+    else if (response.data?.success && response.data?.data) jobsData = response.data.data;
     return jobsData || [];
   };
 
   const formatSalary = (min, max, hideSalary = false) => {
-    if (hideSalary) return "Salary Undisclosed";
+    if (hideSalary) return 'Salary Undisclosed';
     if (!min && !max) return "Salary not specified";
 
     const minNum = min ? Number(min) : null;
@@ -972,8 +807,7 @@ const JobOffers = () => {
     const formattedMin = Number.isFinite(minNum) ? minNum.toLocaleString() : "";
     const formattedMax = Number.isFinite(maxNum) ? maxNum.toLocaleString() : "";
 
-    if (formattedMin && formattedMax)
-      return `${formattedMin} - ${formattedMax}`;
+    if (formattedMin && formattedMax) return `${formattedMin} - ${formattedMax}`;
     if (formattedMin) return `From ${formattedMin}`;
     return `Up to ${formattedMax}`;
   };
@@ -994,9 +828,7 @@ const JobOffers = () => {
   };
 
   const jobMatchesSearch = (job, term) => {
-    const searchText = String(term || "")
-      .trim()
-      .toLowerCase();
+    const searchText = String(term || "").trim().toLowerCase();
     if (!searchText) return true;
 
     const compactSearchText = searchText.replace(/[^a-z0-9ñ]+/g, "");
@@ -1026,12 +858,8 @@ const JobOffers = () => {
       job?.category,
       job?.description,
       job?.requirements,
-      ...(Array.isArray(job?.skillsRequired)
-        ? job.skillsRequired
-        : [job?.skillsRequired]),
-      ...(Array.isArray(job?.perksAndBenefits)
-        ? job.perksAndBenefits
-        : [job?.perksAndBenefits]),
+      ...(Array.isArray(job?.skillsRequired) ? job.skillsRequired : [job?.skillsRequired]),
+      ...(Array.isArray(job?.perksAndBenefits) ? job.perksAndBenefits : [job?.perksAndBenefits]),
       job?.otherBenefits,
       job?.willingToRelocate,
       job?.salaryMin,
@@ -1061,24 +889,15 @@ const JobOffers = () => {
   };
 
   const getSearchRelevanceScore = (job, term) => {
-    const searchText = String(term || "")
-      .trim()
-      .toLowerCase();
+    const searchText = String(term || '').trim().toLowerCase();
     if (!searchText) return 0;
 
-    const compactSearchText = searchText.replace(/[^a-z0-9ñ]+/g, "");
-    const experienceLabel = getExperienceBadgeLabel(
-      job?.experienceLevel,
-    ).toLowerCase();
+    const compactSearchText = searchText.replace(/[^a-z0-9ñ]+/g, '');
+    const experienceLabel = getExperienceBadgeLabel(job?.experienceLevel).toLowerCase();
     const workModeLabel = normalizeWorkModeLabel(job?.workMode).toLowerCase();
-    const freshGraduateLabel = isFreshGraduateJob(job)
-      ? "open to fresh graduates"
-      : "";
-    const exactBadgeValues = [
-      experienceLabel,
-      workModeLabel,
-      freshGraduateLabel,
-    ].filter(Boolean);
+    const freshGraduateLabel = isFreshGraduateJob(job) ? 'open to fresh graduates' : '';
+    const exactBadgeValues = [experienceLabel, workModeLabel, freshGraduateLabel]
+      .filter(Boolean);
 
     let score = 0;
 
@@ -1098,7 +917,7 @@ const JobOffers = () => {
       job?.educationLevel,
       job?.category,
     ]
-      .filter((value) => value !== undefined && value !== null && value !== "")
+      .filter((value) => value !== undefined && value !== null && value !== '')
       .map((value) => String(value).toLowerCase());
 
     priorityValues.forEach((value) => {
@@ -1110,48 +929,34 @@ const JobOffers = () => {
     const allText = [
       job?.description,
       job?.requirements,
-      ...(Array.isArray(job?.skillsRequired)
-        ? job.skillsRequired
-        : [job?.skillsRequired]),
-      ...(Array.isArray(job?.perksAndBenefits)
-        ? job.perksAndBenefits
-        : [job?.perksAndBenefits]),
+      ...(Array.isArray(job?.skillsRequired) ? job.skillsRequired : [job?.skillsRequired]),
+      ...(Array.isArray(job?.perksAndBenefits) ? job.perksAndBenefits : [job?.perksAndBenefits]),
       job?.otherBenefits,
     ]
-      .filter((value) => value !== undefined && value !== null && value !== "")
-      .join(" ")
+      .filter((value) => value !== undefined && value !== null && value !== '')
+      .join(' ')
       .toLowerCase();
 
     if (allText.includes(searchText)) score = Math.max(score, 100);
 
     if (compactSearchText) {
-      const compactBadgeValues = exactBadgeValues.map((value) =>
-        value.replace(/[^a-z0-9ñ]+/g, ""),
-      );
-      if (compactBadgeValues.some((value) => value === compactSearchText))
-        score = Math.max(score, 1000);
-      else if (
-        compactBadgeValues.some((value) => value.startsWith(compactSearchText))
-      )
-        score = Math.max(score, 900);
+      const compactBadgeValues = exactBadgeValues.map((value) => value.replace(/[^a-z0-9ñ]+/g, ''));
+      if (compactBadgeValues.some((value) => value === compactSearchText)) score = Math.max(score, 1000);
+      else if (compactBadgeValues.some((value) => value.startsWith(compactSearchText))) score = Math.max(score, 900);
     }
 
     return score;
   };
 
   const normalizeWorkModeLabel = (value) => {
-    const v = String(value || "")
-      .trim()
-      .toLowerCase();
+    const v = String(value || "").trim().toLowerCase();
 
     if (!v) return "";
 
     if (v.includes("hybrid") || v.includes("blended")) return "Blended";
-    if (v.includes("work from home") || v.includes("wfh"))
-      return "Work from Home";
+    if (v.includes("work from home") || v.includes("wfh")) return "Work from Home";
     if (v.includes("remote")) return "Remote";
-    if (v.includes("on-site") || v.includes("onsite") || v.includes("on site"))
-      return "On-site";
+    if (v.includes("on-site") || v.includes("onsite") || v.includes("on site")) return "On-site";
 
     return String(value || "").trim();
   };
@@ -1214,31 +1019,21 @@ const JobOffers = () => {
 
     const jobTitles = uniq(
       allJobs
-        .map((j) =>
-          String(j?.title || "")
-            .replaceAll('"', "")
-            .trim(),
-        )
-        .filter(Boolean),
+        .map((j) => String(j?.title || "").replaceAll('"', "").trim())
+        .filter(Boolean)
     ).sort((a, b) => a.localeCompare(b));
 
-    const employmentTypes = uniq(
-      allJobs.map((j) => String(j?.jobType || "").trim()).filter(Boolean),
-    ).sort((a, b) => a.localeCompare(b));
+    const employmentTypes = uniq(allJobs.map((j) => String(j?.jobType || "").trim()).filter(Boolean)).sort(
+      (a, b) => a.localeCompare(b)
+    );
 
     const educationLevels = EDUCATION_LEVELS;
 
-    const companies = uniq(
-      allJobs.map((j) => String(j?.companyName || "").trim()).filter(Boolean),
-    ).sort((a, b) => a.localeCompare(b));
+    const companies = uniq(allJobs.map((j) => String(j?.companyName || "").trim()).filter(Boolean)).sort(
+      (a, b) => a.localeCompare(b)
+    );
 
-    return {
-      ...locationGroups,
-      jobTitles,
-      employmentTypes,
-      educationLevels,
-      companies,
-    };
+    return { ...locationGroups, jobTitles, employmentTypes, educationLevels, companies };
   }, [allJobs]);
 
   const hasActiveFilters =
@@ -1290,9 +1085,7 @@ const JobOffers = () => {
 
     const getSalaryMaxComparable = (job) => {
       if (job?.hideSalary) return -1;
-      return (
-        toSalaryNumber(job?.salaryMax) ?? toSalaryNumber(job?.salaryMin) ?? -1
-      );
+      return toSalaryNumber(job?.salaryMax) ?? toSalaryNumber(job?.salaryMin) ?? -1;
     };
 
     const getExpiryComparable = (job) => {
@@ -1308,48 +1101,29 @@ const JobOffers = () => {
     const compareByTitle = (a, b) =>
       String(a?.title || "").localeCompare(String(b?.title || ""));
 
-    const hasSearchTerm = Boolean(String(debouncedSearch || "").trim());
+    const hasSearchTerm = Boolean(String(debouncedSearch || '').trim());
 
     const filtered = hasSearchTerm
       ? (allJobs || []).filter((job) => jobMatchesSearch(job, debouncedSearch))
       : (allJobs || [])
           .filter((job) => jobMatchesSelectedLocations(job, selectedLocations))
           .filter((job) =>
-            selectedJobTitles.length
-              ? selectedJobTitles.includes(
-                  String(job.title || "")
-                    .replaceAll('"', "")
-                    .trim(),
-                )
-              : true,
+            selectedJobTitles.length ? selectedJobTitles.includes(String(job.title || "").replaceAll('"', "").trim()) : true
           )
           .filter((job) =>
-            selectedEmploymentTypes.length
-              ? selectedEmploymentTypes.includes(
-                  String(job.jobType || "").trim(),
-                )
-              : true,
+            selectedEmploymentTypes.length ? selectedEmploymentTypes.includes(String(job.jobType || "").trim()) : true
           )
           .filter((job) =>
-            selectedEducationLevels.length
-              ? selectedEducationLevels.includes(
-                  String(job.educationLevel || "").trim(),
-                )
-              : true,
+            selectedEducationLevels.length ? selectedEducationLevels.includes(String(job.educationLevel || "").trim()) : true
           )
           .filter((job) =>
-            selectedCompanies.length
-              ? selectedCompanies.includes(String(job.companyName || "").trim())
-              : true,
+            selectedCompanies.length ? selectedCompanies.includes(String(job.companyName || "").trim()) : true
           )
           .filter((job) =>
-            selectedWorkModes.length
-              ? selectedWorkModes[0] === normalizeWorkModeLabel(job.workMode)
-              : true,
+            selectedWorkModes.length ? selectedWorkModes[0] === normalizeWorkModeLabel(job.workMode) : true
           )
           .filter((job) => {
-            if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue))
-              return true;
+            if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
             if (job?.hideSalary) return false;
 
             const jobMin = toSalaryNumber(job?.salaryMin);
@@ -1358,15 +1132,10 @@ const JobOffers = () => {
           .filter((job) => {
             if (!freshGraduate && !noExperience) return true;
 
-            const matchesFreshGraduate = freshGraduate
-              ? isFreshGraduateJob(job)
-              : false;
-            const matchesNoExperience = noExperience
-              ? isNoExperienceJob(job?.experienceLevel)
-              : false;
+            const matchesFreshGraduate = freshGraduate ? isFreshGraduateJob(job) : false;
+            const matchesNoExperience = noExperience ? isNoExperienceJob(job?.experienceLevel) : false;
 
-            if (freshGraduate && noExperience)
-              return matchesFreshGraduate && matchesNoExperience;
+            if (freshGraduate && noExperience) return matchesFreshGraduate && matchesNoExperience;
             if (freshGraduate) return matchesFreshGraduate;
             return matchesNoExperience;
           });
@@ -1380,52 +1149,44 @@ const JobOffers = () => {
           getSearchRelevanceScore(a, debouncedSearch);
         if (relevanceDifference !== 0) return relevanceDifference;
 
-        const freshnessDifference =
-          getFreshnessComparable(b) - getFreshnessComparable(a);
+        const freshnessDifference = getFreshnessComparable(b) - getFreshnessComparable(a);
         if (freshnessDifference !== 0) return freshnessDifference;
 
         return compareByTitle(a, b);
       });
     } else if (sortBy === "salary_desc") {
       sorted.sort((a, b) => {
-        const maxDifference =
-          getSalaryMaxComparable(b) - getSalaryMaxComparable(a);
+        const maxDifference = getSalaryMaxComparable(b) - getSalaryMaxComparable(a);
         if (maxDifference !== 0) return maxDifference;
 
-        const minDifference =
-          getSalaryMinComparable(b) - getSalaryMinComparable(a);
+        const minDifference = getSalaryMinComparable(b) - getSalaryMinComparable(a);
         if (minDifference !== 0) return minDifference;
 
         return compareByTitle(a, b);
       });
     } else if (sortBy === "expiry_asc") {
       sorted.sort((a, b) => {
-        const deadlineDifference =
-          getExpiryComparable(a) - getExpiryComparable(b);
+        const deadlineDifference = getExpiryComparable(a) - getExpiryComparable(b);
         if (deadlineDifference !== 0) return deadlineDifference;
 
-        const freshnessDifference =
-          getFreshnessComparable(b) - getFreshnessComparable(a);
+        const freshnessDifference = getFreshnessComparable(b) - getFreshnessComparable(a);
         if (freshnessDifference !== 0) return freshnessDifference;
 
         return compareByTitle(a, b);
       });
     } else if (sortBy === "newest") {
       sorted.sort((a, b) => {
-        const freshnessDifference =
-          getFreshnessComparable(b) - getFreshnessComparable(a);
+        const freshnessDifference = getFreshnessComparable(b) - getFreshnessComparable(a);
         if (freshnessDifference !== 0) return freshnessDifference;
 
         return compareByTitle(a, b);
       });
     } else if (salaryMinInput.trim()) {
       sorted.sort((a, b) => {
-        const minDifference =
-          getSalaryMinComparable(a) - getSalaryMinComparable(b);
+        const minDifference = getSalaryMinComparable(a) - getSalaryMinComparable(b);
         if (minDifference !== 0) return minDifference;
 
-        const maxDifference =
-          getSalaryMaxComparable(a) - getSalaryMaxComparable(b);
+        const maxDifference = getSalaryMaxComparable(a) - getSalaryMaxComparable(b);
         if (maxDifference !== 0) return maxDifference;
 
         return compareByTitle(a, b);
@@ -1450,7 +1211,7 @@ const JobOffers = () => {
 
   const visibleJobs = useMemo(
     () => filteredJobs.slice(0, visibleJobCount),
-    [filteredJobs, visibleJobCount],
+    [filteredJobs, visibleJobCount]
   );
 
   const hasMoreJobs = visibleJobCount < filteredJobs.length;
@@ -1465,9 +1226,7 @@ const JobOffers = () => {
 
     setLoadingMoreJobs(true);
     window.setTimeout(() => {
-      setVisibleJobCount((current) =>
-        Math.min(current + 16, filteredJobs.length),
-      );
+      setVisibleJobCount((current) => Math.min(current + 16, filteredJobs.length));
       setLoadingMoreJobs(false);
     }, 500);
   };
@@ -1530,7 +1289,7 @@ const JobOffers = () => {
 
       if (e.key === "Tab" && modalRef.current) {
         const focusables = modalRef.current.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
         if (!focusables.length) return;
 
@@ -1579,25 +1338,19 @@ const JobOffers = () => {
     "inline-flex items-center gap-2 transition-colors";
 
   const pillBtn =
-    "h-[44px] w-full min-w-0 rounded-xl px-4 bg-white border border-white/40 text-sm font-medium text-black/75 flex items-center justify-between gap-2 hover:bg-[#FFD000] hover:text-black transition";
+    "h-[44px] rounded-xl px-4 bg-white border border-white/40 text-sm font-medium text-black/75 flex items-center gap-2 hover:bg-[#FFD000] hover:text-black transition flex-shrink-0";
 
   const searchBox =
-    "w-full min-w-0 h-[44px] bg-white border border-white/40 rounded-xl px-4 flex items-center gap-3 transition-all duration-300 ease-in-out focus-within:ring-2 focus-within:ring-[#FFD000]/60 xl:col-span-2";
+    "w-full lg:w-auto lg:min-w-[220px] lg:max-w-[370px] lg:flex-1 h-[44px] bg-white border border-white/40 rounded-xl px-4 flex items-center gap-3 shrink transition-all duration-300 ease-in-out focus-within:ring-2 focus-within:ring-[#FFD000]/60";
 
-  const filterRowClass =
-    "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-10";
+  const filterRowClass = "flex flex-wrap items-center gap-3";
 
   const toggleWorkMode = (label) => {
     setSelectedWorkModes((prev) => (prev[0] === label ? [] : [label]));
   };
 
   const isCompanyVerified = (job) => {
-    return Boolean(
-      job?.companyVerified ??
-        job?.isCompanyVerified ??
-        job?.isVerified ??
-        job?.verified,
-    );
+    return Boolean(job?.companyVerified ?? job?.isCompanyVerified ?? job?.isVerified ?? job?.verified);
   };
 
   return (
@@ -1612,12 +1365,8 @@ const JobOffers = () => {
               className={`relative ${openDropdown ? "z-[1000]" : "z-20"} rounded-[26px] border border-[#FFD000] p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-visible text-white bg-[#212C61] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]`}
             >
               <div className="mb-6">
-                <h1 className="text-[28px] md:text-[30px] font-semibold leading-tight text-white">
-                  Job Offers
-                </h1>
-                <p className="mt-2 text-[16px] text-white/80">
-                  Browse available jobs and apply immediately.
-                </p>
+                <h1 className="text-[28px] md:text-[30px] font-semibold leading-tight text-white">Job Offers</h1>
+                <p className="mt-2 text-[16px] text-white/80">Browse available jobs and apply immediately.</p>
               </div>
 
               <div className={filterRowClass}>
@@ -1741,73 +1490,66 @@ const JobOffers = () => {
                   pillBtn={pillBtn}
                 />
 
-                <div className="col-span-full mt-1 flex flex-wrap items-center gap-x-5 gap-y-3">
-                  <FilterCheck
-                    label="No Experience Required"
-                    checked={noExperience}
-                    onChange={(e) => setNoExperience(e.target.checked)}
-                    light
-                  />
+                <FilterCheck
+                  label="No Experience Required"
+                  checked={noExperience}
+                  onChange={(e) => setNoExperience(e.target.checked)}
+                light
+                />
 
-                  <FilterCheck
-                    label="Open to Fresh graduates"
-                    checked={freshGraduate}
-                    onChange={(e) => setFreshGraduate(e.target.checked)}
-                    light
-                  />
+                <FilterCheck
+                  label="Open to Fresh graduates"
+                  checked={freshGraduate}
+                  onChange={(e) => setFreshGraduate(e.target.checked)}
+                light
+                />
 
-                  <FilterCheck
-                    label="On-site"
-                    checked={selectedWorkModes.includes("On-site")}
-                    onChange={() => toggleWorkMode("On-site")}
-                    light
-                  />
+                <FilterCheck
+                  label="On-site"
+                  checked={selectedWorkModes.includes("On-site")}
+                  onChange={() => toggleWorkMode("On-site")}
+                light
+                />
 
-                  <FilterCheck
-                    label="Blended"
-                    checked={selectedWorkModes.includes("Blended")}
-                    onChange={() => toggleWorkMode("Blended")}
-                    light
-                  />
+                <FilterCheck
+                  label="Blended"
+                  checked={selectedWorkModes.includes("Blended")}
+                  onChange={() => toggleWorkMode("Blended")}
+                light
+                />
 
-                  <FilterCheck
-                    label="Remote"
-                    checked={selectedWorkModes.includes("Remote")}
-                    onChange={() => toggleWorkMode("Remote")}
-                    light
-                  />
+                <FilterCheck
+                  label="Remote"
+                  checked={selectedWorkModes.includes("Remote")}
+                  onChange={() => toggleWorkMode("Remote")}
+                light
+                />
 
-                  <FilterCheck
-                    label="Work from Home"
-                    checked={selectedWorkModes.includes("Work from Home")}
-                    onChange={() => toggleWorkMode("Work from Home")}
-                    light
-                  />
+                <FilterCheck
+                  label="Work from Home"
+                  checked={selectedWorkModes.includes("Work from Home")}
+                  onChange={() => toggleWorkMode("Work from Home")}
+                light
+                />
 
-                  {hasActiveFilters && (
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-[#212C61]/20 bg-white text-[15px] font-medium text-black/60 hover:bg-[#212C61]/5 transition"
-                      onClick={clearFilters}
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-[#212C61]/20 bg-white text-[15px] font-medium text-black/60 hover:bg-[#212C61]/5 transition"
+                    onClick={clearFilters}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                      Clear All
-                    </button>
-                  )}
-                </div>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear All
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1819,45 +1561,22 @@ const JobOffers = () => {
                   <div
                     key={index}
                     className="rounded-2xl p-7 animate-pulse"
-                    style={{
-                      backgroundColor: COLORS.card,
-                      border: `1px solid ${COLORS.border}`,
-                    }}
+                    style={{ backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}` }}
                   >
-                    <div
-                      className="h-6 w-3/4 rounded mb-4"
-                      style={{ backgroundColor: COLORS.mutedBox }}
-                    />
-                    <div
-                      className="h-4 w-1/2 rounded mb-5"
-                      style={{ backgroundColor: COLORS.mutedBox }}
-                    />
-                    <div
-                      className="h-24 rounded mb-5"
-                      style={{ backgroundColor: COLORS.mutedBox }}
-                    />
-                    <div
-                      className="h-9 w-2/3 rounded mb-5"
-                      style={{ backgroundColor: COLORS.mutedBox }}
-                    />
+                    <div className="h-6 w-3/4 rounded mb-4" style={{ backgroundColor: COLORS.mutedBox }} />
+                    <div className="h-4 w-1/2 rounded mb-5" style={{ backgroundColor: COLORS.mutedBox }} />
+                    <div className="h-24 rounded mb-5" style={{ backgroundColor: COLORS.mutedBox }} />
+                    <div className="h-9 w-2/3 rounded mb-5" style={{ backgroundColor: COLORS.mutedBox }} />
                     <div className="flex items-center justify-between">
-                      <div
-                        className="h-4 w-24 rounded"
-                        style={{ backgroundColor: COLORS.mutedBox }}
-                      />
-                      <div
-                        className="h-10 w-28 rounded"
-                        style={{ backgroundColor: COLORS.mutedBox }}
-                      />
+                      <div className="h-4 w-24 rounded" style={{ backgroundColor: COLORS.mutedBox }} />
+                      <div className="h-10 w-28 rounded" style={{ backgroundColor: COLORS.mutedBox }} />
                     </div>
                   </div>
                 ))}
               </div>
             ) : errorMsg ? (
               <div className="bg-white border border-[#212C61]/20 rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
-                <h3 className="text-lg font-bold text-black">
-                  Something went wrong
-                </h3>
+                            <h3 className="text-lg font-bold text-black">Something went wrong</h3>
                 <p className="mt-2 text-sm text-black/65">{errorMsg}</p>
                 <button
                   className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-[#212C61]/35 text-black/75 hover:bg-[#212C61]/5
@@ -1874,9 +1593,7 @@ const JobOffers = () => {
                   alt="No results found"
                   className="h-auto w-[220px] max-w-[70vw] object-contain"
                 />
-                <h3 className="mt-5 text-[22px] font-bold text-black">
-                  No results found
-                </h3>
+                <h3 className="mt-5 text-[22px] font-bold text-black">No results found</h3>
                 <p className="mt-2 text-sm text-black/65">
                   Try adjusting your filters or search terms.
                 </p>
@@ -1886,6 +1603,7 @@ const JobOffers = () => {
                     className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#212C61]/25 bg-white px-6 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#212C61]/45 hover:bg-[#212C61]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
                     onClick={clearFilters}
                   >
+                  
                     Clear filters
                   </button>
 
@@ -1894,19 +1612,8 @@ const JobOffers = () => {
                     className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#212C61] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#182149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
                     onClick={fetchAllJobs}
                   >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     Refresh
                   </button>
@@ -1915,180 +1622,81 @@ const JobOffers = () => {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
-                  {visibleJobs.map((job) => {
-                    const jobId = job._id || job.id;
+                {visibleJobs.map((job) => {
+                  const jobId = job._id || job.id;
 
-                    const experienceBadgeLabel = getExperienceBadgeLabel(
-                      job.experienceLevel,
-                    );
-                    const tagFreshGrad = isFreshGraduateJob(job);
+                  const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
+                  const tagFreshGrad = isFreshGraduateJob(job);
 
-                    const wmLabel = normalizeWorkModeLabel(job.workMode);
-                    const tagBlended = wmLabel === "Blended";
-                    const tagOnsite = wmLabel === "On-site";
-                    const tagRemote = wmLabel === "Remote";
-                    const tagWorkFromHome = wmLabel === "Work from Home";
+                  const wmLabel = normalizeWorkModeLabel(job.workMode);
+                  const tagBlended = wmLabel === "Blended";
+                  const tagOnsite = wmLabel === "On-site";
+                  const tagRemote = wmLabel === "Remote";
+                  const tagWorkFromHome = wmLabel === "Work from Home";
 
-                    const verified =
-                      isCompanyVerified(job) || job?.companyVerified == null;
+                  const verified = isCompanyVerified(job) || job?.companyVerified == null;
 
-                    return (
-                      <div
-                        key={jobId}
-                        className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-fit"
-                        style={{ border: `1px solid ${COLORS.border}` }}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-4 min-w-0 flex-1">
-                            <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#212C61]/20 bg-white shadow-sm">
-                              {job.companyLogo ? (
-                                <img
-                                  src={job.companyLogo}
-                                  alt={job.companyName || "Company logo"}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-[#212C61]/10" />
-                              )}
-                            </div>
+                  return (
+                   <div
+                      key={jobId}
+                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-fit"
+                      style={{ border: `1px solid ${COLORS.border}` }}
+                    >
 
-                            <div className="min-w-0 flex-1">
-                              <h3 className="min-w-0 truncate whitespace-nowrap text-[17px] md:text-lg font-bold text-black leading-snug group-hover:text-[#212C61] transition">
-                                {String(job.title || "Job Title").replaceAll(
-                                  '"',
-                                  "",
-                                )}
-                              </h3>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-4 min-w-0 flex-1">
+                          <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#212C61]/20 bg-white shadow-sm">
+                            {job.companyLogo ? (
+                              <img
+                                src={job.companyLogo}
+                                alt={job.companyName || "Company logo"}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#212C61]/10" />
+                            )}
+                          </div>
 
-                              <div className="mt-1 flex items-center gap-2 min-w-0">
-                                <span className="text-sm font-medium text-black/65 truncate">
-                                  {job.companyName || "Company"}
+                          <div className="min-w-0 flex-1">
+                            <h3 className="min-w-0 truncate whitespace-nowrap text-[17px] md:text-lg font-bold text-black leading-snug group-hover:text-[#212C61] transition">
+                              {String(job.title || "Job Title").replaceAll('"', "")}
+                            </h3>
+
+                            <div className="mt-1 flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-medium text-black/65 truncate">
+                                {job.companyName || "Company"}
+                              </span>
+
+                              {verified && (
+                                <span
+                                  className="inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0"
+                                  title="Verified"
+                                  aria-label="Verified company"
+                                >
+                                  <img
+                                    src="/images/checkmo.png"
+                                    alt="Verified"
+                                    className="w-5 h-5 object-contain"
+                                    draggable="false"
+                                  />
                                 </span>
-
-                                {verified && (
-                                  <span
-                                    className="inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0"
-                                    title="Verified"
-                                    aria-label="Verified company"
-                                  >
-                                    <img
-                                      src="/images/checkmo.png"
-                                      alt="Verified"
-                                      className="w-5 h-5 object-contain"
-                                      draggable="false"
-                                    />
-                                  </span>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleSaveJob(job)}
-                            className="flex items-center justify-center w-10 h-10 rounded-xl text-black/65 hover:bg-[#212C61]/5 hover:text-[#212C61] transition flex-shrink-0"
-                            aria-label="Save job"
-                            title="Save job"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M17 21l-5-3-5 3V5a2 2 0 012-2h6a2 2 0 012 2v16z"
-                              />
-                            </svg>
-                          </button>
                         </div>
 
-                        <div
-                          className="mt-4 rounded-2xl p-3.5 relative overflow-hidden"
-                          style={{ backgroundColor: COLORS.mutedBox }}
+                        <button
+                          type="button"
+                          onClick={() => handleSaveJob(job)}
+                          className="flex items-center justify-center w-10 h-10 rounded-xl text-black/65 hover:bg-[#212C61]/5 hover:text-[#212C61] transition flex-shrink-0"
+                          aria-label="Save job"
+                          title="Save job"
                         >
-                          {job.isUrgent ? (
-                            <img
-                              src="/images/urgentneed.png"
-                              alt="Urgent Hiring"
-                              draggable="false"
-                              className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
-                            />
-                          ) : null}
-                          <div className="flex items-center gap-2 text-sm text-black/75 min-h-[20px] min-w-0">
-                            <svg
-                              className="w-4 h-4 text-black/65 flex-shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                            <span className="truncate min-w-0 flex-1">
-                              {formatLocationDisplay(job.location)}
-                            </span>
-                          </div>
-
-                          <div
-                            className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? "pr-[112px]" : ""}`}
-                          >
-                            <span className="w-4 h-4 text-black/65 flex items-center justify-center font-extrabold text-[14px] leading-none">
-                              ₱
-                            </span>
-                            <span className="truncate">
-                              {formatSalary(
-                                job.salaryMin,
-                                job.salaryMax,
-                                job.hideSalary,
-                              )}
-                            </span>
-                          </div>
-
-                          <div
-                            className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? "pr-[112px]" : ""}`}
-                          >
-                            <svg
-                              className="w-4 h-4 text-black/65"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span className="truncate">
-                              {job.jobType || "Full Time Work"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex items-center gap-2 text-[13px] font-medium text-black/65">
                           <svg
-                            className="w-4 h-4 text-black/55 flex-shrink-0"
+                            className="w-5 h-5"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -2098,131 +1706,184 @@ const JobOffers = () => {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth="2"
-                              d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
+                              d="M17 21l-5-3-5 3V5a2 2 0 012-2h6a2 2 0 012 2v16z"
                             />
                           </svg>
-                          <span className="truncate">
-                            {formatApplicationDeadline(job.applicationDeadline)}
+                        </button>
+                      </div>
+
+                      <div
+                        className="mt-4 rounded-2xl p-3.5 relative overflow-hidden"
+                        style={{ backgroundColor: COLORS.mutedBox }}
+                      >
+                        {job.isUrgent ? (
+                          <img
+                            src="/images/urgentneed.png"
+                            alt="Urgent Hiring"
+                            draggable="false"
+                          className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                          />
+                        ) : null}
+                        <div className="flex items-center gap-2 text-sm text-black/75 min-h-[20px] min-w-0">
+                          <svg
+                            className="w-4 h-4 text-black/65 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <span className="truncate min-w-0 flex-1">{formatLocationDisplay(job.location)}</span>
+                        </div>
+
+                        <div className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
+                          <span className="w-4 h-4 text-black/65 flex items-center justify-center font-extrabold text-[14px] leading-none">
+                            ₱
                           </span>
+                          <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}</span>
                         </div>
 
-                        <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-hidden whitespace-nowrap">
-                          {experienceBadgeLabel && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
-                              {experienceBadgeLabel}
-                            </span>
-                          )}
-
-                          {tagBlended && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
-                              Blended
-                            </span>
-                          )}
-                          {tagOnsite && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
-                              On-site
-                            </span>
-                          )}
-                          {tagRemote && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
-                              Remote
-                            </span>
-                          )}
-                          {tagWorkFromHome && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
-                              Work from Home
-                            </span>
-                          )}
-
-                          {tagFreshGrad && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
-                              Open fresh grad
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-3 w-full h-px bg-[#212C61]/20" />
-
-                        <div className="pt-3 flex items-center justify-between gap-3">
-                          <button
-                            type="button"
-                            onClick={() => handleLearnMore(job)}
-                            className={ghostLink}
+                        <div className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
+                          <svg
+                            className="w-4 h-4 text-black/65"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
                           >
-                            <span className="leading-none">View Details</span>
-                            <svg
-                              className="w-4 h-4 self-center shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleApply(job)}
-                            className={primaryBtn}
-                            style={{ backgroundColor: COLORS.primary }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                COLORS.primaryHover)
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                COLORS.primary)
-                            }
-                            onMouseDown={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                COLORS.primaryActive)
-                            }
-                            onMouseUp={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                COLORS.primaryHover)
-                            }
-                          >
-                            Apply Now
-                          </button>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span className="truncate">{job.jobType || "Full Time Work"}</span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
 
-                {hasMoreJobs && (
-                  <div className="mt-8 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={handleViewMoreJobs}
-                      disabled={loadingMoreJobs}
-                      className="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl border border-[#212C61] bg-white px-6 py-3 text-sm font-semibold text-[#212C61] transition hover:bg-[#212C61]/5 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {loadingMoreJobs && (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#212C61] border-r-transparent" />
-                      )}
-                      {loadingMoreJobs ? "Loading jobs..." : "View More Jobs"}
-                    </button>
-                  </div>
-                )}
+                      <div className="mt-3 flex items-center gap-2 text-[13px] font-medium text-black/65">
+                        <svg
+                          className="w-4 h-4 text-black/55 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span className="truncate">{formatApplicationDeadline(job.applicationDeadline)}</span>
+                      </div>
+
+                      <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-hidden whitespace-nowrap">
+                        {experienceBadgeLabel && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                            {experienceBadgeLabel}
+                          </span>
+                        )}
+
+                        {tagBlended && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                            Blended
+                          </span>
+                        )}
+                        {tagOnsite && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                            On-site
+                          </span>
+                        )}
+                        {tagRemote && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                            Remote
+                          </span>
+                        )}
+                        {tagWorkFromHome && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                            Work from Home
+                          </span>
+                        )}
+
+                        {tagFreshGrad && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                            Open fresh grad
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-3 w-full h-px bg-[#212C61]/20" />
+
+                      <div className="pt-3 flex items-center justify-between gap-3">
+                        <button type="button" onClick={() => handleLearnMore(job)} className={ghostLink}>
+                          <span className="leading-none">View Details</span>
+                          <svg
+                            className="w-4 h-4 self-center shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleApply(job)}
+                          className={primaryBtn}
+                          style={{ backgroundColor: COLORS.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = COLORS.primary)}
+                          onMouseDown={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryActive)}
+                          onMouseUp={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
+                        >
+                          Apply Now
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {hasMoreJobs && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleViewMoreJobs}
+                    disabled={loadingMoreJobs}
+                    className="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl border border-[#212C61] bg-white px-6 py-3 text-sm font-semibold text-[#212C61] transition hover:bg-[#212C61]/5 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loadingMoreJobs && (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#212C61] border-r-transparent" />
+                    )}
+                    {loadingMoreJobs ? "Loading jobs..." : "View More Jobs"}
+                  </button>
+                </div>
+              )}
               </>
             )}
           </div>
         </div>
       </div>
-      {showGuestModal && (
+{showGuestModal && (
         <div className="fixed inset-0 z-[80]">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-            onClick={() => setShowGuestModal(false)}
-            aria-hidden="true"
-          />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setShowGuestModal(false)} aria-hidden="true" />
 
           <div className="absolute inset-0 flex items-center justify-center px-4">
             <div
@@ -2271,21 +1932,10 @@ const JobOffers = () => {
                     className="w-full h-11 rounded-lg text-sm font-semibold text-white
                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition"
                     style={{ backgroundColor: COLORS.primary }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        COLORS.primaryHover)
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = COLORS.primary)
-                    }
-                    onMouseDown={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        COLORS.primaryActive)
-                    }
-                    onMouseUp={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        COLORS.primaryHover)
-                    }
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = COLORS.primary)}
+                    onMouseDown={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryActive)}
+                    onMouseUp={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
                   >
                     {gateReason?.primary || "Sign Up"}
                   </button>
