@@ -1,7 +1,7 @@
 // src/components/shared/JoinAsModal.jsx
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookmarksSvgIcon, FaChevronRight } from "./JobseekerIcons";
+import { BookmarksSvgIcon } from "./JobseekerIcons";
 
 const BLUE = {
   primary: "#2e66a6",
@@ -201,7 +201,9 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
               onMouseUp={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = BLUE.hover; }}
             >
               <span>Continue</span>
-              <FaChevronRight className="h-4 w-4" aria-hidden="true" />
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
             </button>
 
             <p className="mt-3 text-center text-xs text-gray-600 sm:text-sm">
