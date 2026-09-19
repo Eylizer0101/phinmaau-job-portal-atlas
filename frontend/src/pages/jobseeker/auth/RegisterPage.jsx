@@ -5,6 +5,9 @@ import axios from 'axios';
 import {
   FaUser,
   FaGraduationCap,
+  FaBriefcase,
+  FaMapMarkerAlt,
+  FaUsers,
   FileIcon,
   CheckCircleIcon,
   GlobeIcon,
@@ -1072,13 +1075,13 @@ const RegisterPage = () => {
                           >
                             <span className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-[#2e66a6]">
                               {value === 'On-site' ? (
-                                <GlobeIcon className="w-4 h-4" />
+                                <FaMapMarkerAlt className="w-4 h-4" aria-hidden="true" />
                               ) : value === 'Remote' ? (
-                                <FaGraduationCap className="w-4 h-4" aria-hidden="true" />
-                              ) : value === 'Blended' ? (
-                                <CheckCircleIcon className="w-4 h-4" />
-                              ) : (
                                 <GlobeIcon className="w-4 h-4" />
+                              ) : value === 'Blended' ? (
+                                <FaBriefcase className="w-4 h-4" aria-hidden="true" />
+                              ) : (
+                                <FaUser className="w-4 h-4" aria-hidden="true" />
                               )}
                             </span>
                             <span className="text-sm font-semibold">{label}</span>
@@ -1285,7 +1288,7 @@ const RegisterPage = () => {
                 ) : index === 3 ? (
                   <CheckCircleIcon className="w-4 h-4" />
                 ) : (
-                  <GlobeIcon className="w-4 h-4" />
+                  <FaUsers className="w-4 h-4" aria-hidden="true" />
                 )}
               </div>
               <div className="pt-0.5">
