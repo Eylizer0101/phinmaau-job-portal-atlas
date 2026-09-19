@@ -8,9 +8,6 @@ import {
   FileIcon,
   CheckCircleIcon,
   GlobeIcon,
-  LocationIcon,
-  BookmarksSvgIcon,
-  BuildingIcon,
 } from '../../../components/jobseeker/JobseekerIcons';
 
 // ✅ Use existing dropdown options (course dropdown)
@@ -1075,11 +1072,11 @@ const RegisterPage = () => {
                           >
                             <span className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-[#2e66a6]">
                               {value === 'On-site' ? (
-                                <LocationIcon className="w-4 h-4" />
+                                <GlobeIcon className="w-4 h-4" />
                               ) : value === 'Remote' ? (
-                                <BookmarksSvgIcon name="laptop" className="w-4 h-4" />
+                                <FaGraduationCap className="w-4 h-4" aria-hidden="true" />
                               ) : value === 'Blended' ? (
-                                <BuildingIcon className="w-4 h-4" />
+                                <CheckCircleIcon className="w-4 h-4" />
                               ) : (
                                 <GlobeIcon className="w-4 h-4" />
                               )}
