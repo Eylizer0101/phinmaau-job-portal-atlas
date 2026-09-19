@@ -5,12 +5,12 @@ import axios from 'axios';
 import {
   FaUser,
   FaGraduationCap,
-  FaBriefcase,
-  FaMapMarkerAlt,
-  FaUsers,
   FileIcon,
   CheckCircleIcon,
   GlobeIcon,
+  LocationIcon,
+  BookmarksSvgIcon,
+  BuildingIcon,
 } from '../../../components/jobseeker/JobseekerIcons';
 
 // ✅ Use existing dropdown options (course dropdown)
@@ -597,6 +597,17 @@ const RegisterPage = () => {
     { id: 3, label: 'Credentials' },
   ];
 
+  const STEP_FIELDS = {
+    1: ['firstName', 'middleName', 'lastName', 'extensionName', 'email', 'phoneNumber'],
+    2: ['course', 'campus', 'yearGraduated', 'preferredWorkMode', 'howSoonCanYouStart'],
+    3: ['cvFile', 'diplomaFile', 'validIdFile', 'torFile', 'sssFile', 'philhealthFile', 'pagibigFile', 'tinFile'],
+  };
+
+  const stepHasError = (stepId) => {
+    const keys = STEP_FIELDS[stepId] || [];
+    return keys.some((k) => Boolean(formErrors?.[k]));
+  };
+
  const Stepper = () => (
     <div className="mt-4">
       <nav aria-label="Progress">
@@ -1064,13 +1075,13 @@ const RegisterPage = () => {
                           >
                             <span className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-[#2e66a6]">
                               {value === 'On-site' ? (
-                                <FaMapMarkerAlt className="w-4 h-4" aria-hidden="true" />
+                                <LocationIcon className="w-4 h-4" />
                               ) : value === 'Remote' ? (
-                                <GlobeIcon className="w-4 h-4" />
+                                <BookmarksSvgIcon name="laptop" className="w-4 h-4" />
                               ) : value === 'Blended' ? (
-                                <FaBriefcase className="w-4 h-4" aria-hidden="true" />
+                                <BuildingIcon className="w-4 h-4" />
                               ) : (
-                                <FaUser className="w-4 h-4" aria-hidden="true" />
+                                <GlobeIcon className="w-4 h-4" />
                               )}
                             </span>
                             <span className="text-sm font-semibold">{label}</span>
@@ -1277,7 +1288,7 @@ const RegisterPage = () => {
                 ) : index === 3 ? (
                   <CheckCircleIcon className="w-4 h-4" />
                 ) : (
-                  <FaUsers className="w-4 h-4" aria-hidden="true" />
+                  <GlobeIcon className="w-4 h-4" />
                 )}
               </div>
               <div className="pt-0.5">
