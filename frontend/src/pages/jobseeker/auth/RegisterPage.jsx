@@ -597,17 +597,6 @@ const RegisterPage = () => {
     { id: 3, label: 'Credentials' },
   ];
 
-  const STEP_FIELDS = {
-    1: ['firstName', 'middleName', 'lastName', 'extensionName', 'email', 'phoneNumber'],
-    2: ['course', 'campus', 'yearGraduated', 'preferredWorkMode', 'howSoonCanYouStart'],
-    3: ['cvFile', 'diplomaFile', 'validIdFile', 'torFile', 'sssFile', 'philhealthFile', 'pagibigFile', 'tinFile'],
-  };
-
-  const stepHasError = (stepId) => {
-    const keys = STEP_FIELDS[stepId] || [];
-    return keys.some((k) => Boolean(formErrors?.[k]));
-  };
-
  const Stepper = () => (
     <div className="mt-4">
       <nav aria-label="Progress">
