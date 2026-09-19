@@ -1449,9 +1449,9 @@ If you don’t receive a confirmation email within 48 hours or have any question
           </svg>
         </button>
 
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-8">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-4">
             {/* LEFT CARD: HOW IT WORKS */}
-            <div className="relative lg:w-[48%] flex items-stretch justify-center">
+            <div className="relative w-full lg:w-[520px] lg:shrink-0 flex items-stretch justify-center">
 
 
               <div className="h-full w-full flex flex-col justify-center">
@@ -1483,7 +1483,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
             </div>
 
             {/* RIGHT CARD: REGISTRATION FORM */}
-            <div className="lg:w-[52%] max-w-[620px] p-5 sm:p-6 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-center">
+            <div className="w-full lg:w-[620px] lg:shrink-0 max-w-[620px] p-5 sm:p-6 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-center">
               <div className="mx-auto w-full">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2.5">
