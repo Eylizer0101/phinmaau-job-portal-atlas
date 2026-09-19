@@ -141,14 +141,14 @@ const RegisterPage = () => {
   const describedBy = (...ids) => ids.filter(Boolean).join(' ') || undefined;
 
   const helperText = (id, text) => (
-    <p id={id} className="text-[12px] text-gray-500 mt-1">
+    <p id={id} className="text-sm text-gray-500 mt-1">
       {text}
     </p>
   );
 
   const errorText = (id, msg) =>
     msg ? (
-      <p id={id} className="text-[13px] text-red-600 mt-1" role="alert" aria-live="assertive">
+      <p id={id} className="text-sm text-red-600 mt-1" role="alert" aria-live="assertive">
         {msg}
       </p>
     ) : null;
@@ -503,16 +503,16 @@ const RegisterPage = () => {
   };
 
   // ---------- UI helpers ----------
-  const labelBase = 'block text-sm font-semibold text-gray-800';
+  const labelBase = 'block text-base font-semibold text-gray-800';
 
   const inputBase =
-    'block w-full h-11 px-3.5 text-[15px] text-gray-900 border border-gray-200 rounded-xl bg-white ' +
+    'block w-full h-11 px-3.5 text-base text-gray-900 border border-gray-200 rounded-xl bg-white ' +
     'shadow-sm transition ' +
     'focus:outline-none focus:border-[#2e66a6] ' +
     'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
 
   const selectBase =
-    'block w-full h-11 px-3.5 pr-10 text-[15px] text-gray-900 border border-gray-200 rounded-xl bg-white ' +
+    'block w-full h-11 px-3.5 pr-10 text-base text-gray-900 border border-gray-200 rounded-xl bg-white ' +
     'shadow-sm transition appearance-none ' +
     'focus:outline-none focus:border-[#2e66a6] ' +
     'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
@@ -619,7 +619,7 @@ const RegisterPage = () => {
                 }`}>
                   {isDone ? '✓' : step.id}
                 </div>
-                <span className={`mt-1.5 text-[10px] sm:text-[11px] font-semibold leading-tight ${isActive ? 'text-[#2e66a6]' : 'text-gray-500'}`}>
+                <span className={`mt-1.5 text-sm font-semibold leading-tight ${isActive ? 'text-[#2e66a6]' : 'text-gray-500'}`}>
                   {step.label}
                 </span>
               </div>
@@ -643,7 +643,7 @@ const RegisterPage = () => {
           {title}
         </label>
 
-        {subtitle ? <p className="text-[11px] text-gray-500 -mt-0.5">{subtitle}</p> : null}
+        {subtitle ? <p className="text-sm text-gray-500 -mt-0.5">{subtitle}</p> : null}
 
         <input
           id={k}
@@ -1025,7 +1025,7 @@ const RegisterPage = () => {
                         type="button"
                         onClick={() => clearFile('profileImageFile')}
                         disabled={loading}
-                        className="text-xs font-semibold text-red-600 hover:underline"
+                        className="text-sm font-semibold text-red-600 hover:underline"
                       >
                         Remove photo
                       </button>
@@ -1065,7 +1065,7 @@ const RegisterPage = () => {
                             <span className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-[#2e66a6]">
                               {value === 'On-site' ? '▣' : value === 'Remote' ? '▱' : value === 'Blended' ? '⌂' : '⌂'}
                             </span>
-                            <span className="text-xs font-semibold">{label}</span>
+                            <span className="text-sm font-semibold">{label}</span>
                           </button>
                         );
                       })}
@@ -1124,7 +1124,7 @@ const RegisterPage = () => {
                 <div className="w-full">
                   <p className="text-sm font-semibold text-gray-900">Quick Upload Rules:</p>
 
-                  <ul className="mt-2 text-xs text-gray-700 list-disc pl-5 space-y-1">
+                  <ul className="mt-2 text-sm text-gray-700 list-disc pl-5 space-y-1">
                     <li><strong>Accepted Formats:</strong> PDF (preferred for resumes) or Photos (JPG, PNG).</li>
                     <li><strong>File Size:</strong> Please keep files under 5MB.</li>
                     <li><strong>Clarity:</strong> If uploading a photo, ensure the text is clear and readable—no blurry shots!</li>
@@ -1139,7 +1139,7 @@ const RegisterPage = () => {
                     <p className="text-sm font-semibold text-gray-900">Pro-Tips for Fresh Grads:</p>
                   </div>
 
-                  <ul className="mt-2 text-xs text-gray-700 list-disc pl-5 space-y-1">
+                  <ul className="mt-2 text-sm text-gray-700 list-disc pl-5 space-y-1">
                     <li>
                       <strong>For your Resume:</strong> We highly recommend using a PDF format. It keeps your layout looking perfect on every recruiter's
                       screen!
@@ -1254,7 +1254,7 @@ const RegisterPage = () => {
     return (
       <section className="w-full rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm" aria-label="How it works">
         <h3 className="text-xl font-bold text-gray-900">How it works</h3>
-        <p className="mt-1 text-xs text-gray-500">5 Simple Steps to Create Your Account</p>
+        <p className="mt-1 text-sm text-gray-500">5 Simple Steps to Create Your Account</p>
         <div className="relative mt-5 space-y-6">
           <div className="absolute left-[17px] top-5 bottom-5 w-px bg-gray-200" aria-hidden="true" />
           {items.map(([number, title, description], index) => (
@@ -1263,8 +1263,8 @@ const RegisterPage = () => {
                 {index === 0 ? '♙' : index === 1 ? '♧' : index === 2 ? '▱' : index === 3 ? '➤' : '⊕'}
               </div>
               <div className="pt-0.5">
-                <p className="text-sm font-bold text-gray-900">{number} {title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-gray-500">{description}</p>
+                <p className="text-base font-bold text-gray-900">{number} {title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-gray-600">{description}</p>
               </div>
             </div>
           ))}
