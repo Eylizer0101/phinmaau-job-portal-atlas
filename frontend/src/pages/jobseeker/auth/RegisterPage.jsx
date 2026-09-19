@@ -1,71 +1,88 @@
 // src/pages/jobseeker/auth/RegisterPage.jsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 // ✅ Use existing dropdown options (course dropdown)
-import { MAJOR_COURSE_OPTIONS } from '../../../constants/jobseekerEducationOptions';
+import { MAJOR_COURSE_OPTIONS } from "../../../constants/jobseekerEducationOptions";
 
 const CREDENTIAL_FILE_KEYS = new Set([
-  'cvFile', 'diplomaFile', 'validIdFile', 'torFile',
-  'sssFile', 'philhealthFile', 'pagibigFile', 'tinFile',
+  "cvFile",
+  "diplomaFile",
+  "validIdFile",
+  "torFile",
+  "sssFile",
+  "philhealthFile",
+  "pagibigFile",
+  "tinFile",
 ]);
-const ALLOWED_CREDENTIAL_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
+const ALLOWED_CREDENTIAL_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_CREDENTIAL_MIME_TYPES = new Set([
-  'application/pdf', 'image/jpeg', 'image/jpg', 'image/png',
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
 ]);
 const MAX_CREDENTIAL_FILE_SIZE = 5 * 1024 * 1024;
-const INVALID_CREDENTIAL_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
-const REGISTRATION_DRAFT_KEY = 'agapay:jobseeker:registration-draft';
-
-const getSavedRegistrationDraft = () => {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem(REGISTRATION_DRAFT_KEY) || '{}');
-    return saved && typeof saved === 'object' ? saved : {};
-  } catch {
-    return {};
-  }
-};
+const INVALID_CREDENTIAL_MESSAGE =
+  "Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.";
 
 const getCredentialSignatureType = async (file) => {
   const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-  const isPdf = bytes.length >= 5
-    && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44
-    && bytes[3] === 0x46 && bytes[4] === 0x2d;
-  const isJpeg = bytes.length >= 3
-    && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const isPdf =
+    bytes.length >= 5 &&
+    bytes[0] === 0x25 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x44 &&
+    bytes[3] === 0x46 &&
+    bytes[4] === 0x2d;
+  const isJpeg =
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff;
   const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-  const isPng = bytes.length >= pngSignature.length
-    && pngSignature.every((byte, index) => bytes[index] === byte);
+  const isPng =
+    bytes.length >= pngSignature.length &&
+    pngSignature.every((byte, index) => bytes[index] === byte);
 
-  if (isPdf) return 'pdf';
-  if (isJpeg) return 'jpeg';
-  if (isPng) return 'png';
+  if (isPdf) return "pdf";
+  if (isJpeg) return "jpeg";
+  if (isPng) return "png";
   return null;
 };
 
 const validateCredentialFile = async (file) => {
   if (!file) return false;
-  const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+  const extension =
+    String(file.name || "")
+      .split(".")
+      .pop()
+      ?.toLowerCase() || "";
 
   if (
-    !ALLOWED_CREDENTIAL_EXTENSIONS.has(extension)
-    || !ALLOWED_CREDENTIAL_MIME_TYPES.has(String(file.type || '').toLowerCase())
-    || file.size > MAX_CREDENTIAL_FILE_SIZE
-  ) return false;
+    !ALLOWED_CREDENTIAL_EXTENSIONS.has(extension) ||
+    !ALLOWED_CREDENTIAL_MIME_TYPES.has(String(file.type || "").toLowerCase()) ||
+    file.size > MAX_CREDENTIAL_FILE_SIZE
+  )
+    return false;
 
   try {
     const signatureType = await getCredentialSignatureType(file);
-    const expectedType = extension === 'jpg' ? 'jpeg' : extension;
-    const mimeType = String(file.type || '').toLowerCase();
-    const expectedMimeType = signatureType === 'pdf'
-      ? 'application/pdf'
-      : signatureType === 'png'
-        ? 'image/png'
-        : 'image/jpeg';
+    const expectedType = extension === "jpg" ? "jpeg" : extension;
+    const mimeType = String(file.type || "").toLowerCase();
+    const expectedMimeType =
+      signatureType === "pdf"
+        ? "application/pdf"
+        : signatureType === "png"
+          ? "image/png"
+          : "image/jpeg";
 
-    return signatureType === expectedType
-      && (mimeType === expectedMimeType || (signatureType === 'jpeg' && mimeType === 'image/jpg'));
+    return (
+      signatureType === expectedType &&
+      (mimeType === expectedMimeType ||
+        (signatureType === "jpeg" && mimeType === "image/jpg"))
+    );
   } catch {
     return false;
   }
@@ -73,34 +90,33 @@ const validateCredentialFile = async (file) => {
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const savedRegistrationDraft = useMemo(getSavedRegistrationDraft, []);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
-  const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/register`;
-  const CHECK_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/check-registration-email`;
-  const REQUEST_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/request-registration-email-otp`;
-  const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/verify-registration-email`;
-  const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
+  const API_BASE_URL =
+    process.env.REACT_APP_API_URL ||
+    "https://phinmaau-job-portal-atlas.onrender.com/api";
+  const API_URL = `${API_BASE_URL.replace(/\/$/, "")}/auth/register`;
+  const CHECK_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, "")}/auth/check-registration-email`;
+  const REQUEST_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, "")}/auth/request-registration-email-otp`;
+  const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, "")}/auth/verify-registration-email`;
+  const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, "")}/auth/resend-registration-email-otp`;
 
   // ✅ 3 steps na lang (Step 4 removed; replaced with modal confirmations)
-  const [currentStep, setCurrentStep] = useState(() => {
-    const savedStep = Number(savedRegistrationDraft.currentStep);
-    return [1, 2, 3].includes(savedStep) ? savedStep : 1;
-  });
+  const [currentStep, setCurrentStep] = useState(1);
   const [currentHowItWorksSlide, setCurrentHowItWorksSlide] = useState(0);
 
   const [loading, setLoading] = useState(false);
-  const [serverError, setServerError] = useState('');
+  const [serverError, setServerError] = useState("");
   const [formErrors, setFormErrors] = useState({});
   const [focused, setFocused] = useState({});
 
   // ✅ NEW: Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false); // "READY TO GO?"
   const [showSuccessModal, setShowSuccessModal] = useState(false); // "Thank you for signing up!"
-  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
-  const [emailOtp, setEmailOtp] = useState('');
-  const [emailOtpError, setEmailOtpError] = useState('');
-  const [emailOtpMessage, setEmailOtpMessage] = useState('');
+  const [showEmailVerificationModal, setShowEmailVerificationModal] =
+    useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailOtpError, setEmailOtpError] = useState("");
+  const [emailOtpMessage, setEmailOtpMessage] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
@@ -111,23 +127,23 @@ const RegisterPage = () => {
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
 
-  const [formData, setFormData] = useState(() => ({
+  const [formData, setFormData] = useState({
     // Step 1: Basic Information
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    extensionName: '',
-    email: '',
-    phoneNumber: '',
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    extensionName: "",
+    email: "",
+    phoneNumber: "",
 
     // Step 2: Career Profile
-    course: '',
-    campus: '',
-    yearGraduated: '',
-    preferredWorkMode: '',
+    course: "",
+    campus: "",
+    yearGraduated: "",
+    preferredWorkMode: "",
     profileImageFile: null,
 
-    howSoonCanYouStart: '',
+    howSoonCanYouStart: "",
 
     // Step 3: Credentials Upload
     cvFile: null,
@@ -140,24 +156,10 @@ const RegisterPage = () => {
     philhealthFile: null,
     pagibigFile: null,
     tinFile: null,
+  });
 
-    ...Object.fromEntries(
-      Object.entries(savedRegistrationDraft.formData || {}).filter(([, value]) => typeof value === 'string')
-    ),
-  }));
-
-  useEffect(() => {
-    const persistableFormData = Object.fromEntries(
-      Object.entries(formData).filter(([, value]) => typeof value === 'string')
-    );
-
-    sessionStorage.setItem(
-      REGISTRATION_DRAFT_KEY,
-      JSON.stringify({ currentStep, formData: persistableFormData })
-    );
-  }, [currentStep, formData]);
-
-  const setFieldFocus = (name, isFocused) => setFocused((p) => ({ ...p, [name]: isFocused }));
+  const setFieldFocus = (name, isFocused) =>
+    setFocused((p) => ({ ...p, [name]: isFocused }));
 
   const clearError = (k) =>
     setFormErrors((p) => {
@@ -167,7 +169,7 @@ const RegisterPage = () => {
       return n;
     });
 
-  const describedBy = (...ids) => ids.filter(Boolean).join(' ') || undefined;
+  const describedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
 
   const helperText = (id, text) => (
     <p id={id} className="text-[12px] text-gray-500 mt-1">
@@ -177,17 +179,23 @@ const RegisterPage = () => {
 
   const errorText = (id, msg) =>
     msg ? (
-      <p id={id} className="text-[13px] text-red-600 mt-1" role="alert" aria-live="assertive">
+      <p
+        id={id}
+        className="text-[13px] text-red-600 mt-1"
+        role="alert"
+        aria-live="assertive"
+      >
         {msg}
       </p>
     ) : null;
 
   // Name rules
-  const hasDigits = (v) => /\d/.test(String(v || ''));
-  const hasValidNameCharacters = (v) => /^[\p{L}\s'-]+$/u.test(String(v || ''));
+  const hasDigits = (v) => /\d/.test(String(v || ""));
+  const hasValidNameCharacters = (v) => /^[\p{L}\s'-]+$/u.test(String(v || ""));
 
   // Email rules
-  const isValidGmailAddress = (v) => /^[^\s@]+@gmail\.com$/i.test(String(v || '').trim());
+  const isValidGmailAddress = (v) =>
+    /^[^\s@]+@gmail\.com$/i.test(String(v || "").trim());
 
   // Year dropdown list (years only)
   const yearOptions = useMemo(() => {
@@ -200,7 +208,7 @@ const RegisterPage = () => {
   }, []);
 
   // ✅ NEW: Ext Name dropdown options
-  const extNameOptions = ['None', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
+  const extNameOptions = ["None", "Jr.", "Sr.", "II", "III", "IV", "V"];
 
   // ---------- File picker refs (custom upload UI) ----------
   const fileRefs = {
@@ -226,65 +234,73 @@ const RegisterPage = () => {
     if (loading) return;
     setFormData((p) => ({ ...p, [key]: null }));
     clearError(key);
-    if (fileRefs[key]?.current) fileRefs[key].current.value = '';
+    if (fileRefs[key]?.current) fileRefs[key].current.value = "";
   };
 
   // -------- Handlers --------
   const handleChange = async (e) => {
     const { name, value, type, files } = e.target;
 
-    if (type === 'file') {
+    if (type === "file") {
       const file = files?.[0] || null;
 
       if (file && CREDENTIAL_FILE_KEYS.has(name)) {
         const isValid = await validateCredentialFile(file);
         if (!isValid) {
           setFormData((prev) => ({ ...prev, [name]: null }));
-          setFormErrors((prev) => ({ ...prev, [name]: INVALID_CREDENTIAL_MESSAGE }));
-          e.target.value = '';
-          setServerError('');
+          setFormErrors((prev) => ({
+            ...prev,
+            [name]: INVALID_CREDENTIAL_MESSAGE,
+          }));
+          e.target.value = "";
+          setServerError("");
           return;
         }
       }
 
       setFormData((prev) => ({ ...prev, [name]: file }));
       clearError(name);
-      setServerError('');
+      setServerError("");
       return;
     }
 
     // Prevent typing numbers on name fields
-    if (name === 'firstName' || name === 'middleName' || name === 'lastName') {
+    if (name === "firstName" || name === "middleName" || name === "lastName") {
       setFormData((prev) => ({ ...prev, [name]: value }));
       clearError(name);
-      setServerError('');
+      setServerError("");
       return;
     }
 
     // ✅ Phone number: numbers only, EXACT 11 max
-    if (name === 'phoneNumber') {
-      const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+    if (name === "phoneNumber") {
+      const digits = String(value || "")
+        .replace(/\D/g, "")
+        .slice(0, 11);
       setFormData((prev) => ({ ...prev, [name]: digits }));
       clearError(name);
-      setServerError('');
+      setServerError("");
       return;
     }
 
     // ✅ Ext Name dropdown: save empty string when "None"
-    if (name === 'extensionName') {
-      setFormData((prev) => ({ ...prev, extensionName: value === 'None' ? '' : value }));
+    if (name === "extensionName") {
+      setFormData((prev) => ({
+        ...prev,
+        extensionName: value === "None" ? "" : value,
+      }));
       clearError(name);
-      setServerError('');
+      setServerError("");
       return;
     }
 
     setFormData((prev) => ({ ...prev, [name]: value }));
     clearError(name);
-    setServerError('');
+    setServerError("");
   };
 
   const handleNameKeyDown = (e) => {
-    if (e.key >= '0' && e.key <= '9') e.preventDefault();
+    if (e.key >= "0" && e.key <= "9") e.preventDefault();
   };
 
   // -------- Validations per step --------
@@ -292,37 +308,49 @@ const RegisterPage = () => {
   const validateStep1 = () => {
     const errors = {};
 
-    const fn = String(formData.firstName || '').trim();
-    const mn = String(formData.middleName || '').trim();
-    const ln = String(formData.lastName || '').trim();
-    const ext = String(formData.extensionName || '').trim();
+    const fn = String(formData.firstName || "").trim();
+    const mn = String(formData.middleName || "").trim();
+    const ln = String(formData.lastName || "").trim();
+    const ext = String(formData.extensionName || "").trim();
 
-    if (!fn) errors.firstName = 'First name is required';
-    else if (hasDigits(fn)) errors.firstName = 'First Name should not contain numbers';
-    else if (fn.length > 50) errors.firstName = 'Maximum of 50 characters only.';
-    else if (!hasValidNameCharacters(fn)) errors.firstName = "Use letters, spaces, hyphens, and apostrophes only.";
+    if (!fn) errors.firstName = "First name is required";
+    else if (hasDigits(fn))
+      errors.firstName = "First Name should not contain numbers";
+    else if (fn.length > 50)
+      errors.firstName = "Maximum of 50 characters only.";
+    else if (!hasValidNameCharacters(fn))
+      errors.firstName = "Use letters, spaces, hyphens, and apostrophes only.";
 
-    if (mn && hasDigits(mn)) errors.middleName = 'Middle Name should not contain numbers';
-    else if (mn.length > 50) errors.middleName = 'Maximum of 50 characters only.';
-    else if (mn && !hasValidNameCharacters(mn)) errors.middleName = "Use letters, spaces, hyphens, and apostrophes only.";
+    if (mn && hasDigits(mn))
+      errors.middleName = "Middle Name should not contain numbers";
+    else if (mn.length > 50)
+      errors.middleName = "Maximum of 50 characters only.";
+    else if (mn && !hasValidNameCharacters(mn))
+      errors.middleName = "Use letters, spaces, hyphens, and apostrophes only.";
 
-    if (!ln) errors.lastName = 'Last name is required';
-    else if (hasDigits(ln)) errors.lastName = 'Last Name should not contain numbers';
-    else if (ln.length > 50) errors.lastName = 'Maximum of 50 characters only.';
-    else if (!hasValidNameCharacters(ln)) errors.lastName = "Use letters, spaces, hyphens, and apostrophes only.";
+    if (!ln) errors.lastName = "Last name is required";
+    else if (hasDigits(ln))
+      errors.lastName = "Last Name should not contain numbers";
+    else if (ln.length > 50) errors.lastName = "Maximum of 50 characters only.";
+    else if (!hasValidNameCharacters(ln))
+      errors.lastName = "Use letters, spaces, hyphens, and apostrophes only.";
 
-    if (ext && hasDigits(ext)) errors.extensionName = 'Extension Name should not contain numbers';
+    if (ext && hasDigits(ext))
+      errors.extensionName = "Extension Name should not contain numbers";
 
-    const email = String(formData.email || '').trim();
-    if (!email) errors.email = 'Email is required';
-    else if (email.length > 100) errors.email = 'Maximum of 100 characters only.';
-    else if (!isValidGmailAddress(email)) errors.email = 'Gmail account required to continue.';
+    const email = String(formData.email || "").trim();
+    if (!email) errors.email = "Email is required";
+    else if (email.length > 100)
+      errors.email = "Maximum of 100 characters only.";
+    else if (!isValidGmailAddress(email))
+      errors.email = "Gmail account required to continue.";
 
     // ✅ Philippine mobile number: 11 digits and must start with 09
-    const phone = String(formData.phoneNumber || '').trim();
-    if (!phone) errors.phoneNumber = 'Phone number is required';
+    const phone = String(formData.phoneNumber || "").trim();
+    if (!phone) errors.phoneNumber = "Phone number is required";
     else if (!/^09\d{9}$/.test(phone)) {
-      errors.phoneNumber = 'Please enter a valid 11-digit Philippine mobile number starting with 09.';
+      errors.phoneNumber =
+        "Please enter a valid 11-digit Philippine mobile number starting with 09.";
     }
 
     setFormErrors(errors);
@@ -333,32 +361,45 @@ const RegisterPage = () => {
   const validateCareerMain = () => {
     const errors = {};
 
-    if (!String(formData.campus || '').trim()) errors.campus = 'Campus is required';
-    if (!String(formData.course || '').trim()) errors.course = 'Course is required';
+    if (!String(formData.campus || "").trim())
+      errors.campus = "Campus is required";
+    if (!String(formData.course || "").trim())
+      errors.course = "Course is required";
     const currentYear = new Date().getFullYear();
     const graduationYear = Number(formData.yearGraduated);
-    if (!String(formData.yearGraduated || '').trim()) errors.yearGraduated = 'Year Graduated is required';
-    else if (!Number.isInteger(graduationYear) || graduationYear < 1982 || graduationYear > currentYear) {
+    if (!String(formData.yearGraduated || "").trim())
+      errors.yearGraduated = "Year Graduated is required";
+    else if (
+      !Number.isInteger(graduationYear) ||
+      graduationYear < 1982 ||
+      graduationYear > currentYear
+    ) {
       errors.yearGraduated = `Year Graduated must be between 1982 and ${currentYear}`;
     }
-    if (!String(formData.preferredWorkMode || '').trim()) errors.preferredWorkMode = 'Preferred Work Mode is required';
-    if (!String(formData.howSoonCanYouStart || '').trim()) errors.howSoonCanYouStart = 'This field is required';
+    if (!String(formData.preferredWorkMode || "").trim())
+      errors.preferredWorkMode = "Preferred Work Mode is required";
+    if (!String(formData.howSoonCanYouStart || "").trim())
+      errors.howSoonCanYouStart = "This field is required";
 
     if (formData.profileImageFile) {
-      const allowedProfileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const allowedProfileTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       const maxProfileSize = 5 * 1024 * 1024;
 
       if (!allowedProfileTypes.includes(formData.profileImageFile.type)) {
-        errors.profileImageFile = 'Accepted formats: JPG, PNG, WEBP';
+        errors.profileImageFile = "Accepted formats: JPG, PNG, WEBP";
       } else if (formData.profileImageFile.size > maxProfileSize) {
-        errors.profileImageFile = 'Graduation photo must be 5MB or smaller';
+        errors.profileImageFile = "Profile photo must be 5MB or smaller";
       }
     }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
 
   // ✅ Step 2 is now Career Profile
   const validateStep2 = () => validateCareerMain();
@@ -371,80 +412,90 @@ const RegisterPage = () => {
 
     const validateFileIfExists = (file, key) => {
       if (!file) return;
-      const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+      const extension =
+        String(file.name || "")
+          .split(".")
+          .pop()
+          ?.toLowerCase() || "";
       if (
-        !ALLOWED_CREDENTIAL_EXTENSIONS.has(extension)
-        || !ALLOWED_CREDENTIAL_MIME_TYPES.has(String(file.type || '').toLowerCase())
-        || file.size > MAX_CREDENTIAL_FILE_SIZE
-      ) errors[key] = INVALID_CREDENTIAL_MESSAGE;
+        !ALLOWED_CREDENTIAL_EXTENSIONS.has(extension) ||
+        !ALLOWED_CREDENTIAL_MIME_TYPES.has(
+          String(file.type || "").toLowerCase(),
+        ) ||
+        file.size > MAX_CREDENTIAL_FILE_SIZE
+      )
+        errors[key] = INVALID_CREDENTIAL_MESSAGE;
     };
 
     // ✅ Required documents
-    if (!formData.cvFile) errors.cvFile = 'CV/Resume is required';
-    else validateFileIfExists(formData.cvFile, 'cvFile');
+    if (!formData.cvFile) errors.cvFile = "CV/Resume is required";
+    else validateFileIfExists(formData.cvFile, "cvFile");
 
-    if (!formData.diplomaFile) errors.diplomaFile = 'Diploma is required';
-    else validateFileIfExists(formData.diplomaFile, 'diplomaFile');
+    if (!formData.diplomaFile) errors.diplomaFile = "Diploma is required";
+    else validateFileIfExists(formData.diplomaFile, "diplomaFile");
 
-    if (!formData.validIdFile) errors.validIdFile = 'Valid ID is required';
-    else validateFileIfExists(formData.validIdFile, 'validIdFile');
+    if (!formData.validIdFile) errors.validIdFile = "Valid ID is required";
+    else validateFileIfExists(formData.validIdFile, "validIdFile");
 
-    if (!formData.torFile) errors.torFile = 'Transcript of Records (TOR) is required';
-    else validateFileIfExists(formData.torFile, 'torFile');
+    if (!formData.torFile)
+      errors.torFile = "Transcript of Records (TOR) is required";
+    else validateFileIfExists(formData.torFile, "torFile");
 
     // ✅ Optional documents
-    validateFileIfExists(formData.sssFile, 'sssFile');
-    validateFileIfExists(formData.philhealthFile, 'philhealthFile');
-    validateFileIfExists(formData.pagibigFile, 'pagibigFile');
-    validateFileIfExists(formData.tinFile, 'tinFile');
+    validateFileIfExists(formData.sssFile, "sssFile");
+    validateFileIfExists(formData.philhealthFile, "philhealthFile");
+    validateFileIfExists(formData.pagibigFile, "pagibigFile");
+    validateFileIfExists(formData.tinFile, "tinFile");
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const submitVerifiedRegistration = async (registrationVerificationToken) => {
-      const fd = new FormData();
+    const fd = new FormData();
 
-      // Step 1: Career Profile
-      fd.append('course', String(formData.course).trim());
-      fd.append('campus', String(formData.campus).trim());
-      fd.append('yearGraduated', String(formData.yearGraduated).trim());
-      fd.append('preferredWorkMode', String(formData.preferredWorkMode).trim());
-      if (formData.profileImageFile) fd.append('profileImage', formData.profileImageFile);
+    // Step 1: Career Profile
+    fd.append("course", String(formData.course).trim());
+    fd.append("campus", String(formData.campus).trim());
+    fd.append("yearGraduated", String(formData.yearGraduated).trim());
+    fd.append("preferredWorkMode", String(formData.preferredWorkMode).trim());
+    if (formData.profileImageFile)
+      fd.append("profileImage", formData.profileImageFile);
 
-      fd.append('howSoonCanYouStart', String(formData.howSoonCanYouStart).trim());
+    fd.append("howSoonCanYouStart", String(formData.howSoonCanYouStart).trim());
 
-      // Step 2: Basic Info
-      fd.append('firstName', String(formData.firstName).trim());
-      fd.append('middleName', String(formData.middleName || '').trim());
-      fd.append('lastName', String(formData.lastName).trim());
-      fd.append('extensionName', String(formData.extensionName || '').trim());
-      fd.append('email', String(formData.email).trim().toLowerCase());
-      fd.append('phoneNumber', String(formData.phoneNumber).trim());
+    // Step 2: Basic Info
+    fd.append("firstName", String(formData.firstName).trim());
+    fd.append("middleName", String(formData.middleName || "").trim());
+    fd.append("lastName", String(formData.lastName).trim());
+    fd.append("extensionName", String(formData.extensionName || "").trim());
+    fd.append("email", String(formData.email).trim().toLowerCase());
+    fd.append("phoneNumber", String(formData.phoneNumber).trim());
 
-      // ✅ Required files only
-      fd.append('cv', formData.cvFile);
-      fd.append('diploma', formData.diplomaFile);
-      fd.append('validId', formData.validIdFile);
+    // ✅ Required files only
+    fd.append("cv", formData.cvFile);
+    fd.append("diploma", formData.diplomaFile);
+    fd.append("validId", formData.validIdFile);
 
-      // ✅ Optional files (append only if meron)
-      fd.append('tor', formData.torFile);
-      if (formData.sssFile) fd.append('sss', formData.sssFile);
-      if (formData.philhealthFile) fd.append('philhealth', formData.philhealthFile);
-      if (formData.pagibigFile) fd.append('pagibig', formData.pagibigFile);
-      if (formData.tinFile) fd.append('tin', formData.tinFile);
+    // ✅ Optional files (append only if meron)
+    fd.append("tor", formData.torFile);
+    if (formData.sssFile) fd.append("sss", formData.sssFile);
+    if (formData.philhealthFile)
+      fd.append("philhealth", formData.philhealthFile);
+    if (formData.pagibigFile) fd.append("pagibig", formData.pagibigFile);
+    if (formData.tinFile) fd.append("tin", formData.tinFile);
 
-      await axios.post(API_URL, fd, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${registrationVerificationToken}`,
-        },
-      });
+    await axios.post(API_URL, fd, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${registrationVerificationToken}`,
+      },
+    });
   };
 
   // ✅ Request OTP first. No User account or credential upload happens here.
   const submitRegistration = async () => {
-    setServerError('');
+    setServerError("");
 
     const okAll = validateStep1() && validateStep2() && validateStep3();
     if (!okAll) {
@@ -468,17 +519,22 @@ const RegisterPage = () => {
     try {
       const response = await axios.post(REQUEST_EMAIL_OTP_API_URL, {
         email: String(formData.email).trim().toLowerCase(),
-        role: 'jobseeker',
+        role: "jobseeker",
       });
 
       setShowConfirmModal(false);
-      setEmailOtp('');
-      setEmailOtpError('');
-      setEmailOtpMessage(response.data?.message || 'We sent a 6-digit verification code to your Gmail address.');
+      setEmailOtp("");
+      setEmailOtpError("");
+      setEmailOtpMessage(
+        response.data?.message ||
+          "We sent a 6-digit verification code to your Gmail address.",
+      );
       setResendCooldown(120);
       setShowEmailVerificationModal(true);
     } catch (err) {
-      setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setServerError(
+        err.response?.data?.message || "Registration failed. Please try again.",
+      );
       setShowConfirmModal(false);
     } finally {
       setLoading(false);
@@ -487,25 +543,29 @@ const RegisterPage = () => {
 
   const verifyRegistrationEmail = async () => {
     if (!/^\d{6}$/.test(emailOtp)) {
-      setEmailOtpError('Enter the 6-digit OTP sent to your email.');
+      setEmailOtpError("Enter the 6-digit OTP sent to your email.");
       return;
     }
     setLoading(true);
-    setEmailOtpError('');
+    setEmailOtpError("");
     try {
       const response = await axios.post(VERIFY_EMAIL_API_URL, {
         email: String(formData.email).trim().toLowerCase(),
-        role: 'jobseeker',
+        role: "jobseeker",
         otp: emailOtp,
       });
-      const registrationVerificationToken = response.data?.registrationVerificationToken;
-      if (!registrationVerificationToken) throw new Error('Missing registration verification token.');
+      const registrationVerificationToken =
+        response.data?.registrationVerificationToken;
+      if (!registrationVerificationToken)
+        throw new Error("Missing registration verification token.");
       await submitVerifiedRegistration(registrationVerificationToken);
-      sessionStorage.removeItem(REGISTRATION_DRAFT_KEY);
       setShowEmailVerificationModal(false);
       setShowSuccessModal(true);
     } catch (err) {
-      setEmailOtpError(err.response?.data?.message || 'Unable to verify the code. Please try again.');
+      setEmailOtpError(
+        err.response?.data?.message ||
+          "Unable to verify the code. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -514,47 +574,62 @@ const RegisterPage = () => {
   const resendRegistrationEmailOtp = async () => {
     if (loading || resendCooldown > 0) return;
     setLoading(true);
-    setEmailOtpError('');
+    setEmailOtpError("");
     try {
       const response = await axios.post(RESEND_EMAIL_OTP_API_URL, {
         email: String(formData.email).trim().toLowerCase(),
-        role: 'jobseeker',
+        role: "jobseeker",
       });
-      setEmailOtp('');
-      setEmailOtpMessage(response.data?.message || 'A new verification code has been sent.');
+      setEmailOtp("");
+      setEmailOtpMessage(
+        response.data?.message || "A new verification code has been sent.",
+      );
       setResendCooldown(120);
     } catch (err) {
-      const retryAfterSeconds = Number(err.response?.data?.retryAfterSeconds || 0);
+      const retryAfterSeconds = Number(
+        err.response?.data?.retryAfterSeconds || 0,
+      );
       if (retryAfterSeconds > 0) setResendCooldown(retryAfterSeconds);
-      setEmailOtpError(err.response?.data?.message || 'Unable to send a new code right now.');
+      setEmailOtpError(
+        err.response?.data?.message || "Unable to send a new code right now.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   // ---------- UI helpers ----------
-  const labelBase = 'block text-sm font-semibold text-gray-800';
+  const labelBase = "block text-sm font-semibold text-gray-800";
 
   const inputBase =
-    'block w-full h-11 px-3.5 text-[15px] text-gray-900 border border-gray-200 rounded-xl bg-white ' +
-    'shadow-sm transition ' +
-    'focus:outline-none focus:border-[#2e66a6] ' +
-    'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+    "block w-full h-11 px-3.5 text-[15px] text-gray-900 border border-gray-200 rounded-xl bg-white " +
+    "shadow-sm transition " +
+    "focus:outline-none focus:border-[#2e66a6] " +
+    "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed";
 
   const selectBase =
-    'block w-full h-11 px-3.5 pr-10 text-[15px] text-gray-900 border border-gray-200 rounded-xl bg-white ' +
-    'shadow-sm transition appearance-none ' +
-    'focus:outline-none focus:border-[#2e66a6] ' +
-    'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+    "block w-full h-11 px-3.5 pr-10 text-[15px] text-gray-900 border border-gray-200 rounded-xl bg-white " +
+    "shadow-sm transition appearance-none " +
+    "focus:outline-none focus:border-[#2e66a6] " +
+    "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed";
 
-  const fieldClass = (hasError) => `${inputBase} ${hasError ? 'border-red-400 focus:border-red-600' : ''}`;
-  const selectClass = (hasError) => `${selectBase} ${hasError ? 'border-red-400 focus:border-red-600' : ''}`;
+  const fieldClass = (hasError) =>
+    `${inputBase} ${hasError ? "border-red-400 focus:border-red-600" : ""}`;
+  const selectClass = (hasError) =>
+    `${selectBase} ${hasError ? "border-red-400 focus:border-red-600" : ""}`;
 
-  const iconWrap = 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none';
+  const iconWrap =
+    "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none";
 
   // ---------- Icons ----------
   const IconUser = () => (
-    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 text-gray-500"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -565,7 +640,13 @@ const RegisterPage = () => {
   );
 
   const IconMail = () => (
-    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 text-gray-500"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -576,7 +657,13 @@ const RegisterPage = () => {
   );
 
   const IconPhone = () => (
-    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 text-gray-500"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -587,19 +674,47 @@ const RegisterPage = () => {
   );
 
   const IconCap = () => (
-    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m-7-3l7 3 7-3" />
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 text-gray-500"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m-7-3l7 3 7-3"
+      />
     </svg>
   );
 
   const IconDoc = () => (
-    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" />
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 text-gray-500"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"
+      />
     </svg>
   );
 
   const IconLightBulb = () => (
-    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 text-gray-500"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -609,18 +724,39 @@ const RegisterPage = () => {
     </svg>
   );
 
-
   // ---------- Stepper ----------
   const steps = [
-    { id: 1, label: 'Basic Information' },
-    { id: 2, label: 'Career Profile' },
-    { id: 3, label: 'Credentials' },
+    { id: 1, label: "Basic Information" },
+    { id: 2, label: "Career Profile" },
+    { id: 3, label: "Credentials" },
   ];
 
   const STEP_FIELDS = {
-    1: ['firstName', 'middleName', 'lastName', 'extensionName', 'email', 'phoneNumber'],
-    2: ['course', 'campus', 'yearGraduated', 'preferredWorkMode', 'howSoonCanYouStart'],
-    3: ['cvFile', 'diplomaFile', 'validIdFile', 'torFile', 'sssFile', 'philhealthFile', 'pagibigFile', 'tinFile'],
+    1: [
+      "firstName",
+      "middleName",
+      "lastName",
+      "extensionName",
+      "email",
+      "phoneNumber",
+    ],
+    2: [
+      "course",
+      "campus",
+      "yearGraduated",
+      "preferredWorkMode",
+      "howSoonCanYouStart",
+    ],
+    3: [
+      "cvFile",
+      "diplomaFile",
+      "validIdFile",
+      "torFile",
+      "sssFile",
+      "philhealthFile",
+      "pagibigFile",
+      "tinFile",
+    ],
   };
 
   const stepHasError = (stepId) => {
@@ -628,33 +764,53 @@ const RegisterPage = () => {
     return keys.some((k) => Boolean(formErrors?.[k]));
   };
 
- const Stepper = () => (
-    <div className="mt-4">
-      <nav aria-label="Progress">
-        <ol className="flex items-center justify-center flex-wrap">
+  const Stepper = () => (
+    <div className="mt-5 border-b border-[#edf1f5] pb-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo192.png"
+            alt="AGAPAY"
+            className="h-8 w-8 rounded-full object-contain"
+          />
+          <div className="text-left leading-tight">
+            <p className="text-sm font-bold text-[#14213d]">AGAPAY</p>
+            <p className="text-[10px] text-[#8390a5]">
+              Let's set up your profile!
+            </p>
+          </div>
+        </div>
+        <p className="text-xs font-medium text-[#5d6b82]">
+          Step {currentStep} of 3
+        </p>
+      </div>
+      <nav aria-label="Registration progress">
+        <ol className="grid grid-cols-3">
           {steps.map((s, idx) => {
             const isDone = s.id < currentStep;
             const isActive = s.id === currentStep;
 
-            const textClass = isDone ? 'text-green-600' : isActive ? 'text-gray-600' : 'text-gray-300';
-            const sepClass = 'text-gray-300';
-
             return (
-              <li key={s.id} className="flex items-center">
-                <span className={`inline-flex items-center text-lg font-semibold ${textClass}`}>
-                  {isDone && (
-                    <svg className="w-6 h-6 mr-2" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 7.707 8.879a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
+              <li
+                key={s.id}
+                className="relative flex flex-col items-center text-center"
+              >
+                {idx !== 0 && (
+                  <span
+                    className={`absolute right-1/2 top-4 h-px w-full ${isDone || isActive ? "bg-[#2e66a6]" : "bg-[#d8e0ea]"}`}
+                    aria-hidden="true"
+                  />
+                )}
+                <span
+                  className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border bg-white text-xs font-semibold ${isDone || isActive ? "border-[#2e66a6] text-[#2e66a6]" : "border-[#cbd5e1] text-[#77869d]"}`}
+                >
+                  {isDone ? "✓" : s.id}
+                </span>
+                <span
+                  className={`relative z-10 mt-1 max-w-[100px] text-[11px] leading-4 ${isActive ? "font-semibold text-[#2e66a6]" : "font-medium text-[#68778e]"}`}
+                >
                   {s.label}
                 </span>
-
-                {idx !== steps.length - 1 && <span className={`mx-4 text-2xl font-semibold ${sepClass}`}>›</span>}
               </li>
             );
           })}
@@ -662,7 +818,6 @@ const RegisterPage = () => {
       </nav>
     </div>
   );
-
 
   // ---------- Custom File Row ----------
   const FileRow = ({ k, title, subtitle }) => {
@@ -674,7 +829,9 @@ const RegisterPage = () => {
           {title}
         </label>
 
-        {subtitle ? <p className="text-[11px] text-gray-500 -mt-0.5">{subtitle}</p> : null}
+        {subtitle ? (
+          <p className="text-[11px] text-gray-500 -mt-0.5">{subtitle}</p>
+        ) : null}
 
         <input
           id={k}
@@ -689,11 +846,13 @@ const RegisterPage = () => {
 
         <div
           className={`flex items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2 shadow-sm ${
-            formErrors?.[k] ? 'border-red-300' : 'border-gray-200'
+            formErrors?.[k] ? "border-red-300" : "border-gray-200"
           }`}
         >
           <div className="min-w-0">
-            <p className="text-sm text-gray-700 truncate">{file ? file.name : 'No file selected'}</p>
+            <p className="text-sm text-gray-700 truncate">
+              {file ? file.name : "No file selected"}
+            </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -717,7 +876,7 @@ const RegisterPage = () => {
               className="h-9 px-4 rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#245387]
                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20 disabled:opacity-50"
             >
-              {file ? 'Replace' : 'Upload'}
+              {file ? "Replace" : "Upload"}
             </button>
           </div>
         </div>
@@ -731,9 +890,18 @@ const RegisterPage = () => {
   const serverAlert = useMemo(() => {
     if (!serverError) return null;
     return (
-      <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl" role="alert" aria-live="assertive">
+      <div
+        className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl"
+        role="alert"
+        aria-live="assertive"
+      >
         <div className="flex items-start">
-          <svg aria-hidden="true" className="w-4 h-4 text-red-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            aria-hidden="true"
+            className="w-4 h-4 text-red-600 mr-2 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fillRule="evenodd"
               d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -771,20 +939,25 @@ const RegisterPage = () => {
                     placeholder="Enter your first name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}
-                    onFocus={() => setFieldFocus('firstName', true)}
-                    onBlur={() => setFieldFocus('firstName', false)}
+                    onFocus={() => setFieldFocus("firstName", true)}
+                    onBlur={() => setFieldFocus("firstName", false)}
                     className={`${fieldClass(!!formErrors.firstName)} pl-10`}
                     disabled={loading}
                     aria-invalid={!!formErrors.firstName}
-                    aria-describedby={describedBy(formErrors.firstName ? 'firstName-error' : null)}
+                    aria-describedby={describedBy(
+                      formErrors.firstName ? "firstName-error" : null,
+                    )}
                   />
                 </div>
-                {errorText('firstName-error', formErrors.firstName)}
+                {errorText("firstName-error", formErrors.firstName)}
               </div>
 
               <div className="space-y-1">
                 <label className={labelBase} htmlFor="middleName">
-                  Middle Name <span className="text-gray-400 font-semibold">(optional)</span>
+                  Middle Name{" "}
+                  <span className="text-gray-400 font-semibold">
+                    (optional)
+                  </span>
                 </label>
                 <input
                   id="middleName"
@@ -795,12 +968,12 @@ const RegisterPage = () => {
                   placeholder="Enter your middle name"
                   onChange={handleChange}
                   onKeyDown={handleNameKeyDown}
-                  onFocus={() => setFieldFocus('middleName', true)}
-                  onBlur={() => setFieldFocus('middleName', false)}
+                  onFocus={() => setFieldFocus("middleName", true)}
+                  onBlur={() => setFieldFocus("middleName", false)}
                   className={inputBase}
                   disabled={loading}
                 />
-                {errorText('middleName-error', formErrors.middleName)}
+                {errorText("middleName-error", formErrors.middleName)}
               </div>
 
               <div className="space-y-1">
@@ -820,30 +993,37 @@ const RegisterPage = () => {
                     placeholder="Enter your last name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}
-                    onFocus={() => setFieldFocus('lastName', true)}
-                    onBlur={() => setFieldFocus('lastName', false)}
+                    onFocus={() => setFieldFocus("lastName", true)}
+                    onBlur={() => setFieldFocus("lastName", false)}
                     className={`${fieldClass(!!formErrors.lastName)} pl-10`}
                     disabled={loading}
                     aria-invalid={!!formErrors.lastName}
-                    aria-describedby={describedBy(formErrors.lastName ? 'lastName-error' : null)}
+                    aria-describedby={describedBy(
+                      formErrors.lastName ? "lastName-error" : null,
+                    )}
                   />
                 </div>
-                {errorText('lastName-error', formErrors.lastName)}
+                {errorText("lastName-error", formErrors.lastName)}
               </div>
 
               <div className="space-y-1">
                 <label className={labelBase} htmlFor="extensionName">
-                  Suffix <span className="text-gray-400 font-semibold">(optional)</span>
+                  Suffix{" "}
+                  <span className="text-gray-400 font-semibold">
+                    (optional)
+                  </span>
                 </label>
                 <select
                   id="extensionName"
                   name="extensionName"
-                  value={formData.extensionName || 'None'}
+                  value={formData.extensionName || "None"}
                   onChange={handleChange}
                   className={selectClass(!!formErrors.extensionName)}
                   disabled={loading}
                   aria-invalid={!!formErrors.extensionName}
-                  aria-describedby={describedBy(formErrors.extensionName ? 'extensionName-error' : null)}
+                  aria-describedby={describedBy(
+                    formErrors.extensionName ? "extensionName-error" : null,
+                  )}
                 >
                   {extNameOptions.map((opt) => (
                     <option key={opt} value={opt}>
@@ -851,7 +1031,7 @@ const RegisterPage = () => {
                     </option>
                   ))}
                 </select>
-                {errorText('extensionName-error', formErrors.extensionName)}
+                {errorText("extensionName-error", formErrors.extensionName)}
               </div>
 
               <div className="space-y-1">
@@ -869,16 +1049,18 @@ const RegisterPage = () => {
                     value={formData.email}
                     placeholder="Enter your Gmail address"
                     onChange={handleChange}
-                    onFocus={() => setFieldFocus('email', true)}
-                    onBlur={() => setFieldFocus('email', false)}
+                    onFocus={() => setFieldFocus("email", true)}
+                    onBlur={() => setFieldFocus("email", false)}
                     className={`${fieldClass(!!formErrors.email)} pl-10`}
                     disabled={loading}
                     aria-invalid={!!formErrors.email}
-                    aria-describedby={describedBy(formErrors.email ? 'email-error' : null)}
+                    aria-describedby={describedBy(
+                      formErrors.email ? "email-error" : null,
+                    )}
                     maxLength={100}
                   />
                 </div>
-                {errorText('email-error', formErrors.email)}
+                {errorText("email-error", formErrors.email)}
               </div>
 
               <div className="space-y-1">
@@ -895,18 +1077,20 @@ const RegisterPage = () => {
                     name="phoneNumber"
                     value={formData.phoneNumber}
                     onChange={handleChange}
-                    onFocus={() => setFieldFocus('phoneNumber', true)}
-                    onBlur={() => setFieldFocus('phoneNumber', false)}
+                    onFocus={() => setFieldFocus("phoneNumber", true)}
+                    onBlur={() => setFieldFocus("phoneNumber", false)}
                     className={`${fieldClass(!!formErrors.phoneNumber)} pl-10`}
                     disabled={loading}
                     aria-invalid={!!formErrors.phoneNumber}
-                    aria-describedby={describedBy(formErrors.phoneNumber ? 'phoneNumber-error' : null)}
+                    aria-describedby={describedBy(
+                      formErrors.phoneNumber ? "phoneNumber-error" : null,
+                    )}
                     inputMode="numeric"
                     maxLength={11}
                     placeholder="e.g., 09xxxxxxxxx"
                   />
                 </div>
-                {errorText('phoneNumber-error', formErrors.phoneNumber)}
+                {errorText("phoneNumber-error", formErrors.phoneNumber)}
               </div>
             </div>
           </div>
@@ -917,218 +1101,253 @@ const RegisterPage = () => {
         return (
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
             <div className="space-y-4">
-                {/* Campus */}
-                <div className="space-y-1 md:col-span-2">
-                  <label className={labelBase} htmlFor="campus">
-                    What is your campus?
-                  </label>
-                  <div className="relative">
-                    <div className={iconWrap}>
-                      <IconCap />
-                    </div>
-                    <select
-                      id="campus"
-                      name="campus"
-                      value={formData.campus}
-                      onChange={handleChange}
-                      className={`${selectClass(!!formErrors.campus)} pl-10`}
-                      disabled={loading}
-                      aria-invalid={!!formErrors.campus}
-                      aria-describedby={formErrors.campus ? 'campus-error' : undefined}
-                    >
-                      <option value="" disabled>
-                        Choose your campus
-                      </option>
-                      <option value="Au Main">Au Main</option>
-                      <option value="Au South">Au South</option>
-                      <option value="Au San jose">Au San jose</option>
-                    </select>
+              {/* Campus */}
+              <div className="space-y-1 md:col-span-2">
+                <label className={labelBase} htmlFor="campus">
+                  What is your campus?
+                </label>
+                <div className="relative">
+                  <div className={iconWrap}>
+                    <IconCap />
                   </div>
-                  {errorText('campus-error', formErrors.campus)}
+                  <select
+                    id="campus"
+                    name="campus"
+                    value={formData.campus}
+                    onChange={handleChange}
+                    className={`${selectClass(!!formErrors.campus)} pl-10`}
+                    disabled={loading}
+                    aria-invalid={!!formErrors.campus}
+                    aria-describedby={
+                      formErrors.campus ? "campus-error" : undefined
+                    }
+                  >
+                    <option value="" disabled>
+                      Choose your campus
+                    </option>
+                    <option value="Au Main">Au Main</option>
+                    <option value="Au South">Au South</option>
+                    <option value="Au San jose">Au San jose</option>
+                  </select>
                 </div>
+                {errorText("campus-error", formErrors.campus)}
+              </div>
 
-                {/* Course */}
-                <div className="space-y-1 md:col-span-2">
-                  <label className={labelBase} htmlFor="course">
-                    What is your course?
+              {/* Course */}
+              <div className="space-y-1 md:col-span-2">
+                <label className={labelBase} htmlFor="course">
+                  What is your course?
+                </label>
+                <div className="relative">
+                  <div className={iconWrap}>
+                    <IconCap />
+                  </div>
+                  <select
+                    id="course"
+                    name="course"
+                    value={formData.course}
+                    onChange={handleChange}
+                    className={`${selectClass(!!formErrors.course)} pl-10`}
+                    disabled={loading}
+                    aria-invalid={!!formErrors.course}
+                    aria-describedby={
+                      formErrors.course ? "course-error" : undefined
+                    }
+                  >
+                    <option value="" disabled>
+                      Choose your course
+                    </option>
+                    {MAJOR_COURSE_OPTIONS.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {errorText("course-error", formErrors.course)}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                {/* Year Graduated */}
+                <div className="space-y-1">
+                  <label className={labelBase} htmlFor="yearGraduated">
+                    Year Graduated
                   </label>
                   <div className="relative">
                     <div className={iconWrap}>
                       <IconCap />
                     </div>
                     <select
-                      id="course"
-                      name="course"
-                      value={formData.course}
+                      id="yearGraduated"
+                      name="yearGraduated"
+                      value={formData.yearGraduated}
                       onChange={handleChange}
-                      className={`${selectClass(!!formErrors.course)} pl-10`}
+                      className={`${selectClass(!!formErrors.yearGraduated)} pl-10`}
                       disabled={loading}
-                      aria-invalid={!!formErrors.course}
-                      aria-describedby={formErrors.course ? 'course-error' : undefined}
+                      aria-invalid={!!formErrors.yearGraduated}
+                      aria-describedby={
+                        formErrors.yearGraduated
+                          ? "yearGraduated-error"
+                          : undefined
+                      }
                     >
                       <option value="" disabled>
-                        Choose your course
+                        Select Year
                       </option>
-                      {MAJOR_COURSE_OPTIONS.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
+                      {yearOptions.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
                         </option>
                       ))}
                     </select>
                   </div>
-                  {errorText('course-error', formErrors.course)}
+                  {errorText("yearGraduated-error", formErrors.yearGraduated)}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                  {/* Year Graduated */}
-                  <div className="space-y-1">
-                    <label className={labelBase} htmlFor="yearGraduated">
-                      Year Graduated
-                    </label>
-                    <div className="relative">
-                      <div className={iconWrap}>
-                        <IconCap />
-                      </div>
-                      <select
-                        id="yearGraduated"
-                        name="yearGraduated"
-                        value={formData.yearGraduated}
-                        onChange={handleChange}
-                        className={`${selectClass(!!formErrors.yearGraduated)} pl-10`}
-                        disabled={loading}
-                        aria-invalid={!!formErrors.yearGraduated}
-                        aria-describedby={formErrors.yearGraduated ? 'yearGraduated-error' : undefined}
+                {/* Profile Photo */}
+                <div className="space-y-1">
+                  <label className={labelBase} htmlFor="profileImageFile">
+                    Graduation Photo{" "}
+                    <span className="text-gray-400 font-semibold">
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    ref={fileRefs.profileImageFile}
+                    id="profileImageFile"
+                    name="profileImageFile"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleChange}
+                    className="sr-only"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => openFilePicker("profileImageFile")}
+                    disabled={loading}
+                    className={`flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-dashed px-3 text-center transition ${
+                      formErrors.profileImageFile
+                        ? "border-red-400 bg-red-50"
+                        : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40"
+                    }`}
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#2e66a6] shadow-sm">
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
                       >
-                        <option value="" disabled>
-                          Select Year
-                        </option>
-                        {yearOptions.map((y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {errorText('yearGraduated-error', formErrors.yearGraduated)}
-                  </div>
-
-                  {/* Profile Photo */}
-                  <div className="space-y-1">
-                    <label className={labelBase} htmlFor="profileImageFile">
-                      Graduation Photo <span className="text-gray-400 font-semibold">(optional)</span>
-                    </label>
-                    <input
-                      ref={fileRefs.profileImageFile}
-                      id="profileImageFile"
-                      name="profileImageFile"
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      onChange={handleChange}
-                      className="sr-only"
-                      disabled={loading}
-                    />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                          d="M3 16.5V18a2 2 0 002 2h14a2 2 0 002-2v-1.5M8 8l4-4m0 0l4 4m-4-4v12"
+                        />
+                      </svg>
+                    </span>
+                    <span className="truncate text-sm font-semibold text-gray-700">
+                      {formData.profileImageFile
+                        ? formData.profileImageFile.name
+                        : "Choose graduation photo"}
+                    </span>
+                  </button>
+                  {formData.profileImageFile ? (
                     <button
                       type="button"
-                      onClick={() => openFilePicker('profileImageFile')}
+                      onClick={() => clearFile("profileImageFile")}
                       disabled={loading}
-                      className={`flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-dashed px-3 text-center transition ${
-                        formErrors.profileImageFile
-                          ? 'border-red-400 bg-red-50'
-                          : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40'
-                      }`}
+                      className="text-xs font-semibold text-red-600 hover:underline"
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#2e66a6] shadow-sm">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.8"
-                            d="M3 16.5V18a2 2 0 002 2h14a2 2 0 002-2v-1.5M8 8l4-4m0 0l4 4m-4-4v12"
-                          />
-                        </svg>
-                      </span>
-                      <span className="truncate text-sm font-semibold text-gray-700">
-                        {formData.profileImageFile ? formData.profileImageFile.name : 'Choose graduation photo'}
-                      </span>
+                      Remove photo
                     </button>
-                    {formData.profileImageFile ? (
-                      <button
-                        type="button"
-                        onClick={() => clearFile('profileImageFile')}
-                        disabled={loading}
-                        className="text-xs font-semibold text-red-600 hover:underline"
-                      >
-                        Remove photo
-                      </button>
-                    ) : null}
-                    {errorText('profileImageFile-error', formErrors.profileImageFile)}
-                  </div>
-
-                  {/* Preferred Work Mode */}
-                  <div className="space-y-1 md:col-span-2">
-                    <label className={labelBase} htmlFor="preferredWorkMode">
-                      Preferred Work Mode
-                    </label>
-                    <div className="relative">
-                      <div className={iconWrap}>
-                        <IconCap />
-                      </div>
-                      <select
-                        id="preferredWorkMode"
-                        name="preferredWorkMode"
-                        value={formData.preferredWorkMode}
-                        onChange={handleChange}
-                        className={`${selectClass(!!formErrors.preferredWorkMode)} pl-10`}
-                        disabled={loading}
-                        aria-invalid={!!formErrors.preferredWorkMode}
-                        aria-describedby={formErrors.preferredWorkMode ? 'preferredWorkMode-error' : undefined}
-                      >
-                        <option value="" disabled>
-                          Choose Work Mode
-                        </option>
-                        <option value="On-site">On-site</option>
-                        <option value="Blended">Blended</option>
-                        <option value="Remote">Remote</option>
-                        <option value="Work from Home">Work from Home</option>
-                      </select>
-                    </div>
-                    {errorText('preferredWorkMode-error', formErrors.preferredWorkMode)}
-                  </div>
+                  ) : null}
+                  {errorText(
+                    "profileImageFile-error",
+                    formErrors.profileImageFile,
+                  )}
                 </div>
 
-                {/* How soon */}
+                {/* Preferred Work Mode */}
                 <div className="space-y-1 md:col-span-2">
-                  <label className={labelBase} htmlFor="howSoonCanYouStart">
-                    How soon can you start?
+                  <label className={labelBase} htmlFor="preferredWorkMode">
+                    Preferred Work Mode
                   </label>
                   <div className="relative">
                     <div className={iconWrap}>
                       <IconCap />
                     </div>
                     <select
-                      id="howSoonCanYouStart"
-                      name="howSoonCanYouStart"
-                      value={formData.howSoonCanYouStart}
+                      id="preferredWorkMode"
+                      name="preferredWorkMode"
+                      value={formData.preferredWorkMode}
                       onChange={handleChange}
-                      className={`${selectClass(!!formErrors.howSoonCanYouStart)} pl-10`}
+                      className={`${selectClass(!!formErrors.preferredWorkMode)} pl-10`}
                       disabled={loading}
-                      aria-invalid={!!formErrors.howSoonCanYouStart}
-                      aria-describedby={formErrors.howSoonCanYouStart ? 'howSoonCanYouStart-error' : undefined}
+                      aria-invalid={!!formErrors.preferredWorkMode}
+                      aria-describedby={
+                        formErrors.preferredWorkMode
+                          ? "preferredWorkMode-error"
+                          : undefined
+                      }
                     >
                       <option value="" disabled>
-                        Choose Availability to Start
+                        Choose Work Mode
                       </option>
-                      <option value="Ready to start">Ready to start</option>
-                      <option value="Within a few days">Within a few days</option>
-                      <option value="Within 1 week">Within 1 week</option>
-                      <option value="Within 2 week">Within 2 week</option>
-                      <option value="Within a month">Within a month</option>
+                      <option value="On-site">On-site</option>
+                      <option value="Blended">Blended</option>
+                      <option value="Remote">Remote</option>
+                      <option value="Work from home">Work from home</option>
                     </select>
                   </div>
-                  {errorText('howSoonCanYouStart-error', formErrors.howSoonCanYouStart)}
+                  {errorText(
+                    "preferredWorkMode-error",
+                    formErrors.preferredWorkMode,
+                  )}
                 </div>
               </div>
 
+              {/* How soon */}
+              <div className="space-y-1 md:col-span-2">
+                <label className={labelBase} htmlFor="howSoonCanYouStart">
+                  How soon can you start?
+                </label>
+                <div className="relative">
+                  <div className={iconWrap}>
+                    <IconCap />
+                  </div>
+                  <select
+                    id="howSoonCanYouStart"
+                    name="howSoonCanYouStart"
+                    value={formData.howSoonCanYouStart}
+                    onChange={handleChange}
+                    className={`${selectClass(!!formErrors.howSoonCanYouStart)} pl-10`}
+                    disabled={loading}
+                    aria-invalid={!!formErrors.howSoonCanYouStart}
+                    aria-describedby={
+                      formErrors.howSoonCanYouStart
+                        ? "howSoonCanYouStart-error"
+                        : undefined
+                    }
+                  >
+                    <option value="" disabled>
+                      Choose Availability to Start
+                    </option>
+                    <option value="Ready to start">Ready to start</option>
+                    <option value="Within a few days">Within a few days</option>
+                    <option value="Within 1 week">Within 1 week</option>
+                    <option value="Within 2 week">Within 2 week</option>
+                    <option value="Within a month">Within a month</option>
+                  </select>
+                </div>
+                {errorText(
+                  "howSoonCanYouStart-error",
+                  formErrors.howSoonCanYouStart,
+                )}
+              </div>
+            </div>
           </div>
         );
 
@@ -1144,35 +1363,59 @@ const RegisterPage = () => {
                 </div>
 
                 <div className="w-full">
-                  <p className="text-sm font-semibold text-gray-900">Quick Upload Rules:</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Quick Upload Rules:
+                  </p>
 
                   <ul className="mt-2 text-xs text-gray-700 list-disc pl-5 space-y-1">
-                    <li><strong>Accepted Formats:</strong> PDF (preferred for resumes) or Photos (JPG, PNG).</li>
-                    <li><strong>File Size:</strong> Please keep files under 5MB.</li>
-                    <li><strong>Clarity:</strong> If uploading a photo, ensure the text is clear and readable—no blurry shots!</li>
-                    <li><strong>No Cropped Edges:</strong> Make sure names, dates, signatures, and other important details are visible.</li>
-                    <li><strong>Check Before Uploading:</strong> Make sure the document is the latest and correct version.</li>
+                    <li>
+                      <strong>Accepted Formats:</strong> PDF (preferred for
+                      resumes) or Photos (JPG, PNG).
+                    </li>
+                    <li>
+                      <strong>File Size:</strong> Please keep files under 5MB.
+                    </li>
+                    <li>
+                      <strong>Clarity:</strong> If uploading a photo, ensure the
+                      text is clear and readable—no blurry shots!
+                    </li>
+                    <li>
+                      <strong>No Cropped Edges:</strong> Make sure names, dates,
+                      signatures, and other important details are visible.
+                    </li>
+                    <li>
+                      <strong>Check Before Uploading:</strong> Make sure the
+                      document is the latest and correct version.
+                    </li>
                   </ul>
-
-                 
 
                   <div className="mt-4 -ml-7 flex items-center gap-3">
                     <IconLightBulb />
-                    <p className="text-sm font-semibold text-gray-900">Pro-Tips for Fresh Grads:</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Pro-Tips for Fresh Grads:
+                    </p>
                   </div>
 
                   <ul className="mt-2 text-xs text-gray-700 list-disc pl-5 space-y-1">
                     <li>
-                      <strong>For your Resume:</strong> We highly recommend using a PDF format. It keeps your layout looking perfect on every recruiter's
-                      screen!
+                      <strong>For your Resume:</strong> We highly recommend
+                      using a PDF format. It keeps your layout looking perfect
+                      on every recruiter's screen!
                     </li>
                     <li>
-                      <strong>Diploma &amp; TOR:</strong> Upload a clear scan or well-lit photo of the complete document. If your Diploma or TOR is not yet available, you may upload proof of request or a claim document from the Registrar&apos;s Office.
+                      <strong>Diploma &amp; TOR:</strong> Upload a clear scan or
+                      well-lit photo of the complete document. If your Diploma
+                      or TOR is not yet available, you may upload proof of
+                      request or a claim document from the Registrar's Office.
                     </li>
                     <li>
-                      <strong>Valid ID:</strong> Upload a clear, unexpired government-issued valid ID, if available.
+                      <strong>Valid ID:</strong> Upload a clear, unexpired
+                      government-issued valid ID, if available.
                     </li>
-                    <li><strong>Before You Submit:</strong> Double-check every upload to avoid verification delays.</li>
+                    <li>
+                      <strong>Before You Submit:</strong> Double-check every
+                      upload to avoid verification delays.
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -1182,7 +1425,10 @@ const RegisterPage = () => {
               <FileRow k="cvFile" title="Upload CV or Resume (Required)" />
               <FileRow k="diplomaFile" title="Diploma (Required)" />
               <FileRow k="validIdFile" title="Valid ID (Required)" />
-              <FileRow k="torFile" title="Transcript of Records (TOR) (Required)" />
+              <FileRow
+                k="torFile"
+                title="Transcript of Records (TOR) (Required)"
+              />
 
               <FileRow k="sssFile" title="SSS (Optional)" />
               <FileRow k="philhealthFile" title="PhilHealth (Optional)" />
@@ -1198,36 +1444,42 @@ const RegisterPage = () => {
   };
 
   const checkEmailAvailability = async () => {
-    const email = String(formData.email || '').trim();
+    const email = String(formData.email || "").trim();
 
     try {
       await axios.post(CHECK_EMAIL_API_URL, {
         email,
-        role: 'jobseeker',
-        contactNumber: String(formData.phoneNumber || '').trim(),
+        role: "jobseeker",
+        contactNumber: String(formData.phoneNumber || "").trim(),
       });
       return true;
     } catch (err) {
-      if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_ALREADY_REGISTERED') {
-        if (err.response?.data?.code === 'CONTACT_NUMBER_ALREADY_REGISTERED') {
+      if (
+        err.response?.status === 409 ||
+        err.response?.data?.code === "EMAIL_ALREADY_REGISTERED"
+      ) {
+        if (err.response?.data?.code === "CONTACT_NUMBER_ALREADY_REGISTERED") {
           setFormErrors((prev) => ({
             ...prev,
-            phoneNumber: 'Contact Number is already registered.',
+            phoneNumber: "Contact Number is already registered.",
           }));
-          setServerError('');
-          document.getElementById('phoneNumber')?.focus?.();
+          setServerError("");
+          document.getElementById("phoneNumber")?.focus?.();
           return false;
         }
         setFormErrors((prev) => ({
           ...prev,
-          email: 'Email address is already registered.',
+          email: "Email address is already registered.",
         }));
-        setServerError('');
-        document.getElementById('email')?.focus?.();
+        setServerError("");
+        document.getElementById("email")?.focus?.();
         return false;
       }
 
-      setServerError(err.response?.data?.message || 'Unable to check the email right now. Please try again.');
+      setServerError(
+        err.response?.data?.message ||
+          "Unable to check the email right now. Please try again.",
+      );
       return false;
     }
   };
@@ -1266,113 +1518,200 @@ const RegisterPage = () => {
     }
   };
 
-
   // ---------- How it Works Carousel ----------
   const howItWorksSlides = [
     {
       id: 1,
-      title: 'Provide your essential details',
+      title: "Provide your essential details",
       description: [
-        'based on your selected role. Make sure that all information',
-        'must be accurate and complete.This ensures employers can',
-        'properly identify and contact you regarding job openings,',
-        'important updates, and career opportunities.',
+        "based on your selected role. Make sure that all information",
+        "must be accurate and complete.This ensures employers can",
+        "properly identify and contact you regarding job openings,",
+        "important updates, and career opportunities.",
       ],
-      icon: 'details',
+      icon: "details",
     },
     {
       id: 2,
-      title: 'Tell us about your academic background and career goals.',
+      title: "Tell us about your academic background and career goals.",
       description: [
-        'Your career profile serves as your professional introduction',
-        'to potential employers. A well-prepared',
-        'profile increases your chances of standing out and connecting',
-        'with the right employer.',
+        "Your career profile serves as your professional introduction",
+        "to potential employers. A well-prepared",
+        "profile increases your chances of standing out and connecting",
+        "with the right employer.",
       ],
-      icon: 'profile',
+      icon: "profile",
     },
     {
       id: 3,
-      title: 'Submit the necessary documents',
-      description: ['This helps validate your qualifications and strengthens your profile.'],
-      icon: 'documents',
+      title: "Submit the necessary documents",
+      description: [
+        "This helps validate your qualifications and strengthens your profile.",
+      ],
+      icon: "documents",
     },
     {
       id: 4,
-      title: 'Account Review',
-      description: ['Before submitting, double-check your details.', 'Ask yourself:'],
-      checklist: [
-        'Is everything correct?',
-        'Are all required documents uploaded?',
-        'Are my information and credentials accurate?',
+      title: "Account Review",
+      description: [
+        "Before submitting, double-check your details.",
+        "Ask yourself:",
       ],
-      footer: 'Once you’re confident everything is complete, submit your registration.',
-      icon: 'review',
+      checklist: [
+        "Is everything correct?",
+        "Are all required documents uploaded?",
+        "Are my information and credentials accurate?",
+      ],
+      footer:
+        "Once you’re confident everything is complete, submit your registration.",
+      icon: "review",
     },
     {
       id: 5,
-      title: 'AGAPAY team carefully reviews all',
+      title: "AGAPAY team carefully reviews all",
       description: [
-        'submitted information to ensure authenticity, accuracy, and',
-        'credibility. This process typically',
-        'takes 24 to 48 hours. Once approved, you',
-        'will receive confirmation email with your login details. Keep an',
-        'eye on your inbox if we need any additional information,',
-        'our team will contact you directly.',
+        "submitted information to ensure authenticity, accuracy, and",
+        "credibility. This process typically",
+        "takes 24 to 48 hours. Once approved, you",
+        "will receive confirmation email with your login details. Keep an",
+        "eye on your inbox if we need any additional information,",
+        "our team will contact you directly.",
       ],
-      icon: 'approval',
+      icon: "approval",
     },
   ];
 
   const totalHowItWorksSlides = howItWorksSlides.length;
 
   const goToHowItWorksSlide = (index) => {
-    setCurrentHowItWorksSlide((index + totalHowItWorksSlides) % totalHowItWorksSlides);
+    setCurrentHowItWorksSlide(
+      (index + totalHowItWorksSlides) % totalHowItWorksSlides,
+    );
   };
 
   const activeHowItWorksSlide = howItWorksSlides[currentHowItWorksSlide];
 
   const renderHowItWorksIcon = (icon) => {
-    if (icon === 'profile') {
+    if (icon === "profile") {
       return (
-        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 21a7 7 0 0114 0" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11h4v4h-4zM18 10v6" />
+        <svg
+          className="w-7 h-7 text-[#1f67b7]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M5 21a7 7 0 0114 0"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M16 11h4v4h-4zM18 10v6"
+          />
         </svg>
       );
     }
 
-    if (icon === 'documents') {
+    if (icon === "documents") {
       return (
-        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" />
+        <svg
+          className="w-7 h-7 text-[#1f67b7]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"
+          />
         </svg>
       );
     }
 
-    if (icon === 'review') {
+    if (icon === "review") {
       return (
-        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 11l3 3L22 4" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+        <svg
+          className="w-7 h-7 text-[#1f67b7]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M9 11l3 3L22 4"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+          />
         </svg>
       );
     }
 
-    if (icon === 'approval') {
+    if (icon === "approval") {
       return (
-        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22a10 10 0 100-20 10 10 0 000 20z" />
+        <svg
+          className="w-7 h-7 text-[#1f67b7]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M12 8v4l3 3"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M12 22a10 10 0 100-20 10 10 0 000 20z"
+          />
         </svg>
       );
     }
 
     return (
-      <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      <svg
+        className="w-7 h-7 text-[#1f67b7]"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+        />
       </svg>
     );
   };
@@ -1387,11 +1726,16 @@ const RegisterPage = () => {
 
       <div className="relative z-10 px-3 py-4 sm:px-7 sm:py-6 lg:px-7">
         <div className="text-center">
-          <h3 className="text-xl sm:text-3xl font-extrabold text-white leading-tight">How it Works</h3>
+          <h3 className="text-xl sm:text-3xl font-extrabold text-white leading-tight">
+            How it Works
+          </h3>
           <div className="mt-8 sm:mt-9" aria-hidden="true" />
         </div>
 
-        <div className="mt-4 sm:mt-5 flex items-center justify-center px-1 sm:px-2" aria-label="How it Works step progress">
+        <div
+          className="mt-4 sm:mt-5 flex items-center justify-center px-1 sm:px-2"
+          aria-label="How it Works step progress"
+        >
           {howItWorksSlides.map((slide, index) => {
             const isActive = index === currentHowItWorksSlide;
             return (
@@ -1401,16 +1745,21 @@ const RegisterPage = () => {
                   onClick={() => goToHowItWorksSlide(index)}
                   className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border text-xs sm:text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
                     isActive
-                      ? 'scale-110 border-white bg-white text-[#1f5ea4] shadow-lg'
-                      : 'border-white/55 bg-white/5 text-white hover:bg-white/15'
+                      ? "scale-110 border-white bg-white text-[#1f5ea4] shadow-lg"
+                      : "border-white/55 bg-white/5 text-white hover:bg-white/15"
                   }`}
                   aria-label={`Go to how it works step ${slide.id}`}
-                  aria-current={isActive ? 'step' : undefined}
+                  aria-current={isActive ? "step" : undefined}
                 >
                   {slide.id}
                 </button>
 
-                {index !== howItWorksSlides.length - 1 && <div className="h-px flex-1 max-w-[48px] sm:max-w-[64px] bg-white/45" aria-hidden="true" />}
+                {index !== howItWorksSlides.length - 1 && (
+                  <div
+                    className="h-px flex-1 max-w-[48px] sm:max-w-[64px] bg-white/45"
+                    aria-hidden="true"
+                  />
+                )}
               </React.Fragment>
             );
           })}
@@ -1423,7 +1772,12 @@ const RegisterPage = () => {
             className="absolute -left-2 sm:-left-3 top-1/2 z-30 flex h-11 w-11 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center bg-transparent text-[#225d9f] transition hover:-translate-y-1/2 hover:scale-110 focus-visible:outline-none"
             aria-label="Previous how it works step"
           >
-            <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg
+              className="w-7 h-7 sm:w-8 sm:h-8"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
               <path
                 fillRule="evenodd"
                 d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
@@ -1438,7 +1792,12 @@ const RegisterPage = () => {
             className="absolute -right-2 sm:-right-3 top-1/2 z-30 flex h-11 w-11 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center bg-transparent text-[#225d9f] transition hover:-translate-y-1/2 hover:scale-110 focus-visible:outline-none"
             aria-label="Next how it works step"
           >
-            <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg
+              className="w-7 h-7 sm:w-8 sm:h-8"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
               <path
                 fillRule="evenodd"
                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
@@ -1453,7 +1812,9 @@ const RegisterPage = () => {
           <div className="relative z-10 overflow-hidden rounded-3xl">
             <div
               className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
+              style={{
+                transform: `translateX(-${currentHowItWorksSlide * 100}%)`,
+              }}
             >
               {howItWorksSlides.map((slide) => (
                 <div key={slide.id} className="w-full shrink-0 px-1">
@@ -1462,7 +1823,9 @@ const RegisterPage = () => {
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
 
-                    <h4 className="text-sm sm:text-lg font-extrabold leading-snug text-[#0f2442] break-words">{slide.title}</h4>
+                    <h4 className="text-sm sm:text-lg font-extrabold leading-snug text-[#0f2442] break-words">
+                      {slide.title}
+                    </h4>
 
                     <div className="mt-2 sm:mt-3 space-y-0.5 text-[11px] sm:text-[14px] font-medium leading-relaxed text-[#31415a] break-words">
                       {slide.description.map((line) => (
@@ -1473,7 +1836,10 @@ const RegisterPage = () => {
                     {slide.checklist ? (
                       <div className="mt-2 sm:mt-3 w-full max-w-[360px] space-y-1.5 sm:space-y-2 text-left">
                         {slide.checklist.map((item) => (
-                          <div key={item} className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[15px] font-semibold text-[#173253] break-words">
+                          <div
+                            key={item}
+                            className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[15px] font-semibold text-[#173253] break-words"
+                          >
                             <span className="mt-0.5 text-[#1f67b7]">✓</span>
                             <span>{item}</span>
                           </div>
@@ -1481,7 +1847,11 @@ const RegisterPage = () => {
                       </div>
                     ) : null}
 
-                    {slide.footer ? <p className="mt-2 sm:mt-3 text-[11px] sm:text-[14px] font-semibold leading-relaxed text-[#173253] break-words">{slide.footer}</p> : null}
+                    {slide.footer ? (
+                      <p className="mt-2 sm:mt-3 text-[11px] sm:text-[14px] font-semibold leading-relaxed text-[#173253] break-words">
+                        {slide.footer}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -1489,17 +1859,24 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 sm:gap-3" aria-label="How it Works slide indicators">
+        <div
+          className="mt-3 sm:mt-4 flex items-center justify-center gap-2 sm:gap-3"
+          aria-label="How it Works slide indicators"
+        >
           {howItWorksSlides.map((slide, index) => (
             <button
               key={slide.id}
               type="button"
               onClick={() => goToHowItWorksSlide(index)}
               className={`h-2.5 w-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
-                currentHowItWorksSlide === index ? 'bg-white' : 'bg-white/40 hover:bg-white/70'
+                currentHowItWorksSlide === index
+                  ? "bg-white"
+                  : "bg-white/40 hover:bg-white/70"
               }`}
               aria-label={`Go to how it works step ${slide.id}`}
-              aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
+              aria-current={
+                currentHowItWorksSlide === index ? "step" : undefined
+              }
             />
           ))}
         </div>
@@ -1533,15 +1910,30 @@ const RegisterPage = () => {
               <div className="p-8 sm:p-10">
                 <div className="flex justify-center">
                   <div className="w-14 h-14 rounded-full flex items-center justify-center">
-                    <img src="/images/check.png" alt="Check" className="w-20 h-20 object-contain" draggable="false" />
+                    <img
+                      src="/images/check.png"
+                      alt="Check"
+                      className="w-20 h-20 object-contain"
+                      draggable="false"
+                    />
                   </div>
                 </div>
 
-                <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">READY TO GO?</h3>
+                <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">
+                  READY TO GO?
+                </h3>
 
                 <div className="mt-5 rounded-xl bg-[#eaf1fb] px-6 py-4 text-center">
                   <p className="text-sm text-gray-800">
-                    Before submitting your registration, please carefully review all the information you have provided to ensure it is accurate, complete, and valid. By clicking Submit Registration, you confirm that all details entered are true and correct. You also authorize AGAPAY to use your information for career matching purposes and to share your professional profile, credentials, and relevant details with verified employers to help connect you with suitable job opportunities.
+                    Before submitting your registration, please carefully review
+                    all the information you have provided to ensure it is
+                    accurate, complete, and valid. By clicking Submit
+                    Registration, you confirm that all details entered are true
+                    and correct. You also authorize AGAPAY to use your
+                    information for career matching purposes and to share your
+                    professional profile, credentials, and relevant details with
+                    verified employers to help connect you with suitable job
+                    opportunities.
                   </p>
                 </div>
 
@@ -1565,7 +1957,7 @@ const RegisterPage = () => {
                       focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
                       disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    {loading ? 'Submitting...' : 'Submit Registration'}
+                    {loading ? "Submitting..." : "Submit Registration"}
                   </button>
                 </div>
               </div>
@@ -1591,25 +1983,40 @@ const RegisterPage = () => {
               <div className="p-8 sm:p-10">
                 <div className="flex justify-center">
                   <div className="w-14 h-14 rounded-full flex items-center justify-center">
-                    <img src="/images/like.png" alt="Success" className="w-20 h-20 object-contain" draggable="false" />
+                    <img
+                      src="/images/like.png"
+                      alt="Success"
+                      className="w-20 h-20 object-contain"
+                      draggable="false"
+                    />
                   </div>
                 </div>
 
-                <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">Thank you for signing up!</h3>
+                <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">
+                  Thank you for signing up!
+                </h3>
 
                 <div className="mt-5 rounded-xl bg-[#eaf1fb] px-6 py-5 text-center">
-                  <p className="text-sm font-semibold text-gray-900">Your account is awaiting review</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Your account is awaiting review
+                  </p>
 
                   <p className="mt-3 text-sm text-gray-800">
-                 Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. 
-                 This verification process usually takes 24 to 48 hours.
+                    Our team is reviewing the information and credentials you
+                    submitted to ensure everything is complete and accurate.
+                    This verification process usually takes 24 to 48 hours.
                   </p>
 
                   <p className="mt-4 text-sm text-gray-800">
-                    Once your account is approved, you’ll receive a confirmation email with your login details. 
-Keep an eye on your inbox—if we require any additional information, our team will contact you directly.
-After verification, you’ll gain full access as a job seeker, allowing you to explore career opportunities, connect with potential employers, and manage your professional profile efficiently.
-If you don’t receive a confirmation email within 48 hours or have any questions during this process, please contact us at agapay@gmail.com
+                    Once your account is approved, you’ll receive a confirmation
+                    email with your login details. Keep an eye on your inbox—if
+                    we require any additional information, our team will contact
+                    you directly. After verification, you’ll gain full access as
+                    a job seeker, allowing you to explore career opportunities,
+                    connect with potential employers, and manage your
+                    professional profile efficiently. If you don’t receive a
+                    confirmation email within 48 hours or have any questions
+                    during this process, please contact us at agapay@gmail.com
                   </p>
                 </div>
 
@@ -1618,9 +2025,10 @@ If you don’t receive a confirmation email within 48 hours or have any question
                     type="button"
                     onClick={() => {
                       setShowSuccessModal(false);
-                      navigate('/login', {
+                      navigate("/login", {
                         state: {
-                          message: 'Registration submitted successfully! Please wait for admin approval.',
+                          message:
+                            "Registration submitted successfully! Please wait for admin approval.",
                           email: String(formData.email).trim().toLowerCase(),
                         },
                       });
@@ -1640,51 +2048,82 @@ If you don’t receive a confirmation email within 48 hours or have any question
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-[#2e66a6]/10 flex items-center justify-center p-2 sm:p-4">
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-3 sm:p-6 lg:p-10">
       {/* ✅ Modals */}
       <ConfirmModal />
       <SuccessModal />
       {showEmailVerificationModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+          role="dialog"
+          aria-modal="true"
+        >
           <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
-            <h3 className="text-center text-2xl font-extrabold text-gray-900">Verify your email</h3>
-            <p className="mt-2 text-center text-sm text-gray-600">{emailOtpMessage}</p>
+            <h3 className="text-center text-2xl font-extrabold text-gray-900">
+              Verify your email
+            </h3>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              {emailOtpMessage}
+            </p>
             <input
               value={emailOtp}
-              onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) =>
+                setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="000000"
               className="mt-6 h-12 w-full rounded-xl border border-gray-300 text-center font-sans text-xl tracking-[0.35em] focus:border-[#2e66a6] focus:outline-none"
             />
-            {emailOtpError && <p className="mt-2 text-center text-sm text-red-600" role="alert">{emailOtpError}</p>}
-            <button type="button" onClick={verifyRegistrationEmail} disabled={loading} className="mt-5 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">
-              {loading ? 'Verifying...' : 'Verify Email'}
+            {emailOtpError && (
+              <p className="mt-2 text-center text-sm text-red-600" role="alert">
+                {emailOtpError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={verifyRegistrationEmail}
+              disabled={loading}
+              className="mt-5 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {loading ? "Verifying..." : "Verify Email"}
             </button>
-            <button type="button" onClick={resendRegistrationEmailOtp} disabled={loading || resendCooldown > 0} className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-50">
-              {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+            <button
+              type="button"
+              onClick={resendRegistrationEmailOtp}
+              disabled={loading || resendCooldown > 0}
+              className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {resendCooldown > 0
+                ? `Resend code in ${resendCooldown}s`
+                : "Resend code"}
             </button>
           </div>
         </div>
       )}
 
-      <div className="w-full max-w-[1340px]">
-        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">
+      <div className="w-full max-w-[1220px]">
+        <div className="overflow-hidden rounded-2xl bg-transparent min-h-[82vh]">
           <div className="flex flex-col lg:flex-row">
             {/* LEFT BRAND PANEL */}
-            <div className="relative lg:w-[42%] p-4 pt-14 sm:p-6 sm:pt-16 lg:p-8 bg-white flex items-center justify-center">
+            <div className="relative lg:w-[44%] p-4 pt-14 sm:p-6 sm:pt-16 lg:p-8 bg-transparent flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => {
                   if (window.history.length > 1) navigate(-1);
-                  else navigate('/');
+                  else navigate("/");
                 }}
                 className="absolute left-4 top-4 sm:left-6 sm:top-6 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition
     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
                 aria-label="Go back"
                 title="Go back"
               >
-                <svg className="w-4 h-4 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <svg
+                  className="w-4 h-4 text-gray-700"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
                   <path
                     fillRule="evenodd"
                     d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
@@ -1709,7 +2148,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
       "
                       style={{
                         background:
-                          'radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 45%, transparent 75%)',
+                          "radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 45%, transparent 75%)",
                       }}
                     />
                   </div>
@@ -1722,28 +2161,32 @@ If you don’t receive a confirmation email within 48 hours or have any question
             </div>
 
             {/* CENTER DIVIDER */}
-            <div className="hidden lg:flex items-center justify-center" aria-hidden="true">
+            <div
+              className="hidden lg:flex items-center justify-center"
+              aria-hidden="true"
+            >
               <div className="w-px h-[85%] bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
             </div>
 
             {/* RIGHT FORM PANEL */}
-            <div className="lg:w-[58%] p-4 sm:p-8 lg:p-10 bg-white flex flex-col justify-center">
-              <div className="mx-auto w-full max-w-2xl">
-                <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-600 tracking-tight">Let's set up your profile!</h2>
-                </div>
-
+            <div className="lg:w-[56%] p-4 sm:p-6 lg:p-8 bg-transparent flex flex-col justify-center">
+              <div className="mx-auto w-full max-w-2xl rounded-2xl border border-[#dfe7f0] bg-white p-5 shadow-[0_10px_30px_rgba(15,35,65,0.08)] sm:p-7">
                 <Stepper />
 
                 <div className="mt-6">
                   {serverAlert}
 
-                  <form onSubmit={onFormSubmit} className="space-y-5" noValidate aria-busy={loading}>
+                  <form
+                    onSubmit={onFormSubmit}
+                    className="space-y-5"
+                    noValidate
+                    aria-busy={loading}
+                  >
                     {renderStepContent()}
 
                     {/* ACTIONS (Step 1-3 buttons only) */}
-                    <div className="flex items-center justify-center pt-2">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex w-full items-center justify-between gap-3">
                         {currentStep > 1 && (
                           <button
                             type="button"
@@ -1756,7 +2199,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
                               focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
                               disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Previous
+                            ←&nbsp;&nbsp; Back
                           </button>
                         )}
 
@@ -1767,21 +2210,11 @@ If you don’t receive a confirmation email within 48 hours or have any question
                             focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
                             disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Next
+                          Next &nbsp;&nbsp;→
                         </button>
                       </div>
                     </div>
                   </form>
-
-                  <div className="mt-7">
-                    <div className="h-px bg-gray-100 mb-4" />
-                    <p className="text-center text-sm text-gray-700">
-                      Already have an account?{' '}
-                      <Link to="/login" className="font-semibold text-[#2e66a6] hover:text-[#245387] underline">
-                        Sign In here
-                      </Link>
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
