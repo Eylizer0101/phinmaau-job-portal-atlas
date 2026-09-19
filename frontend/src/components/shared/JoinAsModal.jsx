@@ -100,12 +100,8 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
     return (
       <div
-        className="relative w-full overflow-hidden border border-gray-200"
-        style={{
-          maxWidth: "1040px",
-          borderRadius: "22px",
-          background: "linear-gradient(135deg, #123b7a 0%, #2e66a6 52%, #56b5dc 100%)",
-        }}
+        className="relative w-full overflow-hidden border border-gray-200 bg-white"
+        style={{ maxWidth: "1040px", borderRadius: "22px" }}
       >
         <div className="flex items-center justify-between px-5 pt-5 sm:px-7">
           <button
