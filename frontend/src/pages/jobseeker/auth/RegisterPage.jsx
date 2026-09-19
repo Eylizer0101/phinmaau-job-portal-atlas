@@ -1487,7 +1487,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
               <div className="mx-auto w-full">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2.5">
-                    <img src="/logo192.png" alt="AGAPAY" className="h-8 w-8 object-contain" />
+                    <img src="/images/phinma-logo.png" alt="PHINMA AU" className="h-8 w-8 object-contain" />
                     <div>
                       <h2 className="text-base font-bold leading-tight text-gray-900 tracking-tight">AGAPAY</h2>
                       <p className="mt-0.5 text-[11px] text-gray-400">Let's set up your profile!</p>
