@@ -2,16 +2,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import {
-  FaUser,
-  FaGraduationCap,
-  FileIcon,
-  CheckCircleIcon,
-  GlobeIcon,
-  LocationIcon,
-  BookmarksSvgIcon,
-  BuildingIcon,
-} from '../../../components/jobseeker/JobseekerIcons';
 
 // ✅ Use existing dropdown options (course dropdown)
 import { MAJOR_COURSE_OPTIONS } from '../../../constants/jobseekerEducationOptions';
@@ -1074,15 +1064,7 @@ const RegisterPage = () => {
                             aria-pressed={selected}
                           >
                             <span className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-[#2e66a6]">
-                              {value === 'On-site' ? (
-                                <LocationIcon className="w-4 h-4" />
-                              ) : value === 'Remote' ? (
-                                <BookmarksSvgIcon name="laptop" className="w-4 h-4" />
-                              ) : value === 'Blended' ? (
-                                <BuildingIcon className="w-4 h-4" />
-                              ) : (
-                                <GlobeIcon className="w-4 h-4" />
-                              )}
+                              {value === 'On-site' ? '▣' : value === 'Remote' ? '▱' : value === 'Blended' ? '⌂' : '⌂'}
                             </span>
                             <span className="text-sm font-semibold">{label}</span>
                           </button>
@@ -1279,17 +1261,7 @@ const RegisterPage = () => {
           {items.map(([number, title, description], index) => (
             <div key={number} className="relative flex gap-4">
               <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f3f7fb] text-[#2e66a6] ring-4 ring-white">
-                {index === 0 ? (
-                  <FaUser className="w-4 h-4" aria-hidden="true" />
-                ) : index === 1 ? (
-                  <FaGraduationCap className="w-4 h-4" aria-hidden="true" />
-                ) : index === 2 ? (
-                  <FileIcon className="w-4 h-4" />
-                ) : index === 3 ? (
-                  <CheckCircleIcon className="w-4 h-4" />
-                ) : (
-                  <GlobeIcon className="w-4 h-4" />
-                )}
+                {index === 0 ? '♙' : index === 1 ? '♧' : index === 2 ? '▱' : index === 3 ? '➤' : '⊕'}
               </div>
               <div className="pt-0.5">
                 <p className="text-base font-bold text-gray-900">{number} {title}</p>
