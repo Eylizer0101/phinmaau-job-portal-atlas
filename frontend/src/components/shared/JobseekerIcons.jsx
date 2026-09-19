@@ -1290,3 +1290,93 @@ export const ApplicationStatusIcon = ({ name, className = 'h-4 w-4' }) => {
     </svg>
   );
 };
+
+export const RegistrationGuideIcon = ({ name, className = 'w-4 h-4' }) => {
+  const common = {
+    className,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '1.8',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+  };
+
+  switch (name) {
+    case 'details':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="7" r="3" />
+          <path d="M6.5 20v-1.5A5.5 5.5 0 0112 13a5.5 5.5 0 015.5 5.5V20" />
+          <path d="M9 20h6" />
+        </svg>
+      );
+    case 'career':
+      return (
+        <svg {...common}>
+          <path d="M8 18h8" />
+          <path d="M9.5 14.5h5" />
+          <path d="M8.2 13a6 6 0 117.6 0c-1.15.9-1.8 1.9-1.8 3h-4c0-1.1-.65-2.1-1.8-3z" />
+          <path d="M12 2V1" />
+        </svg>
+      );
+    case 'documents':
+      return (
+        <svg {...common}>
+          <path d="M7 3h7l4 4v14H7z" />
+          <path d="M14 3v5h4" />
+          <path d="M10 12h5M10 16h5" />
+        </svg>
+      );
+    case 'review':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M10 8l6 4-6 4z" />
+        </svg>
+      );
+    case 'teamReview':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v10M7 12h10" />
+        </svg>
+      );
+    case 'onsite':
+      return (
+        <svg {...common}>
+          <path d="M5 21V6h10v15" />
+          <path d="M15 10h4v11" />
+          <path d="M8 9h2M8 13h2M8 17h2M18 13h1M18 17h1" />
+          <path d="M3 21h18" />
+        </svg>
+      );
+    case 'remote':
+      return (
+        <svg {...common}>
+          <rect x="4" y="5" width="16" height="11" rx="1.5" />
+          <path d="M2.5 19h19M9 19h6" />
+        </svg>
+      );
+    case 'blended':
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="12" height="9" rx="1.5" />
+          <path d="M5 17h8" />
+          <path d="M17 10h4v9h-7v-3" />
+          <path d="M18.5 16.5h.01" />
+        </svg>
+      );
+    case 'home':
+      return (
+        <svg {...common}>
+          <path d="M3 11.5L12 4l9 7.5" />
+          <path d="M5.5 10v10h13V10" />
+          <path d="M9 20v-6h6v6" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};

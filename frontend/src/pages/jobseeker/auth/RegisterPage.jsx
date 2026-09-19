@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { RegistrationGuideIcon } from '../../../components/jobseeker/JobseekerIcons';
 
 // ✅ Use existing dropdown options (course dropdown)
 import { MAJOR_COURSE_OPTIONS } from '../../../constants/jobseekerEducationOptions';
@@ -1039,11 +1040,11 @@ const RegisterPage = () => {
                     <label className={labelBase}>Preferred Work Mode</label>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       {[
-                        ['On-site', 'On-site'],
-                        ['Remote', 'Remote'],
-                        ['Blended', 'Blended'],
-                        ['Work from home', 'Work from Home'],
-                      ].map(([value, label]) => {
+                        ['On-site', 'On-site', 'onsite'],
+                        ['Remote', 'Remote', 'remote'],
+                        ['Blended', 'Blended', 'blended'],
+                        ['Work from home', 'Work from Home', 'home'],
+                      ].map(([value, label, iconName]) => {
                         const selected = formData.preferredWorkMode === value;
                         return (
                           <button
@@ -1064,7 +1065,7 @@ const RegisterPage = () => {
                             aria-pressed={selected}
                           >
                             <span className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-[#2e66a6]">
-                              {value === 'On-site' ? '▣' : value === 'Remote' ? '▱' : value === 'Blended' ? '⌂' : '⌂'}
+                              <RegistrationGuideIcon name={iconName} className="h-4 w-4" />
                             </span>
                             <span className="text-sm font-semibold">{label}</span>
                           </button>
@@ -1245,11 +1246,11 @@ const RegisterPage = () => {
   // ---------- How it Works (static guide) ----------
   const HowItWorksCarousel = () => {
     const items = [
-      ['1.', 'Provide your essential details', 'Based on your selected role, make sure all information provided is accurate and complete so employers can properly identify and contact you for job opportunities.'],
-      ['2.', 'Tell us about your academic background and career goals.', 'Your career profile introduces you to potential employers and helps you stand out to the right opportunities.'],
-      ['3.', 'Submit the necessary documents', 'This helps validate your qualifications and strengthens your profile.'],
-      ['4.', 'Account Review', 'Before submitting, double-check that all your information and required documents are accurate and complete.'],
-      ['5.', 'AGAPAY team carefully reviews all', 'Your submitted information will be reviewed for accuracy and authenticity. Approval typically takes 24–48 hours, and you’ll receive a confirmation email once approved.'],
+      ['1.', 'Provide your essential details', 'Based on your selected role, make sure all information provided is accurate and complete so employers can properly identify and contact you for job opportunities.', 'details'],
+      ['2.', 'Tell us about your academic background and career goals.', 'Your career profile introduces you to potential employers and helps you stand out to the right opportunities.', 'career'],
+      ['3.', 'Submit the necessary documents', 'This helps validate your qualifications and strengthens your profile.', 'documents'],
+      ['4.', 'Account Review', 'Before submitting, double-check that all your information and required documents are accurate and complete.', 'review'],
+      ['5.', 'AGAPAY team carefully reviews all', 'Your submitted information will be reviewed for accuracy and authenticity. Approval typically takes 24–48 hours, and you’ll receive a confirmation email once approved.', 'teamReview'],
     ];
 
     return (
@@ -1258,10 +1259,10 @@ const RegisterPage = () => {
         <p className="mt-1 text-sm text-gray-500">5 Simple Steps to Create Your Account</p>
         <div className="relative mt-5 space-y-6">
           <div className="absolute left-[17px] top-5 bottom-5 w-px bg-gray-200" aria-hidden="true" />
-          {items.map(([number, title, description], index) => (
+          {items.map(([number, title, description, iconName]) => (
             <div key={number} className="relative flex gap-4">
               <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f3f7fb] text-[#2e66a6] ring-4 ring-white">
-                {index === 0 ? '♙' : index === 1 ? '♧' : index === 2 ? '▱' : index === 3 ? '➤' : '⊕'}
+                <RegistrationGuideIcon name={iconName} className="h-4 w-4" />
               </div>
               <div className="pt-0.5">
                 <p className="text-base font-bold text-gray-900">{number} {title}</p>
