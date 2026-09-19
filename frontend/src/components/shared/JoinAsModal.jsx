@@ -169,7 +169,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
                     draggable="false"
                   />
 
-                  <div className="relative z-10 mt-5 space-y-2.5 border-t border-gray-200 pt-4">
+                  <div className="relative z-10 mt-5 mr-[155px] space-y-2.5 border-t-2 border-gray-300 pt-4 sm:mr-[185px]">
                     {card.features.map((feature) => (
                       <div key={feature.label} className="flex items-center gap-3 text-sm text-black">
                         <span className="shrink-0" style={{ color: BLUE.primary }}>
@@ -206,7 +206,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
               </svg>
             </button>
 
-            <p className="mt-3 text-center text-xs text-gray-600 sm:text-sm">
+            <p className="mt-3 whitespace-nowrap text-center text-xs text-gray-600 sm:text-sm">
               Select a role to continue • Already have an account?{" "}
               <Link to="/login" className="font-medium underline underline-offset-2" style={{ color: BLUE.primary }}>
                 Sign In here
