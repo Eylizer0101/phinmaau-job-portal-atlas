@@ -299,17 +299,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
               </button>
             </div>
 
-            {messages.length > 1 && (
-              <div className="mt-2 flex justify-end px-1">
-                <button
-                  type="button"
-                  onClick={clearConversation}
-                  className="flex-shrink-0 text-[11px] font-semibold text-slate-500 hover:text-[#212C61]"
-                >
-                  Clear chat
-                </button>
-              </div>
-            )}
+           
           </form>
         </section>
       )}
