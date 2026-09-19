@@ -1,12 +1,13 @@
 // src/components/shared/JoinAsModal.jsx
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { BookmarksSvgIcon, FaChevronRight } from "./JobseekerIcons";
 
 const BLUE = {
-  primary: "#1e4ba0",
-  hover: "#1b4290",
-  active: "#163879",
-  ring: "#1e4ba0",
+  primary: "#2e66a6",
+  hover: "#285b94",
+  active: "#234f81",
+  ring: "#2e66a6",
 };
 
 const JoinAsModal = () => {
@@ -70,101 +71,146 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
   const RolePage = () => {
     const disabled = !role;
 
+    const roleCards = [
+      {
+        id: "jobseeker",
+        title: "Job Seeker",
+        description: "Find opportunities, apply for positions, build your profile, and connect with employers.",
+        icon: "/images/jobseeker_icons.png",
+        illustration: "/images/jobseekerboy.png",
+        features: [
+          { icon: "search", label: "Browse available jobs" },
+          { icon: "file", label: "Submit applications" },
+          { icon: "checkCircle", label: "Track applications" },
+        ],
+      },
+      {
+        id: "employer",
+        title: "Employer",
+        description: "Post job opportunities, manage applicants, and find the right candidates for your company.",
+        icon: "/images/employer_icons.png",
+        illustration: "/images/girlemployer.png",
+        features: [
+          { icon: "briefcase", label: "Post job vacancies" },
+          { icon: "users", label: "Review applicants" },
+          { icon: "checkCircle", label: "Connect with candidates" },
+        ],
+      },
+    ];
+
     return (
       <div
-        className="w-full bg-white shadow-lg border border-gray-200 sm:-mt-16"
-        style={{
-          maxWidth: "520px",
-          borderRadius: "18px",
-        }}
+        className="relative w-full overflow-hidden border border-gray-200 bg-white"
+        style={{ maxWidth: "1040px", borderRadius: "22px" }}
       >
-        {/* header */}
-        <div className="flex items-center justify-between px-6 pt-5">
+        <div className="flex items-center justify-between px-5 pt-5 sm:px-7">
           <button
             ref={topButtonRef}
             type="button"
             onClick={() => navigate("/")}
-            className="h-10 w-10 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center
-                       focus:outline-none focus:ring-2 focus:ring-offset-2"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-black transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ "--tw-ring-color": BLUE.ring }}
             aria-label="Back"
             title="Back"
           >
-            <svg className="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path
-                fillRule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <BookmarksSvgIcon name="arrowLeft" className="h-5 w-5" />
           </button>
-
           <div className="w-10" aria-hidden="true" />
         </div>
 
-        {/* body */}
-        <div className="px-7 pb-7">
-          <div className="mt-2 flex justify-center">
-            <img
-              src="/images/createacc.png"
-              alt="Create account"
-              className="h-[200px] w-auto object-contain select-none pointer-events-none"
-              draggable="false"
-            />
+        <div className="px-5 pb-6 sm:px-8 sm:pb-8 lg:px-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-[26px] font-semibold leading-tight text-black sm:text-[32px]">
+              How would you like to use the platform?
+            </h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+              Choose your role to get started and enjoy a personalized experience tailored to your goals.
+            </p>
           </div>
 
-          <h2 className="mt-3 text-center text-xl font-semibold text-gray-900">Create Account As</h2>
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {roleCards.map((card) => {
+              const selected = role === card.id;
+              return (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => setRole(card.id)}
+                  className="relative min-h-[300px] overflow-hidden rounded-[18px] border-2 bg-white p-5 text-left transition focus:outline-none focus:ring-2 focus:ring-offset-2 sm:p-6"
+                  style={{
+                    borderColor: selected ? BLUE.primary : "#d9e1e8",
+                    "--tw-ring-color": BLUE.ring,
+                  }}
+                  aria-pressed={selected}
+                >
+                  <span
+                    className="absolute right-5 top-5 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-white"
+                    style={{ borderColor: selected ? BLUE.primary : "#b9c6d3" }}
+                    aria-hidden="true"
+                  >
+                    {selected && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: BLUE.primary }} />}
+                  </span>
 
-          <div className="mt-4">
-            <div className="relative">
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 shadow-sm
-                 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                style={{ "--tw-ring-color": BLUE.ring }}
-                aria-label="Choose role"
-              >
-                <option value="">Choose Role</option>
-                <option value="jobseeker">Jobseeker</option>
-                <option value="employer">Employer</option>
-              </select>
-            </div>
+                  <div className="relative z-10 max-w-[65%] sm:max-w-[62%]">
+                    <img
+                      src={card.icon}
+                      alt=""
+                      className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+                      draggable="false"
+                    />
+                    <h3 className="mt-2 text-xl font-semibold text-black sm:text-2xl">{card.title}</h3>
+                    <p className="mt-1.5 text-[13px] leading-5 text-gray-600 sm:text-sm">{card.description}</p>
+                  </div>
+
+                  <img
+                    src={card.illustration}
+                    alt=""
+                    className="pointer-events-none absolute bottom-12 right-3 h-[150px] w-[150px] select-none object-contain sm:bottom-10 sm:right-5 sm:h-[180px] sm:w-[180px]"
+                    draggable="false"
+                  />
+
+                  <div className="relative z-10 mt-5 space-y-2.5 border-t border-gray-200 pt-4">
+                    {card.features.map((feature) => (
+                      <div key={feature.label} className="flex items-center gap-3 text-sm text-black">
+                        <span className="shrink-0" style={{ color: BLUE.primary }}>
+                          <BookmarksSvgIcon name={feature.icon} className="h-5 w-5" />
+                        </span>
+                        <span>{feature.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
-          <button
-            type="button"
-            onClick={proceedFromRole}
-            disabled={disabled}
-            className="mt-4 w-full h-11 rounded-xl text-sm font-semibold text-white transition
-                       focus:outline-none focus:ring-2 focus:ring-offset-2"
-            style={{
-              backgroundColor: disabled ? "#93a6c9" : BLUE.primary,
-              cursor: disabled ? "not-allowed" : "pointer",
-              "--tw-ring-color": BLUE.ring,
-            }}
-            onMouseEnter={(e) => {
-              if (!disabled) e.currentTarget.style.backgroundColor = BLUE.hover;
-            }}
-            onMouseLeave={(e) => {
-              if (!disabled) e.currentTarget.style.backgroundColor = BLUE.primary;
-            }}
-            onMouseDown={(e) => {
-              if (!disabled) e.currentTarget.style.backgroundColor = BLUE.active;
-            }}
-            onMouseUp={(e) => {
-              if (!disabled) e.currentTarget.style.backgroundColor = BLUE.hover;
-            }}
-          >
-            Proceed
-          </button>
+          <div className="mx-auto mt-5 max-w-[390px]">
+            <button
+              type="button"
+              onClick={proceedFromRole}
+              disabled={disabled}
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-xl text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-base"
+              style={{
+                backgroundColor: disabled ? "#9db5cf" : BLUE.primary,
+                cursor: disabled ? "not-allowed" : "pointer",
+                "--tw-ring-color": BLUE.ring,
+              }}
+              onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = BLUE.hover; }}
+              onMouseLeave={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = BLUE.primary; }}
+              onMouseDown={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = BLUE.active; }}
+              onMouseUp={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = BLUE.hover; }}
+            >
+              <span>Continue</span>
+              <FaChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
 
-          <p className="mt-4 text-center text-sm text-gray-700">
-            Already have an account?{" "}
-            <Link to="/login" className="font-semibold underline underline-offset-2" style={{ color: BLUE.primary }}>
-              Sign In here
-            </Link>
-          </p>
+            <p className="mt-3 text-center text-xs text-gray-600 sm:text-sm">
+              Select a role to continue • Already have an account?{" "}
+              <Link to="/login" className="font-medium underline underline-offset-2" style={{ color: BLUE.primary }}>
+                Sign In here
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     );
