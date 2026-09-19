@@ -2790,11 +2790,14 @@ const ApplicationDetails = () => {
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Personal Information</h3>
                   <div className="grid grid-cols-1 gap-x-7 gap-y-0.5 pt-1 sm:grid-cols-3">
                     {personalInformationColumns.map((column, columnIndex) => (
-                      <div key={`personal-column-${columnIndex}`}>
+                      <div key={`personal-column-${columnIndex}`} className="min-w-0 overflow-hidden">
                         {column.map(([label, value]) =>
                           isMeaningfulResumeValue(value) ? (
-                            <div key={label}>
-                              <b>{label}:</b> {value}
+                            <div key={label} className="flex min-w-0 max-w-full items-baseline overflow-hidden whitespace-nowrap">
+                              <b className="shrink-0 whitespace-nowrap">{label}:</b>
+                              <span className="ml-1 block min-w-0 flex-1 truncate" title={String(value)}>
+                                {value}
+                              </span>
                             </div>
                           ) : null
                         )}
