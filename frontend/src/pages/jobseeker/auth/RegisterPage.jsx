@@ -1440,7 +1440,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
             if (window.history.length > 1) navigate(-1);
             else navigate('/');
           }}
-          className="absolute left-0 -top-12 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
+          className="absolute left-0 -top-6 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
           aria-label="Go back"
           title="Go back"
         >
