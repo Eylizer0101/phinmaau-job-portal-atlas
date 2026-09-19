@@ -599,39 +599,40 @@ const RegisterPage = () => {
   };
 
  const Stepper = () => (
-    <div className="mt-4 mb-5">
-      <div className="flex items-start w-full" aria-label="Registration progress">
-        {steps.map((step, index) => {
-          const isActive = step.id === currentStep;
-          const isDone = step.id < currentStep;
-          const hasError = stepHasError(step.id);
-          return (
-            <React.Fragment key={step.id}>
-              <div className="flex min-w-[82px] flex-col items-center text-center">
-                <div className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors ${
-                  hasError
-                    ? 'border-red-400 bg-red-50 text-red-600'
-                    : isActive
-                      ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
-                      : isDone
-                        ? 'border-[#2e66a6] bg-blue-50 text-[#2e66a6]'
-                        : 'border-gray-200 bg-gray-50 text-gray-500'
-                }`}>
-                  {isDone ? '✓' : step.id}
-                </div>
-                <span className={`mt-1.5 text-sm font-semibold leading-tight ${isActive ? 'text-[#2e66a6]' : 'text-gray-500'}`}>
-                  {step.label}
+    <div className="mt-4">
+      <nav aria-label="Progress">
+        <ol className="flex items-center justify-center flex-wrap">
+          {steps.map((s, idx) => {
+            const isDone = s.id < currentStep;
+            const isActive = s.id === currentStep;
+
+            const textClass = isDone ? 'text-green-600' : isActive ? 'text-gray-600' : 'text-gray-300';
+            const sepClass = 'text-gray-300';
+
+            return (
+              <li key={s.id} className="flex items-center">
+                <span className={`inline-flex items-center text-lg font-semibold ${textClass}`}>
+                  {isDone && (
+                    <svg className="w-6 h-6 mr-2" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 7.707 8.879a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                  {s.label}
                 </span>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`mt-[13px] h-px flex-1 ${step.id < currentStep ? 'bg-[#2e66a6]' : 'bg-gray-200'}`} aria-hidden="true" />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
+
+                {idx !== steps.length - 1 && <span className={`mx-4 text-2xl font-semibold ${sepClass}`}>›</span>}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
     </div>
   );
+
 
   // ---------- Custom File Row ----------
   const FileRow = ({ k, title, subtitle }) => {
@@ -1519,7 +1520,23 @@ If you don’t receive a confirmation email within 48 hours or have any question
                               focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
                               disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            ← Back
+                            <span className="flex items-center justify-center gap-2">
+                              <svg
+                                className="w-[18px] h-[18px] shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M15 19l-7-7 7-7"
+                                />
+                              </svg>
+                              Back
+                            </span>
                           </button>
                         ) : <span aria-hidden="true" />}
 
@@ -1530,7 +1547,23 @@ If you don’t receive a confirmation email within 48 hours or have any question
                             focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
                             disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Next →
+                          <span className="flex items-center justify-center gap-2">
+                            Next
+                            <svg
+                              className="w-[18px] h-[18px] shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </span>
                         </button>
                       </div>
                     </div>
