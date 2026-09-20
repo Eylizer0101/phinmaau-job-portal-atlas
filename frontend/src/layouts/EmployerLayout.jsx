@@ -238,6 +238,10 @@ const EmployerLayout = ({ children }) => {
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2";
 
+  // Keep the bottom sidebar profile unavailable while the initial account
+  // check is still loading and while the mandatory password gate is active.
+  const isSidebarProfileLocked = !hasCheckedVerification || isPasswordGateLocked;
+
   const sidebarProfile = sidebarUser?.employerProfile || {};
   const sidebarCompanyName =
     sidebarProfile.companyName || sidebarUser?.companyName || sidebarUser?.fullName || "Employer";
@@ -264,6 +268,12 @@ const EmployerLayout = ({ children }) => {
     document.addEventListener("mousedown", closeOnOutsideClick);
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [sidebarProfileOpen]);
+
+  useEffect(() => {
+    if (isSidebarProfileLocked && sidebarProfileOpen) {
+      setSidebarProfileOpen(false);
+    }
+  }, [isSidebarProfileLocked, sidebarProfileOpen]);
 
   // ✅ Verify modal a11y + focus management
   const verifyDialogRef = useRef(null);
@@ -794,11 +804,12 @@ const EmployerLayout = ({ children }) => {
 
   const SidebarProfile = ({ mobile = false }) => (
     <div ref={mobile ? undefined : sidebarProfileRef} className="relative border-t border-gray-200 bg-white p-3">
-      {sidebarProfileOpen ? (
+      {sidebarProfileOpen && !isSidebarProfileLocked ? (
         <div className="absolute bottom-[calc(100%+8px)] left-3 right-3 z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
           <button
             type="button"
             onClick={() => {
+              if (isSidebarProfileLocked) return;
               setSidebarProfileOpen(false);
               setIsMobileNavOpen(false);
               navigate("/employer/company-profile");
@@ -811,6 +822,7 @@ const EmployerLayout = ({ children }) => {
           <button
             type="button"
             onClick={() => {
+              if (isSidebarProfileLocked) return;
               setSidebarProfileOpen(false);
               setIsMobileNavOpen(false);
               navigate("/employer/settings");
@@ -826,6 +838,7 @@ const EmployerLayout = ({ children }) => {
             <button
               type="button"
               onClick={() => {
+                if (isSidebarProfileLocked) return;
                 setSidebarProfileOpen(false);
                 setIsMobileNavOpen(false);
                 openLogoutModal();
@@ -841,10 +854,21 @@ const EmployerLayout = ({ children }) => {
 
       <button
         type="button"
-        onClick={() => setSidebarProfileOpen((open) => !open)}
-        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-gray-100 ${focusRing}`}
+        onClick={() => {
+          if (isSidebarProfileLocked) return;
+          setSidebarProfileOpen((open) => !open);
+        }}
+        disabled={isSidebarProfileLocked}
+        className={[
+          "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition",
+          isSidebarProfileLocked
+            ? "cursor-not-allowed opacity-55"
+            : "hover:bg-gray-100",
+          focusRing,
+        ].join(" ")}
         aria-haspopup="menu"
-        aria-expanded={sidebarProfileOpen}
+        aria-expanded={!isSidebarProfileLocked && sidebarProfileOpen}
+        aria-disabled={isSidebarProfileLocked ? "true" : undefined}
       >
         <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
           {sidebarAvatar && !sidebarAvatarFailed ? (
