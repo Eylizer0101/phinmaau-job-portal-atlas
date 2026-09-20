@@ -371,7 +371,7 @@ const SalaryDropdown = ({ id, label, value, setValue, openDropdown, setOpenDropd
                 type="text"
                 inputMode="numeric"
                 value={formatAmountInput(value)}
-                onChange={(e) => setValue(normalizeAmount(e.target.value).slice(0, 7))}
+                onChange={(e) => setValue(normalizeAmount(e.target.value).slice(0, 6))}
                 placeholder="Indicate minimum salary"
                 className="w-full px-4 py-3 outline-none text-sm text-gray-700 bg-white"
               />
@@ -1533,7 +1533,7 @@ const JobSearch = () => {
                       selected={selectedLocations}
                       setSelected={setSelectedLocations}
                       enableSearch
-                      searchMaxLength={100}
+                      searchMaxLength={20}
                       menuWidth="w-[300px]"
                       openDropdown={openDropdown}
                       setOpenDropdown={setOpenDropdown}
@@ -1587,7 +1587,7 @@ const JobSearch = () => {
                       selected={selectedCompanies}
                       setSelected={setSelectedCompanies}
                       enableSearch
-                      searchMaxLength={150}
+                      searchMaxLength={20}
                       menuWidth="w-[300px]"
                       openDropdown={openDropdown}
                       setOpenDropdown={setOpenDropdown}

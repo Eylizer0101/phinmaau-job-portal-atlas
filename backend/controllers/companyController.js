@@ -549,11 +549,11 @@ exports.submitCompanyReview = async (req, res) => {
       daysToFirstResponse === undefined ||
       !Number.isInteger(numericDaysToFirstResponse) ||
       numericDaysToFirstResponse < 0 ||
-      numericDaysToFirstResponse > 999
+      numericDaysToFirstResponse > 99
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Days to first response is required and must be a whole number from 0 to 999.',
+        message: 'Days to first response is required and must be a whole number from 0 to 99.',
       });
     }
 
@@ -563,11 +563,11 @@ exports.submitCompanyReview = async (req, res) => {
       totalProcessDays === undefined ||
       !Number.isInteger(numericTotalProcessDays) ||
       numericTotalProcessDays < 0 ||
-      numericTotalProcessDays > 999
+      numericTotalProcessDays > 99
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Total process length is required and must be a whole number from 0 to 999.',
+        message: 'Total process length is required and must be a whole number from 0 to 99.',
       });
     }
 
@@ -578,10 +578,10 @@ exports.submitCompanyReview = async (req, res) => {
       });
     }
 
-    if (trimmedMessage.length > 1000) {
+    if (trimmedMessage.length > 500) {
       return res.status(400).json({
         success: false,
-        message: 'Your review must not exceed 1,000 characters.',
+        message: 'Your review must not exceed 500 characters.',
       });
     }
 

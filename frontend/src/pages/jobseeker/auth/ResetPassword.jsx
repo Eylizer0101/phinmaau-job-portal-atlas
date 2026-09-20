@@ -335,6 +335,7 @@ const ResetPassword = () => {
                 name="newPassword"
                 type={showNewPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+              maxLength={25}
                 value={formData.newPassword}
                 onChange={handleChange}
                 placeholder="Enter New Password"
@@ -367,6 +368,7 @@ const ResetPassword = () => {
                 name="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+              maxLength={25}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm New Password"

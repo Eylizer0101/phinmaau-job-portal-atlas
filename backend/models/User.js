@@ -268,13 +268,13 @@ const companyReviewSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
-      max: 999,
+      max: 99,
     },
     totalProcessDays: {
       type: Number,
       default: 0,
       min: 0,
-      max: 999,
+      max: 99,
     },
     outcome: {
       type: String,
@@ -289,7 +289,7 @@ const companyReviewSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 1000,
+      maxlength: 500,
     },
     createdAt: {
       type: Date,
@@ -309,11 +309,11 @@ const companyReviewSchema = new mongoose.Schema(
 const educationEntrySchema = new mongoose.Schema(
   {
     level: { type: String, default: '', trim: true },
-    educationalAttainment: { type: String, default: '', trim: true },
-    school: { type: String, default: '', trim: true, maxlength: 150 },
+    educationalAttainment: { type: String, default: '', trim: true, maxlength: 100 },
+    school: { type: String, default: '', trim: true, maxlength: 100 },
     campus: { type: String, default: '', trim: true, set: normalizeCampusValue },
     course: { type: String, default: '', trim: true, set: normalizeCourseValue },
-    studyField: { type: String, default: '', trim: true },
+    studyField: { type: String, default: '', trim: true, maxlength: 50 },
     startMonth: { type: String, default: '', trim: true },
     startYear: { type: String, default: '', trim: true },
     endMonth: { type: String, default: '', trim: true },
@@ -323,7 +323,7 @@ const educationEntrySchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true,
-      validate: richTextLengthValidator(1000, 'Description must not exceed 1,000 characters.'),
+      validate: richTextLengthValidator(500, 'Description must not exceed 500 characters.'),
     },
   },
   { _id: false }
@@ -334,7 +334,7 @@ const educationEntrySchema = new mongoose.Schema(
 // ---------------------------
 const workExperienceSchema = new mongoose.Schema(
   {
-    companyName: { type: String, required: true, trim: true, maxlength: 150, default: '' },
+    companyName: { type: String, required: true, trim: true, maxlength: 120, default: '' },
     positionTitle: { type: String, required: true, trim: true, maxlength: 100, default: '' },
     startDate: { type: Date, required: true },
     endDate: { type: Date, default: null },
@@ -343,7 +343,7 @@ const workExperienceSchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true,
-      validate: richTextLengthValidator(1000, 'Description must not exceed 1,000 characters.'),
+      validate: richTextLengthValidator(500, 'Description must not exceed 500 characters.'),
     },
   },
   { _id: true, timestamps: true }
@@ -354,10 +354,10 @@ const workExperienceSchema = new mongoose.Schema(
 // ---------------------------
 const profileMoreEntrySchema = new mongoose.Schema(
   {
-    title: { type: String, default: '', trim: true },
-    organization: { type: String, default: '', trim: true },
-    role: { type: String, default: '', trim: true },
-    issuer: { type: String, default: '', trim: true },
+    title: { type: String, default: '', trim: true, maxlength: 100 },
+    organization: { type: String, default: '', trim: true, maxlength: 100 },
+    role: { type: String, default: '', trim: true, maxlength: 100 },
+    issuer: { type: String, default: '', trim: true, maxlength: 100 },
     date: { type: String, default: '', trim: true },
     startDate: { type: String, default: '', trim: true },
     endDate: { type: String, default: '', trim: true },
@@ -365,14 +365,14 @@ const profileMoreEntrySchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true,
-      validate: richTextLengthValidator(1000, 'Description must not exceed 1,000 characters.'),
+      validate: richTextLengthValidator(500, 'Description must not exceed 500 characters.'),
     },
     url: { type: String, default: '', trim: true },
-    name: { type: String, default: '', trim: true },
-    position: { type: String, default: '', trim: true },
-    company: { type: String, default: '', trim: true },
-    email: { type: String, default: '', trim: true },
-    phone: { type: String, default: '', trim: true },
+    name: { type: String, default: '', trim: true, maxlength: 100 },
+    position: { type: String, default: '', trim: true, maxlength: 100 },
+    company: { type: String, default: '', trim: true, maxlength: 120 },
+    email: { type: String, default: '', trim: true, validate: { validator: (value) => !value || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && !/^\d+$/.test(value)), message: 'Please enter a valid reference email address containing @.' } },
+    phone: { type: String, default: '', trim: true, maxlength: 11, match: [/^\d{11}$/, 'Contact number must contain exactly 11 digits.'] },
   },
   { _id: true, timestamps: true }
 );
@@ -434,9 +434,9 @@ const userSchema = new mongoose.Schema(
       default: 'jobseeker',
     },
 
-    firstName: { type: String, trim: true, maxlength: 50, default: '' },
-    middleName: { type: String, trim: true, maxlength: 50, default: '' },
-    lastName: { type: String, trim: true, maxlength: 50, default: '' },
+    firstName: { type: String, trim: true, maxlength: 25, default: '' },
+    middleName: { type: String, trim: true, maxlength: 25, default: '' },
+    lastName: { type: String, trim: true, maxlength: 25, default: '' },
     extensionName: { type: String, trim: true, default: '' },
 
     profileImage: { type: String, default: '' },
@@ -541,10 +541,10 @@ const userSchema = new mongoose.Schema(
         type: String,
         default: '',
         trim: true,
-        validate: richTextLengthValidator(500, 'Objective must not exceed 500 characters.'),
+        validate: richTextLengthValidator(250, 'Objective must not exceed 250 characters.'),
       },
-      minimumSalary: { type: String, default: '', trim: true, maxlength: 7 },
-      maximumSalary: { type: String, default: '', trim: true, maxlength: 7 },
+      minimumSalary: { type: String, default: '', trim: true, maxlength: 6, match: [/^\d{0,6}$/, 'Minimum Salary must contain numbers only and must not exceed 6 digits.'] },
+      maximumSalary: { type: String, default: '', trim: true, maxlength: 6, match: [/^\d{0,6}$/, 'Maximum Salary must contain numbers only and must not exceed 6 digits.'] },
       salaryCurrency: { type: String, default: 'PHP', trim: true },
       salaryPrivacy: {
         type: String,
@@ -553,13 +553,13 @@ const userSchema = new mongoose.Schema(
         trim: true,
       },
 
-      address: { type: String, default: '', trim: true, maxlength: 250 },
+      address: { type: String, default: '', trim: true, maxlength: 50 },
       birthday: { type: String, default: '', trim: true },
       gender: { type: String, default: '', trim: true },
-      nationality: { type: String, default: '', trim: true },
+      nationality: { type: String, default: '', trim: true, maxlength: 50 },
       civilStatus: { type: String, default: '', trim: true },
-      height: { type: String, default: '', trim: true, maxlength: 10, match: [/^\d*$/, 'Height must contain numbers only.'] },
-      weight: { type: String, default: '', trim: true, maxlength: 10, match: [/^\d*$/, 'Weight must contain numbers only.'] },
+      height: { type: String, default: '', trim: true, maxlength: 3, match: [/^\d{0,3}$/, 'Height must contain numbers only and must not exceed 3 digits.'] },
+      weight: { type: String, default: '', trim: true, maxlength: 3, match: [/^\d{0,3}$/, 'Weight must contain numbers only and must not exceed 3 digits.'] },
       preferredLanguage: { type: String, default: '', trim: true, maxlength: 50 },
 
       employmentType: { type: String, default: '', trim: true },

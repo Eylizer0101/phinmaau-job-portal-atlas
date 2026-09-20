@@ -896,6 +896,7 @@ const LoginPage = () => {
                       onFocus={() => setFocused((p) => ({ ...p, username: true }))}
                       onBlur={() => setFocused((p) => ({ ...p, username: false }))}
                       autoComplete="username"
+                      maxLength={30}
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
@@ -950,6 +951,7 @@ const LoginPage = () => {
                       onFocus={() => setFocused((p) => ({ ...p, password: true }))}
                       onBlur={() => setFocused((p) => ({ ...p, password: false }))}
                       autoComplete="current-password"
+                      maxLength={25}
                       placeholder="Enter your password"
                       className={`${fieldClass(!!fieldErrors.password)} pl-10 pr-12`}
                       disabled={loading || isLocked}

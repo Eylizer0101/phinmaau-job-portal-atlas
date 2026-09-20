@@ -2739,10 +2739,10 @@ const CompanyViewDetails = () => {
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        maxLength={3}
+                        maxLength={2}
                         required
                         value={reviewDaysToFirstResponse}
-                        onChange={(e) => setReviewDaysToFirstResponse(String(e.target.value || "").replace(/\D/g, "").slice(0, 3))}
+                        onChange={(e) => setReviewDaysToFirstResponse(String(e.target.value || "").replace(/\D/g, "").slice(0, 2))}
                         placeholder="e.g. 3"
                         disabled={reviewSubmitting}
                         className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
@@ -2758,10 +2758,10 @@ const CompanyViewDetails = () => {
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        maxLength={3}
+                        maxLength={2}
                         required
                         value={reviewTotalProcessDays}
-                        onChange={(e) => setReviewTotalProcessDays(String(e.target.value || "").replace(/\D/g, "").slice(0, 3))}
+                        onChange={(e) => setReviewTotalProcessDays(String(e.target.value || "").replace(/\D/g, "").slice(0, 2))}
                         placeholder="e.g. 21"
                         disabled={reviewSubmitting}
                         className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
@@ -2846,7 +2846,7 @@ const CompanyViewDetails = () => {
                     value={reviewMessage}
                     onChange={(e) => setReviewMessage(e.target.value)}
                     rows="5"
-                    maxLength={1000}
+                    maxLength={500}
                     className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none resize-y focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     placeholder="How were the interviews? Communication? Timing? What surprised you?"
                     disabled={reviewSubmitting}

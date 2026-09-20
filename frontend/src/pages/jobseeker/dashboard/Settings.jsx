@@ -384,6 +384,10 @@ const Settings = () => {
       setEmailChangeMessage({ type: 'error', text: 'Please enter your current password and new email address.' });
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(newEmail || '').trim()) || /^\d+$/.test(String(newEmail || '').trim())) {
+      setEmailChangeMessage({ type: 'error', text: 'Please enter a valid email address containing @.' });
+      return;
+    }
 
     if (!/^[^\s@]+@gmail\.com$/i.test(newEmail.trim())) {
       setEmailChangeMessage({ type: 'error', text: 'Please enter a valid Gmail address ending in @gmail.com.' });
@@ -544,6 +548,11 @@ const Settings = () => {
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordMessage({ type: 'error', text: 'Please complete all password fields.' });
+      return;
+    }
+
+    if (newPassword.length > 25 || confirmPassword.length > 25) {
+      setPasswordMessage({ type: 'error', text: 'New password and confirm password must not exceed 25 characters.' });
       return;
     }
 
@@ -819,7 +828,7 @@ const Settings = () => {
                     show={showNewPassword}
                     onToggle={() => setShowNewPassword((v) => !v)}
                     autoComplete="new-password"
-                    maxLength={64}
+                    maxLength={25}
                   />
 
                   {newPassword ? (
@@ -867,7 +876,7 @@ const Settings = () => {
                   show={showConfirmPassword}
                   onToggle={() => setShowConfirmPassword((v) => !v)}
                   autoComplete="new-password"
-                  maxLength={64}
+                  maxLength={25}
                 />
               </div>
             </div>

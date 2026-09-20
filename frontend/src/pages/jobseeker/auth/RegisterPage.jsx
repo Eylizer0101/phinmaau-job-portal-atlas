@@ -270,16 +270,16 @@ const RegisterPage = () => {
 
     if (!fn) errors.firstName = 'First name is required';
     else if (hasDigits(fn)) errors.firstName = 'First Name should not contain numbers';
-    else if (fn.length > 50) errors.firstName = 'Maximum of 50 characters only.';
+    else if (fn.length > 50) errors.firstName = 'Maximum of 25 characters only.';
     else if (!hasValidNameCharacters(fn)) errors.firstName = "Use letters, spaces, hyphens, and apostrophes only.";
 
     if (mn && hasDigits(mn)) errors.middleName = 'Middle Name should not contain numbers';
-    else if (mn.length > 50) errors.middleName = 'Maximum of 50 characters only.';
+    else if (mn.length > 50) errors.middleName = 'Maximum of 25 characters only.';
     else if (mn && !hasValidNameCharacters(mn)) errors.middleName = "Use letters, spaces, hyphens, and apostrophes only.";
 
     if (!ln) errors.lastName = 'Last name is required';
     else if (hasDigits(ln)) errors.lastName = 'Last Name should not contain numbers';
-    else if (ln.length > 50) errors.lastName = 'Maximum of 50 characters only.';
+    else if (ln.length > 50) errors.lastName = 'Maximum of 25 characters only.';
     else if (!hasValidNameCharacters(ln)) errors.lastName = "Use letters, spaces, hyphens, and apostrophes only.";
 
     if (ext && hasDigits(ext)) errors.extensionName = 'Extension Name should not contain numbers';
@@ -737,7 +737,7 @@ const RegisterPage = () => {
                     type="text"
                     name="firstName"
                     value={formData.firstName}
-                    maxLength={50}
+                    maxLength={25}
                     placeholder="Enter your first name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}
@@ -761,7 +761,7 @@ const RegisterPage = () => {
                   type="text"
                   name="middleName"
                   value={formData.middleName}
-                  maxLength={50}
+                  maxLength={25}
                   placeholder="Enter your middle name"
                   onChange={handleChange}
                   onKeyDown={handleNameKeyDown}
@@ -786,7 +786,7 @@ const RegisterPage = () => {
                     type="text"
                     name="lastName"
                     value={formData.lastName}
-                    maxLength={50}
+                    maxLength={25}
                     placeholder="Enter your last name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}

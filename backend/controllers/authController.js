@@ -965,7 +965,7 @@ exports.register = async (req, res) => {
 
     for (const [label, value, required] of nameValues) {
       if (required && !value) return res.status(400).json({ message: `${label} is required` });
-      if (value.length > 50) return res.status(400).json({ message: 'Maximum of 50 characters only.' });
+      if (value.length > 25) return res.status(400).json({ message: 'Maximum of 25 characters only.' });
       if (value && !isValidPersonName(value)) {
         return res.status(400).json({ message: `${label} may contain letters, spaces, hyphens, and apostrophes only.` });
       }
@@ -2046,6 +2046,10 @@ exports.resetPassword = async (req, res) => {
 
     if (!/^\d{6}$/.test(otp)) {
       return res.status(400).json({ message: 'Enter the valid 6-digit OTP sent to your email.' });
+    }
+
+    if (newPassword.length > 25 || confirmPassword.length > 25) {
+      return res.status(400).json({ message: 'Password must not exceed 25 characters.' });
     }
 
     if (!isStrongPassword(newPassword)) {
@@ -3360,8 +3364,11 @@ exports.changePassword = async (req, res) => {
 
     if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Please provide current and new password' });
 
-    if (String(currentPassword).length > 64 || String(newPassword).length > 64) {
-      return res.status(400).json({ success: false, message: 'Password must not exceed 64 characters.' });
+    if (String(currentPassword).length > 64) {
+      return res.status(400).json({ success: false, message: 'Current password must not exceed 64 characters.' });
+    }
+    if (String(newPassword).length > 25) {
+      return res.status(400).json({ success: false, message: 'New password must not exceed 25 characters.' });
     }
 
     if (!isStrongPassword(newPassword)) {

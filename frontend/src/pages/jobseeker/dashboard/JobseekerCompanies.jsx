@@ -450,6 +450,7 @@ const JobseekerCompanies = () => {
           >
             <input
               value={locationSearch}
+              maxLength={20}
               onChange={(event) => setLocationSearch(event.target.value)}
               placeholder="Search location"
               className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
@@ -671,6 +672,7 @@ const JobseekerCompanies = () => {
                       placeholder="Search companies, location, or industry..."
                       className="w-full h-full outline-none text-sm text-black bg-transparent"
                       value={search}
+              maxLength={20}
                       onChange={(e) => setSearch(e.target.value)}
                       aria-label="Search companies"
                     />

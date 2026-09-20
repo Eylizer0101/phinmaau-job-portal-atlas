@@ -112,7 +112,7 @@ const CERTIFICATION_YEAR_OPTIONS = Array.from(
 );
 
 const EXTENSION_NAME_OPTIONS = ['Jr', 'Sr', 'II', 'III', 'IV', 'V'];
-const NAME_MAX_LENGTH = 50;
+const NAME_MAX_LENGTH = 25;
 
 const PREFERRED_WORK_MODE_OPTIONS = [
   'On-site',
@@ -980,7 +980,7 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
   );
 };
 
-const InputWithDropdown = ({ label, value, onChange, placeholder = '', options = [] }) => {
+const InputWithDropdown = ({ label, value, onChange, placeholder = '', options = [], maxLength }) => {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
   const cleanValue = String(value || '');
@@ -1023,6 +1023,7 @@ const InputWithDropdown = ({ label, value, onChange, placeholder = '', options =
         <input
           type="text"
           value={cleanValue}
+          maxLength={maxLength}
           onChange={(event) => {
             emitValue(event.target.value);
             setOpen(true);
@@ -2177,8 +2178,9 @@ const FormLabel = ({ children, required = false }) => (
   </label>
 );
 
-const PlainInput = ({ value, onChange, placeholder = '' }) => (
+const PlainInput = ({ value, onChange, placeholder = '', ...props }) => (
   <input
+    {...props}
     value={value || ''}
     onChange={onChange}
     placeholder={placeholder}
@@ -2337,11 +2339,11 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
       <>
         <div>
           <FormLabel required>Certification Title</FormLabel>
-          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="Search or enter licenses" />
+          <PlainInput value={item.title} maxLength={100} onChange={(e) => change('title', e.target.value)} placeholder="Search or enter licenses" />
         </div>
         <div>
           <FormLabel required>Issuer</FormLabel>
-          <PlainInput value={item.issuer} onChange={(e) => change('issuer', e.target.value)} placeholder="Who authorized the certificate" />
+          <PlainInput value={item.issuer} maxLength={100} onChange={(e) => change('issuer', e.target.value)} placeholder="Who authorized the certificate" />
         </div>
         <div>
           <FormLabel required>Issuance Date</FormLabel>
@@ -2356,11 +2358,11 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
       <>
         <div>
           <FormLabel required>Project Name</FormLabel>
-          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="Project name" />
+          <PlainInput value={item.title} maxLength={100} onChange={(e) => change('title', e.target.value)} placeholder="Project name" />
         </div>
         <div>
           <FormLabel required>Role</FormLabel>
-          <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Project" />
+          <PlainInput value={item.role} maxLength={100} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Project" />
         </div>
         <DatePickerRow
           value={item.date}
@@ -2374,7 +2376,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
-            maxLength={1000}
+            maxLength={500}
             className="rounded-b-[5px]"
           />
         </div>
@@ -2387,11 +2389,11 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
       <>
         <div>
           <FormLabel required>Title</FormLabel>
-          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="e.g. Leadership training" />
+          <PlainInput value={item.title} maxLength={100} onChange={(e) => change('title', e.target.value)} placeholder="e.g. Leadership training" />
         </div>
         <div>
           <FormLabel required>Organizer</FormLabel>
-          <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Who is the Organizer?" />
+          <PlainInput value={item.organization} maxLength={100} onChange={(e) => change('organization', e.target.value)} placeholder="Who is the Organizer?" />
         </div>
         <DatePickerRow
           value={item.date}
@@ -2411,7 +2413,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
-            maxLength={1000}
+            maxLength={500}
             className="rounded-b-[5px]"
           />
         </div>
@@ -2424,11 +2426,11 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
       <>
         <div>
           <FormLabel required>Title</FormLabel>
-          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="Title" />
+          <PlainInput value={item.title} maxLength={100} onChange={(e) => change('title', e.target.value)} placeholder="Title" />
         </div>
         <div>
           <FormLabel required>Issuer</FormLabel>
-          <PlainInput value={item.issuer} onChange={(e) => change('issuer', e.target.value)} placeholder="Who issued the award?" />
+          <PlainInput value={item.issuer} maxLength={100} onChange={(e) => change('issuer', e.target.value)} placeholder="Who issued the award?" />
         </div>
         <div>
           <FormLabel required>Date</FormLabel>
@@ -2440,7 +2442,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
-            maxLength={1000}
+            maxLength={500}
             className="rounded-b-[5px]"
           />
         </div>
@@ -2453,11 +2455,11 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
       <>
         <div>
           <FormLabel required>Organization</FormLabel>
-          <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Name of Organization" />
+          <PlainInput value={item.organization} maxLength={100} onChange={(e) => change('organization', e.target.value)} placeholder="Name of Organization" />
         </div>
         <div>
           <FormLabel required>Role</FormLabel>
-          <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Organization" />
+          <PlainInput value={item.role} maxLength={100} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Organization" />
         </div>
         <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent yearOptions={CERTIFICATION_YEAR_OPTIONS} />
         <div>
@@ -2466,7 +2468,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
-            maxLength={1000}
+            maxLength={500}
             className="rounded-b-[5px]"
           />
         </div>
@@ -2479,23 +2481,23 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
       <>
         <div>
           <FormLabel required>Name</FormLabel>
-          <PlainInput value={item.name} onChange={(e) => change('name', e.target.value)} placeholder="Reference name" />
+          <PlainInput value={item.name} maxLength={100} onChange={(e) => change('name', e.target.value)} placeholder="Reference name" />
         </div>
         <div>
           <FormLabel required>Occupation / Position</FormLabel>
-          <PlainInput value={item.position} onChange={(e) => change('position', e.target.value)} placeholder="Occupation / Position" />
+          <PlainInput value={item.position} maxLength={100} onChange={(e) => change('position', e.target.value)} placeholder="Occupation / Position" />
         </div>
         <div>
           <FormLabel required>Company</FormLabel>
-          <PlainInput value={item.company} onChange={(e) => change('company', e.target.value)} placeholder="Company" />
+          <PlainInput value={item.company} maxLength={120} onChange={(e) => change('company', e.target.value)} placeholder="Company" />
         </div>
         <div>
           <FormLabel required>Contact Number</FormLabel>
-          <PlainInput value={item.phone} onChange={(e) => change('phone', e.target.value)} placeholder="Phone number" />
+          <PlainInput value={item.phone} maxLength={11} inputMode="numeric" onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="Phone number" />
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
-          <PlainInput value={item.email} onChange={(e) => change('email', e.target.value)} placeholder="Email address" />
+          <PlainInput value={item.email} type="email" onChange={(e) => change('email', e.target.value)} placeholder="Email address" />
         </div>
       </>
     );
@@ -2699,7 +2701,7 @@ const WorkExperienceModal = ({
             <Input
               label="Company"
               value={form.companyName}
-              maxLength={150}
+              maxLength={120}
               onChange={(e) => onChange('companyName', e.target.value)}
               placeholder="e.g. Phinma Araullo University"
             />
@@ -2751,7 +2753,7 @@ const WorkExperienceModal = ({
             rows={5}
             value={form.description}
             onChange={(e) => onChange('description', e.target.value)}
-            maxLength={1000}
+            maxLength={500}
             placeholder="Describe your responsibilities, achievements, and the work you handled."
           />
         </div>
@@ -3089,7 +3091,7 @@ const BasicInfoModal = ({
                 <input
                   value={drafts.streetAddress || ''}
                   required
-                  maxLength={250}
+                  maxLength={50}
                   onChange={(e) => onChange('streetAddress', e.target.value)}
                   placeholder="e.g. #89 Garcia St"
                   className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
@@ -3579,7 +3581,7 @@ const ProfileEditModal = ({
             rows={8}
             value={drafts.aboutMe}
             onChange={(e) => onChange('aboutMe', e.target.value)}
-            maxLength={500}
+            maxLength={250}
             placeholder="Insert text here..."
           />
         </div>
@@ -3602,13 +3604,13 @@ const ProfileEditModal = ({
             placeholder="Select educational attainment"
             options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
           />
-          <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" maxLength={100} />
-          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" inputMode="numeric" />
-          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" inputMode="numeric" />
+          <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" maxLength={50} />
+          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value).replace(/\D/g, '').slice(0, 6))} placeholder="Minimum Salary" inputMode="numeric" maxLength={6} />
+          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value).replace(/\D/g, '').slice(0, 6))} placeholder="Maximum Salary" inputMode="numeric" maxLength={6} />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
-          <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" maxLength={10} />
-          <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" maxLength={10} />
-          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
+          <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Height" maxLength={3} inputMode="numeric" />
+          <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Weight" maxLength={3} inputMode="numeric" />
+          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" maxLength={50} />
           <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
           <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
           <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
@@ -3630,7 +3632,7 @@ const ProfileEditModal = ({
                 <input
                   type="text"
                   value={item.skill || ''}
-                  maxLength={100}
+                  maxLength={50}
                   onChange={(e) => onSkillRowChange(index, 'skill', e.target.value)}
                   placeholder="e.g. Communication, Canva, Figma, Coding"
                   className="w-full h-12 px-4 rounded-[6px] border border-gray-300 bg-white text-black outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
@@ -3699,12 +3701,13 @@ const ProfileEditModal = ({
                   onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)}
                   options={EDUCATION_LEVEL_OPTIONS}
                   placeholder="Select or enter educational attainment"
+                  maxLength={100}
                 />
 
                 <Input
                   label="School / University *"
                   value={entry.school || entry.campus}
-                  maxLength={150}
+                  maxLength={100}
                   onChange={(e) => onChangeEducationEntry(index, 'school', e.target.value)}
                   placeholder="Enter school / university"
                 />
@@ -3752,7 +3755,7 @@ const ProfileEditModal = ({
                   rows={4}
                   value={entry.description}
                   onChange={(e) => onChangeEducationEntry(index, 'description', e.target.value)}
-                  maxLength={1000}
+                  maxLength={500}
                   placeholder="Add education details, honors, activities, or relevant notes."
                 />
               </div>
@@ -3979,6 +3982,12 @@ const getProfileEntryValidationError = (sectionKey, item = {}) => {
   if (sectionKey === 'references') {
     if (!value('name') || !value('position') || !value('company') || !value('phone') || !value('email')) {
       return 'Please complete all required reference fields before saving.';
+    }
+    if (!/^\d{11}$/.test(value('phone'))) {
+      return 'Contact number must contain exactly 11 digits.';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('email')) || /^\d+$/.test(value('email'))) {
+      return 'Please enter a valid reference email address containing @.';
     }
   }
 
@@ -5659,8 +5668,8 @@ const MyProfile = () => {
 
     if (sectionKey === 'about') {
       const objectiveLength = getRichTextPlainText(activeDrafts.aboutMe).length;
-      if (objectiveLength > 500) {
-        setError('Objective must not exceed 500 characters.');
+      if (objectiveLength > 250) {
+        setError('Objective must not exceed 250 characters.');
         return false;
       }
     }
@@ -5981,7 +5990,7 @@ const MyProfile = () => {
 
       setError(
         isObjectiveLengthError
-          ? 'Objective must not exceed 500 characters.'
+          ? 'Objective must not exceed 250 characters.'
           : serverMessage || 'Failed to save changes.'
       );
       return false;
