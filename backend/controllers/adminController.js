@@ -91,9 +91,9 @@ exports.updateAdminProfile = async (req, res) => {
 
     const fieldLimits = [
       ['School / Organization Name', profileValues.organizationName, 150],
-      ['First Name', profileValues.firstName, 50],
-      ['Middle Name', profileValues.middleName, 50],
-      ['Last Name', profileValues.lastName, 50],
+      ['First Name', profileValues.firstName, 25],
+      ['Middle Name', profileValues.middleName, 25],
+      ['Last Name', profileValues.lastName, 25],
       ['Role', profileValues.positionRole, 100],
       ['Department Office', profileValues.departmentOffice, 100],
     ];
@@ -105,10 +105,10 @@ exports.updateAdminProfile = async (req, res) => {
       });
     }
 
-    if (profileValues.contactNumber && !/^\d{1,11}$/.test(profileValues.contactNumber)) {
+    if (profileValues.contactNumber && !/^\d{11}$/.test(profileValues.contactNumber)) {
       return res.status(400).json({
         success: false,
-        message: 'Phone Number must contain numbers only and must not exceed 11 digits.',
+        message: 'Phone Number must contain exactly 11 digits.',
       });
     }
 
@@ -165,11 +165,11 @@ exports.updateAdminPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Complete all password fields.' });
     }
     if (
-      String(currentPassword).length > 64 ||
-      String(newPassword).length > 64 ||
-      String(confirmNewPassword).length > 64
+      String(currentPassword).length > 25 ||
+      String(newPassword).length > 25 ||
+      String(confirmNewPassword).length > 25
     ) {
-      return res.status(400).json({ success: false, message: 'Password must not exceed 64 characters.' });
+      return res.status(400).json({ success: false, message: 'Password must not exceed 25 characters.' });
     }
     if (newPassword !== confirmNewPassword) {
       return res.status(400).json({ success: false, message: 'New passwords do not match.' });

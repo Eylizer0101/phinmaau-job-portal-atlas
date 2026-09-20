@@ -266,12 +266,15 @@ const validateJobRules = (data, requireComplete = false) => {
   if (/\d/.test(title)) return 'Job title must not contain numbers.';
   if (title && (!/^[a-zA-ZÀ-ÿ&/().,'’+\-\s]+$/.test(title) || INVALID_JOB_TITLE_WORDS.some((word) => title.toLowerCase().includes(word)) || /(.)\1{3,}/i.test(title))) return 'Enter a valid, professional job title.';
 
+  const locationText = String(data.location || '').trim();
+  if (locationText.length > 150) return 'Complete work address must not exceed 150 characters.';
+
   const vacanciesText = String(data.vacancies ?? '').trim();
   if (requireComplete || vacanciesText) {
     if (!/^\d+$/.test(vacanciesText) || Number(vacanciesText) < 1 || Number(vacanciesText) > 50) return 'Vacancies must be a whole number from 1 to 50.';
   }
 
-  for (const [field, label, minimum] of [['description', 'Job description', 500], ['requirements', 'Qualifications', 1000]]) {
+  for (const [field, label, minimum] of [['description', 'Job description', 500], ['requirements', 'Qualifications', 500]]) {
     const text = stripHtmlToText(data[field]);
     if (requireComplete && !text) return `${label} is required.`;
     if ((requireComplete && text && text.length < minimum) || text.length > 2000) return `${label} must contain ${minimum.toLocaleString()} to 2,000 text characters.`;
@@ -296,9 +299,9 @@ const validateJobRules = (data, requireComplete = false) => {
   }
 
   const skills = normalizeSkills(data.skillsRequired);
-  if (skills.some((skill) => skill.length > 100)) return 'Each required skill must not exceed 100 characters.';
+  if (skills.some((skill) => skill.length > 50)) return 'Each required skill must not exceed 50 characters.';
   const benefitList = String(data.otherBenefits || '').split(',').map((item) => item.trim()).filter(Boolean);
-  if (benefitList.some((benefit) => benefit.length > 80)) return 'Each custom benefit must not exceed 80 characters.';
+  if (benefitList.some((benefit) => benefit.length > 50)) return 'Each custom benefit must not exceed 50 characters.';
   return '';
 };
 

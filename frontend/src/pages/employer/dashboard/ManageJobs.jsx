@@ -927,6 +927,10 @@ const ManageJobs = () => {
       setError('Enter a reason for the edit request.');
       return;
     }
+    if (requestReason.trim().length > 500) {
+      setError('Reason for the edit request must not exceed 500 characters.');
+      return;
+    }
 
     try {
       setRequestSubmitting(true);
@@ -2163,7 +2167,7 @@ const ManageJobs = () => {
                     onChange={(event) => setRequestReason(event.target.value)}
                     required
                     rows={4}
-                    maxLength={1000}
+                    maxLength={500}
                     placeholder="Explain why this post needs to be edited..."
                     className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
                   />

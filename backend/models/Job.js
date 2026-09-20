@@ -51,8 +51,8 @@ const jobSchema = new mongoose.Schema({
         type: String,
         required: function () { return this.isPublished === true; },
         validate: {
-            validator: function (value) { const count = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length; return !this.isPublished || (count >= 1000 && count <= 2000); },
-            message: 'Qualifications must contain 1,000 to 2,000 text characters.'
+            validator: function (value) { const count = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length; return !this.isPublished || (count >= 500 && count <= 2000); },
+            message: 'Qualifications must contain 500 to 2,000 text characters.'
         }
     },
     jobType: {
@@ -109,7 +109,8 @@ const jobSchema = new mongoose.Schema({
     },
     location: {
         type: String,
-        required: function () { return this.isPublished === true; }
+        required: function () { return this.isPublished === true; },
+        maxlength: [150, 'Complete work address must not exceed 150 characters.']
     },
     locationProvince: {
         type: String,
@@ -147,7 +148,7 @@ const jobSchema = new mongoose.Schema({
     skillsRequired: [{
         type: String,
         trim: true,
-        maxlength: 100
+        maxlength: 50
     }],
 
     experienceLevel: {
@@ -192,8 +193,8 @@ const jobSchema = new mongoose.Schema({
         trim: true,
         default: '',
         validate: {
-            validator: (value) => String(value || '').split(',').every((benefit) => benefit.trim().length <= 80),
-            message: 'Each custom benefit must not exceed 80 characters.'
+            validator: (value) => String(value || '').split(',').every((benefit) => benefit.trim().length <= 50),
+            message: 'Each custom benefit must not exceed 50 characters.'
         }
     },
     willingToRelocate: {

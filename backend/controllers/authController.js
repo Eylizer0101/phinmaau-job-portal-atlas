@@ -1233,7 +1233,7 @@ exports.registerEmployer = async (req, res) => {
     ];
     for (const [label, value, required] of nameValues) {
       if (required && !value) return res.status(400).json({ message: `${label} is required.` });
-      if (value.length > 50) return res.status(400).json({ message: 'Maximum of 50 characters only.' });
+      if (value.length > 25) return res.status(400).json({ message: 'Maximum of 25 characters only.' });
       if (value && !isValidPersonName(value)) {
         return res.status(400).json({ message: `${label} may contain letters, spaces, hyphens, and apostrophes only.` });
       }
@@ -2148,10 +2148,10 @@ exports.updateProfile = async (req, res) => {
       if (!Object.prototype.hasOwnProperty.call(updateData, field)) continue;
 
       const cleanName = String(updateData[field] ?? '').trim();
-      if (cleanName.length > 50) {
+      if (cleanName.length > 25) {
         return res.status(400).json({
           success: false,
-          message: `${label} must not exceed 50 characters.`,
+          message: `${label} must not exceed 25 characters.`,
         });
       }
 
@@ -3236,14 +3236,18 @@ exports.updateCompanyProfile = async (req, res) => {
     if (employerProfileUpdate.companyName.length > 150) {
       return res.status(400).json({ success: false, message: 'Company name must not exceed 150 characters.' });
     }
-    if (employerProfileUpdate.companyAddress.length > 250) {
-      return res.status(400).json({ success: false, message: 'Office address must not exceed 250 characters.' });
+    if (employerProfileUpdate.companyAddress.length > 100) {
+      return res.status(400).json({ success: false, message: 'Office address must not exceed 100 characters.' });
     }
     if (employerProfileUpdate.businessEmail.length > 100) {
       return res.status(400).json({ success: false, message: 'Contact email must not exceed 100 characters.' });
     }
     if (employerProfileUpdate.mobileNumber && !/^\d{11}$/.test(employerProfileUpdate.mobileNumber)) {
       return res.status(400).json({ success: false, message: 'Contact number must contain exactly 11 digits.' });
+    }
+    const companyDescriptionLength = String(employerProfileUpdate.companyDescription || '').trim().length;
+    if (companyDescriptionLength && (companyDescriptionLength < 100 || companyDescriptionLength > 1000)) {
+      return res.status(400).json({ success: false, message: 'Company description must contain 100 to 1,000 characters.' });
     }
     if (employerProfileUpdate.companyWebsiteUrl.length > 255) {
       return res.status(400).json({ success: false, message: 'Company website must not exceed 255 characters.' });
@@ -3364,8 +3368,8 @@ exports.changePassword = async (req, res) => {
 
     if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Please provide current and new password' });
 
-    if (String(currentPassword).length > 64) {
-      return res.status(400).json({ success: false, message: 'Current password must not exceed 64 characters.' });
+    if (String(currentPassword).length > 25) {
+      return res.status(400).json({ success: false, message: 'Current password must not exceed 25 characters.' });
     }
     if (String(newPassword).length > 25) {
       return res.status(400).json({ success: false, message: 'New password must not exceed 25 characters.' });
@@ -3682,7 +3686,7 @@ exports.requestEmailChangeVerification = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email must not exceed 100 characters.' });
     }
     if (String(currentPassword || '').length > 64) {
-      return res.status(400).json({ success: false, message: 'Password must not exceed 64 characters.' });
+      return res.status(400).json({ success: false, message: 'Password must not exceed 25 characters.' });
     }
     if (!currentPassword || !String(currentPassword).trim()) {
       return res.status(400).json({ success: false, message: 'Current password is required.' });

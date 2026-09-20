@@ -1908,6 +1908,7 @@ const JobseekerVerificationDetails = () => {
                       id="credentialPassword"
                       type={showCredentialPassword ? "text" : "password"}
                       value={credentialPassword}
+                      maxLength={25}
                       onChange={(event) => {
                         setCredentialPassword(event.target.value);
                         setPasswordError("");

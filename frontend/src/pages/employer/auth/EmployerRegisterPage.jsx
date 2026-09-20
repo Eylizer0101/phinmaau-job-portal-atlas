@@ -284,20 +284,20 @@ const EmployerRegisterPage = () => {
     if (check('firstName')) {
       const value = formData.firstName.trim();
       if (!value) next.firstName = 'First name is required.';
-      else if (value.length > 50) next.firstName = 'Maximum of 50 characters only.';
+      else if (value.length > 25) next.firstName = 'Maximum of 25 characters only.';
       else if (!PERSON_NAME_PATTERN.test(value)) next.firstName = "Use letters, spaces, hyphens, and apostrophes only.";
     }
 
     if (check('middleName')) {
       const value = formData.middleName.trim();
-      if (value.length > 50) next.middleName = 'Maximum of 50 characters only.';
+      if (value.length > 25) next.middleName = 'Maximum of 25 characters only.';
       else if (value && !PERSON_NAME_PATTERN.test(value)) next.middleName = "Use letters, spaces, hyphens, and apostrophes only.";
     }
 
     if (check('lastName')) {
       const value = formData.lastName.trim();
       if (!value) next.lastName = 'Last name is required.';
-      else if (value.length > 50) next.lastName = 'Maximum of 50 characters only.';
+      else if (value.length > 25) next.lastName = 'Maximum of 25 characters only.';
       else if (!PERSON_NAME_PATTERN.test(value)) next.lastName = "Use letters, spaces, hyphens, and apostrophes only.";
     }
 
@@ -1711,7 +1711,7 @@ const EmployerRegisterPage = () => {
                                 id="firstName"
                                 name="firstName"
                                 value={formData.firstName}
-                                maxLength={50}
+                                maxLength={25}
                                 onChange={handleChange}
                                 onFocus={() => setFieldFocus('firstName', true)}
                                 onBlur={() => setFieldFocus('firstName', false)}
@@ -1740,7 +1740,7 @@ const EmployerRegisterPage = () => {
                                 id="middleName"
                                 name="middleName"
                                 value={formData.middleName}
-                                maxLength={50}
+                                maxLength={25}
                                 onChange={handleChange}
                                 onFocus={() => setFieldFocus('middleName', true)}
                                 onBlur={() => setFieldFocus('middleName', false)}
@@ -1768,7 +1768,7 @@ const EmployerRegisterPage = () => {
                                 id="lastName"
                                 name="lastName"
                                 value={formData.lastName}
-                                maxLength={50}
+                                maxLength={25}
                                 onChange={handleChange}
                                 onFocus={() => setFieldFocus('lastName', true)}
                                 onBlur={() => setFieldFocus('lastName', false)}

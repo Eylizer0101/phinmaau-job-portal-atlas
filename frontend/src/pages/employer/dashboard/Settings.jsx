@@ -655,21 +655,21 @@ const Settings = () => {
                     label="First Name"
                     placeholder="e.g. Juan"
                     value={nameForm.firstName}
-                    maxLength={50}
+                    maxLength={25}
                     onChange={(e) => setNameForm((prev) => ({ ...prev, firstName: e.target.value }))}
                   />
                   <TextInput
                     label="Last Name"
                     placeholder="e.g. De La Cruz"
                     value={nameForm.lastName}
-                    maxLength={50}
+                    maxLength={25}
                     onChange={(e) => setNameForm((prev) => ({ ...prev, lastName: e.target.value }))}
                   />
                   <TextInput
                     label="Middle Name (Optional)"
                     placeholder="e.g. Santos"
                     value={nameForm.middleName}
-                    maxLength={50}
+                    maxLength={25}
                     onChange={(e) => setNameForm((prev) => ({ ...prev, middleName: e.target.value }))}
                   />
                   <SelectInput
@@ -710,7 +710,7 @@ const Settings = () => {
                       onToggle={() => setPasswordVisibility((prev) => ({ ...prev, email: !prev.email }))}
                       placeholder="Enter password here"
                       value={emailForm.currentPassword}
-                      maxLength={64}
+                      maxLength={25}
                       onChange={(e) => setEmailForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
                     />
 
@@ -869,7 +869,7 @@ const Settings = () => {
                       onToggle={() => setPasswordVisibility((prev) => ({ ...prev, old: !prev.old }))}
                       placeholder="Enter current password here"
                       value={passwordForm.oldPassword}
-                      maxLength={64}
+                      maxLength={25}
                       onChange={(e) => setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))}
                       autoComplete="current-password"
                     />
@@ -881,7 +881,7 @@ const Settings = () => {
                         onToggle={() => setPasswordVisibility((prev) => ({ ...prev, new: !prev.new }))}
                         placeholder="Enter new password here"
                         value={passwordForm.newPassword}
-                      maxLength={64}
+                      maxLength={25}
                         onChange={(e) => {
                           setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }));
                           if (messages.password) clearMessage('password');
@@ -939,7 +939,7 @@ const Settings = () => {
                       onToggle={() => setPasswordVisibility((prev) => ({ ...prev, retype: !prev.retype }))}
                       placeholder="Retype new password here"
                       value={passwordForm.retypeNewPassword}
-                      maxLength={64}
+                      maxLength={25}
                       onChange={(e) => setPasswordForm((prev) => ({ ...prev, retypeNewPassword: e.target.value }))}
                       autoComplete="new-password"
                     />

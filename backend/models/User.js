@@ -447,7 +447,7 @@ const userSchema = new mongoose.Schema(
       organizationLogo: { type: String, trim: true, default: '' },
       organizationLogoPublicId: { type: String, trim: true, default: '', select: false },
       positionRole: { type: String, trim: true, maxlength: 100, default: 'System Administrator' },
-      contactNumber: { type: String, trim: true, maxlength: 11, match: [/^\d{0,11}$/, 'Phone Number must contain numbers only and must not exceed 11 digits.'], default: '' },
+      contactNumber: { type: String, trim: true, maxlength: 11, match: [/^\d{11}$/, 'Phone Number must contain exactly 11 digits.'], default: '' },
       departmentOffice: { type: String, trim: true, maxlength: 100, default: '' },
     },
 
@@ -629,7 +629,7 @@ const userSchema = new mongoose.Schema(
         type: String,
         default: '',
         trim: true,
-        maxlength: [250, 'Office address must not exceed 250 characters.'],
+        maxlength: [100, 'Office address must not exceed 100 characters.'],
       },
       companyDescription: {
         type: String,
@@ -638,11 +638,11 @@ const userSchema = new mongoose.Schema(
         validate: {
           validator: function (value) {
             const cleanValue = String(value || '').trim();
-            return cleanValue.length === 0 || cleanValue.length >= 500;
+            return cleanValue.length === 0 || cleanValue.length >= 100;
           },
-          message: 'Company description must contain at least 500 characters.',
+          message: 'Company description must contain at least 100 characters.',
         },
-        maxlength: [1500, 'Company description must not exceed 1500 characters.'],
+        maxlength: [1000, 'Company description must not exceed 1000 characters.'],
       },
       facebookUrl: { type: String, default: '', trim: true, maxlength: 255 },
       instagramUrl: { type: String, default: '', trim: true, maxlength: 255 },

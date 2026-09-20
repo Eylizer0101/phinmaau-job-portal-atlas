@@ -111,7 +111,7 @@ const getRichTextPlainText = (value = '') => {
 };
 
 const JOB_DESCRIPTION_MIN = 500;
-const JOB_REQUIREMENTS_MIN = 1000;
+const JOB_REQUIREMENTS_MIN = 500;
 const JOB_TEXT_MAX = 2000;
 const MAX_SALARY = 999999;
 const INVALID_JOB_TITLE_WORDS = [
@@ -722,6 +722,7 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
         <input
           id="location"
           name="location"
+          maxLength={150}
           value={query}
           disabled={disabled}
           onChange={(e) => {
@@ -1266,7 +1267,7 @@ const PostJob = () => {
 
   const addCustomBenefit = useCallback((rawBenefit) => {
     const benefit = normalizeSingleLine(rawBenefit).replace(/^,+|,+$/g, '');
-    if (!benefit || benefit.length > 80) return;
+    if (!benefit || benefit.length > 50) return;
     if (customBenefits.some((item) => item.toLowerCase() === benefit.toLowerCase())) {
       setCustomBenefitInput('');
       return;
@@ -1525,6 +1526,8 @@ const PostJob = () => {
 
     if ((touched.location || submitted) && !formData.location.trim()) {
       errors.location = 'Complete work address is required.';
+    } else if ((touched.location || submitted) && formData.location.trim().length > 150) {
+      errors.location = 'Complete work address must not exceed 150 characters.';
     }
 
     if ((touched.jobType || submitted) && !String(formData.jobType || '').trim()) {
@@ -1573,8 +1576,8 @@ const PostJob = () => {
 
     if ((touched.skillsRequired || submitted) && !skillsCountValid) {
       errors.skillsRequired = `Please limit skills to 10. You entered ${skillsAll.length}.`;
-    } else if ((touched.skillsRequired || submitted) && skillsAll.some((skill) => skill.length > 100)) {
-      errors.skillsRequired = 'Each skill must not exceed 100 characters.';
+    } else if ((touched.skillsRequired || submitted) && skillsAll.some((skill) => skill.length > 50)) {
+      errors.skillsRequired = 'Each skill must not exceed 50 characters.';
     }
 
     if ((touched.locationImage || submitted) && locationImageFile) {
@@ -1598,7 +1601,7 @@ const PostJob = () => {
     if (!descriptionText) return 'Job description is required';
     if (descriptionText.length < JOB_DESCRIPTION_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 500 to 2,000 characters';
     if (!requirementsText) return 'Job requirements are required';
-    if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 1,000 to 2,000 characters';
+    if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 500 to 2,000 characters';
     if (!formData.location.trim()) return 'Complete work address is required';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be from today through 6 months from today';
@@ -1609,8 +1612,8 @@ const PostJob = () => {
       return 'Salary must be ₱1–₱999,999, and maximum must be at least the minimum';
     }
     if (!skillsCountValid) return 'Skills must be 10 or fewer';
-    if (skillsAll.some((skill) => skill.length > 100)) return 'Each skill must not exceed 100 characters';
-    if (customBenefits.some((benefit) => benefit.length > 80)) return 'Each custom benefit must not exceed 80 characters';
+    if (skillsAll.some((skill) => skill.length > 50)) return 'Each skill must not exceed 50 characters';
+    if (customBenefits.some((benefit) => benefit.length > 50)) return 'Each custom benefit must not exceed 50 characters';
 
     const exp = normalizeExperienceLevel(formData.experienceLevel);
     if (!EXPERIENCE_LEVELS.includes(exp)) return 'Invalid experience level';
@@ -2465,7 +2468,7 @@ const PostJob = () => {
                             onKeyDown={(event) => {
                               if (event.key === 'Enter') { event.preventDefault(); addCustomBenefit(customBenefitInput); }
                             }}
-                            maxLength={80}
+                            maxLength={50}
                             className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none"
                             placeholder="e.g., Paid Bereavement Leave"
                           />
