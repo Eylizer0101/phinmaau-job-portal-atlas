@@ -2779,21 +2779,9 @@ exports.getCurrentUser = async (req, res) => {
         }
       });
 
-      const shouldRepairOverallStatus =
-        String(verificationDocs.overallStatus || '').toLowerCase() !== 'verified';
-      const shouldRepairProfileVerificationStatus =
-        String(user.jobSeekerProfile.verificationStatus || '').toLowerCase() !== 'verified';
-
-      if (
-        repairedRequiredCredentials ||
-        repairedPhoneVerification ||
-        user.isVerified !== true ||
-        shouldRepairOverallStatus ||
-        shouldRepairProfileVerificationStatus
-      ) {
+      if (repairedRequiredCredentials || repairedPhoneVerification || user.isVerified !== true) {
         user.isVerified = true;
         user.jobSeekerProfile.verificationStatus = 'verified';
-        verificationDocs.overallStatus = 'verified';
         await user.save();
       }
     }
@@ -2941,9 +2929,7 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
       });
     }
 
-    const overallStatus = alreadyVerified
-      ? 'verified'
-      : getAlumniOverallStatus(currentDocs, false);
+    const overallStatus = getAlumniOverallStatus(currentDocs, false);
 
     currentDocs.overallStatus = overallStatus;
 
@@ -2997,28 +2983,21 @@ exports.deleteAlumniVerificationDoc = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    const accountWasVerified = isApprovedJobseekerAccount(user);
     const updatePath = `jobSeekerProfile.verificationDocs.${docType}`;
 
     const updatedUser = await User.findByIdAndUpdate(userId, { $unset: { [updatePath]: 1 } }, { new: true }).select('-password');
 
     const currentDocs = updatedUser.jobSeekerProfile?.verificationDocs || {};
-    const overallStatus = accountWasVerified
-      ? 'verified'
-      : getAlumniOverallStatus(currentDocs, false);
-
-    const finalUpdateFields = {
-      'jobSeekerProfile.verificationDocs.overallStatus': overallStatus,
-      'jobSeekerProfile.verificationStatus': accountWasVerified ? 'verified' : overallStatus,
-    };
-
-    if (accountWasVerified) {
-      finalUpdateFields.isVerified = true;
-    }
+    const overallStatus = getAlumniOverallStatus(currentDocs, false);
 
     const finalUser = await User.findByIdAndUpdate(
       userId,
-      { $set: finalUpdateFields },
+      {
+        $set: {
+          'jobSeekerProfile.verificationDocs.overallStatus': overallStatus,
+          'jobSeekerProfile.verificationStatus': isApprovedJobseekerAccount(updatedUser) ? 'verified' : overallStatus,
+        },
+      },
       { new: true }
     ).select('-password');
 
@@ -4317,7 +4296,7 @@ exports.resubmitDocument = async (req, res) => {
         };
       }
 
-      verificationDocs.overallStatus = accountWasVerified ? 'verified' : 'pending';
+      verificationDocs.overallStatus = 'pending';
       verificationDocs.adminRemarks = '';
       if (user.isVerified !== true) {
         verificationDocs.verifiedBy = null;
