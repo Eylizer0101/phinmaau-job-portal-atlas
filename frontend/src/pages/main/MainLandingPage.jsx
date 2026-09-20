@@ -140,7 +140,7 @@ const MainLandingPage = () => {
             <button
               type="button"
               onClick={() => navigate("/jobs")}
-              className="mt-5 inline-flex h-14 min-w-[290px] items-center justify-center gap-5 rounded-2xl bg-[#2e66a6] px-8 text-lg font-semibold text-white shadow-sm transition hover:bg-[#17224f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e4ba0] focus-visible:ring-offset-2 lg:mt-4 lg:h-12 lg:min-w-[270px]"
+              className="mt-5 inline-flex h-14 min-w-[290px] items-center justify-center gap-5 rounded-2xl bg-[#2e66a6] px-8 text-lg font-semibold text-white shadow-sm transition hover:bg-[#32489c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e4ba0] focus-visible:ring-offset-2 lg:mt-4 lg:h-12 lg:min-w-[270px]"
             >
               <span>Find your job</span>
               <svg
