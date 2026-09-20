@@ -1104,7 +1104,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
   if (!open) return null;
 
   const commentLength = String(comment || '').length;
-  const canSubmit = !submitting;
+  const canSubmit = Boolean(selectedReason && String(comment || '').trim()) && !submitting;
 
   return (
     <div
@@ -2345,6 +2345,7 @@ const ApplicationDetails = () => {
   const [success, setSuccess] = useState('');
   const [statusResult, setStatusResult] = useState(null);
   const [activeTab, setActiveTab] = useState('resume');
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
@@ -2631,12 +2632,11 @@ const ApplicationDetails = () => {
     ],
   ];
   const hasPersonalInformation = hasMeaningfulResumeRows(personalInformationColumns);
-  const activities = Array.isArray(application.activityHistory) && application.activityHistory.length
+  const activities = Array.isArray(application.activityHistory)
     ? [...application.activityHistory].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
-    : [
-        application.reviewedAt ? { type: 'reviewed', title: 'Application reviewed', description: 'The employer reviewed this application.', occurredAt: application.reviewedAt } : null,
-        { type: 'submitted', title: 'Application received', description: `${name} applied for ${application.job?.title || 'this position'}.`, occurredAt: application.appliedAt || application.createdAt },
-      ].filter(Boolean);
+    : [];
+  const visibleActivities = showAllActivities ? activities : activities.slice(0, 6);
+  const hasMoreActivities = activities.length > 6;
   const declineReasons = currentStatus === 'for interview' ? FOR_INTERVIEW_DECLINE_REASONS : APPLICANTS_DECLINE_REASONS;
 
 
@@ -2718,7 +2718,7 @@ const ApplicationDetails = () => {
           <div className="flex items-center justify-between border-t border-[#d8e2ee] px-5 sm:px-7">
             <div className="flex items-center">
               <button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button>
-              <button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button>
+              <button onClick={() => { setActiveTab('activity'); setShowAllActivities(false); }} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button>
             </div>
             <button
               type="button"
@@ -2927,7 +2927,46 @@ const ApplicationDetails = () => {
               </article>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-white/0 via-white/80 to-white" aria-hidden="true" />
             </div>
-          ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
+          ) : (
+            <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10">
+              {activities.length === 0 ? (
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center">
+                  <SvgIcon name="activity" className="h-8 w-8 text-gray-400" />
+                  <h3 className="mt-3 text-base font-semibold text-gray-800">No activity yet</h3>
+                  <p className="mt-1 max-w-md text-sm text-gray-500">Application activity will appear here when an actual action is recorded.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="relative ml-3 border-l-2 border-gray-200 pl-8">
+                    {visibleActivities.map((item, index) => {
+                      const dt = formatDateTime(item.occurredAt || item.createdAt);
+                      return (
+                        <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0">
+                          <div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6]">
+                            <SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3>
+                          <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p>
+                          <div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {hasMoreActivities ? (
+                    <div className="mt-6 flex justify-center border-t border-gray-100 pt-5">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllActivities((previous) => !previous)}
+                        className="rounded-lg border border-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/5"
+                      >
+                        {showAllActivities ? 'Show Less Activity' : 'View All Activity'}
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+          )}
         </main>
 
         <aside className="space-y-5">

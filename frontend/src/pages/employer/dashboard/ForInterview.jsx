@@ -713,7 +713,7 @@ const DeclineReasonModal = ({
 
   if (!open) return null;
 
-  const canSubmit = !isSubmitting;
+  const canSubmit = Boolean(selectedReason && String(comment || '').trim()) && !isSubmitting;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center px-4 py-6">
@@ -1849,6 +1849,11 @@ const ForInterview = () => {
 
     const selectedReason = declineReason.trim();
     const comment = declineComment.trim();
+
+    if (!selectedReason || !comment) {
+      setError('Please select a decline reason and provide a comment before declining the application.');
+      return;
+    }
 
     const applicationId = declineTarget._id;
     resetDeclineState();

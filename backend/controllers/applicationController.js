@@ -1570,6 +1570,13 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       });
     }
 
+    if (decision === 'declined' && declineReason.length > 40) {
+      return res.status(400).json({
+        success: false,
+        message: 'Decline reason must not exceed 40 characters.'
+      });
+    }
+
     const existingApplication = await Application.findOne({
       _id: applicationId,
       employer: req.user._id,
@@ -1656,6 +1663,19 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
         message: 'This request was updated while you were submitting. Please refresh the application details.'
       });
     }
+
+    application.activityHistory.push({
+      type: decision === 'declined' ? 'declined' : 'status_changed',
+      title: decision === 'declined' ? 'Employment status request declined' : 'Employment status request approved',
+      description: decision === 'declined'
+        ? [declineReason, explanation].filter(Boolean).join(' — ')
+        : 'The employer approved the employment status change request.',
+      fromStatus: 'hired',
+      toStatus: 'hired',
+      occurredAt: reviewedAt,
+      performedBy: req.user._id
+    });
+    await application.save();
 
     await notificationController.createEmploymentStatusDecisionNotification(application, decision);
 
@@ -3092,10 +3112,17 @@ exports.updateApplicationStatus = async (req, res) => {
         normalizedDeclineReason = '';
       }
 
-      if (normalizedDeclineReason && !VALID_DECLINE_REASONS.includes(normalizedDeclineReason)) {
+      if (!normalizedDeclineReason || !normalizedDeclineComment) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid decline reason selected'
+          message: 'A decline reason and comment are required.'
+        });
+      }
+
+      if (!VALID_DECLINE_REASONS.includes(normalizedDeclineReason) && normalizedDeclineReason.length > 40) {
+        return res.status(400).json({
+          success: false,
+          message: 'Custom decline reason must not exceed 40 characters.'
         });
       }
 

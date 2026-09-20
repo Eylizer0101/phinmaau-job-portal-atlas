@@ -964,7 +964,7 @@ const HiredApplicants = () => {
   const handleReviewStatusRequest = async (decision) => {
     if (!reviewApplication?._id || reviewLoading) return;
 
-    const finalDeclineReason = declineReason === 'Other' ? customDeclineReason.trim() : declineReason;
+    const finalDeclineReason = declineReason === 'Other Not Listed Above' ? customDeclineReason.trim() : declineReason;
     if (decision === 'declined' && (!finalDeclineReason || !declineExplanation.trim())) {
       setError('Select or enter a decline reason and add a comment.');
       return;
@@ -1779,14 +1779,14 @@ const selectBase =
             <label className="mt-5 block text-sm font-semibold text-gray-800">
               Select Reason for Decline
               <select value={declineReason} onChange={(event) => setDeclineReason(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15">
-                <option value="">Choose a reason</option>
-                {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other'].map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+                <option value="" disabled>Choose a reason</option>
+                {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other Not Listed Above'].map((reason) => <option key={reason} value={reason}>{reason}</option>)}
               </select>
             </label>
-            {declineReason === 'Other' && (
+            {declineReason === 'Other Not Listed Above' && (
               <label className="mt-4 block text-sm font-semibold text-gray-800">
                 Other Reason
-                <input value={customDeclineReason} onChange={(event) => setCustomDeclineReason(event.target.value)} maxLength={120} placeholder="Enter the decline reason" className="mt-2 h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+                <input value={customDeclineReason} onChange={(event) => setCustomDeclineReason(event.target.value)} maxLength={40} placeholder="Enter the decline reason" className="mt-2 h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
               </label>
             )}
             <label className="mt-4 block text-sm font-semibold text-gray-800">
@@ -1799,7 +1799,7 @@ const selectBase =
             {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
-              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || (declineReason === 'Other' && !customDeclineReason.trim()) || !declineExplanation.trim() || reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
+              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || (declineReason === 'Other Not Listed Above' && !customDeclineReason.trim()) || !declineExplanation.trim() || reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
             </div>
           </div>
         </div>

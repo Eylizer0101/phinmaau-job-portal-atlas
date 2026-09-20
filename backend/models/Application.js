@@ -235,7 +235,7 @@ const applicationSchema = new mongoose.Schema({
             type: String,
             default: '',
             trim: true,
-            maxlength: 120
+            maxlength: 40
         },
         explanation: {
             type: String,
@@ -251,7 +251,7 @@ const applicationSchema = new mongoose.Schema({
             decision: { type: String, enum: ['pending', 'approved', 'declined', 'no_response'], default: 'pending' },
             respondedAt: { type: Date, default: null },
             respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-            declineReason: { type: String, default: '', trim: true, maxlength: 120 },
+            declineReason: { type: String, default: '', trim: true, maxlength: 40 },
             explanation: { type: String, default: '', trim: true, maxlength: 500 }
         },
         adminDecision: {
@@ -279,12 +279,14 @@ const applicationSchema = new mongoose.Schema({
     declineReason: {
         type: String,
         default: '',
-        trim: true
+        trim: true,
+        maxlength: 40
     },
     declineComment: {
         type: String,
         default: '',
-        trim: true
+        trim: true,
+        maxlength: 30
     },
 
     // ✅ NEW: save where the application was declined from
