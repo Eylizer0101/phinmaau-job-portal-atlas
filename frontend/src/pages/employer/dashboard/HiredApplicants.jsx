@@ -1790,9 +1790,9 @@ const selectBase =
               </label>
             )}
             <label className="mt-4 block text-sm font-semibold text-gray-800">
-              Comment
+              Reason for Declining
               <div className="relative mt-2">
-                <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={4} placeholder="Enter your comment" className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+                <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={4} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
                 <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineExplanation.length}/500</span>
               </div>
             </label>
