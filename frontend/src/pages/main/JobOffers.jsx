@@ -766,16 +766,16 @@ const JobOffers = () => {
 
   const COLORS = useMemo(
     () => ({
-      primary: "#212C61",
-      primaryHover: "#212C61",
-      primaryActive: "#212C61",
+      primary: "#2e66a6",
+      primaryHover: "#25578f",
+      primaryActive: "#1f4b7c",
 
       pageBg: "#FFFFFF",
-      frame: "rgba(33, 44, 97, 0.05)",
+      frame: "#f8fafc",
       card: "#FFFFFF",
-      border: "rgba(33, 44, 97, 0.18)",
-      borderStrong: "rgba(33, 44, 97, 0.35)",
-      mutedBox: "rgba(33, 44, 97, 0.06)",
+      border: "#d8e2ee",
+      borderStrong: "#b8c9dc",
+      mutedBox: "#f7faff",
 
       text: "#000000",
       subtext: "#000000",
@@ -1328,20 +1328,16 @@ const JobOffers = () => {
   };
 
   const primaryBtn =
-    "min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-[0_8px_18px_rgba(33,44,97,0.18)] " +
-    "hover:shadow-[0_10px_22px_rgba(33,44,97,0.24)] active:scale-[0.99] " +
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2 transition-all";
+     "px-5 py-2 h-[40px] rounded-xl text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none";
 
   const ghostLink =
-    "min-h-[44px] px-1 text-sm font-semibold text-black/70 hover:text-[#212C61] leading-none " +
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2 " +
-    "inline-flex items-center gap-2 transition-colors";
+     "text-sm font-medium text-gray-600 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 inline-flex items-center gap-2 transition";
 
   const pillBtn =
-    "h-[44px] rounded-xl px-4 bg-white border border-white/40 text-sm font-medium text-black/75 flex items-center gap-2 hover:bg-[#FFD000] hover:text-black transition flex-shrink-0";
+     "h-[44px] rounded-xl px-4 bg-white/95 border border-white/30 text-sm font-medium text-gray-700 flex items-center gap-2 hover:bg-white transition flex-shrink-0";
 
   const searchBox =
-    "w-full lg:w-auto lg:min-w-[220px] lg:max-w-[370px] lg:flex-1 h-[44px] bg-white border border-white/40 rounded-xl px-4 flex items-center gap-3 shrink transition-all duration-300 ease-in-out focus-within:ring-2 focus-within:ring-[#FFD000]/60";
+     "w-full lg:w-auto lg:min-w-[220px] lg:max-w-[370px] lg:flex-1 h-[44px] bg-white/95 border border-white/30 rounded-xl px-4 flex items-center gap-3 shrink transition-all duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-200";
 
   const filterRowClass = "flex flex-wrap items-center gap-3";
 
@@ -1362,17 +1358,33 @@ const JobOffers = () => {
           <div className="bg-transparent">
             <div
               ref={filterBoxRef}
-              className={`relative ${openDropdown ? "z-[1000]" : "z-20"} rounded-[26px] border border-[#FFD000] p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-visible text-white bg-[#212C61] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]`}
+              className={`relative ${openDropdown ? "z-[1000]" : "z-20"} rounded-[26px] border border-gray-200 p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-visible text-white bg-gradient-to-br from-[#061e4e] via-[#244e7f] to-[#52b2db] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]`}
             >
+              <div className="pointer-events-none absolute inset-0 z-0">
+                <div
+                  className="absolute w-[160px] md:w-[200px] h-[160px] md:h-[200px] rounded-full blur-[40px] md:blur-[50px] top-[40%] right-[15%] md:right-[20%] opacity-60"
+                  style={{ background: "radial-gradient(circle, rgba(46,102,166,0.25) 0%, rgba(46,102,166,0.12) 45%, transparent 75%)" }}
+                />
+              </div>
+              <img
+                src="/images/findjob.png"
+                alt="Job offers illustration"
+                className="pointer-events-none absolute right-[20px] md:right-[40px] top-1/3 -translate-y-1/2 w-34 h-34 md:w-49 md:h-48 object-contain opacity-50 mix-blend-soft-light saturate-120 z-0"
+                style={{
+                  WebkitMaskImage: "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 80%)",
+                  maskImage: "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 80%)",
+                }}
+              />
+              <div className="relative z-10">
               <div className="mb-6">
                 <h1 className="text-[28px] md:text-[30px] font-semibold leading-tight text-white">Job Offers</h1>
-                <p className="mt-2 text-[16px] text-white/80">Browse available jobs and apply immediately.</p>
+                <p className="mt-2 text-[16px] text-blue-100/90">Browse available jobs and apply immediately.</p>
               </div>
 
               <div className={filterRowClass}>
                 <div className={searchBox}>
                   <svg
-                    className="w-5 h-5 text-black/55"
+                    className="w-5 h-5 text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1389,7 +1401,7 @@ const JobOffers = () => {
                   <input
                     type="text"
                     placeholder="Find a Job or Company..."
-                    className="w-full h-full outline-none text-sm text-black/75 bg-transparent placeholder:text-black/40"
+                    className="w-full h-full outline-none text-sm text-gray-700 bg-transparent placeholder:text-black/40"
                     value={search}
                     maxLength={150}
                     onChange={(e) => setSearch(e.target.value)}
@@ -1535,7 +1547,7 @@ const JobOffers = () => {
                 {hasActiveFilters && (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-[#212C61]/20 bg-white text-[15px] font-medium text-black/60 hover:bg-[#212C61]/5 transition"
+                    className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-[#d8e2ee] bg-white text-[15px] font-medium text-black/60 hover:bg-[#2e66a6]/5 transition"
                     onClick={clearFilters}
                   >
                     <svg
@@ -1550,6 +1562,7 @@ const JobOffers = () => {
                     Clear All
                   </button>
                 )}
+              </div>
               </div>
             </div>
           </div>
@@ -1575,12 +1588,12 @@ const JobOffers = () => {
                 ))}
               </div>
             ) : errorMsg ? (
-              <div className="bg-white border border-[#212C61]/20 rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
+              <div className="bg-white border border-[#d8e2ee] rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
                             <h3 className="text-lg font-bold text-black">Something went wrong</h3>
-                <p className="mt-2 text-sm text-black/65">{errorMsg}</p>
+                <p className="mt-2 text-sm text-gray-600">{errorMsg}</p>
                 <button
-                  className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-[#212C61]/35 text-black/75 hover:bg-[#212C61]/5
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61] transition"
+                  className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-[#b8c9dc] text-gray-700 hover:bg-[#2e66a6]/5
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
                   onClick={fetchAllJobs}
                 >
                   Try again
@@ -1594,13 +1607,13 @@ const JobOffers = () => {
                   className="h-auto w-[220px] max-w-[70vw] object-contain"
                 />
                 <h3 className="mt-5 text-[22px] font-bold text-black">No results found</h3>
-                <p className="mt-2 text-sm text-black/65">
+                <p className="mt-2 text-sm text-gray-600">
                   Try adjusting your filters or search terms.
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <button
                     type="button"
-                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#212C61]/25 bg-white px-6 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#212C61]/45 hover:bg-[#212C61]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                     onClick={clearFilters}
                   >
                   
@@ -1609,7 +1622,7 @@ const JobOffers = () => {
 
                   <button
                     type="button"
-                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#212C61] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#182149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                     onClick={fetchAllJobs}
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -1639,13 +1652,13 @@ const JobOffers = () => {
                   return (
                    <div
                       key={jobId}
-                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-fit"
+                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(46,102,166,0.12)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-fit"
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
 
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-4 min-w-0 flex-1">
-                          <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#212C61]/20 bg-white shadow-sm">
+                          <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#d8e2ee] bg-white shadow-sm">
                             {job.companyLogo ? (
                               <img
                                 src={job.companyLogo}
@@ -1656,17 +1669,17 @@ const JobOffers = () => {
                                 }}
                               />
                             ) : (
-                              <div className="w-full h-full bg-[#212C61]/10" />
+                              <div className="w-full h-full bg-[#2e66a6]/10" />
                             )}
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <h3 className="min-w-0 truncate whitespace-nowrap text-[17px] md:text-lg font-bold text-black leading-snug group-hover:text-[#212C61] transition">
+                            <h3 className="min-w-0 truncate whitespace-nowrap text-[17px] md:text-lg font-bold text-black leading-snug group-hover:text-[#2e66a6] transition">
                               {String(job.title || "Job Title").replaceAll('"', "")}
                             </h3>
 
                             <div className="mt-1 flex items-center gap-2 min-w-0">
-                              <span className="text-sm font-medium text-black/65 truncate">
+                              <span className="text-sm font-medium text-gray-600 truncate">
                                 {job.companyName || "Company"}
                               </span>
 
@@ -1691,7 +1704,7 @@ const JobOffers = () => {
                         <button
                           type="button"
                           onClick={() => handleSaveJob(job)}
-                          className="flex items-center justify-center w-10 h-10 rounded-xl text-black/65 hover:bg-[#212C61]/5 hover:text-[#212C61] transition flex-shrink-0"
+                          className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-600 hover:bg-[#2e66a6]/5 hover:text-[#2e66a6] transition flex-shrink-0"
                           aria-label="Save job"
                           title="Save job"
                         >
@@ -1724,9 +1737,9 @@ const JobOffers = () => {
                           className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
                           />
                         ) : null}
-                        <div className="flex items-center gap-2 text-sm text-black/75 min-h-[20px] min-w-0">
+                        <div className="flex items-center gap-2 text-sm text-gray-700 min-h-[20px] min-w-0">
                           <svg
-                            className="w-4 h-4 text-black/65 flex-shrink-0"
+                            className="w-4 h-4 text-gray-600 flex-shrink-0"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1748,16 +1761,16 @@ const JobOffers = () => {
                           <span className="truncate min-w-0 flex-1">{formatLocationDisplay(job.location)}</span>
                         </div>
 
-                        <div className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
-                          <span className="w-4 h-4 text-black/65 flex items-center justify-center font-extrabold text-[14px] leading-none">
+                        <div className={`mt-2 flex items-center gap-2 text-sm text-gray-700 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
+                          <span className="w-4 h-4 text-gray-600 flex items-center justify-center font-extrabold text-[14px] leading-none">
                             ₱
                           </span>
                           <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}</span>
                         </div>
 
-                        <div className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
+                        <div className={`mt-2 flex items-center gap-2 text-sm text-gray-700 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
                           <svg
-                            className="w-4 h-4 text-black/65"
+                            className="w-4 h-4 text-gray-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1774,9 +1787,9 @@ const JobOffers = () => {
                         </div>
                       </div>
 
-                      <div className="mt-3 flex items-center gap-2 text-[13px] font-medium text-black/65">
+                      <div className="mt-3 flex items-center gap-2 text-[13px] font-medium text-gray-600">
                         <svg
-                          className="w-4 h-4 text-black/55 flex-shrink-0"
+                          className="w-4 h-4 text-gray-500 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1794,40 +1807,40 @@ const JobOffers = () => {
 
                       <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-hidden whitespace-nowrap">
                         {experienceBadgeLabel && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-blue-50 text-[#2e66a6] border border-blue-200">
                             {experienceBadgeLabel}
                           </span>
                         )}
 
                         {tagBlended && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Blended
                           </span>
                         )}
                         {tagOnsite && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-blue-50 text-[#2e66a6] border border-blue-200">
                             On-site
                           </span>
                         )}
                         {tagRemote && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Remote
                           </span>
                         )}
                         {tagWorkFromHome && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Work from Home
                           </span>
                         )}
 
                         {tagFreshGrad && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-[#FFD000]/20 text-black border border-[#FFD000]">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Open fresh grad
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-3 w-full h-px bg-[#212C61]/20" />
+                      <div className="mt-3 w-full h-px bg-[#2e66a6]/20" />
 
                       <div className="pt-3 flex items-center justify-between gap-3">
                         <button type="button" onClick={() => handleLearnMore(job)} className={ghostLink}>
@@ -1867,10 +1880,10 @@ const JobOffers = () => {
                     type="button"
                     onClick={handleViewMoreJobs}
                     disabled={loadingMoreJobs}
-                    className="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl border border-[#212C61] bg-white px-6 py-3 text-sm font-semibold text-[#212C61] transition hover:bg-[#212C61]/5 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl border border-[#2e66a6] bg-white px-6 py-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/5 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loadingMoreJobs && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#212C61] border-r-transparent" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6] border-r-transparent" />
                     )}
                     {loadingMoreJobs ? "Loading jobs..." : "View More Jobs"}
                   </button>
@@ -1888,7 +1901,7 @@ const JobOffers = () => {
           <div className="absolute inset-0 flex items-center justify-center px-4">
             <div
               ref={modalRef}
-              className="w-full max-w-[460px] bg-white border border-[#212C61]/20 shadow-[0_24px_80px_rgba(0,0,0,0.24)] rounded-[24px]"
+              className="w-full max-w-[460px] bg-white border border-[#d8e2ee] shadow-[0_24px_80px_rgba(0,0,0,0.24)] rounded-[24px]"
               role="dialog"
               aria-modal="true"
               aria-label="Access required"
@@ -1897,12 +1910,12 @@ const JobOffers = () => {
                 <button
                   type="button"
                   onClick={() => setShowGuestModal(false)}
-                  className="h-9 w-9 rounded-full border border-[#212C61]/20 hover:bg-[#212C61]/5 flex items-center justify-center
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61] transition"
+                  className="h-9 w-9 rounded-full border border-[#d8e2ee] hover:bg-[#2e66a6]/5 flex items-center justify-center
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
                   aria-label="Close"
                   title="Close"
                 >
-                  <span className="text-lg leading-none text-black/75">×</span>
+                  <span className="text-lg leading-none text-gray-700">×</span>
                 </button>
               </div>
 
@@ -1920,7 +1933,7 @@ const JobOffers = () => {
                   {gateReason?.title || "Access required"}
                 </h3>
 
-                <p className="mt-3 text-center text-sm text-black/65 leading-6">
+                <p className="mt-3 text-center text-sm text-gray-600 leading-6">
                   {gateReason?.body || "Please login to continue."}
                 </p>
 
@@ -1944,8 +1957,8 @@ const JobOffers = () => {
                     type="button"
                     onClick={goLogin}
                     className="w-full h-11 rounded-lg text-sm font-semibold text-black
-                               border border-[#212C61]/20 bg-[#212C61]/5 hover:bg-[#212C61]/10 transition
-                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61]"
+                               border border-[#d8e2ee] bg-[#2e66a6]/5 hover:bg-[#2e66a6]/10 transition
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
                   >
                     {gateReason?.secondary || "Sign In"}
                   </button>

@@ -249,14 +249,14 @@ const Companies = () => {
 
   const COLORS = useMemo(
     () => ({
-      primary: "#212C61",
-      primaryHover: "#212C61",
-      primaryActive: "#212C61",
+      primary: "#2e66a6",
+      primaryHover: "#25578f",
+      primaryActive: "#1f4b7c",
 
       pageBg: "#FFFFFF",
       card: "#FFFFFF",
-      border: "rgba(33, 44, 97, 0.18)",
-      mutedBox: "rgba(33, 44, 97, 0.06)",
+      border: "#d8e2ee",
+      mutedBox: "#f7faff",
 
       text: "#000000",
       subtext: "#000000",
@@ -356,7 +356,7 @@ const Companies = () => {
           return (
             <svg
               key={idx}
-              className={`${size} text-[#FFD000]`}
+              className={`${size} text-[#2e66a6]`}
               viewBox="0 0 20 20"
               fill={filled ? "currentColor" : "none"}
               stroke="currentColor"
@@ -473,16 +473,16 @@ const Companies = () => {
   }, [search, selectedLocation, selectedIndustry]);
 
   const pillBtn =
-    "min-h-[44px] rounded-xl px-4 bg-white border border-[#212C61]/25 shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-sm font-semibold text-black/75 " +
-    "flex items-center gap-2 hover:border-[#FFD000] hover:bg-[#FFD000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2 transition-all flex-shrink-0";
+    "h-[46px] rounded-xl px-5 bg-white/95 border border-white/30 text-sm font-semibold text-black " +
+    "flex items-center gap-2 hover:bg-white transition flex-shrink-0 shadow-sm";
 
   const searchBox =
-    "w-full lg:w-[520px] h-[46px] bg-white border border-[#212C61]/25 rounded-xl px-4 " +
-    "flex items-center gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex-shrink-0 transition-all duration-200 focus-within:border-[#FFD000] focus-within:ring-2 focus-within:ring-[#FFD000]/30";
+    "w-full lg:w-[430px] h-[46px] bg-white/95 border border-white/30 rounded-xl px-4 " +
+    "flex items-center gap-3 flex-shrink-0 shadow-sm";
 
   const selectPill =
-    "h-[46px] rounded-xl px-4 bg-white border border-[#212C61]/25 shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-sm font-semibold text-black/75 " +
-    "hover:border-[#FFD000] hover:bg-[#FFD000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2 transition-all flex-shrink-0";
+    "h-[46px] rounded-xl px-5 bg-white/95 border border-white/30 text-sm font-semibold text-black " +
+    "flex items-center gap-2 hover:bg-white transition flex-shrink-0 shadow-sm";
 
   useEffect(() => {
     if (openDropdown !== "location") {
@@ -599,7 +599,7 @@ const Companies = () => {
         {isOpen && (
           <div
             id="main-company-location-menu"
-            className="absolute left-0 top-full z-[80] mt-2 w-[300px] max-w-[92vw] rounded-xl border border-[#212C61]/20 bg-white p-4 shadow-xl"
+            className="absolute left-0 top-full z-[80] mt-2 w-[300px] max-w-[92vw] rounded-xl border border-[#d8e2ee] bg-white p-4 shadow-xl"
             role="dialog"
             aria-label="Location filter"
           >
@@ -607,7 +607,7 @@ const Companies = () => {
               value={locationSearch}
               onChange={(event) => setLocationSearch(event.target.value)}
               placeholder="Search location"
-              className="w-full rounded-xl border border-[#212C61]/20 bg-[#212C61]/5 px-4 py-3 text-sm text-black outline-none focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/20"
+              className="w-full rounded-xl border border-[#d8e2ee] bg-[#2e66a6]/5 px-4 py-3 text-sm text-black outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             />
 
             <div className="mt-4 max-h-[280px] overflow-auto pr-1">
@@ -618,7 +618,7 @@ const Companies = () => {
                     setSelectedLocation("");
                     setOpenDropdown(null);
                   }}
-                  className="mb-2 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#212C61] hover:bg-[#212C61]/5"
+                  className="mb-2 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#2e66a6] hover:bg-[#2e66a6]/5"
                 >
                   Clear location
                 </button>
@@ -695,7 +695,7 @@ const Companies = () => {
         {isOpen && (
           <div
             id="main-company-industry-menu"
-            className="absolute left-0 top-full z-[80] mt-2 w-[240px] max-w-[92vw] rounded-xl border border-[#212C61]/20 bg-white p-2 shadow-xl"
+            className="absolute left-0 top-full z-[80] mt-2 w-[240px] max-w-[92vw] rounded-xl border border-[#d8e2ee] bg-white p-2 shadow-xl"
             role="dialog"
             aria-label="Industry filter"
           >
@@ -713,8 +713,8 @@ const Companies = () => {
                     }}
                     className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
                       selectedIndustry === industry
-                        ? "bg-[#212C61]/5 font-semibold text-[#212C61]"
-                        : "text-black hover:bg-[#212C61]/5"
+                        ? "bg-[#2e66a6]/5 font-semibold text-[#2e66a6]"
+                        : "text-black hover:bg-[#2e66a6]/5"
                     }`}
                     title={industry}
                   >
@@ -798,8 +798,8 @@ const Companies = () => {
   };
 
   const ghostLink =
-    "min-h-[44px] px-1 text-sm font-semibold text-black/70 hover:text-[#212C61] leading-none " +
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2 " +
+    "min-h-[44px] px-1 text-sm font-semibold text-black/70 hover:text-[#2e66a6] leading-none " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 " +
     "rounded-lg inline-flex items-center gap-2 transition-colors";
 
   return (
@@ -809,17 +809,40 @@ const Companies = () => {
       <div className="pt-24 pb-14">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
-            <div className="rounded-[24px] border border-[#FFD000] bg-[#212C61] px-5 py-5 md:px-6 md:py-5 shadow-[0_8px_24px_rgba(33,44,97,0.12)]">
+            <div
+              className="
+                relative rounded-[26px] border border-gray-200 p-6 md:p-8
+                shadow-[0_4px_20px_rgba(0,0,0,0.08)]
+                overflow-visible text-white bg-gradient-to-br
+                from-[#061e4e] via-[#244e7f] to-[#52b2db]
+                transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+              "
+            >
+              <div className="pointer-events-none absolute inset-0 z-0">
+                <div
+                  className="absolute w-[160px] md:w-[200px] h-[160px] md:h-[200px] rounded-full blur-[40px] md:blur-[50px] top-[40%] right-[15%] md:right-[20%] opacity-60"
+                  style={{ background: "radial-gradient(circle, rgba(46,102,166,0.25) 0%, rgba(46,102,166,0.12) 45%, transparent 75%)" }}
+                />
+              </div>
+              <img
+                src="/images/findjob.png"
+                alt="Companies illustration"
+                className="pointer-events-none absolute right-[20px] md:right-[40px] top-1/3 -translate-y-1/2 w-34 h-34 md:w-49 md:h-48 object-contain opacity-50 mix-blend-soft-light saturate-120 z-0"
+                style={{
+                  WebkitMaskImage: "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 80%)",
+                  maskImage: "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 80%)",
+                }}
+              />
               <div className="relative z-10">
                 <div className="mb-6">
-                  <h1 className="text-[28px] md:text-[32px] font-bold tracking-tight text-white leading-tight">Companies</h1>
-                  <p className="mt-2 text-[15px] text-white/80 leading-relaxed">Browse verified companies and discover new job offers.</p>
+                  <h1 className="text-[28px] md:text-[30px] font-semibold text-white leading-tight">Companies</h1>
+                  <p className="mt-2 text-[16px] text-blue-100/90">Browse verified companies and discover new job offers.</p>
                 </div>
 
                 <div ref={filterBoxRef} className="flex flex-wrap items-center gap-3">
                   <div className={searchBox}>
                     <svg
-                      className="w-5 h-5 text-black/55"
+                      className="w-5 h-5 text-gray-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -836,7 +859,7 @@ const Companies = () => {
                     <input
                       type="text"
                       placeholder="Search companies, location, or industry..."
-                      className="w-full outline-none text-sm text-black/75 bg-transparent"
+                      className="w-full outline-none text-sm text-gray-700 bg-transparent placeholder:text-gray-400"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       aria-label="Search companies"
@@ -863,7 +886,7 @@ const Companies = () => {
           <div className="mt-6">
             {!loadingInitial && !errorMsg && hasAnyFilter && (
               <div className="mb-4 flex justify-end">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#212C61]">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#2e66a6]">
                   Filtered results
                 </p>
               </div>
@@ -889,7 +912,7 @@ const Companies = () => {
                       <div className="h-12 w-32 rounded" style={{ backgroundColor: COLORS.mutedBox }} />
                       <div className="h-8 w-8 rounded-[9px]" style={{ backgroundColor: COLORS.mutedBox }} />
                     </div>
-                    <div className="mt-6 h-px w-full" style={{ backgroundColor: "rgba(33, 44, 97, 0.12)" }} />
+                    <div className="mt-6 h-px w-full" style={{ backgroundColor: "rgba(46, 102, 166, 0.14)" }} />
                     <div className="mt-6 flex items-center justify-between">
                       <div className="h-5 w-24 rounded" style={{ backgroundColor: COLORS.mutedBox }} />
                       <div className="h-10 w-28 rounded-full" style={{ backgroundColor: COLORS.mutedBox }} />
@@ -898,12 +921,12 @@ const Companies = () => {
                 ))}
               </div>
             ) : errorMsg ? (
-              <div className="bg-white border border-[#212C61]/20 rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
+              <div className="bg-white border border-[#d8e2ee] rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
                 <h3 className="text-lg font-bold text-black">Something went wrong</h3>
                 <p className="mt-2 text-sm text-black/65">{errorMsg}</p>
                 <button
-                  className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-[#212C61]/35 text-black/75 hover:bg-[#212C61]/5
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61] transition"
+                  className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-[#d8e2ee] text-black/75 hover:bg-[#2e66a6]/5
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
                   onClick={() =>
                     fetchCompanies({
                       search,
@@ -929,7 +952,7 @@ const Companies = () => {
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <button
                     type="button"
-                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#212C61]/25 bg-white px-6 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#212C61]/45 hover:bg-[#212C61]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                     onClick={clearAll}
                   >
                     
@@ -938,7 +961,7 @@ const Companies = () => {
 
                   <button
                     type="button"
-                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#212C61] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#182149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#182149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                     onClick={() => fetchCompanies()}
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -967,7 +990,7 @@ const Companies = () => {
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-14 h-14 rounded-[16px] overflow-hidden border border-[#212C61]/20 bg-white shadow-sm shrink-0">
+                          <div className="w-14 h-14 rounded-[16px] overflow-hidden border border-[#d8e2ee] bg-white shadow-sm shrink-0">
                             {logoUrl ? (
                               <img
                                 src={logoUrl}
@@ -988,7 +1011,7 @@ const Companies = () => {
                           </div>
 
                           <div className="min-w-0 flex items-center gap-1.5 max-w-full">
-                            <h3 className="min-w-0 truncate text-[18px] md:text-[19px] leading-[1.25] font-bold text-black group-hover:text-[#212C61] transition">
+                            <h3 className="min-w-0 truncate text-[18px] md:text-[19px] leading-[1.25] font-bold text-black group-hover:text-[#2e66a6] transition">
                               {c.companyName || "Company"}
                             </h3>
 
@@ -1009,7 +1032,7 @@ const Companies = () => {
                       </div>
 
                       <div
-                        className="mt-4 rounded-2xl px-4 py-4 border border-[#212C61]/15"
+                        className="mt-4 rounded-2xl px-4 py-4 border border-[#2e66a6]/15"
                         style={{ backgroundColor: COLORS.mutedBox }}
                       >
                         <div className="flex items-center gap-2 text-[13px] text-black/75 leading-none">
@@ -1060,7 +1083,7 @@ const Companies = () => {
                             {formatRatingValue(averageRating)}
                           </div>
 
-                          <div className="w-px h-[46px] bg-[#212C61]/20 shrink-0" />
+                          <div className="w-px h-[46px] bg-[#2e66a6]/20 shrink-0" />
 
                           <div className="min-w-0">
                             <StarRating rating={averageRating} size="w-[15px] h-[15px]" />
@@ -1101,10 +1124,10 @@ const Companies = () => {
                     type="button"
                     onClick={handleViewMoreCompanies}
                     disabled={loadingMoreCompanies}
-                    className="inline-flex min-w-[230px] items-center justify-center gap-2 rounded-xl border border-[#212C61] bg-white px-6 py-3 text-sm font-semibold text-[#212C61] transition hover:bg-[#212C61]/5 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex min-w-[230px] items-center justify-center gap-2 rounded-xl border border-[#2e66a6] bg-white px-6 py-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/5 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loadingMoreCompanies && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#212C61] border-r-transparent" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6] border-r-transparent" />
                     )}
                     {loadingMoreCompanies ? "Loading companies..." : "View More Companies"}
                   </button>
@@ -1122,7 +1145,7 @@ const Companies = () => {
           <div className="absolute inset-0 flex items-center justify-center px-4">
             <div
               ref={modalRef}
-              className="w-full max-w-[460px] bg-white border border-[#212C61]/20 shadow-[0_24px_80px_rgba(0,0,0,0.24)] rounded-[24px]"
+              className="w-full max-w-[460px] bg-white border border-[#d8e2ee] shadow-[0_24px_80px_rgba(0,0,0,0.24)] rounded-[24px]"
               role="dialog"
               aria-modal="true"
               aria-label="Access required"
@@ -1131,8 +1154,8 @@ const Companies = () => {
                 <button
                   type="button"
                   onClick={() => setShowGuestModal(false)}
-                  className="h-9 w-9 rounded-full border border-[#212C61]/20 hover:bg-[#212C61]/5 flex items-center justify-center
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61] transition"
+                  className="h-9 w-9 rounded-full border border-[#d8e2ee] hover:bg-[#2e66a6]/5 flex items-center justify-center
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
                   aria-label="Close"
                   title="Close"
                 >
@@ -1178,8 +1201,8 @@ const Companies = () => {
                     type="button"
                     onClick={goLogin}
                     className="w-full h-11 rounded-lg text-sm font-semibold text-black
-                               border border-[#212C61]/20 bg-[#212C61]/5 hover:bg-[#212C61]/10 transition
-                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61]"
+                               border border-[#d8e2ee] bg-[#2e66a6]/5 hover:bg-[#2e66a6]/10 transition
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
                   >
                     {gateReason?.secondary || "Sign In"}
                   </button>
