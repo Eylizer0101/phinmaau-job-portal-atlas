@@ -310,6 +310,38 @@ const normalizeExtensionName = (value) => {
   return clean.toLowerCase() === 'none' ? '' : clean;
 };
 
+const isAtLeast18YearsOld = (birthday = '') => {
+  const clean = String(birthday || '').trim();
+  if (!clean) return true;
+
+  const match = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const birthDate = new Date(year, month - 1, day);
+
+  if (
+    Number.isNaN(birthDate.getTime()) ||
+    birthDate.getFullYear() !== year ||
+    birthDate.getMonth() !== month - 1 ||
+    birthDate.getDate() !== day
+  ) {
+    return false;
+  }
+
+  const today = new Date();
+  const latestEligibleBirthday = new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate()
+  );
+
+  return birthDate <= latestEligibleBirthday;
+};
+
 const getRichTextPlainText = (value) =>
   String(value ?? '')
     .replace(/<br\s*\/?>/gi, '\n')
@@ -2179,12 +2211,23 @@ exports.updateProfile = async (req, res) => {
         updateData.jobSeekerProfile[field] = value;
       }
 
+      if (requestedProfileKeys.includes('birthday')) {
+        const birthday = String(updateData.jobSeekerProfile.birthday || '').trim();
+        if (birthday && !isAtLeast18YearsOld(birthday)) {
+          return res.status(400).json({
+            success: false,
+            message: 'You must be at least 18 years old.',
+          });
+        }
+        updateData.jobSeekerProfile.birthday = birthday;
+      }
+
       if (requestedProfileKeys.includes('references') && Array.isArray(updateData.jobSeekerProfile.references)) {
         for (const reference of updateData.jobSeekerProfile.references) {
           const phone = String(reference?.phone || '').trim();
           const email = String(reference?.email || '').trim();
-          if (!/^\d{11}$/.test(phone)) {
-            return res.status(400).json({ success: false, message: 'Reference contact number must contain exactly 11 digits.' });
+          if (!/^09\d{9}$/.test(phone)) {
+            return res.status(400).json({ success: false, message: 'Reference contact number must be an 11-digit number starting with 09.' });
           }
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return res.status(400).json({ success: false, message: 'Please enter a valid reference email address.' });

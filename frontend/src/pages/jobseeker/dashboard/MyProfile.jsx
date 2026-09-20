@@ -187,6 +187,47 @@ const formatSalaryInput = (value = '') => {
   return digits ? Number(digits).toLocaleString('en-US') : '';
 };
 
+const getLatestEligibleBirthday = () => {
+  const today = new Date();
+  const cutoff = new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const year = cutoff.getFullYear();
+  const month = String(cutoff.getMonth() + 1).padStart(2, '0');
+  const day = String(cutoff.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+const isAtLeast18YearsOld = (birthday = '') => {
+  const clean = String(birthday || '').trim();
+  if (!clean) return true;
+
+  const match = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const birthdayDate = new Date(year, month - 1, day);
+
+  if (
+    Number.isNaN(birthdayDate.getTime()) ||
+    birthdayDate.getFullYear() !== year ||
+    birthdayDate.getMonth() !== month - 1 ||
+    birthdayDate.getDate() !== day
+  ) {
+    return false;
+  }
+
+  const latestEligibleBirthday = getLatestEligibleBirthday();
+  return clean <= latestEligibleBirthday;
+};
+
 const normalizeEmploymentTypeValue = (value = '') => {
   const clean = String(value || '').trim();
   const normalized = clean.toLowerCase();
@@ -962,7 +1003,7 @@ const ResumePasswordModal = ({
   );
 };
 
-const Input = ({ label, value, onChange, placeholder = '', disabled = false, type = 'text', maxLength, inputMode }) => {
+const Input = ({ label, value, onChange, placeholder = '', disabled = false, type = 'text', maxLength, inputMode, min, max }) => {
   return (
     <div>
       <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
@@ -974,6 +1015,8 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
         disabled={disabled}
         maxLength={maxLength}
         inputMode={inputMode}
+        min={min}
+        max={max}
         className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
       />
     </div>
@@ -2493,7 +2536,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Contact Number</FormLabel>
-          <PlainInput value={item.phone} maxLength={11} inputMode="numeric" onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="Phone number" />
+          <PlainInput value={item.phone} maxLength={11} inputMode="numeric" onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="09XXXXXXXXX" />
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
@@ -3581,7 +3624,7 @@ const ProfileEditModal = ({
             rows={8}
             value={drafts.aboutMe}
             onChange={(e) => onChange('aboutMe', e.target.value)}
-            maxLength={250}
+            maxLength={500}
             placeholder="Insert text here..."
           />
         </div>
@@ -3613,7 +3656,13 @@ const ProfileEditModal = ({
           <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" maxLength={50} />
           <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
           <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
-          <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
+          <Input
+            label="Birthday"
+            type="date"
+            value={drafts.birthday}
+            max={getLatestEligibleBirthday()}
+            onChange={(e) => onChange('birthday', e.target.value)}
+          />
         </div>
       );
     }
@@ -3983,8 +4032,8 @@ const getProfileEntryValidationError = (sectionKey, item = {}) => {
     if (!value('name') || !value('position') || !value('company') || !value('phone') || !value('email')) {
       return 'Please complete all required reference fields before saving.';
     }
-    if (!/^\d{11}$/.test(value('phone'))) {
-      return 'Contact number must contain exactly 11 digits.';
+    if (!/^09\d{9}$/.test(value('phone'))) {
+      return 'Contact number must be an 11-digit number starting with 09.';
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('email')) || /^\d+$/.test(value('email'))) {
       return 'Please enter a valid reference email address containing @.';
@@ -5668,10 +5717,19 @@ const MyProfile = () => {
 
     if (sectionKey === 'about') {
       const objectiveLength = getRichTextPlainText(activeDrafts.aboutMe).length;
-      if (objectiveLength > 250) {
-        setError('Objective must not exceed 250 characters.');
+      if (objectiveLength > 500) {
+        setError('Objective must not exceed 500 characters.');
         return false;
       }
+    }
+
+    if (
+      (sectionKey === 'career' || sectionKey === 'personal') &&
+      activeDrafts.birthday &&
+      !isAtLeast18YearsOld(activeDrafts.birthday)
+    ) {
+      setError('You must be at least 18 years old.');
+      return false;
     }
 
     if (sectionKey === 'basic') {
@@ -7884,7 +7942,7 @@ const MyProfile = () => {
                         .map((key) => ({
                           key,
                           label: MORE_PROFILE_SECTIONS[key]?.title || key,
-                          actionLabel: hasMeaningfulListContent(formData[key]) ? 'EDIT' : 'ADD',
+                          actionLabel: 'ADD',
                         })),
                     ].map((section) => {
                       const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;

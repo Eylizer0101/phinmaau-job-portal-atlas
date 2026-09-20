@@ -372,7 +372,7 @@ const profileMoreEntrySchema = new mongoose.Schema(
     position: { type: String, default: '', trim: true, maxlength: 100 },
     company: { type: String, default: '', trim: true, maxlength: 120 },
     email: { type: String, default: '', trim: true, validate: { validator: (value) => !value || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && !/^\d+$/.test(value)), message: 'Please enter a valid reference email address containing @.' } },
-    phone: { type: String, default: '', trim: true, maxlength: 11, match: [/^\d{11}$/, 'Contact number must contain exactly 11 digits.'] },
+    phone: { type: String, default: '', trim: true, maxlength: 11, match: [/^09\d{9}$/, 'Contact number must be an 11-digit number starting with 09.'] },
   },
   { _id: true, timestamps: true }
 );
@@ -541,7 +541,7 @@ const userSchema = new mongoose.Schema(
         type: String,
         default: '',
         trim: true,
-        validate: richTextLengthValidator(250, 'Objective must not exceed 250 characters.'),
+        validate: richTextLengthValidator(500, 'Objective must not exceed 500 characters.'),
       },
       minimumSalary: { type: String, default: '', trim: true, maxlength: 6, match: [/^\d{0,6}$/, 'Minimum Salary must contain numbers only and must not exceed 6 digits.'] },
       maximumSalary: { type: String, default: '', trim: true, maxlength: 6, match: [/^\d{0,6}$/, 'Maximum Salary must contain numbers only and must not exceed 6 digits.'] },
