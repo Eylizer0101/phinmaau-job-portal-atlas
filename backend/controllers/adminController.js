@@ -3580,7 +3580,7 @@ exports.holdJobseekerVerification = async (req, res) => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 48);
 
-    verificationDocs.overallStatus = 'hold';
+    verificationDocs.overallStatus = wasAccountVerified ? 'verified' : 'hold';
     verificationDocs.adminRemarks = String(reasonMessage).trim();
 
     if (!wasAccountVerified) {
@@ -3755,9 +3755,8 @@ const markVerificationDocumentChecked = async (req, res, role) => {
     let accountAutoApproved = false;
     if (role === 'jobseeker') {
       if (wasAccountVerified) {
-        const credentialReviewStatus = getJobseekerCredentialReviewStatus(docs);
-        docs.overallStatus = credentialReviewStatus;
-        user.jobSeekerProfile.verificationStatus = credentialReviewStatus;
+        docs.overallStatus = 'verified';
+        user.jobSeekerProfile.verificationStatus = 'verified';
         user.isVerified = true;
         await user.save();
       } else {

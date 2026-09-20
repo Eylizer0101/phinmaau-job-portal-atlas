@@ -1182,9 +1182,22 @@ const JobDetails = () => {
         return;
       }
 
-      const verificationStatus = user.jobSeekerProfile?.verificationStatus;
+      const verificationStatus = String(
+        user.jobSeekerProfile?.verificationStatus || ''
+      ).toLowerCase();
+      const overallVerificationStatus = String(
+        user.jobSeekerProfile?.verificationDocs?.overallStatus || ''
+      ).toLowerCase();
+      const accountVerified =
+        user.isVerified === true ||
+        verificationStatus === 'verified' ||
+        overallVerificationStatus === 'verified' ||
+        (
+          String(user.status || '').toLowerCase() === 'active' &&
+          Boolean(String(user.username || '').trim())
+        );
 
-      if (verificationStatus !== 'verified') {
+      if (!accountVerified) {
         let message = 'Your account is not verified. ';
         if (verificationStatus === 'pending') {
           message += 'Your verification is pending approval from admin.';
