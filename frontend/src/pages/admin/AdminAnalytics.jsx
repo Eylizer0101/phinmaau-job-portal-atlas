@@ -1,59 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
-  BarChart3,
   BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
-  Clock3,
   Download,
   Filter,
-  GraduationCap,
+  Mail,
   RefreshCw,
-  ShieldCheck,
-  Target,
-  TrendingUp,
+  ShieldAlert,
   UserRoundCheck,
-  UsersRound,
   X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ComposedChart,
-  Legend,
-  Line,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import api from "../../services/api";
 
 const numberFormat = new Intl.NumberFormat("en-US");
-const percentFormat = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 1,
-});
-
-const CHART_COLORS = [
-  "#2e66a6",
-  "#1f9d71",
-  "#d99300",
-  "#6366f1",
-  "#dc4c4c",
-  "#64748b",
-  "#0f8ea8",
-  "#8b5cf6",
-];
 
 const dateOptions = [
-  ["overall", "All Time"],
+  ["overall", "Overall"],
   ["today", "Today"],
   ["yesterday", "Yesterday"],
   ["thisWeek", "This Week"],
@@ -63,8 +29,62 @@ const dateOptions = [
   ["thisYear", "This Year"],
   ["lastYear", "Last Year"],
   ["specific", "Specific Date"],
-  ["range", "Custom Range"],
+  ["range", "Date Range"],
 ];
+
+const emptyAnalytics = {
+  kpis: {
+    totalUsers: 0,
+    activeJobs: 0,
+    applications: 0,
+    hired: 0,
+    hireRate: 0,
+    pendingVerification: 0,
+    unreadMessages: 0,
+    systemFailures: 0,
+  },
+  trends: [],
+  filters: { options: {} },
+  sections: {
+    users: { roles: [], statuses: [], verification: [], campuses: [] },
+    jobs: {
+      statuses: [],
+      categories: [],
+      employmentTypes: [],
+      workModes: [],
+      totalVacancies: 0,
+      totalViews: 0,
+    },
+    applications: {
+      funnel: [],
+      interviewRate: 0,
+      hireRate: 0,
+      employmentStatus: [],
+    },
+    verification: {
+      emailRequests: 0,
+      emailVerified: 0,
+      emailCompletionRate: 0,
+      byRole: [],
+    },
+    operations: {
+      editRequests: [],
+      editRequestSections: [],
+      messages: [],
+      messageRead: [],
+      conversationPreferences: [],
+      notifications: [],
+      notificationRead: [],
+      system: {
+        statuses: [],
+        modules: [],
+        methods: [],
+        p95DurationMs: 0,
+        serverErrors: 0,
+      },
+    },
+  },
+};
 
 const initialFilters = {
   date: "overall",
@@ -74,104 +94,136 @@ const initialFilters = {
   endDate: "",
   role: "all",
   campus: "all",
-  yearGraduated: "all",
-  course: "all",
   userStatus: "all",
   verificationStatus: "all",
   jobStatus: "all",
-  industry: "all",
   category: "all",
   jobType: "all",
   workMode: "all",
-  educationLevel: "all",
-  experienceLevel: "all",
   applicationStatus: "all",
   company: "all",
-  skill: "all",
-  certification: "all",
   editRequestStatus: "all",
+  messageType: "all",
+  notificationType: "all",
+  logStatus: "all",
+  logModule: "all",
 };
 
-const emptyAnalytics = {
-  generatedAt: null,
-  timezone: "Asia/Manila",
-  privacyThreshold: 5,
-  filters: { options: {} },
-  appliedFilters: {},
-  kpis: {
-    registeredUsers: 0,
-    activeJobs: 0,
-    applications: 0,
-    hired: 0,
-    hireRate: 0,
-    avgTimeToHireDays: 0,
-  },
-  kpiMeta: {},
-  kpiComparison: {},
-  trends: [],
-  overview: {
-    funnel: [],
-    topIndustriesByHires: [],
-  },
-  sections: {
-    applications: {
-      funnel: [],
-      applicationsBeforeHire: [],
-      stageDurations: [],
-      employerResponsiveness: [],
-      dropoutNodes: [],
-      declineReasons: [],
-      salaryBands: [],
-      employmentStatus: [],
-      metrics: {},
-    },
-    jobs: {
-      statuses: [],
-      categories: [],
-      jobTypes: [],
-      workModes: [],
-      educationLevels: [],
-      experienceLevels: [],
-      demandedSkills: [],
-      salaryVisibility: [],
-      metrics: {},
-    },
-    verification: {
-      statuses: [],
-      backlogAging: [],
-      editRequests: [],
-      editRequestSections: [],
-      employmentRequests: [],
-      registrationByRole: [],
-      metrics: {},
-    },
-  },
-  planCoverage: {
-    implemented: [],
-    schemaLimited: [],
-  },
+const statCardImages = {
+  users: "/images/admin_1.png",
+  jobs: "/images/case.png",
+  applications: "/images/admin_3.png",
+  hired: "/images/admin_2.png",
+  rate: "/images/admin_4.png",
+  verification: "/images/admin_3.png",
+  messages: "/images/admin_1.png",
+  failures: "/images/case.png",
 };
+
+const colors = [
+  "#2e66a6",
+  "#16a36f",
+  "#dc9300",
+  "#6366f1",
+  "#dc2626",
+  "#64748b",
+  "#0891b2",
+];
 
 const titleCase = (value) =>
   String(value || "")
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+const StatCard = ({ label, value, suffix = "", imageSrc }) => (
+  <div className="group relative min-h-[132px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-6 py-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
+    <div
+      className="pointer-events-none absolute right-8 top-1/2 h-[70px] w-[70px] -translate-y-1/2 rounded-full blur-[35px]"
+      style={{
+        background:
+          "radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,.14) 45%, transparent 75%)",
+      }}
+    />
+    <img
+      src={imageSrc}
+      alt=""
+      aria-hidden="true"
+      className="pointer-events-none absolute right-[-18px] top-1/2 h-20 w-20 -translate-y-1/2 object-contain opacity-50 mix-blend-soft-light saturate-150 transition-all duration-700 group-hover:right-[-15px] group-hover:scale-105"
+      style={{
+        WebkitMaskImage:
+          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+        maskImage:
+          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+      }}
+    />
+    <div className="relative z-10">
+      <h3 className="text-3xl font-semibold leading-none">
+        {numberFormat.format(Number(value || 0))}
+        {suffix}
+      </h3>
+      <p className="mt-3 flex items-center gap-1 whitespace-nowrap text-sm text-white/90">
+        <span>{label}</span>
+        <span className="ml-1 text-base font-bold">&gt;</span>
+      </p>
+    </div>
+    <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition group-hover:border-white/20" />
+  </div>
+);
+
+const FilterSelect = ({
+  label,
+  value,
+  onChange,
+  values = [],
+  allLabel = "All",
+  disabled = false,
+}) => (
+  <label className="block min-w-0">
+    <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+      {label}
+    </span>
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-slate-50"
+    >
+      <option value="all">{allLabel}</option>
+      {values.map((item) => (
+        <option key={item} value={item}>
+          {titleCase(item)}
+        </option>
+      ))}
+    </select>
+  </label>
+);
+
+const DateInput = ({ label, value, onChange }) => (
+  <label className="block">
+    <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+      {label}
+    </span>
+    <input
+      type="date"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+    />
+  </label>
+);
+
 const formatDateInput = (date) => {
   if (!date) return "";
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return "";
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(
-    2,
-    "0",
-  )}-${String(value.getDate()).padStart(2, "0")}`;
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 };
 
 const formatDateLabel = (value) => {
   if (!value) return "Select date";
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return "Select date";
-  return date.toLocaleDateString("en-PH", {
+  return date.toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
     year: "numeric",
@@ -205,40 +257,6 @@ const getYearOptions = () => {
   return Array.from(
     { length: currentYear - firstYear + 1 },
     (_, index) => currentYear - index,
-  );
-};
-
-const getDisplayValue = (row, suffix = "") => {
-  if (!row) return "0";
-  if (row.suppressed) return row.displayValue || "n < 5";
-  return `${numberFormat.format(Number(row.value || 0))}${suffix}`;
-};
-
-const ChartTooltip = ({ active, payload, label, valueSuffix = "" }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-xl">
-      {label ? (
-        <p className="mb-1.5 text-xs font-semibold text-slate-800">{label}</p>
-      ) : null}
-      <div className="space-y-1">
-        {payload.map((entry) => {
-          const row = entry?.payload || {};
-          const value = row.suppressed
-            ? row.displayValue || "n < 5"
-            : `${numberFormat.format(Number(entry.value || 0))}${valueSuffix}`;
-          return (
-            <div
-              key={`${entry.dataKey}-${entry.name}`}
-              className="flex items-center justify-between gap-5 text-xs"
-            >
-              <span className="text-slate-500">{entry.name}</span>
-              <span className="font-semibold text-slate-800">{value}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
   );
 };
 
@@ -276,14 +294,13 @@ const CalendarMonth = ({
         >
           ‹
         </button>
-
-        <div className="grid grid-cols-[1fr_86px] gap-2">
+        <div className="grid grid-cols-[1fr_82px] gap-2">
           <select
             value={month}
             onChange={(event) =>
               onChangeMonth(new Date(year, Number(event.target.value), 1))
             }
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs font-semibold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs font-bold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select month"
           >
             {monthNames.map((name, index) => (
@@ -292,13 +309,12 @@ const CalendarMonth = ({
               </option>
             ))}
           </select>
-
           <select
             value={year}
             onChange={(event) =>
               onChangeMonth(new Date(Number(event.target.value), month, 1))
             }
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs font-semibold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs font-bold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select year"
           >
             {getYearOptions().map((option) => (
@@ -308,7 +324,6 @@ const CalendarMonth = ({
             ))}
           </select>
         </div>
-
         <button
           type="button"
           onClick={() => onChangeMonth(addCalendarMonths(monthDate, 1))}
@@ -319,12 +334,11 @@ const CalendarMonth = ({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 text-center text-[10px] font-semibold uppercase text-slate-400">
+      <div className="grid grid-cols-7 text-center text-[10px] font-bold uppercase text-slate-400">
         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
           <div key={day}>{day}</div>
         ))}
       </div>
-
       <div className="mt-2 grid grid-cols-7 gap-y-1 text-center text-xs">
         {days.map((day) => {
           const value = formatDateInput(day);
@@ -336,15 +350,7 @@ const CalendarMonth = ({
               type="button"
               key={value}
               onClick={() => onPickDate(value)}
-              className={`mx-auto flex h-8 w-full items-center justify-center transition ${
-                outside ? "text-slate-300" : "text-slate-700"
-              } ${
-                ranged ? "bg-[#2e66a6]/10 text-[#2e66a6]" : ""
-              } ${
-                selected
-                  ? "rounded-lg bg-[#2e66a6] font-semibold text-white"
-                  : "rounded-md hover:bg-[#2e66a6]/10"
-              }`}
+              className={`mx-auto flex h-8 w-full items-center justify-center transition ${outside ? "text-slate-300" : "text-slate-700"} ${ranged ? "bg-[#2e66a6]/10 text-[#2e66a6]" : ""} ${selected ? "rounded-lg bg-[#2e66a6] font-bold text-white shadow-sm" : "rounded-md hover:bg-[#2e66a6]/10"}`}
               aria-label={formatDateLabel(value)}
             >
               {day.getDate()}
@@ -374,6 +380,7 @@ const CustomDateRangeModal = ({
   );
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -383,22 +390,38 @@ const CustomDateRangeModal = ({
     setDraftEnd(nextEnd);
     setLeftMonth(new Date(`${nextStart}T00:00:00`));
     setRightMonth(addCalendarMonths(new Date(`${nextEnd}T00:00:00`), 1));
-
     const previousOverflow = document.body.style.overflow;
+    previousFocusRef.current = document.activeElement;
     document.body.style.overflow = "hidden";
     const focusTimer = setTimeout(() => closeRef.current?.focus(), 0);
-
     const handleKeyDown = (event) => {
       if (event.key === "Escape") onCancel();
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll(
+        'button:not([disabled]), select:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       clearTimeout(focusTimer);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus?.();
     };
-  }, [open, startDate, endDate, onCancel, today]);
+    // onCancel is intentionally omitted because the parent supplies an inline close handler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, startDate, endDate, today]);
 
   if (!open) return null;
 
@@ -406,24 +429,19 @@ const CustomDateRangeModal = ({
     if (!draftStart || draftEnd) {
       setDraftStart(value);
       setDraftEnd("");
-      return;
-    }
-
-    if (
-      new Date(`${value}T00:00:00`) <
-      new Date(`${draftStart}T00:00:00`)
+    } else if (
+      new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)
     ) {
       setDraftEnd(draftStart);
       setDraftStart(value);
-      return;
+    } else {
+      setDraftEnd(value);
     }
-
-    setDraftEnd(value);
   };
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 px-3 py-5 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/65 px-3 py-5 backdrop-blur-[2px]"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
@@ -439,7 +457,7 @@ const CustomDateRangeModal = ({
           <div>
             <h2
               id="analytics-date-range-title"
-              className="text-base font-semibold text-slate-900"
+              className="text-base font-bold text-slate-900"
             >
               Select Date Range
             </h2>
@@ -447,12 +465,11 @@ const CustomDateRangeModal = ({
               Choose the starting and ending dates for the analytics report.
             </p>
           </div>
-
           <button
             ref={closeRef}
             type="button"
             onClick={onCancel}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/25"
             aria-label="Close date range modal"
           >
             <X size={18} />
@@ -461,22 +478,20 @@ const CustomDateRangeModal = ({
 
         <div className="grid gap-3 bg-slate-50/80 px-5 py-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
               Start Date
             </span>
-            <span className="mt-1 flex items-center gap-2 text-sm font-semibold text-[#2e66a6]">
+            <span className="mt-1 flex items-center gap-2 text-sm font-bold text-[#2e66a6]">
               <CalendarDays size={16} />
               {formatDateLabel(draftStart)}
             </span>
           </div>
-
           <span className="hidden text-lg text-slate-400 sm:block">→</span>
-
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
               End Date
             </span>
-            <span className="mt-1 flex items-center gap-2 text-sm font-semibold text-[#2e66a6]">
+            <span className="mt-1 flex items-center gap-2 text-sm font-bold text-[#2e66a6]">
               <CalendarDays size={16} />
               {formatDateLabel(draftEnd)}
             </span>
@@ -504,7 +519,7 @@ const CustomDateRangeModal = ({
           <button
             type="button"
             onClick={onCancel}
-            className="h-10 rounded-xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
           >
             Cancel
           </button>
@@ -514,7 +529,7 @@ const CustomDateRangeModal = ({
               draftStart && draftEnd && onApply(draftStart, draftEnd)
             }
             disabled={!draftStart || !draftEnd}
-            className="h-10 rounded-xl bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-10 rounded-xl bg-[#2e66a6] px-6 text-sm font-bold text-white shadow-md shadow-[#2e66a6]/20 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Apply Range
           </button>
@@ -523,34 +538,6 @@ const CustomDateRangeModal = ({
     </div>
   );
 };
-
-const FilterSelect = ({
-  label,
-  value,
-  onChange,
-  values = [],
-  allLabel = "All",
-  disabled = false,
-}) => (
-  <label className="block min-w-0">
-    <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
-      {label}
-    </span>
-    <select
-      value={value}
-      disabled={disabled}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 disabled:bg-slate-50"
-    >
-      <option value="all">{allLabel}</option>
-      {values.map((item) => (
-        <option key={item} value={item}>
-          {titleCase(item)}
-        </option>
-      ))}
-    </select>
-  </label>
-);
 
 const DateFilterDropdown = ({
   value,
@@ -565,7 +552,7 @@ const DateFilterDropdown = ({
     value === "range" && startDate && endDate
       ? `${formatDateLabel(startDate)} – ${formatDateLabel(endDate)}`
       : dateOptions.find(([optionValue]) => optionValue === value)?.[1] ||
-        "All Time";
+        "Overall";
 
   useEffect(() => {
     if (!open) return undefined;
@@ -575,7 +562,6 @@ const DateFilterDropdown = ({
     const closeWithEscape = (event) => {
       if (event.key === "Escape") setOpen(false);
     };
-
     window.addEventListener("mousedown", close);
     window.addEventListener("keydown", closeWithEscape);
     return () => {
@@ -586,28 +572,24 @@ const DateFilterDropdown = ({
 
   return (
     <div ref={containerRef} className="relative min-w-0">
-      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+      <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
         Date Range
       </span>
-
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}
-        className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-left text-xs font-medium text-slate-700 outline-none transition hover:bg-slate-50 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 disabled:bg-slate-50"
+        className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-left text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-slate-50"
         aria-expanded={open}
       >
         <span className="truncate">{selectedLabel}</span>
         <ChevronDown
           size={14}
-          className={`shrink-0 text-slate-400 transition ${
-            open ? "rotate-180" : ""
-          }`}
+          className={`shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`}
         />
       </button>
-
       {open ? (
-        <div className="absolute left-0 top-[48px] z-50 w-56 rounded-xl border border-slate-100 bg-white p-2 shadow-xl">
+        <div className="absolute left-0 top-[48px] z-40 w-56 rounded-xl border border-slate-100 bg-white p-2 shadow-xl">
           {dateOptions.map(([optionValue, label]) => (
             <button
               type="button"
@@ -616,11 +598,7 @@ const DateFilterDropdown = ({
                 setOpen(false);
                 onSelect(optionValue);
               }}
-              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-medium transition ${
-                value === optionValue
-                  ? "bg-[#2e66a6]/10 text-[#2e66a6]"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
+              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${value === optionValue ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-slate-600 hover:bg-slate-50"}`}
             >
               {label}
             </button>
@@ -631,317 +609,296 @@ const DateFilterDropdown = ({
   );
 };
 
-const ChartCard = ({
-  title,
-  subtitle,
-  children,
-  className = "",
-  action = null,
-}) => (
+const ChartCard = ({ title, subtitle, children, className = "" }) => (
   <section
-    className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-5 ${className}`}
+    className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}
   >
-    <div className="mb-4 flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-      <div className="min-w-0">
-        <h2 className="text-[15px] font-semibold text-slate-900">{title}</h2>
-        {subtitle ? (
-          <p className="mt-1 text-xs leading-5 text-slate-500">{subtitle}</p>
-        ) : null}
-      </div>
-      {action}
+    <div className="mb-3 border-b border-slate-100 pb-3">
+      <h2 className="text-sm font-bold text-slate-800">{title}</h2>
+      {subtitle ? (
+        <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
+      ) : null}
     </div>
     {children}
   </section>
 );
 
-const EmptyChart = ({ message = "No data for the selected filters." }) => (
-  <div className="flex h-[260px] items-center justify-center rounded-xl bg-slate-50 px-5 text-center text-sm text-slate-400">
-    {message}
+const EmptyChart = () => (
+  <div className="flex h-32 items-center justify-center rounded-xl bg-slate-50 text-xs font-medium text-slate-400">
+    No data for the selected filters.
   </div>
 );
 
-const HorizontalBarChart = ({
-  data = [],
-  valueLabel = "Count",
-  valueSuffix = "",
-  height = 300,
-}) => {
-  if (!data.length) return <EmptyChart />;
-
+const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
+  const rows = data.slice(0, maxItems);
+  const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
+  if (!rows.length) return <EmptyChart />;
   return (
-    <div style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 6, right: 22, bottom: 6, left: 10 }}
+    <div className="space-y-2.5">
+      {rows.map((item, index) => (
+        <div
+          key={`${item.name}-${index}`}
+          className="grid grid-cols-[minmax(90px,140px)_1fr_auto] items-center gap-3 text-xs"
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-          <YAxis
-            type="category"
-            dataKey="name"
-            width={145}
-            tick={{ fontSize: 11 }}
-            tickFormatter={(value) =>
-              String(value).length > 22
-                ? `${String(value).slice(0, 22)}…`
-                : value
-            }
-          />
-          <Tooltip content={<ChartTooltip valueSuffix={valueSuffix} />} />
-          <Bar
-            dataKey="value"
-            name={valueLabel}
-            fill="#2e66a6"
-            radius={[0, 7, 7, 0]}
-            animationDuration={650}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+          <span
+            className="truncate text-right font-semibold text-slate-600"
+            title={titleCase(item.name)}
+          >
+            {titleCase(item.name)}
+          </span>
+          <div className="h-6 overflow-hidden rounded-md bg-slate-100">
+            <div
+              className="h-full min-w-[3px] rounded-lg transition-all"
+              style={{
+                width: `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`,
+                backgroundColor: colors[index % colors.length],
+              }}
+            />
+          </div>
+          <span className="w-10 text-right font-bold text-slate-700">
+            {numberFormat.format(Number(item.value || 0))}
+            {percentage ? "%" : ""}
+          </span>
+        </div>
+      ))}
     </div>
   );
 };
 
-const DonutChart = ({ data = [], centerLabel = "Total", height = 270 }) => {
-  if (!data.length) return <EmptyChart />;
-
-  const total = data.reduce(
-    (sum, row) => sum + (row.suppressed ? 0 : Number(row.value || 0)),
-    0,
-  );
-
+const DonutChart = ({ data = [] }) => {
+  const rows = data.filter((item) => Number(item.value || 0) > 0);
+  const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
+  if (!rows.length || !total) return <EmptyChart />;
+  let cursor = 0;
+  const stops = rows.map((item, index) => {
+    const start = cursor;
+    cursor += (Number(item.value || 0) / total) * 100;
+    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+  });
   return (
-    <div className="relative" style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="48%"
-            innerRadius={68}
-            outerRadius={98}
-            paddingAngle={2}
-            animationDuration={650}
+    <div className="grid min-h-40 items-center gap-4 sm:grid-cols-[150px_1fr]">
+      <div
+        className="relative mx-auto h-32 w-32 rounded-full"
+        style={{ background: `conic-gradient(${stops.join(",")})` }}
+      >
+        <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
+          <span className="text-2xl font-extrabold text-slate-800">
+            {numberFormat.format(total)}
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+            Total
+          </span>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {rows.slice(0, 8).map((item, index) => (
+          <div
+            key={item.name}
+            className="flex items-center justify-between gap-3 text-xs"
           >
-            {data.map((entry, index) => (
-              <Cell
-                key={`${entry.name}-${index}`}
-                fill={CHART_COLORS[index % CHART_COLORS.length]}
+            <span className="flex min-w-0 items-center gap-2 text-slate-600">
+              <i
+                className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                style={{ backgroundColor: colors[index % colors.length] }}
               />
-            ))}
-          </Pie>
-          <Tooltip content={<ChartTooltip />} />
-          <Legend
-            verticalAlign="bottom"
-            iconType="circle"
-            formatter={(value) => (
-              <span className="text-xs text-slate-600">{titleCase(value)}</span>
-            )}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-
-      <div className="pointer-events-none absolute left-1/2 top-[44%] -translate-x-1/2 -translate-y-1/2 text-center">
-        <div className="text-2xl font-semibold text-slate-900">
-          {numberFormat.format(total)}
-        </div>
-        <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
-          {centerLabel}
-        </div>
+              <span className="truncate">{titleCase(item.name)}</span>
+            </span>
+            <strong className="text-slate-800">
+              {numberFormat.format(item.value)}
+            </strong>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
 const TrendChart = ({ data = [] }) => {
+  const series = [
+    ["registrations", "Registrations", "#2e66a6"],
+    ["jobs", "Jobs", "#16a36f"],
+    ["applications", "Applications", "#dc9300"],
+    ["hires", "Hires", "#6366f1"],
+  ];
   if (!data.length) return <EmptyChart />;
-
+  const width = 760;
+  const height = 250;
+  const left = 42;
+  const top = 18;
+  const plotWidth = width - left - 18;
+  const plotHeight = height - top - 45;
+  const max = Math.max(
+    1,
+    ...data.flatMap((item) => series.map(([key]) => Number(item[key] || 0))),
+  );
+  const point = (item, index, key) => {
+    const x =
+      left +
+      (data.length === 1
+        ? plotWidth / 2
+        : (index / (data.length - 1)) * plotWidth);
+    const y = top + plotHeight - (Number(item[key] || 0) / max) * plotHeight;
+    return `${x},${y}`;
+  };
   return (
-    <div className="h-[330px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={data}
-          margin={{ top: 10, right: 24, bottom: 5, left: 4 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-          <YAxis
-            yAxisId="count"
-            allowDecimals={false}
-            tick={{ fontSize: 11 }}
+    <div>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-[220px] w-full"
+        role="img"
+        aria-label="Monthly analytics trend chart"
+      >
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const y = top + plotHeight - ratio * plotHeight;
+          return (
+            <g key={ratio}>
+              <line x1={left} y1={y} x2={width - 18} y2={y} stroke="#e2e8f0" />
+              <text
+                x={left - 8}
+                y={y + 4}
+                textAnchor="end"
+                fontSize="10"
+                fill="#64748b"
+              >
+                {Math.round(max * ratio)}
+              </text>
+            </g>
+          );
+        })}
+        {series.map(([key, , color]) => (
+          <polyline
+            key={key}
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points={data
+              .map((item, index) => point(item, index, key))
+              .join(" ")}
           />
-          <YAxis
-            yAxisId="rate"
-            orientation="right"
-            domain={[0, 100]}
-            tick={{ fontSize: 11 }}
-            tickFormatter={(value) => `${value}%`}
-          />
-          <Tooltip content={<ChartTooltip />} />
-          <Legend
-            formatter={(value) => (
-              <span className="text-xs text-slate-600">{value}</span>
-            )}
-          />
-          <Line
-            yAxisId="count"
-            type="monotone"
-            dataKey="applications"
-            name="Applications"
-            stroke="#2e66a6"
-            strokeWidth={3}
-            dot={{ r: 3 }}
-            activeDot={{ r: 5 }}
-            animationDuration={700}
-          />
-          <Line
-            yAxisId="count"
-            type="monotone"
-            dataKey="hires"
-            name="Hires"
-            stroke="#1f9d71"
-            strokeWidth={3}
-            dot={{ r: 3 }}
-            activeDot={{ r: 5 }}
-            animationDuration={700}
-          />
-          <Line
-            yAxisId="rate"
-            type="monotone"
-            dataKey="hireRate"
-            name="Hire Rate (%)"
-            stroke="#d99300"
-            strokeWidth={2}
-            strokeDasharray="6 4"
-            dot={false}
-            animationDuration={700}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+        ))}
+        {data.map((item, index) => {
+          if (
+            data.length > 10 &&
+            index % Math.ceil(data.length / 8) !== 0 &&
+            index !== data.length - 1
+          )
+            return null;
+          const x =
+            left +
+            (data.length === 1
+              ? plotWidth / 2
+              : (index / (data.length - 1)) * plotWidth);
+          return (
+            <text
+              key={`${item.label}-${index}`}
+              x={x}
+              y={height - 10}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#64748b"
+            >
+              {item.label}
+            </text>
+          );
+        })}
+      </svg>
+      <div className="flex flex-wrap justify-center gap-4">
+        {series.map(([, label, color]) => (
+          <span
+            key={label}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600"
+          >
+            <i
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };
 
-const KpiCard = ({
-  label,
-  value,
-  suffix = "",
-  icon: Icon,
-  meta,
-  comparison,
-  inverseComparison = false,
-}) => {
-  const suppressed = Boolean(meta?.suppressed);
-  const renderedValue = suppressed
-    ? "n < 5"
-    : `${typeof value === "number" ? numberFormat.format(value) : value}${suffix}`;
-
-  const hasComparison = Number.isFinite(comparison);
-  const good =
-    hasComparison && (inverseComparison ? comparison <= 0 : comparison >= 0);
-
+const FunnelChart = ({ data = [] }) => {
+  const rows = data.filter((item) => Number(item.value || 0) > 0);
+  const max = Math.max(1, ...rows.map((item) => item.value));
+  if (!rows.length) return <EmptyChart />;
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
-            {renderedValue}
-          </p>
-        </div>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6]">
-          <Icon size={21} />
-        </div>
-      </div>
-
-      <div className="mt-4 min-h-[20px]">
-        {hasComparison ? (
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${
-              good
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-rose-50 text-rose-700"
-            }`}
-          >
-            <TrendingUp
-              size={12}
-              className={comparison < 0 ? "rotate-180" : ""}
-            />
-            {comparison > 0 ? "+" : ""}
-            {percentFormat.format(comparison)}% vs previous period
-          </span>
-        ) : (
-          <span className="text-[11px] text-slate-400">
-            {meta?.sampleSize
-              ? `Sample: ${numberFormat.format(meta.sampleSize)}`
-              : "All Time has no previous-period comparison"}
-          </span>
-        )}
-      </div>
-
-      {meta?.formula ? (
-        <p
-          className="mt-3 line-clamp-2 text-[11px] leading-4 text-slate-400"
-          title={meta.formula}
-        >
-          {meta.formula}
-        </p>
-      ) : null}
+    <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 py-1">
+      {rows.map((item, index) => {
+        const proportionalWidth = (Number(item.value || 0) / max) * 100;
+        const width = Math.max(44, Math.min(100, proportionalWidth));
+        return (
+          <div key={item.name} className="w-full text-center">
+            <div
+              className="mx-auto flex h-8 items-center justify-center rounded-lg px-3 text-xs font-bold text-white shadow-sm"
+              style={{
+                width: `${width}%`,
+                backgroundColor: colors[index % colors.length],
+              }}
+            >
+              <span className="truncate">
+                {titleCase(item.name)} · {numberFormat.format(item.value)}
+              </span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
 
 const MetricTile = ({ label, value, suffix = "", icon: Icon }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
     <div className="flex items-center justify-between gap-3">
       <div>
-        <p className="text-[11px] font-medium text-slate-500">{label}</p>
-        <p className="mt-1.5 text-2xl font-semibold text-slate-900">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+          {label}
+        </p>
+        <p className="mt-1 text-2xl font-extrabold text-slate-800">
           {numberFormat.format(Number(value || 0))}
           {suffix}
         </p>
       </div>
       <div className="rounded-xl bg-[#2e66a6]/10 p-2.5 text-[#2e66a6]">
-        <Icon size={19} />
+        <Icon size={20} />
       </div>
     </div>
   </div>
 );
 
-const SectionTabs = ({ tabs, active, onChange }) => (
-  <div className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1.5">
-    {tabs.map(([key, label]) => (
-      <button
-        type="button"
-        key={key}
-        onClick={() => onChange(key)}
-        className={`shrink-0 rounded-lg px-4 py-2 text-xs font-medium transition ${
-          active === key
-            ? "bg-[#2e66a6] text-white"
-            : "text-slate-600 hover:bg-slate-50"
-        }`}
-      >
-        {label}
-      </button>
-    ))}
-  </div>
-);
-
 const AnalyticsSkeleton = () => (
-  <div className="space-y-4 animate-pulse" aria-label="Loading analytics">
-    <div className="h-44 rounded-2xl border border-slate-200 bg-white" />
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }, (_, index) => (
-        <div
-          key={index}
-          className="h-40 rounded-2xl border border-slate-200 bg-white"
-        />
-      ))}
+  <div
+    className="grid animate-pulse grid-cols-1 gap-4 xl:grid-cols-12"
+    aria-label="Loading analytics charts"
+  >
+    <div className="h-56 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-12">
+      <div className="h-4 w-40 rounded bg-slate-200" />
+      <div className="mt-5 h-36 rounded-xl bg-slate-100" />
     </div>
-    <div className="h-80 rounded-2xl border border-slate-200 bg-white" />
+    <div className="h-60 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-7">
+      <div className="h-4 w-36 rounded bg-slate-200" />
+      <div className="mt-5 space-y-3">
+        {[100, 86, 72, 58].map((width) => (
+          <div
+            key={width}
+            className="mx-auto h-7 rounded-lg bg-slate-100"
+            style={{ width: `${width}%` }}
+          />
+        ))}
+      </div>
+    </div>
+    <div className="h-60 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-5">
+      <div className="h-4 w-32 rounded bg-slate-200" />
+      <div className="mt-5 space-y-3">
+        {["w-full", "w-4/5", "w-3/5", "w-2/5"].map((width) => (
+          <div key={width} className={`h-6 rounded-md bg-slate-100 ${width}`} />
+        ))}
+      </div>
+    </div>
   </div>
 );
 
@@ -949,9 +906,6 @@ const AdminAnalytics = () => {
   const [analytics, setAnalytics] = useState(emptyAnalytics);
   const [filters, setFilters] = useState(initialFilters);
   const [activeTab, setActiveTab] = useState("overview");
-  const [applicationTab, setApplicationTab] = useState("journey");
-  const [jobsTab, setJobsTab] = useState("demand");
-  const [verificationTab, setVerificationTab] = useState("verification");
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -959,6 +913,7 @@ const AdminAnalytics = () => {
   const [exporting, setExporting] = useState(false);
 
   const options = analytics?.filters?.options || {};
+  const kpis = analytics?.kpis || emptyAnalytics.kpis;
   const sections = analytics?.sections || emptyAnalytics.sections;
 
   const requestParams = useMemo(() => {
@@ -978,27 +933,12 @@ const AdminAnalytics = () => {
       const response = await api.get("/admin/analytics", {
         params: requestParams,
       });
-
       setAnalytics({
         ...emptyAnalytics,
         ...(response.data || {}),
-        overview: {
-          ...emptyAnalytics.overview,
-          ...(response.data?.overview || {}),
-        },
         sections: {
-          applications: {
-            ...emptyAnalytics.sections.applications,
-            ...(response.data?.sections?.applications || {}),
-          },
-          jobs: {
-            ...emptyAnalytics.sections.jobs,
-            ...(response.data?.sections?.jobs || {}),
-          },
-          verification: {
-            ...emptyAnalytics.sections.verification,
-            ...(response.data?.sections?.verification || {}),
-          },
+          ...emptyAnalytics.sections,
+          ...(response.data?.sections || {}),
         },
       });
     } catch (err) {
@@ -1019,13 +959,11 @@ const AdminAnalytics = () => {
 
   const updateFilter = (name, value) =>
     setFilters((previous) => ({ ...previous, [name]: value }));
-
   const selectDateFilter = (value) => {
     if (value === "range") {
       setShowCustomDateModal(true);
       return;
     }
-
     setFilters((previous) => ({
       ...previous,
       date: value,
@@ -1034,7 +972,6 @@ const AdminAnalytics = () => {
       endDate: "",
     }));
   };
-
   const applyCustomDateRange = (startDate, endDate) => {
     setFilters((previous) => ({
       ...previous,
@@ -1045,78 +982,40 @@ const AdminAnalytics = () => {
     }));
     setShowCustomDateModal(false);
   };
-
   const resetFilters = () => setFilters(initialFilters);
-  const hasFilters =
-    JSON.stringify(filters) !== JSON.stringify(initialFilters);
+  const hasFilters = JSON.stringify(filters) !== JSON.stringify(initialFilters);
 
   const exportAnalytics = () => {
     try {
       setExporting(true);
       const workbook = XLSX.utils.book_new();
-
-      const appendSheet = (name, rows) => {
-        const data = rows?.length ? rows : [{ Message: "No data" }];
+      const addSheet = (name, rows) =>
         XLSX.utils.book_append_sheet(
           workbook,
-          XLSX.utils.json_to_sheet(data),
+          XLSX.utils.json_to_sheet(
+            rows?.length ? rows : [{ Message: "No data" }],
+          ),
           name.slice(0, 31),
         );
-      };
-
-      appendSheet(
+      addSheet(
         "KPIs",
-        Object.entries(analytics.kpis || {}).map(([metric, value]) => ({
+        Object.entries(kpis).map(([metric, value]) => ({
           Metric: titleCase(metric),
           Value: value,
-          Formula: analytics.kpiMeta?.[metric]?.formula || "",
-          Sample_Size: analytics.kpiMeta?.[metric]?.sampleSize ?? "",
         })),
       );
-
-      appendSheet(
-        "Filters_Applied",
-        Object.entries(analytics.appliedFilters || {}).map(([filter, value]) => ({
-          Filter: titleCase(filter),
-          Value: value || "All",
-        })),
-      );
-
-      appendSheet("Trend", analytics.trends || []);
-      appendSheet("Hiring_Funnel", analytics.overview?.funnel || []);
-      appendSheet(
-        "Top_Industries",
-        analytics.overview?.topIndustriesByHires || [],
-      );
-      appendSheet(
-        "Applications_Before_Hire",
-        sections.applications?.applicationsBeforeHire || [],
-      );
-      appendSheet(
-        "Stage_Durations",
-        sections.applications?.stageDurations || [],
-      );
-      appendSheet(
-        "Dropout_Nodes",
-        sections.applications?.dropoutNodes || [],
-      );
-      appendSheet("Job_Status", sections.jobs?.statuses || []);
-      appendSheet("Demanded_Skills", sections.jobs?.demandedSkills || []);
-      appendSheet(
-        "Verification_Backlog",
-        sections.verification?.backlogAging || [],
-      );
-      appendSheet(
-        "Edit_Requests",
-        sections.verification?.editRequests || [],
-      );
-
+      addSheet("Trends", analytics.trends || []);
+      addSheet("Application Funnel", sections.applications?.funnel || []);
+      addSheet("Job Categories", sections.jobs?.categories || []);
+      addSheet("User Verification", sections.users?.verification || []);
+      addSheet("Messages", sections.operations?.messages || []);
+      addSheet("Notifications", sections.operations?.notifications || []);
+      addSheet("System Modules", sections.operations?.system?.modules || []);
       XLSX.writeFile(
         workbook,
         `admin-analytics-${new Date().toISOString().slice(0, 10)}.xlsx`,
       );
     } catch (err) {
-      console.error("Analytics export error:", err);
       setError("Unable to export analytics data.");
     } finally {
       setExporting(false);
@@ -1125,9 +1024,9 @@ const AdminAnalytics = () => {
 
   const tabs = [
     ["overview", "Overview"],
-    ["applications", "Applications & Offers"],
-    ["jobs", "Posted Jobs"],
-    ["verification", "Verification & Requests"],
+    ["recruitment", "Recruitment"],
+    ["users", "Users & Verification"],
+    ["operations", "Operations"],
   ];
 
   return (
@@ -1135,76 +1034,86 @@ const AdminAnalytics = () => {
       <div className="space-y-4">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">
+            <h1 className="text-xl font-extrabold text-slate-900">
               Admin Analytics
             </h1>
-            <p className="mt-1 max-w-3xl text-sm leading-5 text-slate-500">
-              Filter-reactive institutional analytics for users, applications,
-              job demand, hiring outcomes, verification, and administrative
-              requests.
+            <p className="text-xs text-slate-500">
+              Compact system-wide analysis of users, jobs, applications,
+              verification, engagement, and operations.
             </p>
           </div>
-
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={fetchAnalytics}
               disabled={loading}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-60"
             >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              <RefreshCw size={14} />{" "}
               Refresh
             </button>
-
             <button
               type="button"
               onClick={exportAnalytics}
               disabled={loading || exporting}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-semibold text-white transition hover:bg-[#255487] disabled:opacity-60"
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60"
             >
-              <Download size={14} />
-              {exporting ? "Exporting..." : "Export XLSX"}
+              <Download size={14} /> {exporting ? "Exporting..." : "Export"}
             </button>
           </div>
         </header>
 
         {error ? (
-          <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <span>{error}</span>
-            <button
-              type="button"
-              onClick={() => setError("")}
-              aria-label="Close message"
-            >
-              <X size={16} />
-            </button>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
           </div>
         ) : null}
 
-        {/* GLOBAL FILTER PANEL - intentionally above the KPI bar */}
-        <section className="sticky top-0 z-30 rounded-2xl border border-slate-200 bg-white/95 p-4 backdrop-blur">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <Filter size={16} className="text-[#2e66a6]" />
-                Global Filter Panel
-              </div>
-              <p className="mt-0.5 text-xs text-slate-500">
-                One filter state drives the KPI cards, charts, and export.
-              </p>
-            </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Users"
+            value={kpis.totalUsers}
+            imageSrc={statCardImages.users}
+          />
+          <StatCard
+            label="Active Jobs"
+            value={kpis.activeJobs}
+            imageSrc={statCardImages.jobs}
+          />
+          <StatCard
+            label="Applications"
+            value={kpis.applications}
+            imageSrc={statCardImages.applications}
+          />
+          <StatCard
+            label="Hired"
+            value={kpis.hired}
+            imageSrc={statCardImages.hired}
+          />
+          <StatCard
+            label="Hire Rate"
+            value={kpis.hireRate}
+            suffix="%"
+            imageSrc={statCardImages.rate}
+          />
+          <StatCard
+            label="Pending Verification"
+            value={kpis.pendingVerification}
+            imageSrc={statCardImages.verification}
+          />
+          <StatCard
+            label="Unread Messages"
+            value={kpis.unreadMessages}
+            imageSrc={statCardImages.messages}
+          />
+          <StatCard
+            label="System Failures"
+            value={kpis.systemFailures}
+            imageSrc={statCardImages.failures}
+          />
+        </div>
 
-            <button
-              type="button"
-              onClick={resetFilters}
-              disabled={!hasFilters}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <RefreshCw size={13} />
-              Reset
-            </button>
-          </div>
-
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
             <DateFilterDropdown
               value={filters.date}
@@ -1213,9 +1122,8 @@ const AdminAnalytics = () => {
               onSelect={selectDateFilter}
               disabled={loading}
             />
-
             <label className="block">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+              <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
                 Date Based On
               </span>
               <select
@@ -1223,54 +1131,34 @@ const AdminAnalytics = () => {
                 onChange={(event) =>
                   updateFilter("dateField", event.target.value)
                 }
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
               >
                 <option value="primary">Primary Event Date</option>
                 <option value="created">Record Created</option>
                 <option value="outcome">Outcome / Updated Date</option>
               </select>
             </label>
-
             {filters.date === "specific" ? (
-              <label className="block">
-                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
-                  Specific Date
-                </span>
-                <input
-                  type="date"
-                  value={filters.specificDate}
-                  onChange={(event) =>
-                    updateFilter("specificDate", event.target.value)
-                  }
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                />
-              </label>
+              <DateInput
+                label="Specific Date"
+                value={filters.specificDate}
+                onChange={(value) => updateFilter("specificDate", value)}
+              />
             ) : null}
-
+            <FilterSelect
+              label="Role"
+              value={filters.role}
+              onChange={(value) => updateFilter("role", value)}
+              values={options.roles}
+              allLabel="All Roles"
+            />
             <FilterSelect
               label="Campus"
               value={filters.campus}
               onChange={(value) => updateFilter("campus", value)}
               values={options.campuses}
-              allLabel="All Campus"
+              allLabel="All Campuses"
             />
-
-            <FilterSelect
-              label="Year Graduated"
-              value={filters.yearGraduated}
-              onChange={(value) => updateFilter("yearGraduated", value)}
-              values={options.yearsGraduated}
-              allLabel="All Batch"
-            />
-
-            <FilterSelect
-              label="Course / Program"
-              value={filters.course}
-              onChange={(value) => updateFilter("course", value)}
-              values={options.courses}
-              allLabel="All Programs"
-            />
-
             <FilterSelect
               label="Application Status"
               value={filters.applicationStatus}
@@ -1278,25 +1166,17 @@ const AdminAnalytics = () => {
               values={options.applicationStatuses}
               allLabel="All Application Statuses"
             />
-
             <FilterSelect
-              label="Job Status"
-              value={filters.jobStatus}
-              onChange={(value) => updateFilter("jobStatus", value)}
-              values={options.jobStatuses}
-              allLabel="All Job Statuses"
+              label="Job Type"
+              value={filters.jobType}
+              onChange={(value) => updateFilter("jobType", value)}
+              values={options.jobTypes}
+              allLabel="All Job Types"
             />
           </div>
 
           {showMoreFilters ? (
-            <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-              <FilterSelect
-                label="User Role"
-                value={filters.role}
-                onChange={(value) => updateFilter("role", value)}
-                values={options.roles}
-                allLabel="Job Seeker & Employer"
-              />
+            <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
               <FilterSelect
                 label="User Status"
                 value={filters.userStatus}
@@ -1307,32 +1187,23 @@ const AdminAnalytics = () => {
               <FilterSelect
                 label="Verification"
                 value={filters.verificationStatus}
-                onChange={(value) =>
-                  updateFilter("verificationStatus", value)
-                }
+                onChange={(value) => updateFilter("verificationStatus", value)}
                 values={options.verificationStatuses}
                 allLabel="All Verification Statuses"
               />
               <FilterSelect
-                label="Industry / Sector"
-                value={filters.industry}
-                onChange={(value) => updateFilter("industry", value)}
-                values={options.industries}
-                allLabel="All Industries"
+                label="Job Status"
+                value={filters.jobStatus}
+                onChange={(value) => updateFilter("jobStatus", value)}
+                values={options.jobStatuses}
+                allLabel="All Job Statuses"
               />
               <FilterSelect
-                label="Job Category"
+                label="Category"
                 value={filters.category}
                 onChange={(value) => updateFilter("category", value)}
                 values={options.categories}
                 allLabel="All Categories"
-              />
-              <FilterSelect
-                label="Job Type"
-                value={filters.jobType}
-                onChange={(value) => updateFilter("jobType", value)}
-                values={options.jobTypes}
-                allLabel="All Job Types"
               />
               <FilterSelect
                 label="Work Mode"
@@ -1342,20 +1213,6 @@ const AdminAnalytics = () => {
                 allLabel="All Work Modes"
               />
               <FilterSelect
-                label="Education Required"
-                value={filters.educationLevel}
-                onChange={(value) => updateFilter("educationLevel", value)}
-                values={options.educationLevels}
-                allLabel="All Education Levels"
-              />
-              <FilterSelect
-                label="Experience Required"
-                value={filters.experienceLevel}
-                onChange={(value) => updateFilter("experienceLevel", value)}
-                values={options.experienceLevels}
-                allLabel="All Experience Levels"
-              />
-              <FilterSelect
                 label="Company"
                 value={filters.company}
                 onChange={(value) => updateFilter("company", value)}
@@ -1363,649 +1220,318 @@ const AdminAnalytics = () => {
                 allLabel="All Companies"
               />
               <FilterSelect
-                label="Skill"
-                value={filters.skill}
-                onChange={(value) => updateFilter("skill", value)}
-                values={options.skills}
-                allLabel="All Skills"
-              />
-              <FilterSelect
-                label="Certification"
-                value={filters.certification}
-                onChange={(value) => updateFilter("certification", value)}
-                values={options.certifications}
-                allLabel="All Certifications"
-              />
-              <FilterSelect
-                label="Edit Request Status"
+                label="Edit Request"
                 value={filters.editRequestStatus}
-                onChange={(value) =>
-                  updateFilter("editRequestStatus", value)
-                }
+                onChange={(value) => updateFilter("editRequestStatus", value)}
                 values={options.editRequestStatuses}
-                allLabel="All Edit Request Statuses"
+                allLabel="All Edit Requests"
+              />
+              <FilterSelect
+                label="Message Type"
+                value={filters.messageType}
+                onChange={(value) => updateFilter("messageType", value)}
+                values={options.messageTypes}
+                allLabel="All Message Types"
+              />
+              <FilterSelect
+                label="Notification Type"
+                value={filters.notificationType}
+                onChange={(value) => updateFilter("notificationType", value)}
+                values={options.notificationTypes}
+                allLabel="All Notification Types"
+              />
+              <FilterSelect
+                label="Log Status"
+                value={filters.logStatus}
+                onChange={(value) => updateFilter("logStatus", value)}
+                values={options.logStatuses}
+                allLabel="All Log Statuses"
+              />
+              <FilterSelect
+                label="Log Module"
+                value={filters.logModule}
+                onChange={(value) => updateFilter("logModule", value)}
+                values={options.logModules}
+                allLabel="All Log Modules"
               />
             </div>
           ) : null}
 
-          <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
+          <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-3">
             <button
               type="button"
               onClick={() => setShowMoreFilters((value) => !value)}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-medium text-[#2e66a6] transition hover:bg-[#2e66a6]/10"
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10"
             >
               <Filter size={13} />
-              {showMoreFilters ? "Hide More Filters" : "More Filters"}
+              {showMoreFilters ? "Hide Filters" : "More Filters"}
+            </button>
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!hasFilters}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw size={13} />
+              Clear All
             </button>
           </div>
         </section>
 
-        {loading ? (
-          <AnalyticsSkeleton />
-        ) : (
-          <>
-            {/* KPI BAR - intentionally below the global filters */}
-            <section>
-              <div className="mb-3 flex items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-semibold text-slate-900">
-                    Key Performance Indicators
-                  </h2>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Dynamic K1–K6 metrics recalculated using the current filter
-                    scope.
-                  </p>
-                </div>
-                <span className="text-[11px] text-slate-400">
-                  Small groups use n &lt; {analytics.privacyThreshold || 5}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <KpiCard
-                  label="Registered Users"
-                  value={analytics.kpis.registeredUsers}
-                  icon={UsersRound}
-                  meta={analytics.kpiMeta.registeredUsers}
-                  comparison={analytics.kpiComparison.registeredUsers}
-                />
-                <KpiCard
-                  label="Active Jobs"
-                  value={analytics.kpis.activeJobs}
-                  icon={BriefcaseBusiness}
-                  meta={analytics.kpiMeta.activeJobs}
-                  comparison={analytics.kpiComparison.activeJobs}
-                />
-                <KpiCard
-                  label="Applications"
-                  value={analytics.kpis.applications}
-                  icon={BarChart3}
-                  meta={analytics.kpiMeta.applications}
-                  comparison={analytics.kpiComparison.applications}
-                />
-                <KpiCard
-                  label="Hired Applicants"
-                  value={analytics.kpis.hired}
-                  icon={UserRoundCheck}
-                  meta={analytics.kpiMeta.hired}
-                  comparison={analytics.kpiComparison.hired}
-                />
-                <KpiCard
-                  label="Hire Rate"
-                  value={analytics.kpis.hireRate}
-                  suffix="%"
-                  icon={Target}
-                  meta={analytics.kpiMeta.hireRate}
-                  comparison={analytics.kpiComparison.hireRate}
-                />
-                <KpiCard
-                  label="Average Time-to-Hire"
-                  value={analytics.kpis.avgTimeToHireDays}
-                  suffix=" days"
-                  icon={Clock3}
-                  meta={analytics.kpiMeta.avgTimeToHireDays}
-                  comparison={analytics.kpiComparison.avgTimeToHireDays}
-                  inverseComparison
-                />
-              </div>
-            </section>
-
-            <nav
-              className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2"
-              aria-label="Analytics sections"
+        <nav
+          className="flex gap-6 overflow-x-auto border-b border-slate-200"
+          aria-label="Analytics sections"
+        >
+          {tabs.map(([key, label]) => (
+            <button
+              type="button"
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`shrink-0 border-b-2 px-1 pb-3 text-xs font-bold transition ${activeTab === key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"}`}
             >
-              {tabs.map(([key, label]) => (
-                <button
-                  type="button"
-                  key={key}
-                  onClick={() => setActiveTab(key)}
-                  className={`shrink-0 rounded-xl px-4 py-2.5 text-xs font-medium transition ${
-                    activeTab === key
-                      ? "bg-[#2e66a6] text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </nav>
+              {label}
+            </button>
+          ))}
+        </nav>
 
-            {activeTab === "overview" ? (
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-                <ChartCard
-                  title="Applications & Hires Trend"
-                  subtitle="Shows submitted applications, hires, and hire rate over time so placement movement is easy to see."
-                  className="xl:col-span-12"
-                >
-                  <TrendChart data={analytics.trends} />
-                </ChartCard>
+        {loading ? <div className="min-h-[420px] w-full bg-white" aria-hidden="true" /> : null}
 
-                <ChartCard
-                  title="Hiring Funnel"
-                  subtitle="Shows where applicants are currently concentrated or leaving the recruitment pipeline."
-                  className="xl:col-span-7"
-                >
-                  <HorizontalBarChart
-                    data={analytics.overview.funnel}
-                    valueLabel="Applications"
-                    height={330}
-                  />
-                </ChartCard>
+        {!loading && activeTab === "overview" ? (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <ChartCard
+              title="System Activity Trend"
+              subtitle="Registrations, jobs, applications, and hires by month"
+              className="xl:col-span-12"
+            >
+              <TrendChart data={analytics.trends} />
+            </ChartCard>
+            <ChartCard
+              title="Application Funnel"
+              subtitle="Current recruitment outcome distribution"
+              className="xl:col-span-7"
+            >
+              <FunnelChart data={sections.applications?.funnel} />
+            </ChartCard>
+            <ChartCard
+              title="Top Job Categories"
+              subtitle="Jobs grouped by category"
+              className="xl:col-span-5"
+            >
+              <HorizontalBars data={sections.jobs?.categories} />
+            </ChartCard>
+            <ChartCard
+              title="User Roles"
+              subtitle="Admin, employer, and jobseeker accounts"
+              className="xl:col-span-6"
+            >
+              <DonutChart data={sections.users?.roles} />
+            </ChartCard>
+            <ChartCard
+              title="Job Status"
+              subtitle="Lifecycle state of job postings"
+              className="xl:col-span-6"
+            >
+              <DonutChart data={sections.jobs?.statuses} />
+            </ChartCard>
+          </div>
+        ) : null}
 
-                <ChartCard
-                  title="Top Industries by Hires"
-                  subtitle="Shows which employer sectors are absorbing the most graduates under the current filters."
-                  className="xl:col-span-5"
-                >
-                  <HorizontalBarChart
-                    data={analytics.overview.topIndustriesByHires}
-                    valueLabel="Hires"
-                    height={330}
-                  />
-                </ChartCard>
-              </div>
-            ) : null}
-
-            {activeTab === "applications" ? (
-              <div className="space-y-4">
-                <SectionTabs
-                  tabs={[
-                    ["journey", "Journey"],
-                    ["behaviour", "Behaviour"],
-                    ["speed", "Speed"],
-                    ["dropouts", "Drop-outs"],
-                  ]}
-                  active={applicationTab}
-                  onChange={setApplicationTab}
+        {!loading && activeTab === "recruitment" ? (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <ChartCard
+              title="Application Funnel"
+              subtitle="Pending through final outcome"
+              className="xl:col-span-7"
+            >
+              <FunnelChart data={sections.applications?.funnel} />
+            </ChartCard>
+            <ChartCard
+              title="Employment Type"
+              subtitle="Job supply grouped by employment type"
+              className="xl:col-span-5"
+            >
+              <HorizontalBars data={sections.jobs?.employmentTypes} />
+            </ChartCard>
+            <ChartCard
+              title="Work Mode"
+              subtitle="On-site, remote, blended, and work from home"
+              className="xl:col-span-6"
+            >
+              <DonutChart data={sections.jobs?.workModes} />
+            </ChartCard>
+            <ChartCard
+              title="Employment Status"
+              subtitle="Status recorded for hired applicants"
+              className="xl:col-span-6"
+            >
+              <HorizontalBars data={sections.applications?.employmentStatus} />
+            </ChartCard>
+            <ChartCard
+              title="Recruitment KPIs"
+              subtitle="Capacity, attention, and conversion"
+              className="xl:col-span-12"
+            >
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <MetricTile
+                  label="Total Vacancies"
+                  value={sections.jobs?.totalVacancies}
+                  icon={BriefcaseBusiness}
                 />
-
-                {applicationTab === "journey" ? (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <MetricTile
-                        label="Median Time-to-Hire"
-                        value={sections.applications.metrics?.medianTimeToHireDays}
-                        suffix=" days"
-                        icon={Clock3}
-                      />
-                      <MetricTile
-                        label="P75 Time-to-Hire"
-                        value={sections.applications.metrics?.p75TimeToHireDays}
-                        suffix=" days"
-                        icon={Activity}
-                      />
-                      <MetricTile
-                        label="Interview Rate"
-                        value={sections.applications.metrics?.interviewRate}
-                        suffix="%"
-                        icon={UserRoundCheck}
-                      />
-                      <MetricTile
-                        label="Withdrawal Rate"
-                        value={sections.applications.metrics?.withdrawalRate}
-                        suffix="%"
-                        icon={TrendingUp}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 xl:grid-cols-12">
-                      <ChartCard
-                        title="Applicant Journey Funnel"
-                        subtitle="Pending through final outcomes, using the same application-status definitions as the analytics plan."
-                        className="xl:col-span-7"
-                      >
-                        <HorizontalBarChart
-                          data={sections.applications.funnel}
-                          valueLabel="Applications"
-                          height={330}
-                        />
-                      </ChartCard>
-
-                      <ChartCard
-                        title="Employment Status of Hires"
-                        subtitle="Current active or inactive employment state for applicants already marked as hired."
-                        className="xl:col-span-5"
-                      >
-                        <DonutChart
-                          data={sections.applications.employmentStatus}
-                          centerLabel="Hired"
-                        />
-                      </ChartCard>
-                    </div>
-                  </>
-                ) : null}
-
-                {applicationTab === "behaviour" ? (
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <ChartCard
-                      title="Applications Before First Hire"
-                      subtitle="Answers how many applications a job seeker submitted before reaching the first hired outcome."
-                    >
-                      <HorizontalBarChart
-                        data={sections.applications.applicationsBeforeHire}
-                        valueLabel="Job Seekers"
-                        height={330}
-                      />
-                    </ChartCard>
-
-                    <ChartCard
-                      title="Advertised Salary Band of Hires"
-                      subtitle="Uses the midpoint of the job's advertised salary range because actual offered salary is not stored in the current schema."
-                    >
-                      <HorizontalBarChart
-                        data={sections.applications.salaryBands}
-                        valueLabel="Hires"
-                        height={330}
-                      />
-                    </ChartCard>
-                  </div>
-                ) : null}
-
-                {applicationTab === "speed" ? (
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <ChartCard
-                      title="Stage Duration Profile"
-                      subtitle="Median calendar days spent from application to first action, interview to decision, and total process time."
-                    >
-                      <HorizontalBarChart
-                        data={sections.applications.stageDurations}
-                        valueLabel="Median Days"
-                        valueSuffix=" days"
-                        height={290}
-                      />
-                    </ChartCard>
-
-                    <ChartCard
-                      title="Employer Responsiveness"
-                      subtitle="Employers with the longest median days from application submission to the first recorded employer action."
-                    >
-                      <HorizontalBarChart
-                        data={sections.applications.employerResponsiveness}
-                        valueLabel="Median Days"
-                        valueSuffix=" days"
-                        height={330}
-                      />
-                    </ChartCard>
-                  </div>
-                ) : null}
-
-                {applicationTab === "dropouts" ? (
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <ChartCard
-                      title="Drop-out Node Breakdown"
-                      subtitle="Shows where non-hired applications leave or stall in the recruitment journey."
-                    >
-                      <HorizontalBarChart
-                        data={sections.applications.dropoutNodes}
-                        valueLabel="Applications"
-                        height={340}
-                      />
-                    </ChartCard>
-
-                    <ChartCard
-                      title="Top Decline Reasons"
-                      subtitle="Ranks the currently stored employer decline reasons. Free-text reasons may still require future standardisation."
-                    >
-                      <HorizontalBarChart
-                        data={sections.applications.declineReasons}
-                        valueLabel="Declined Applications"
-                        height={340}
-                      />
-                    </ChartCard>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            {activeTab === "jobs" ? (
-              <div className="space-y-4">
-                <SectionTabs
-                  tabs={[
-                    ["demand", "Demand & Health"],
-                    ["requirements", "Requirements"],
-                    ["skills", "Skills & Salary"],
-                  ]}
-                  active={jobsTab}
-                  onChange={setJobsTab}
+                <MetricTile
+                  label="Job Views"
+                  value={sections.jobs?.totalViews}
+                  icon={Activity}
                 />
-
-                {jobsTab === "demand" ? (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <MetricTile
-                        label="Total Vacancies"
-                        value={sections.jobs.metrics?.totalVacancies}
-                        icon={BriefcaseBusiness}
-                      />
-                      <MetricTile
-                        label="Applications / Job"
-                        value={sections.jobs.metrics?.applicationsPerJob}
-                        icon={BarChart3}
-                      />
-                      <MetricTile
-                        label="View-to-Application"
-                        value={sections.jobs.metrics?.viewToApplicationRate}
-                        suffix="%"
-                        icon={Target}
-                      />
-                      <MetricTile
-                        label="Median Time-to-Fill"
-                        value={sections.jobs.metrics?.medianTimeToFillDays}
-                        suffix=" days"
-                        icon={Clock3}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <ChartCard
-                        title="Job Status"
-                        subtitle="Derived job lifecycle state using status, publish state, archive state, activity, and application deadline."
-                      >
-                        <DonutChart
-                          data={sections.jobs.statuses}
-                          centerLabel="Jobs"
-                        />
-                      </ChartCard>
-
-                      <ChartCard
-                        title="Jobs by Category"
-                        subtitle="Current job supply grouped by job category under the active global filters."
-                      >
-                        <HorizontalBarChart
-                          data={sections.jobs.categories}
-                          valueLabel="Jobs"
-                          height={320}
-                        />
-                      </ChartCard>
-                    </div>
-                  </>
-                ) : null}
-
-                {jobsTab === "requirements" ? (
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <ChartCard
-                      title="Job Type Mix"
-                      subtitle="Distribution of Full-time, Part-time, Contractual, Permanent, and legacy unspecified postings."
-                    >
-                      <HorizontalBarChart
-                        data={sections.jobs.jobTypes}
-                        valueLabel="Jobs"
-                        height={300}
-                      />
-                    </ChartCard>
-
-                    <ChartCard
-                      title="Work Mode Mix"
-                      subtitle="Distribution of On-site, Remote, Blended, and Work from Home jobs."
-                    >
-                      <HorizontalBarChart
-                        data={sections.jobs.workModes}
-                        valueLabel="Jobs"
-                        height={300}
-                      />
-                    </ChartCard>
-
-                    <ChartCard
-                      title="Education Requirement"
-                      subtitle="Canonical education levels so legacy Bachelor, Master, and Doctorate labels do not split the counts."
-                    >
-                      <HorizontalBarChart
-                        data={sections.jobs.educationLevels}
-                        valueLabel="Jobs"
-                        height={300}
-                      />
-                    </ChartCard>
-
-                    <ChartCard
-                      title="Experience Requirement"
-                      subtitle="Legacy experience values are grouped into the five analytics-plan buckets."
-                    >
-                      <HorizontalBarChart
-                        data={sections.jobs.experienceLevels}
-                        valueLabel="Jobs"
-                        height={300}
-                      />
-                    </ChartCard>
-                  </div>
-                ) : null}
-
-                {jobsTab === "skills" ? (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <MetricTile
-                        label="Applications / Vacancy"
-                        value={sections.jobs.metrics?.applicationsPerVacancy}
-                        icon={Activity}
-                      />
-                      <MetricTile
-                        label="Fill Rate"
-                        value={sections.jobs.metrics?.fillRate}
-                        suffix="%"
-                        icon={CheckCircle2}
-                      />
-                      <MetricTile
-                        label="Salary Transparency"
-                        value={sections.jobs.metrics?.salaryTransparencyRate}
-                        suffix="%"
-                        icon={ShieldCheck}
-                      />
-                      <MetricTile
-                        label="Fresh Graduate Open"
-                        value={sections.jobs.metrics?.freshGraduateOpenRate}
-                        suffix="%"
-                        icon={GraduationCap}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <ChartCard
-                        title="Top Demanded Skills"
-                        subtitle="Counts how frequently each required skill appears in job postings within the current scope."
-                      >
-                        <HorizontalBarChart
-                          data={sections.jobs.demandedSkills}
-                          valueLabel="Jobs Requiring Skill"
-                          height={360}
-                        />
-                      </ChartCard>
-
-                      <ChartCard
-                        title="Salary Visibility"
-                        subtitle="Compares job postings that show an advertised salary with postings that hide it."
-                      >
-                        <DonutChart
-                          data={sections.jobs.salaryVisibility}
-                          centerLabel="Jobs"
-                        />
-                      </ChartCard>
-                    </div>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-
-            {activeTab === "verification" ? (
-              <div className="space-y-4">
-                <SectionTabs
-                  tabs={[
-                    ["verification", "Verification"],
-                    ["requests", "Requests"],
-                  ]}
-                  active={verificationTab}
-                  onChange={setVerificationTab}
+                <MetricTile
+                  label="Interview Rate"
+                  value={sections.applications?.interviewRate}
+                  suffix="%"
+                  icon={UserRoundCheck}
                 />
-
-                {verificationTab === "verification" ? (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <MetricTile
-                        label="Pending / Hold Backlog"
-                        value={sections.verification.metrics?.pendingBacklog}
-                        icon={ShieldCheck}
-                      />
-                      <MetricTile
-                        label="Email OTP Requests"
-                        value={sections.verification.metrics?.emailRequests}
-                        icon={Activity}
-                      />
-                      <MetricTile
-                        label="Email Verified"
-                        value={sections.verification.metrics?.emailVerified}
-                        icon={CheckCircle2}
-                      />
-                      <MetricTile
-                        label="Email Completion"
-                        value={sections.verification.metrics?.emailCompletionRate}
-                        suffix="%"
-                        icon={Target}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <ChartCard
-                        title="Verification Status"
-                        subtitle="Overall verification state for job seekers and employers, using canonical Verified, Declined, Pending, Hold, and Not Submitted labels."
-                      >
-                        <DonutChart
-                          data={sections.verification.statuses}
-                          centerLabel="Users"
-                        />
-                      </ChartCard>
-
-                      <ChartCard
-                        title="Verification Backlog Aging"
-                        subtitle="Pending and Hold verification records grouped by the age of the earliest uploaded document."
-                      >
-                        <HorizontalBarChart
-                          data={sections.verification.backlogAging}
-                          valueLabel="Users"
-                          height={290}
-                        />
-                      </ChartCard>
-
-                      <ChartCard
-                        title="Registration Verification by Role"
-                        subtitle="Email registration OTP records grouped by job seeker and employer role."
-                      >
-                        <HorizontalBarChart
-                          data={sections.verification.registrationByRole}
-                          valueLabel="Requests"
-                          height={260}
-                        />
-                      </ChartCard>
-                    </div>
-                  </>
-                ) : null}
-
-                {verificationTab === "requests" ? (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      <MetricTile
-                        label="Edit Request Approval"
-                        value={sections.verification.metrics?.editRequestApprovalRate}
-                        suffix="%"
-                        icon={CheckCircle2}
-                      />
-                      <MetricTile
-                        label="Edit Request Turnaround"
-                        value={
-                          sections.verification.metrics
-                            ?.editRequestMedianTurnaroundDays
-                        }
-                        suffix=" days"
-                        icon={Clock3}
-                      />
-                      <MetricTile
-                        label="Employment Request Turnaround"
-                        value={
-                          sections.verification.metrics
-                            ?.employmentRequestMedianTurnaroundDays
-                        }
-                        suffix=" days"
-                        icon={Clock3}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <ChartCard
-                        title="Job Edit Request Outcomes"
-                        subtitle="Pending, Approved, Rejected, and Expired job edit requests."
-                      >
-                        <DonutChart
-                          data={sections.verification.editRequests}
-                          centerLabel="Requests"
-                        />
-                      </ChartCard>
-
-                      <ChartCard
-                        title="Most Requested Job Sections"
-                        subtitle="Shows which parts of published job posts employers most often request to unlock for editing."
-                      >
-                        <HorizontalBarChart
-                          data={sections.verification.editRequestSections}
-                          valueLabel="Requests"
-                          height={320}
-                        />
-                      </ChartCard>
-
-                      <ChartCard
-                        title="Employment Status Requests"
-                        subtitle="Current outcomes of hired-applicant employment status requests, including pending, approved, declined, and no-response states."
-                      >
-                        <DonutChart
-                          data={sections.verification.employmentRequests}
-                          centerLabel="Requests"
-                        />
-                      </ChartCard>
-                    </div>
-                  </>
-                ) : null}
+                <MetricTile
+                  label="Hire Rate"
+                  value={sections.applications?.hireRate}
+                  suffix="%"
+                  icon={CheckCircle2}
+                />
               </div>
-            ) : null}
+            </ChartCard>
+          </div>
+        ) : null}
 
-            <footer className="flex flex-col gap-1 border-t border-slate-200 pt-3 text-[11px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-              <span>
-                Timezone: {analytics.timezone || "Asia/Manila"} · Small-group
-                threshold: n &lt; {analytics.privacyThreshold || 5}
-              </span>
-              <span>
-                Last updated:{" "}
-                {analytics.generatedAt
-                  ? new Date(analytics.generatedAt).toLocaleString("en-PH")
-                  : "—"}
-              </span>
-            </footer>
-          </>
-        )}
+        {!loading && activeTab === "users" ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartCard
+              title="Verification Status"
+              subtitle="Employer and jobseeker verification state"
+            >
+              <HorizontalBars data={sections.users?.verification} />
+            </ChartCard>
+            <ChartCard
+              title="Jobseekers by Campus"
+              subtitle="Campus distribution from jobseeker profiles"
+            >
+              <HorizontalBars data={sections.users?.campuses} />
+            </ChartCard>
+            <ChartCard
+              title="Account Status"
+              subtitle="Active, inactive, suspended, and pending users"
+            >
+              <DonutChart data={sections.users?.statuses} />
+            </ChartCard>
+            <ChartCard
+              title="Email Registration Verification"
+              subtitle="Pending email records are subject to TTL cleanup"
+            >
+              <div className="grid gap-3 sm:grid-cols-3">
+                <MetricTile
+                  label="OTP Requests"
+                  value={sections.verification?.emailRequests}
+                  icon={Mail}
+                />
+                <MetricTile
+                  label="Verified"
+                  value={sections.verification?.emailVerified}
+                  icon={CheckCircle2}
+                />
+                <MetricTile
+                  label="Completion"
+                  value={sections.verification?.emailCompletionRate}
+                  suffix="%"
+                  icon={UserRoundCheck}
+                />
+              </div>
+            </ChartCard>
+          </div>
+        ) : null}
+
+        {!loading && activeTab === "operations" ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartCard
+              title="Job Edit Requests"
+              subtitle="Governance requests by status"
+            >
+              <HorizontalBars data={sections.operations?.editRequests} />
+            </ChartCard>
+            <ChartCard
+              title="Most Requested Job Sections"
+              subtitle="Sections employers request to edit"
+            >
+              <HorizontalBars data={sections.operations?.editRequestSections} />
+            </ChartCard>
+            <ChartCard
+              title="Message Types"
+              subtitle="Conversation activity without exposing message content"
+            >
+              <HorizontalBars data={sections.operations?.messages} />
+            </ChartCard>
+            <ChartCard
+              title="Message Read State"
+              subtitle="Read and unread messages"
+            >
+              <DonutChart data={sections.operations?.messageRead} />
+            </ChartCard>
+            <ChartCard
+              title="Notification Types"
+              subtitle="System notifications by workflow"
+            >
+              <HorizontalBars data={sections.operations?.notifications} />
+            </ChartCard>
+            <ChartCard
+              title="Notification State"
+              subtitle="Read, unread, and archived counts"
+            >
+              <DonutChart data={sections.operations?.notificationRead} />
+            </ChartCard>
+            <ChartCard
+              title="System Reliability"
+              subtitle="Log outcome and request performance"
+            >
+              <HorizontalBars data={sections.operations?.system?.statuses} />
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <MetricTile
+                  label="P95 Duration"
+                  value={sections.operations?.system?.p95DurationMs}
+                  suffix=" ms"
+                  icon={Activity}
+                />
+                <MetricTile
+                  label="Server Errors"
+                  value={sections.operations?.system?.serverErrors}
+                  icon={ShieldAlert}
+                />
+              </div>
+            </ChartCard>
+            <ChartCard
+              title="System Log Modules"
+              subtitle="Modules generating the most audit events"
+              className="lg:col-span-2"
+            >
+              <HorizontalBars
+                data={sections.operations?.system?.modules}
+                maxItems={10}
+              />
+            </ChartCard>
+          </div>
+        ) : null}
+
+        {!loading ? (
+          <p className="text-right text-[10px] text-slate-400">
+            Timezone: Asia/Manila · Last updated:{" "}
+            {analytics.generatedAt
+              ? new Date(analytics.generatedAt).toLocaleString("en-PH")
+              : "—"}
+          </p>
+        ) : null}
+
+        <CustomDateRangeModal
+          open={showCustomDateModal}
+          startDate={filters.startDate}
+          endDate={filters.endDate}
+          onCancel={() => setShowCustomDateModal(false)}
+          onApply={applyCustomDateRange}
+        />
       </div>
-
-      <CustomDateRangeModal
-        open={showCustomDateModal}
-        startDate={filters.startDate}
-        endDate={filters.endDate}
-        onCancel={() => setShowCustomDateModal(false)}
-        onApply={applyCustomDateRange}
-      />
     </main>
   );
 };

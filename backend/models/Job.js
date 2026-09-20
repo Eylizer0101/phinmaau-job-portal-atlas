@@ -313,8 +313,5 @@ jobSchema.index({ title: 'text', description: 'text', category: 'text' });
 jobSchema.index({ employer: 1, createdAt: -1 });
 jobSchema.index({ isActive: 1, isPublished: 1 });
 jobSchema.index({ employer: 1, isArchived: 1, createdAt: -1 });
-jobSchema.index({ publishedAt: -1 });
-jobSchema.index({ status: 1, isPublished: 1, isActive: 1 });
-jobSchema.index({ applicationDeadline: 1 });
 
 module.exports = mongoose.model('Job', jobSchema);

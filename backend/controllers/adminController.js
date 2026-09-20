@@ -1141,7 +1141,6 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
 // ADMIN ANALYTICS PAGE
 // ==========================
 const ANALYTICS_MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
-const ANALYTICS_PRIVACY_THRESHOLD = 5;
 
 const analyticsText = (value) => String(value ?? '').trim();
 const analyticsLower = (value) => analyticsText(value).toLowerCase();
@@ -1260,21 +1259,10 @@ const getAdminAnalyticsDateRange = ({ preset, specificDate, startDate, endDate }
       if (start <= end) return { start, end, label: 'Date Range' };
     }
   }
-  return { start: null, end: null, label: 'All Time' };
-};
-
-const analyticsPreviousRange = (range) => {
-  if (!range?.start || !range?.end) return null;
-  const span = range.end.getTime() - range.start.getTime() + 1;
-  return {
-    start: new Date(range.start.getTime() - span),
-    end: new Date(range.start.getTime() - 1),
-    label: 'Previous Period',
-  };
+  return { start: null, end: null, label: 'Overall' };
 };
 
 const analyticsInRange = (value, range) => {
-  if (!range?.start && !range?.end) return true;
   const date = value ? new Date(value) : null;
   if (!date || Number.isNaN(date.getTime())) return false;
   if (range.start && date < range.start) return false;
@@ -1285,56 +1273,18 @@ const analyticsInRange = (value, range) => {
 const analyticsDateFor = (type, record, dateField) => {
   if (dateField === 'created') return record?.createdAt;
   if (dateField === 'outcome') {
-    if (type === 'job') return record?.filledAt || record?.archivedAt || record?.updatedAt || record?.publishedAt || record?.createdAt;
+    if (type === 'job') return record?.filledAt || record?.archivedAt || record?.updatedAt || record?.createdAt;
     if (type === 'application') return record?.hiredAt || record?.reviewedAt || record?.updatedAt || record?.appliedAt || record?.createdAt;
     if (type === 'editRequest') return record?.reviewedAt || record?.updatedAt || record?.createdAt;
+    if (type === 'message') return record?.readAt || record?.updatedAt || record?.createdAt;
     if (type === 'verification') return record?.verifiedAt || record?.consumedAt || record?.updatedAt || record?.createdAt;
-    if (type === 'employmentRequest') {
-      return record?.employmentStatusRequest?.adminDecision?.decidedAt ||
-        record?.employmentStatusRequest?.reviewedAt ||
-        record?.employmentStatusRequest?.requestedAt ||
-        record?.updatedAt ||
-        record?.createdAt;
-    }
     return record?.updatedAt || record?.createdAt;
   }
   if (type === 'job') return record?.publishedAt || record?.createdAt;
   if (type === 'application') return record?.appliedAt || record?.createdAt;
   if (type === 'verification') return record?.otpRequestedAt || record?.createdAt;
-  if (type === 'employmentRequest') return record?.employmentStatusRequest?.requestedAt || record?.createdAt;
   return record?.createdAt;
 };
-
-const analyticsUnique = (values) => [...new Set(values.map(analyticsText).filter(Boolean))]
-  .sort((a, b) => a.localeCompare(b));
-
-const analyticsMedian = (values) => {
-  const sorted = values.map(Number).filter(Number.isFinite).sort((a, b) => a - b);
-  if (!sorted.length) return 0;
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-};
-
-const analyticsMean = (values) => {
-  const clean = values.map(Number).filter(Number.isFinite);
-  return clean.length ? clean.reduce((sum, value) => sum + value, 0) / clean.length : 0;
-};
-
-const analyticsPercentile = (values, percentile) => {
-  const sorted = values.map(Number).filter(Number.isFinite).sort((a, b) => a - b);
-  if (!sorted.length) return 0;
-  const index = Math.min(sorted.length - 1, Math.ceil((percentile / 100) * sorted.length) - 1);
-  return sorted[Math.max(0, index)];
-};
-
-const analyticsDaysBetween = (start, end) => {
-  const from = start ? new Date(start) : null;
-  const to = end ? new Date(end) : null;
-  if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) return null;
-  return (to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000);
-};
-
-const analyticsRound = (value, digits = 1) => Number(Number(value || 0).toFixed(digits));
 
 const analyticsCountRows = (items, getter, limit = 20) => {
   const counts = new Map();
@@ -1348,8 +1298,8 @@ const analyticsCountRows = (items, getter, limit = 20) => {
     .slice(0, limit);
 };
 
-const analyticsCountFlatValues = (values, limit = 20) =>
-  analyticsCountRows(values.filter(Boolean), (value) => value, limit);
+const analyticsUnique = (values) => [...new Set(values.map(analyticsText).filter(Boolean))]
+  .sort((a, b) => a.localeCompare(b));
 
 const analyticsVerificationStatus = (user) => {
   if (user?.role === 'jobseeker') {
@@ -1368,204 +1318,39 @@ const analyticsVerificationStatus = (user) => {
   return user?.isVerified ? 'verified' : 'unverified';
 };
 
-const analyticsCanonicalVerification = (value) => {
-  const status = analyticsLower(value);
-  if (status === 'approved') return 'verified';
-  if (status === 'rejected') return 'declined';
-  if (status === 'submitted') return 'pending';
-  return status || 'not_submitted';
+const analyticsPercentile = (values, percentile) => {
+  const sorted = values.map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+  if (!sorted.length) return 0;
+  const index = Math.min(sorted.length - 1, Math.ceil((percentile / 100) * sorted.length) - 1);
+  return Math.round(sorted[Math.max(0, index)]);
 };
 
-const analyticsCanonicalEducation = (value) => {
-  const text = analyticsLower(value);
-  if (!text) return 'Unspecified';
-  if (text.includes('bachelor') || text.includes('college')) return "Bachelor's / College Degree";
-  if (text.includes('master')) return "Master's Degree";
-  if (text.includes('doctor')) return 'Doctorate';
-  return analyticsText(value);
-};
-
-const analyticsCanonicalExperience = (value) => {
-  const text = analyticsLower(value);
-  if (!text) return 'Unspecified';
-  if (text.includes('no experience')) return 'No experience';
-  if (text.includes('less than 1')) return 'Less than 1 year';
-  if (/(1-3|1–3|1 year|2 year|3 year)/.test(text)) return '1–3 years';
-  if (/(4-5|4–5|4 year|5 year)/.test(text)) return '4–5 years';
-  if (text.includes('6+')) return '6+ years';
-  return analyticsText(value);
-};
-
-const analyticsDerivedJobStatus = (job, now = new Date()) => {
-  if (!job) return 'unknown';
-  const stored = analyticsLower(job.status);
-  if (stored === 'draft' || job.isPublished === false) return 'draft';
-  if (stored === 'filled') return 'filled';
-  if (stored === 'closed') return 'closed';
-  if (job.isArchived) return analyticsLower(job.statusBeforeArchive) || 'closed';
-  const deadline = job.applicationDeadline ? new Date(job.applicationDeadline) : null;
-  if (stored === 'published' && deadline && !Number.isNaN(deadline.getTime()) && deadline < now) return 'expired';
-  if (stored === 'published' && job.isActive !== false) return 'open';
-  return stored || 'unknown';
-};
-
-const analyticsSplitSkills = (value) => analyticsText(value)
-  .split(/[,;\n|]+/)
-  .map((item) => item.trim())
-  .filter(Boolean);
-
-const analyticsUserSkills = (user) => analyticsUnique([
-  ...analyticsSplitSkills(user?.jobSeekerProfile?.technicalSkills),
-  ...analyticsSplitSkills(user?.jobSeekerProfile?.softSkills),
-]);
-
-const analyticsUserCertifications = (user) => analyticsUnique(
-  (user?.jobSeekerProfile?.certifications || [])
-    .map((item) => item?.title || item?.name || item?.value || item?.description)
-    .filter(Boolean)
-);
-
-const analyticsFirstActivityAt = (application, predicate) => {
-  const history = Array.isArray(application?.activityHistory) ? application.activityHistory : [];
-  const matched = history
-    .filter((event) => event?.occurredAt && predicate(event))
-    .map((event) => new Date(event.occurredAt))
-    .filter((date) => !Number.isNaN(date.getTime()))
-    .sort((a, b) => a - b);
-  return matched[0] || null;
-};
-
-const analyticsDecisionAt = (application) => {
-  if (analyticsLower(application?.status) === 'hired' && application?.hiredAt) return new Date(application.hiredAt);
-  const finalStatuses = new Set(['hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full']);
-  const history = Array.isArray(application?.activityHistory) ? application.activityHistory : [];
-  const matched = history
-    .filter((event) => event?.occurredAt && (
-      finalStatuses.has(analyticsLower(event?.toStatus)) ||
-      ['hired', 'declined'].includes(analyticsLower(event?.type))
-    ))
-    .map((event) => new Date(event.occurredAt))
-    .filter((date) => !Number.isNaN(date.getTime()))
-    .sort((a, b) => a - b);
-  return matched[matched.length - 1] || null;
-};
-
-const analyticsFirstActionAt = (application) => {
-  const candidates = [
-    application?.viewedAt,
-    application?.reviewedAt,
-    analyticsFirstActivityAt(application, (event) => analyticsLower(event?.type) !== 'submitted'),
-  ]
-    .filter(Boolean)
-    .map((value) => new Date(value))
-    .filter((date) => !Number.isNaN(date.getTime()));
-  return candidates.length ? candidates.sort((a, b) => a - b)[0] : null;
-};
-
-const analyticsDropoutNode = (application, job) => {
-  const status = analyticsLower(application?.status);
-  if (status === 'hired') return '';
-  if (status === 'declined') {
-    return analyticsLower(application?.declinedFrom) === 'forinterview'
-      ? 'Declined – After Interview'
-      : 'Declined – Screening';
-  }
-  if (status === 'withdrawn') {
-    return analyticsLower(application?.lastActiveStatus) === 'for interview'
-      ? 'Withdrawn – Interview Stage'
-      : 'Withdrawn – Before Review';
-  }
-  if (status === 'cancelled') return 'Cancelled';
-  if (status === 'vacancy full') return 'Vacancy Full';
-
-  if (['pending', 'for interview'].includes(status)) {
-    const jobStatus = analyticsDerivedJobStatus(job);
-    if (['filled', 'closed', 'expired'].includes(jobStatus)) return 'Job Ended Before Decision';
-    const history = Array.isArray(application?.activityHistory) ? application.activityHistory : [];
-    const dates = [
-      application?.appliedAt,
-      application?.viewedAt,
-      application?.reviewedAt,
-      ...history.map((event) => event?.occurredAt),
-    ]
-      .filter(Boolean)
-      .map((value) => new Date(value))
-      .filter((date) => !Number.isNaN(date.getTime()));
-    const latest = dates.length ? dates.sort((a, b) => b - a)[0] : null;
-    if (latest && (Date.now() - latest.getTime()) >= 30 * 24 * 60 * 60 * 1000) return 'No Response (30+ days)';
-  }
-  return '';
-};
-
-const analyticsSuppressRows = (rows, threshold = ANALYTICS_PRIVACY_THRESHOLD) =>
-  rows.map((row) => {
-    const value = Number(row.value || 0);
-    if (value > 0 && value < threshold) {
-      return { ...row, value: threshold - 1, suppressed: true, displayValue: `n < ${threshold}` };
-    }
-    return { ...row, suppressed: false, displayValue: String(value) };
-  });
-
-const analyticsKpiMeta = (sampleSize, formula, threshold = ANALYTICS_PRIVACY_THRESHOLD) => ({
-  sampleSize,
-  formula,
-  suppressed: sampleSize > 0 && sampleSize < threshold,
-});
-
-const analyticsTrendRows = ({ applications, range }) => {
-  if (!applications.length) return [];
-  const sourceDates = applications
-    .map((item) => item.appliedAt || item.createdAt)
-    .filter(Boolean)
-    .map((value) => new Date(value))
-    .filter((date) => !Number.isNaN(date.getTime()));
-
-  if (!sourceDates.length) return [];
-  const minDate = range?.start || new Date(Math.min(...sourceDates.map((date) => date.getTime())));
-  const maxDate = range?.end || new Date(Math.max(...sourceDates.map((date) => date.getTime())));
-  const spanDays = Math.max(1, (maxDate - minDate) / (24 * 60 * 60 * 1000));
-  const bucketMode = spanDays <= 31 ? 'day' : spanDays <= 180 ? 'week' : 'month';
+const analyticsTrendRows = ({ users, jobs, applications, dateField = 'primary' }) => {
   const buckets = new Map();
-
-  const bucketFor = (dateValue) => {
-    const date = new Date(dateValue);
-    if (Number.isNaN(date.getTime())) return null;
-    const shifted = new Date(date.getTime() + ANALYTICS_MANILA_OFFSET_MS);
-    let key;
-    let label;
-    if (bucketMode === 'day') {
-      key = `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}-${String(shifted.getUTCDate()).padStart(2, '0')}`;
-      label = shifted.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-    } else if (bucketMode === 'week') {
-      const day = shifted.getUTCDay();
-      const mondayOffset = day === 0 ? 6 : day - 1;
-      const monday = new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate() - mondayOffset));
-      key = monday.toISOString().slice(0, 10);
-      label = `Week of ${monday.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone: 'UTC' })}`;
-    } else {
-      key = `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}`;
-      label = shifted.toLocaleDateString('en-PH', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+  const ensure = (dateValue) => {
+    const parts = analyticsManilaParts(dateValue);
+    const key = `${parts.year}-${String(parts.month + 1).padStart(2, '0')}`;
+    if (!buckets.has(key)) {
+      const label = new Date(Date.UTC(parts.year, parts.month, 1)).toLocaleString('en-US', {
+        month: 'short', year: '2-digit', timeZone: 'UTC',
+      });
+      buckets.set(key, { key, label, registrations: 0, jobs: 0, applications: 0, hires: 0 });
     }
-    if (!buckets.has(key)) buckets.set(key, { key, label, applications: 0, hires: 0, hireRate: 0 });
     return buckets.get(key);
   };
 
-  applications.forEach((application) => {
-    const applicationBucket = bucketFor(application.appliedAt || application.createdAt);
-    if (applicationBucket) applicationBucket.applications += 1;
-    if (analyticsLower(application.status) === 'hired') {
-      const hireBucket = bucketFor(application.hiredAt || analyticsDecisionAt(application) || application.appliedAt);
-      if (hireBucket) hireBucket.hires += 1;
+  users.forEach((item) => { const date = analyticsDateFor('user', item, dateField); if (date) ensure(date).registrations += 1; });
+  jobs.forEach((item) => { const date = analyticsDateFor('job', item, dateField); if (date) ensure(date).jobs += 1; });
+  applications.forEach((item) => {
+    const date = analyticsDateFor('application', item, dateField);
+    if (date) ensure(date).applications += 1;
+    if (analyticsLower(item.status) === 'hired') {
+      const hireDate = dateField === 'outcome' ? date : (item.hiredAt || date);
+      if (hireDate) ensure(hireDate).hires += 1;
     }
   });
 
-  return Array.from(buckets.values())
-    .sort((a, b) => a.key.localeCompare(b.key))
-    .map((row) => ({
-      ...row,
-      hireRate: row.applications ? analyticsRound((row.hires / row.applications) * 100) : 0,
-    }))
-    .slice(-24);
+  return Array.from(buckets.values()).sort((a, b) => a.key.localeCompare(b.key)).slice(-18);
 };
 
 exports.getAdminAnalytics = async (req, res) => {
@@ -1579,513 +1364,187 @@ exports.getAdminAnalytics = async (req, res) => {
       endDate: analyticsText(req.query.endDate),
       role: analyticsLower(req.query.role || 'all'),
       campus: analyticsText(req.query.campus || 'all'),
-      yearGraduated: analyticsText(req.query.yearGraduated || 'all'),
-      course: analyticsText(req.query.course || 'all'),
       userStatus: analyticsLower(req.query.userStatus || 'all'),
       verificationStatus: analyticsLower(req.query.verificationStatus || 'all'),
       jobStatus: analyticsLower(req.query.jobStatus || 'all'),
-      industry: analyticsText(req.query.industry || 'all'),
       category: analyticsText(req.query.category || 'all'),
       jobType: analyticsText(req.query.jobType || 'all'),
       workMode: analyticsText(req.query.workMode || 'all'),
-      educationLevel: analyticsText(req.query.educationLevel || 'all'),
-      experienceLevel: analyticsText(req.query.experienceLevel || 'all'),
       applicationStatus: analyticsLower(req.query.applicationStatus || 'all'),
       company: analyticsText(req.query.company || 'all'),
-      skill: analyticsText(req.query.skill || 'all'),
-      certification: analyticsText(req.query.certification || 'all'),
       editRequestStatus: analyticsLower(req.query.editRequestStatus || 'all'),
+      messageType: analyticsLower(req.query.messageType || 'all'),
+      notificationType: analyticsLower(req.query.notificationType || 'all'),
+      logStatus: analyticsLower(req.query.logStatus || 'all'),
+      logModule: analyticsText(req.query.logModule || 'all'),
     };
-
     const range = getAdminAnalyticsDateRange({
       preset: filters.date,
       specificDate: filters.specificDate,
       startDate: filters.startDate,
       endDate: filters.endDate,
     });
-    const previousRange = analyticsPreviousRange(range);
 
-    const [usersAll, jobsAll, applicationsAll, editRequestsAll, verificationRequestsAll] = await Promise.all([
-      User.find({ status: { $ne: 'deleted' }, role: { $in: ['jobseeker', 'employer'] } })
-        .select([
-          'role', 'status', 'isActive', 'isVerified', 'createdAt', 'updatedAt',
-          'jobSeekerProfile.campus', 'jobSeekerProfile.course', 'jobSeekerProfile.studyField',
-          'jobSeekerProfile.yearGraduated', 'jobSeekerProfile.technicalSkills', 'jobSeekerProfile.softSkills',
-          'jobSeekerProfile.certifications', 'jobSeekerProfile.minimumSalary', 'jobSeekerProfile.maximumSalary',
-          'jobSeekerProfile.salaryPrivacy', 'jobSeekerProfile.verificationStatus', 'jobSeekerProfile.verificationDocs',
-          'employerProfile.companyName', 'employerProfile.industry', 'employerProfile.regionCity',
-          'employerProfile.verificationDocs', 'employerProfile.reviews',
-        ].join(' '))
+    const [usersAll, jobsAll, applicationsAll, editRequestsAll, messagesAll, conversationPreferencesAll,
+      notificationsAll, verificationRequestsAll, systemLogsAll] = await Promise.all([
+      User.find({ status: { $ne: 'deleted' } })
+        .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.educationEntries jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
-      Job.find({})
-        .select([
-          'employer', 'companyName', 'status', 'isActive', 'isPublished', 'isArchived', 'statusBeforeArchive',
-          'category', 'jobType', 'workMode', 'educationLevel', 'experienceLevel', 'skillsRequired',
-          'salaryMin', 'salaryMax', 'hideSalary', 'isUrgent', 'openToFreshGraduates',
-          'locationProvince', 'locationCity', 'locationLatitude', 'locationLongitude',
-          'vacancies', 'views', 'applicationCount', 'applicationDeadline', 'originalApplicationDeadline',
-          'deadlineExtendedAt', 'draftProgress', 'publishedAt', 'filledAt', 'archivedAt', 'createdAt', 'updatedAt',
-        ].join(' '))
-        .lean(),
-      Application.find({})
-        .select([
-          'job', 'jobseeker', 'employer', 'status', 'lastActiveStatus', 'withdrawalCount',
-          'appliedAt', 'reviewedAt', 'viewedAt', 'hiredAt', 'employmentStatus', 'employmentEndReason',
-          'employmentEndedAt', 'employmentStatusRequest', 'interviewSchedule', 'activityHistory',
-          'declineReason', 'declinedFrom', 'hiringStage', 'resumeSnapshot', 'createdAt', 'updatedAt',
-        ].join(' '))
-        .lean(),
-      JobEditRequest.find({})
-        .select('job employer requestedSections reason status reviewedAt unlockUntil createdAt updatedAt')
-        .lean(),
-      PendingEmailVerification.find({})
-        .select('role otpRequestedAt verifiedAt consumedAt deleteAfterAt createdAt updatedAt')
-        .lean(),
+      Job.find({}).select('employer companyName status isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount publishedAt filledAt archivedAt createdAt updatedAt').lean(),
+      Application.find({}).select('job jobseeker employer status appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
+      JobEditRequest.find({}).select('job employer requestedSections status reviewedAt unlockUntil createdAt updatedAt').lean(),
+      Message.find({}).select('conversationId sender receiver messageType isRead readAt job application createdAt updatedAt').lean(),
+      ConversationPreference.find({}).select('user conversationId otherUser archived hiddenCompany deleted createdAt updatedAt').lean(),
+      Notification.find({}).select('user type relatedModel isRead isArchived createdAt updatedAt').lean(),
+      PendingEmailVerification.find({}).select('role otpRequestedAt otpExpiresAt verifiedAt consumedAt deleteAfterAt createdAt updatedAt').lean(),
+      SystemLog.find({}).select('actorRole action module status method statusCode durationMs createdAt updatedAt').lean(),
     ]);
 
     const userById = new Map(usersAll.map((user) => [analyticsId(user._id), user]));
     const jobById = new Map(jobsAll.map((job) => [analyticsId(job._id), job]));
+    const dateMatches = (type, item) => !range.start || analyticsInRange(analyticsDateFor(type, item, filters.dateField), range);
     const same = (actual, selected) => analyticsIsAll(selected) || analyticsLower(actual) === analyticsLower(selected);
-    const contains = (values, selected) => analyticsIsAll(selected) ||
-      values.some((value) => analyticsLower(value) === analyticsLower(selected));
 
-    const userMatchesAttributes = (user) => {
-      if (!user) return false;
+    const users = usersAll.filter((user) => {
+      if (!dateMatches('user', user)) return false;
       if (!same(user.role, filters.role)) return false;
       if (!same(user.status, filters.userStatus)) return false;
-      if (!same(analyticsCanonicalVerification(analyticsVerificationStatus(user)), analyticsCanonicalVerification(filters.verificationStatus))) return false;
-
-      if (user.role === 'jobseeker') {
-        if (!same(getJobseekerCampus(user), filters.campus)) return false;
-        if (!same(user?.jobSeekerProfile?.yearGraduated, filters.yearGraduated)) return false;
-        if (!same(user?.jobSeekerProfile?.course, filters.course)) return false;
-        if (!contains(analyticsUserSkills(user), filters.skill)) return false;
-        if (!contains(analyticsUserCertifications(user), filters.certification)) return false;
-      } else if (!analyticsIsAll(filters.campus) || !analyticsIsAll(filters.yearGraduated) ||
-        !analyticsIsAll(filters.course) || !analyticsIsAll(filters.skill) || !analyticsIsAll(filters.certification)) {
-        return false;
-      }
+      if (!same(analyticsVerificationStatus(user), filters.verificationStatus)) return false;
+      if (!analyticsIsAll(filters.campus) && analyticsLower(getJobseekerCampus(user)) !== analyticsLower(filters.campus)) return false;
       return true;
-    };
+    });
 
-    const jobMatchesAttributes = (job) => {
-      if (!job) return false;
-      const employer = userById.get(analyticsId(job.employer));
-      const derivedStatus = analyticsDerivedJobStatus(job);
-      if (!same(derivedStatus, filters.jobStatus)) return false;
+    const jobAttributeMatches = (job) => {
+      if (!same(job.status, filters.jobStatus)) return false;
       if (!same(job.category, filters.category)) return false;
       if (!same(job.jobType, filters.jobType)) return false;
       if (!same(job.workMode, filters.workMode)) return false;
-      if (!same(analyticsCanonicalEducation(job.educationLevel), filters.educationLevel)) return false;
-      if (!same(analyticsCanonicalExperience(job.experienceLevel), filters.experienceLevel)) return false;
-      if (!same(employer?.employerProfile?.industry, filters.industry)) return false;
-      if (!same(job.companyName || employer?.employerProfile?.companyName, filters.company)) return false;
-      if (!contains(job.skillsRequired || [], filters.skill)) return false;
+      const employer = userById.get(analyticsId(job.employer));
+      const company = analyticsText(job.companyName || employer?.employerProfile?.companyName);
+      if (!same(company, filters.company)) return false;
       return true;
     };
+    const jobs = jobsAll.filter((job) => dateMatches('job', job) && jobAttributeMatches(job));
+    const allowedJobIds = new Set(jobsAll.filter(jobAttributeMatches).map((job) => analyticsId(job._id)));
 
-    const applicationMatchesAttributes = (application) => {
-      if (!application) return false;
+    const applications = applicationsAll.filter((application) => {
+      if (!dateMatches('application', application)) return false;
       if (!same(application.status, filters.applicationStatus)) return false;
-      const seeker = userById.get(analyticsId(application.jobseeker));
       const job = jobById.get(analyticsId(application.job));
-      if (!jobMatchesAttributes(job)) return false;
-      if (!analyticsIsAll(filters.role) && filters.role !== 'jobseeker') return false;
-      if (!analyticsIsAll(filters.campus) && !same(getJobseekerCampus(seeker), filters.campus)) return false;
-      if (!analyticsIsAll(filters.yearGraduated) && !same(seeker?.jobSeekerProfile?.yearGraduated, filters.yearGraduated)) return false;
-      if (!analyticsIsAll(filters.course) && !same(seeker?.jobSeekerProfile?.course, filters.course)) return false;
-      if (!analyticsIsAll(filters.verificationStatus) &&
-        !same(analyticsCanonicalVerification(analyticsVerificationStatus(seeker)), analyticsCanonicalVerification(filters.verificationStatus))) return false;
-      if (!analyticsIsAll(filters.skill) && !contains(analyticsUserSkills(seeker), filters.skill)) return false;
-      if (!analyticsIsAll(filters.certification) && !contains(analyticsUserCertifications(seeker), filters.certification)) return false;
+      if ((!analyticsIsAll(filters.jobStatus) || !analyticsIsAll(filters.category) || !analyticsIsAll(filters.jobType) ||
+        !analyticsIsAll(filters.workMode) || !analyticsIsAll(filters.company)) && !allowedJobIds.has(analyticsId(job?._id))) return false;
+      const seeker = userById.get(analyticsId(application.jobseeker));
+      if (!analyticsIsAll(filters.campus) && analyticsLower(getJobseekerCampus(seeker)) !== analyticsLower(filters.campus)) return false;
       return true;
-    };
+    });
 
-    const filterByRange = (type, items, selectedRange, attributeMatcher) => items.filter((item) => (
-      analyticsInRange(analyticsDateFor(type, item, filters.dateField), selectedRange) &&
-      (!attributeMatcher || attributeMatcher(item))
-    ));
-
-    const users = filterByRange('user', usersAll, range, userMatchesAttributes);
-    const jobs = filterByRange('job', jobsAll, range, jobMatchesAttributes);
-    const applications = filterByRange('application', applicationsAll, range, applicationMatchesAttributes);
-    const editRequests = filterByRange('editRequest', editRequestsAll, range, (item) =>
-      same(item.status, filters.editRequestStatus) && jobMatchesAttributes(jobById.get(analyticsId(item.job)))
-    );
-    const employmentRequests = filterByRange(
-      'employmentRequest',
-      applicationsAll.filter((item) => analyticsLower(item?.employmentStatusRequest?.status) !== 'none'),
-      range,
-      applicationMatchesAttributes
-    );
-
-    const previousUsers = previousRange ? filterByRange('user', usersAll, previousRange, userMatchesAttributes) : [];
-    const previousJobs = previousRange ? filterByRange('job', jobsAll, previousRange, jobMatchesAttributes) : [];
-    const previousApplications = previousRange ? filterByRange('application', applicationsAll, previousRange, applicationMatchesAttributes) : [];
+    const editRequests = editRequestsAll.filter((item) => dateMatches('editRequest', item) && same(item.status, filters.editRequestStatus));
+    const messages = messagesAll.filter((item) => dateMatches('message', item) && same(item.messageType, filters.messageType));
+    const notifications = notificationsAll.filter((item) => dateMatches('notification', item) && same(item.type, filters.notificationType));
+    const verificationRequests = verificationRequestsAll.filter((item) => dateMatches('verification', item) && same(item.role, filters.role));
+    const systemLogs = systemLogsAll.filter((item) => dateMatches('log', item) && same(item.status, filters.logStatus) && same(item.module, filters.logModule));
+    const conversationPreferences = conversationPreferencesAll.filter((item) => dateMatches('conversationPreference', item));
 
     const hiredApplications = applications.filter((item) => analyticsLower(item.status) === 'hired');
-    const previousHired = previousApplications.filter((item) => analyticsLower(item.status) === 'hired');
-    const activeJobs = jobs.filter((item) => analyticsDerivedJobStatus(item) === 'open');
-    const previousActiveJobs = previousJobs.filter((item) => analyticsDerivedJobStatus(item, previousRange?.end || new Date()) === 'open');
-
-    const timeToHireDays = hiredApplications
-      .map((item) => analyticsDaysBetween(item.appliedAt, item.hiredAt || analyticsDecisionAt(item)))
-      .filter((value) => value !== null);
-    const previousTimeToHireDays = previousHired
-      .map((item) => analyticsDaysBetween(item.appliedAt, item.hiredAt || analyticsDecisionAt(item)))
-      .filter((value) => value !== null);
-
-    const currentKpis = {
-      registeredUsers: users.length,
-      activeJobs: activeJobs.length,
-      applications: applications.length,
-      hired: hiredApplications.length,
-      hireRate: applications.length ? analyticsRound((hiredApplications.length / applications.length) * 100) : 0,
-      avgTimeToHireDays: timeToHireDays.length ? analyticsRound(analyticsMean(timeToHireDays)) : 0,
-    };
-    const previousKpis = previousRange ? {
-      registeredUsers: previousUsers.length,
-      activeJobs: previousActiveJobs.length,
-      applications: previousApplications.length,
-      hired: previousHired.length,
-      hireRate: previousApplications.length ? analyticsRound((previousHired.length / previousApplications.length) * 100) : 0,
-      avgTimeToHireDays: previousTimeToHireDays.length ? analyticsRound(analyticsMean(previousTimeToHireDays)) : 0,
-    } : null;
-
-    const percentChange = (current, previous) => {
-      if (!previousRange || !Number.isFinite(previous) || previous === 0) return null;
-      return analyticsRound(((current - previous) / Math.abs(previous)) * 100);
-    };
-
+    const pendingVerification = users.filter((item) => ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
+    const activeJobs = jobs.filter((item) => !item.isArchived && item.isActive !== false && item.isPublished !== false && ['published', 'open'].includes(analyticsLower(item.status))).length;
+    const failedLogs = systemLogs.filter((item) => analyticsLower(item.status) === 'failed').length;
     const applicationStatuses = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'];
-    const funnel = analyticsSuppressRows(applicationStatuses.map((name) => ({
+    const applicationFunnel = applicationStatuses.map((name) => ({
       name,
       value: applications.filter((item) => analyticsLower(item.status) === name).length,
-    })));
-
-    const topIndustries = analyticsSuppressRows(
-      analyticsCountRows(hiredApplications, (application) => {
-        const job = jobById.get(analyticsId(application.job));
-        const employer = userById.get(analyticsId(job?.employer || application.employer));
-        return employer?.employerProfile?.industry || 'Unspecified';
-      }, 10)
-    );
-
-    const applicationsBySeeker = new Map();
-    applications.slice().sort((a, b) => new Date(a.appliedAt || 0) - new Date(b.appliedAt || 0)).forEach((application) => {
-      const key = analyticsId(application.jobseeker);
-      if (!applicationsBySeeker.has(key)) applicationsBySeeker.set(key, []);
-      applicationsBySeeker.get(key).push(application);
-    });
-    const beforeHireBuckets = new Map([['1', 0], ['2', 0], ['3', 0], ['4–5', 0], ['6–10', 0], ['11+', 0], ['Still searching', 0]]);
-    applicationsBySeeker.forEach((items) => {
-      const firstHireIndex = items.findIndex((item) => analyticsLower(item.status) === 'hired');
-      if (firstHireIndex < 0) {
-        beforeHireBuckets.set('Still searching', beforeHireBuckets.get('Still searching') + 1);
-        return;
-      }
-      const count = firstHireIndex + 1;
-      const bucket = count === 1 ? '1' : count === 2 ? '2' : count === 3 ? '3' : count <= 5 ? '4–5' : count <= 10 ? '6–10' : '11+';
-      beforeHireBuckets.set(bucket, beforeHireBuckets.get(bucket) + 1);
-    });
-    const applicationsBeforeHire = analyticsSuppressRows(
-      Array.from(beforeHireBuckets, ([name, value]) => ({ name, value }))
-    );
-
-    const pendingDurations = [];
-    const interviewDurations = [];
-    const totalDurations = [];
-    applications.forEach((application) => {
-      const interviewAt = analyticsFirstActivityAt(
-        application,
-        (event) => analyticsLower(event?.toStatus) === 'for interview' || analyticsLower(event?.type) === 'interview'
-      ) || application?.interviewSchedule?.setAt;
-      const decisionAt = analyticsDecisionAt(application);
-      const firstTransition = interviewAt || decisionAt || analyticsFirstActionAt(application);
-      const pendingDays = analyticsDaysBetween(application.appliedAt, firstTransition);
-      if (pendingDays !== null) pendingDurations.push(pendingDays);
-      const interviewDays = analyticsDaysBetween(interviewAt, decisionAt);
-      if (interviewDays !== null) interviewDurations.push(interviewDays);
-      const totalDays = analyticsDaysBetween(application.appliedAt, decisionAt || new Date());
-      if (totalDays !== null) totalDurations.push(totalDays);
-    });
-    const stageDurations = [
-      { name: 'Pending / First action', value: analyticsRound(analyticsMedian(pendingDurations)), sampleSize: pendingDurations.length },
-      { name: 'Interview to decision', value: analyticsRound(analyticsMedian(interviewDurations)), sampleSize: interviewDurations.length },
-      { name: 'Total process', value: analyticsRound(analyticsMedian(totalDurations)), sampleSize: totalDurations.length },
-    ];
-
-    const employerResponseMap = new Map();
-    applications.forEach((application) => {
-      const firstActionAt = analyticsFirstActionAt(application);
-      const days = analyticsDaysBetween(application.appliedAt, firstActionAt);
-      if (days === null) return;
-      const job = jobById.get(analyticsId(application.job));
-      const employer = userById.get(analyticsId(application.employer || job?.employer));
-      const name = analyticsText(job?.companyName || employer?.employerProfile?.companyName) || 'Unspecified';
-      if (!employerResponseMap.has(name)) employerResponseMap.set(name, []);
-      employerResponseMap.get(name).push(days);
-    });
-    const employerResponsiveness = Array.from(employerResponseMap, ([name, values]) => ({
-      name,
-      value: analyticsRound(analyticsMedian(values)),
-      sampleSize: values.length,
-    }))
-      .filter((item) => item.sampleSize >= ANALYTICS_PRIVACY_THRESHOLD)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 10);
-
-    const dropoutNodes = analyticsSuppressRows(analyticsCountRows(
-      applications
-        .map((application) => analyticsDropoutNode(application, jobById.get(analyticsId(application.job))))
-        .filter(Boolean),
-      (item) => item,
-      10
-    ));
-    const declineReasons = analyticsSuppressRows(analyticsCountRows(
-      applications.filter((item) => analyticsLower(item.status) === 'declined' && item.declineReason),
-      (item) => item.declineReason,
-      10
-    ));
-
-    const salaryBands = analyticsSuppressRows(analyticsCountRows(
-      hiredApplications
-        .map((application) => {
-          const job = jobById.get(analyticsId(application.job));
-          const min = Number(job?.salaryMin);
-          const max = Number(job?.salaryMax);
-          if (!Number.isFinite(min) && !Number.isFinite(max)) return '';
-          const midpoint = Number.isFinite(min) && Number.isFinite(max) ? (min + max) / 2 : (Number.isFinite(min) ? min : max);
-          if (midpoint < 15000) return 'Below ₱15k';
-          if (midpoint < 25000) return '₱15k–₱24,999';
-          if (midpoint < 40000) return '₱25k–₱39,999';
-          return '₱40k+';
-        })
-        .filter(Boolean),
-      (item) => item
-    ));
-
-    const applicationsPerJobMap = new Map();
-    applications.forEach((application) => {
-      const key = analyticsId(application.job);
-      applicationsPerJobMap.set(key, (applicationsPerJobMap.get(key) || 0) + 1);
-    });
-    const timeToFillDays = jobs
-      .filter((job) => analyticsDerivedJobStatus(job) === 'filled')
-      .map((job) => analyticsDaysBetween(job.publishedAt || job.createdAt, job.filledAt))
-      .filter((value) => value !== null);
-    const totalViews = jobs.reduce((sum, job) => sum + Number(job.views || 0), 0);
-    const totalVacancies = jobs.reduce((sum, job) => sum + Number(job.vacancies || 0), 0);
-    const jobsApplicationCount = jobs.reduce((sum, job) => sum + Number(applicationsPerJobMap.get(analyticsId(job._id)) || 0), 0);
-    const filledJobs = jobs.filter((job) => analyticsDerivedJobStatus(job) === 'filled');
-    const endedJobs = jobs.filter((job) => ['filled', 'closed', 'expired'].includes(analyticsDerivedJobStatus(job)));
-
-    const demandedSkills = analyticsSuppressRows(analyticsCountFlatValues(
-      jobs.flatMap((job) => job.skillsRequired || []),
-      12
-    ));
-
-    const jobStatusRows = analyticsSuppressRows(analyticsCountRows(jobs, (job) => analyticsDerivedJobStatus(job)));
-    const jobCategoryRows = analyticsSuppressRows(analyticsCountRows(jobs, (job) => job.category, 10));
-    const jobTypeRows = analyticsSuppressRows(analyticsCountRows(jobs, (job) => job.jobType));
-    const workModeRows = analyticsSuppressRows(analyticsCountRows(jobs, (job) => job.workMode));
-    const educationRows = analyticsSuppressRows(analyticsCountRows(jobs, (job) => analyticsCanonicalEducation(job.educationLevel)));
-    const experienceRows = analyticsSuppressRows(analyticsCountRows(jobs, (job) => analyticsCanonicalExperience(job.experienceLevel)));
-
-    const verificationUsers = users.filter((user) => ['jobseeker', 'employer'].includes(user.role));
-    const verificationStatusRows = analyticsSuppressRows(
-      analyticsCountRows(verificationUsers, (user) => analyticsCanonicalVerification(analyticsVerificationStatus(user)))
-    );
-
-    const verificationAgeBuckets = new Map([['0–2 days', 0], ['3–7 days', 0], ['8–14 days', 0], ['15+ days', 0]]);
-    const pendingVerificationUsers = verificationUsers.filter((user) =>
-      ['pending', 'hold'].includes(analyticsCanonicalVerification(analyticsVerificationStatus(user)))
-    );
-    pendingVerificationUsers.forEach((user) => {
-      const docs = user.role === 'jobseeker'
-        ? user?.jobSeekerProfile?.verificationDocs
-        : user?.employerProfile?.verificationDocs;
-      const dates = Object.values(docs || {})
-        .filter((value) => value && typeof value === 'object' && value.uploadedAt)
-        .map((value) => new Date(value.uploadedAt))
-        .filter((date) => !Number.isNaN(date.getTime()));
-      const earliest = dates.length ? dates.sort((a, b) => a - b)[0] : new Date(user.createdAt);
-      const age = Math.max(0, analyticsDaysBetween(earliest, new Date()) || 0);
-      const bucket = age <= 2 ? '0–2 days' : age <= 7 ? '3–7 days' : age <= 14 ? '8–14 days' : '15+ days';
-      verificationAgeBuckets.set(bucket, verificationAgeBuckets.get(bucket) + 1);
-    });
-
-    const editRequestRows = analyticsSuppressRows(analyticsCountRows(editRequests, (item) => item.status));
-    const editRequestSections = analyticsSuppressRows(analyticsCountFlatValues(
-      editRequests.flatMap((item) => item.requestedSections || []),
-      10
-    ));
-    const editTurnaround = editRequests
-      .filter((item) => item.reviewedAt)
-      .map((item) => analyticsDaysBetween(item.createdAt, item.reviewedAt))
-      .filter((value) => value !== null);
-
-    const employmentRequestRows = analyticsSuppressRows(analyticsCountRows(
-      employmentRequests,
-      (item) => item?.employmentStatusRequest?.status || 'none'
-    ));
-    const employmentTurnaround = employmentRequests
-      .map((item) => analyticsDaysBetween(
-        item?.employmentStatusRequest?.requestedAt,
-        item?.employmentStatusRequest?.adminDecision?.decidedAt || item?.employmentStatusRequest?.reviewedAt
-      ))
-      .filter((value) => value !== null);
-
-    const verificationRequests = verificationRequestsAll.filter((item) =>
-      analyticsInRange(analyticsDateFor('verification', item, filters.dateField), range) &&
-      (analyticsIsAll(filters.role) || same(item.role, filters.role))
-    );
+    }));
     const verifiedRegistrations = verificationRequests.filter((item) => item.verifiedAt || item.consumedAt).length;
 
     return res.status(200).json({
       success: true,
       generatedAt: new Date().toISOString(),
       timezone: 'Asia/Manila',
-      privacyThreshold: ANALYTICS_PRIVACY_THRESHOLD,
       appliedFilters: { ...filters, dateLabel: range.label },
       filters: {
         options: {
-          roles: ['jobseeker', 'employer'],
-          campuses: analyticsUnique(usersAll.filter((item) => item.role === 'jobseeker').map(getJobseekerCampus).filter((value) => value !== 'Unspecified')),
-          yearsGraduated: analyticsUnique(usersAll.filter((item) => item.role === 'jobseeker').map((item) => item?.jobSeekerProfile?.yearGraduated)).sort((a, b) => Number(b) - Number(a)),
-          courses: analyticsUnique(usersAll.filter((item) => item.role === 'jobseeker').map((item) => item?.jobSeekerProfile?.course)),
+          roles: ['admin', 'employer', 'jobseeker'],
+          campuses: analyticsUnique(usersAll.map(getJobseekerCampus).filter((value) => value !== 'Unspecified')),
           userStatuses: analyticsUnique(usersAll.map((item) => item.status)),
-          verificationStatuses: analyticsUnique(usersAll.map((item) => analyticsCanonicalVerification(analyticsVerificationStatus(item)))),
-          jobStatuses: ['open', 'closed', 'draft', 'filled', 'expired'],
-          industries: analyticsUnique(usersAll.filter((item) => item.role === 'employer').map((item) => item?.employerProfile?.industry)),
+          verificationStatuses: analyticsUnique(usersAll.map(analyticsVerificationStatus)),
+          jobStatuses: analyticsUnique(jobsAll.map((item) => item.status)),
           categories: analyticsUnique(jobsAll.map((item) => item.category)),
           jobTypes: analyticsUnique(jobsAll.map((item) => item.jobType)),
           workModes: analyticsUnique(jobsAll.map((item) => item.workMode)),
-          educationLevels: analyticsUnique(jobsAll.map((item) => analyticsCanonicalEducation(item.educationLevel))),
-          experienceLevels: analyticsUnique(jobsAll.map((item) => analyticsCanonicalExperience(item.experienceLevel))),
           applicationStatuses,
           companies: analyticsUnique(jobsAll.map((job) => job.companyName || userById.get(analyticsId(job.employer))?.employerProfile?.companyName)),
-          skills: analyticsUnique([
-            ...jobsAll.flatMap((job) => job.skillsRequired || []),
-            ...usersAll.filter((item) => item.role === 'jobseeker').flatMap(analyticsUserSkills),
-          ]),
-          certifications: analyticsUnique(usersAll.filter((item) => item.role === 'jobseeker').flatMap(analyticsUserCertifications)),
           editRequestStatuses: analyticsUnique(editRequestsAll.map((item) => item.status)),
+          messageTypes: analyticsUnique(messagesAll.map((item) => item.messageType)),
+          notificationTypes: analyticsUnique(notificationsAll.map((item) => item.type)),
+          logStatuses: analyticsUnique(systemLogsAll.map((item) => item.status)),
+          logModules: analyticsUnique(systemLogsAll.map((item) => item.module)),
         },
       },
-      kpis: currentKpis,
-      kpiMeta: {
-        registeredUsers: analyticsKpiMeta(users.length, 'Registered jobseekers and employers in the active filter scope.'),
-        activeJobs: analyticsKpiMeta(activeJobs.length, 'Published, active, non-archived jobs whose deadline has not passed.'),
-        applications: analyticsKpiMeta(applications.length, 'Application records in the active filter scope.'),
-        hired: analyticsKpiMeta(hiredApplications.length, 'Applications whose current status is Hired.'),
-        hireRate: analyticsKpiMeta(applications.length, 'Hired applications ÷ all applications in scope × 100.'),
-        avgTimeToHireDays: analyticsKpiMeta(timeToHireDays.length, 'Mean calendar days from appliedAt to hiredAt for hired applications.'),
+      kpis: {
+        totalUsers: users.length,
+        activeJobs,
+        applications: applications.length,
+        hired: hiredApplications.length,
+        hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
+        pendingVerification,
+        unreadMessages: messages.filter((item) => !item.isRead).length,
+        systemFailures: failedLogs,
       },
-      kpiComparison: previousKpis ? {
-        registeredUsers: percentChange(currentKpis.registeredUsers, previousKpis.registeredUsers),
-        activeJobs: percentChange(currentKpis.activeJobs, previousKpis.activeJobs),
-        applications: percentChange(currentKpis.applications, previousKpis.applications),
-        hired: percentChange(currentKpis.hired, previousKpis.hired),
-        hireRate: percentChange(currentKpis.hireRate, previousKpis.hireRate),
-        avgTimeToHireDays: percentChange(currentKpis.avgTimeToHireDays, previousKpis.avgTimeToHireDays),
-      } : {},
-      trends: analyticsTrendRows({ applications, range }),
-      overview: {
-        funnel,
-        topIndustriesByHires: topIndustries,
-      },
+      trends: analyticsTrendRows({ users, jobs, applications, dateField: filters.dateField }),
       sections: {
-        applications: {
-          funnel,
-          applicationsBeforeHire,
-          stageDurations,
-          employerResponsiveness,
-          dropoutNodes,
-          declineReasons,
-          salaryBands,
-          employmentStatus: analyticsSuppressRows(analyticsCountRows(hiredApplications, (item) => item.employmentStatus || 'not recorded')),
-          metrics: {
-            medianTimeToHireDays: timeToHireDays.length ? analyticsRound(analyticsMedian(timeToHireDays)) : 0,
-            p75TimeToHireDays: timeToHireDays.length ? analyticsRound(analyticsPercentile(timeToHireDays, 75)) : 0,
-            interviewRate: applications.length
-              ? analyticsRound((applications.filter((item) => ['for interview', 'hired'].includes(analyticsLower(item.status))).length / applications.length) * 100)
-              : 0,
-            withdrawalRate: applications.length
-              ? analyticsRound((applications.filter((item) => analyticsLower(item.status) === 'withdrawn').length / applications.length) * 100)
-              : 0,
-          },
+        users: {
+          roles: analyticsCountRows(users, (item) => item.role),
+          statuses: analyticsCountRows(users, (item) => item.status),
+          verification: analyticsCountRows(users.filter((item) => item.role !== 'admin'), analyticsVerificationStatus),
+          campuses: analyticsCountRows(users.filter((item) => item.role === 'jobseeker'), getJobseekerCampus),
         },
         jobs: {
-          statuses: jobStatusRows,
-          categories: jobCategoryRows,
-          jobTypes: jobTypeRows,
-          workModes: workModeRows,
-          educationLevels: educationRows,
-          experienceLevels: experienceRows,
-          demandedSkills,
-          salaryVisibility: analyticsSuppressRows([
-            { name: 'Salary shown', value: jobs.filter((job) => !job.hideSalary).length },
-            { name: 'Salary hidden', value: jobs.filter((job) => job.hideSalary).length },
-          ]),
-          metrics: {
-            totalVacancies,
-            totalViews,
-            applicationsPerJob: jobs.length ? analyticsRound(jobsApplicationCount / jobs.length, 2) : 0,
-            applicationsPerVacancy: totalVacancies ? analyticsRound(jobsApplicationCount / totalVacancies, 2) : 0,
-            viewToApplicationRate: totalViews ? analyticsRound((jobsApplicationCount / totalViews) * 100) : 0,
-            medianTimeToFillDays: timeToFillDays.length ? analyticsRound(analyticsMedian(timeToFillDays)) : 0,
-            fillRate: endedJobs.length ? analyticsRound((filledJobs.length / endedJobs.length) * 100) : 0,
-            salaryTransparencyRate: jobs.length ? analyticsRound((jobs.filter((job) => !job.hideSalary).length / jobs.length) * 100) : 0,
-            freshGraduateOpenRate: jobs.length ? analyticsRound((jobs.filter((job) => job.openToFreshGraduates).length / jobs.length) * 100) : 0,
-          },
+          statuses: analyticsCountRows(jobs, (item) => item.status),
+          categories: analyticsCountRows(jobs, (item) => item.category, 10),
+          employmentTypes: analyticsCountRows(jobs, (item) => item.jobType),
+          workModes: analyticsCountRows(jobs, (item) => item.workMode),
+          totalVacancies: jobs.reduce((sum, item) => sum + Number(item.vacancies || 0), 0),
+          totalViews: jobs.reduce((sum, item) => sum + Number(item.views || 0), 0),
+        },
+        applications: {
+          funnel: applicationFunnel,
+          interviewRate: applications.length ? Number(((applications.filter((item) => ['for interview', 'hired'].includes(analyticsLower(item.status))).length / applications.length) * 100).toFixed(1)) : 0,
+          hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
+          employmentStatus: analyticsCountRows(hiredApplications, (item) => item.employmentStatus || 'not recorded'),
         },
         verification: {
-          statuses: verificationStatusRows,
-          backlogAging: analyticsSuppressRows(Array.from(verificationAgeBuckets, ([name, value]) => ({ name, value }))),
-          editRequests: editRequestRows,
-          editRequestSections,
-          employmentRequests: employmentRequestRows,
-          registrationByRole: analyticsSuppressRows(analyticsCountRows(verificationRequests, (item) => item.role)),
-          metrics: {
-            pendingBacklog: pendingVerificationUsers.length,
-            editRequestApprovalRate: editRequests.filter((item) => ['approved', 'rejected'].includes(analyticsLower(item.status))).length
-              ? analyticsRound(
-                (editRequests.filter((item) => analyticsLower(item.status) === 'approved').length /
-                  editRequests.filter((item) => ['approved', 'rejected'].includes(analyticsLower(item.status))).length) * 100
-              )
-              : 0,
-            editRequestMedianTurnaroundDays: editTurnaround.length ? analyticsRound(analyticsMedian(editTurnaround)) : 0,
-            employmentRequestMedianTurnaroundDays: employmentTurnaround.length ? analyticsRound(analyticsMedian(employmentTurnaround)) : 0,
-            emailRequests: verificationRequests.length,
-            emailVerified: verifiedRegistrations,
-            emailCompletionRate: verificationRequests.length
-              ? analyticsRound((verifiedRegistrations / verificationRequests.length) * 100)
-              : 0,
+          emailRequests: verificationRequests.length,
+          emailVerified: verifiedRegistrations,
+          emailCompletionRate: verificationRequests.length ? Number(((verifiedRegistrations / verificationRequests.length) * 100).toFixed(1)) : 0,
+          byRole: analyticsCountRows(verificationRequests, (item) => item.role),
+        },
+        operations: {
+          editRequests: analyticsCountRows(editRequests, (item) => item.status),
+          editRequestSections: analyticsCountRows(editRequests.flatMap((item) => item.requestedSections || []), (item) => item, 10),
+          messages: analyticsCountRows(messages, (item) => item.messageType),
+          messageRead: [
+            { name: 'Read', value: messages.filter((item) => item.isRead).length },
+            { name: 'Unread', value: messages.filter((item) => !item.isRead).length },
+          ],
+          conversationPreferences: [
+            { name: 'Archived', value: conversationPreferences.filter((item) => item.archived).length },
+            { name: 'Hidden Company', value: conversationPreferences.filter((item) => item.hiddenCompany).length },
+            { name: 'Deleted', value: conversationPreferences.filter((item) => item.deleted).length },
+          ],
+          notifications: analyticsCountRows(notifications, (item) => item.type, 12),
+          notificationRead: [
+            { name: 'Read', value: notifications.filter((item) => item.isRead).length },
+            { name: 'Unread', value: notifications.filter((item) => !item.isRead).length },
+            { name: 'Archived', value: notifications.filter((item) => item.isArchived).length },
+          ],
+          system: {
+            statuses: analyticsCountRows(systemLogs, (item) => item.status),
+            modules: analyticsCountRows(systemLogs, (item) => item.module, 10),
+            methods: analyticsCountRows(systemLogs, (item) => item.method || 'N/A'),
+            p95DurationMs: analyticsPercentile(systemLogs.map((item) => item.durationMs), 95),
+            serverErrors: systemLogs.filter((item) => Number(item.statusCode) >= 500).length,
           },
         },
-      },
-      planCoverage: {
-        implemented: [
-          'Global filter panel',
-          'K1–K6 KPI bar',
-          'Overview hiring funnel',
-          'Applications & hires trend',
-          'Top industries by hires',
-          'Applications-before-hire distribution',
-          'Stage duration profile',
-          'Employer responsiveness',
-          'Drop-out breakdown',
-          'Decline reasons',
-          'Posted-jobs health and requirement analytics',
-          'Verification backlog and request analytics',
-        ],
-        schemaLimited: [
-          'Actual offered salary is unavailable; salary analytics use advertised job salary ranges.',
-          'Employer verification has no dedicated verifiedAt field; turnaround remains approximate.',
-          'Predictive P1–P8 and KPI K7/K8 are not activated because no scored prediction store/model outputs exist in the current schema.',
-          'Research-ready 63-variable row-level export is not exposed by this dashboard endpoint.',
-        ],
       },
     });
   } catch (error) {
