@@ -3,8 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const BRAND = {
-  primary: "#1e4ba0",
-  hover: "#1b4290",
+  primary: "#2e66a6",
+  hover: "#32489c",
   active: "#163879",
   focus: "#1e4ba0",
 };
