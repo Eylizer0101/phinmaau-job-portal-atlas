@@ -697,4 +697,6 @@ userSchema.set('toObject', { virtuals: true });
 userSchema.statics.hashToken = (token) =>
   crypto.createHash('sha256').update(String(token)).digest('hex');
 
+userSchema.index({ role: 1, 'jobSeekerProfile.campus': 1, 'jobSeekerProfile.yearGraduated': 1 });
+
 module.exports = mongoose.model('User', userSchema);

@@ -48,5 +48,6 @@ const jobEditRequestSchema = new mongoose.Schema({
 
 jobEditRequestSchema.index({ job: 1, status: 1, createdAt: -1 });
 jobEditRequestSchema.index({ employer: 1, createdAt: -1 });
+jobEditRequestSchema.index({ status: 1, createdAt: -1 });
 
 module.exports = mongoose.model('JobEditRequest', jobEditRequestSchema);
