@@ -2330,10 +2330,16 @@ exports.updateProfile = async (req, res) => {
   } catch (error) {
     console.error('Error updating profile:', error);
     if (error?.name === 'ValidationError') {
-      const validationMessage = Object.values(error.errors || {})[0]?.message;
+      const validationEntry = Object.values(error.errors || {})[0];
+      const validationPath = String(validationEntry?.path || '');
+      const validationMessage = String(validationEntry?.message || '').trim();
+
       return res.status(400).json({
         success: false,
-        message: validationMessage || 'Please check the profile information and try again.',
+        message:
+          validationPath === 'jobSeekerProfile.address'
+            ? 'Address must not exceed 250 characters.'
+            : validationMessage || 'Please check the profile information and try again.',
       });
     }
     res.status(500).json({ success: false, message: 'Error updating profile' });

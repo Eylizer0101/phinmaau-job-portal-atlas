@@ -5988,10 +5988,19 @@ const MyProfile = () => {
         sectionKey === 'about' &&
         (/aboutMe/i.test(serverMessage) || /maximum allowed length \(500\)/i.test(serverMessage));
 
+      const isRawValidationError =
+        /\bPath\s+[`'"]/i.test(serverMessage) ||
+        /jobSeekerProfile\./i.test(serverMessage) ||
+        /maximum allowed length/i.test(serverMessage);
+
       setError(
         isObjectiveLengthError
           ? 'Objective must not exceed 250 characters.'
-          : serverMessage || 'Failed to save changes.'
+          : isRawValidationError
+            ? sectionKey === 'basic'
+              ? 'Please check the information you entered and try again.'
+              : 'Please check the information in this section and try again.'
+            : serverMessage || 'Failed to save changes.'
       );
       return false;
     } finally {

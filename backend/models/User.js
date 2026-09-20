@@ -553,7 +553,7 @@ const userSchema = new mongoose.Schema(
         trim: true,
       },
 
-      address: { type: String, default: '', trim: true, maxlength: 50 },
+      address: { type: String, default: '', trim: true, maxlength: [250, 'Address must not exceed 250 characters.'] },
       birthday: { type: String, default: '', trim: true },
       gender: { type: String, default: '', trim: true },
       nationality: { type: String, default: '', trim: true, maxlength: 50 },
