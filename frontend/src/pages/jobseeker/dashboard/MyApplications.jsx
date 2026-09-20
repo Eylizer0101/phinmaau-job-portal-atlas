@@ -1475,6 +1475,19 @@ const MyApplications = () => {
                   const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
                   const employerRequestDecision = String(application.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase();
                   const canRequestEmploymentChange = statusValue === 'hired' && employmentStatus !== 'inactive';
+                  const statusRequestDeclineReason = String(
+                    application.employmentStatusRequest?.employerResponse?.declineReason ||
+                    application.employmentStatusRequest?.declineReason ||
+                    ''
+                  ).trim();
+                  const statusRequestDeclineExplanation = String(
+                    application.employmentStatusRequest?.employerResponse?.explanation ||
+                    application.employmentStatusRequest?.explanation ||
+                    ''
+                  ).trim();
+                  const showStatusRequestDeclineFeedback =
+                    statusValue === 'hired' &&
+                    (employmentRequestStatus === 'declined' || employerRequestDecision === 'declined');
 
                   const declineReason = String(application.declineReason || '').trim();
                   const declineComment = String(application.declineComment || '').trim();
@@ -1618,6 +1631,25 @@ const MyApplications = () => {
                             )}
                           </div>
                         </div>
+
+                        {showStatusRequestDeclineFeedback && (
+                          <div className={`mt-3 pt-3 ${UI.divider}`}>
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              <div className="rounded-lg border border-[#d7e6f7] bg-[#f3f8fe] px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-[#5d6f84]">Status Request Decline Reason</p>
+                                <p className="mt-1 text-sm font-medium leading-relaxed text-gray-800">
+                                  {statusRequestDeclineReason || 'No Decline reason was provided.'}
+                                </p>
+                              </div>
+                              <div className="rounded-lg border border-[#d7e6f7] bg-[#f3f8fe] px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-[#5d6f84]">Explanation</p>
+                                <p className="mt-1 text-sm font-medium leading-relaxed text-gray-800">
+                                  {statusRequestDeclineExplanation || 'No additional comment provided.'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {isDeclinedCard && (
                           <div className={`mt-3 pt-3 ${UI.divider}`}>
