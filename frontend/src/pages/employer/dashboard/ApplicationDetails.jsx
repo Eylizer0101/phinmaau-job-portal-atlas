@@ -1163,13 +1163,13 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
               value={comment}
               onChange={(event) => onCommentChange(event.target.value.slice(0, 30))}
               rows={4}
-              maxLength={30}
+              maxLength={200}
               disabled={submitting}
               className="min-h-[125px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-3 pb-8 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2f67e8] focus:ring-2 focus:ring-[#2f67e8]/10 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-70"
               placeholder="Leave a comment for the applicant..."
             />
             <span className="pointer-events-none absolute bottom-2.5 right-3 text-[10px] text-gray-400">
-              {commentLength}/30
+              {commentLength}/200
             </span>
           </div>
 

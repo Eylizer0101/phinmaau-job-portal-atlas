@@ -788,7 +788,7 @@ const DeclineReasonModal = ({
             onChange={(e) => onCommentChange(e.target.value.slice(0, 30))}
             disabled={isSubmitting}
             rows={4}
-            maxLength={30}
+            maxLength={200}
             placeholder="Leave a comment for the applicant..."
             className="min-h-[125px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2f67e8] focus:ring-2 focus:ring-[#2f67e8]/10 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-70"
           />
@@ -797,7 +797,7 @@ const DeclineReasonModal = ({
               * This feedback will be shared directly with the applicant to help their professional growth.
             </p>
             <span className="shrink-0 text-[11px] font-medium text-gray-400">
-              {String(comment || '').length}/30
+              {String(comment || '').length}/200
             </span>
           </div>
 
