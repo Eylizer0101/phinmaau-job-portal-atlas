@@ -2546,17 +2546,41 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
               const allowedKeys = [
                 'Backspace',
                 'Delete',
+                'Tab',
                 'ArrowLeft',
                 'ArrowRight',
                 'ArrowUp',
                 'ArrowDown',
-                'Tab',
                 'Home',
                 'End',
               ];
 
-              if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
-              if (!/^\d$/.test(e.key)) e.preventDefault();
+              if (e.ctrlKey || e.metaKey || allowedKeys.includes(e.key)) return;
+
+              if (!/^\d$/.test(e.key)) {
+                e.preventDefault();
+              }
+            }}
+            onBeforeInput={(e) => {
+              const incomingValue = e.nativeEvent?.data;
+              if (incomingValue && !/^\d+$/.test(incomingValue)) {
+                e.preventDefault();
+              }
+            }}
+            onPaste={(e) => {
+              e.preventDefault();
+
+              const pastedDigits = String(e.clipboardData?.getData('text') || '')
+                .replace(/\D/g, '');
+              const input = e.currentTarget;
+              const currentValue = String(item.phone || '');
+              const selectionStart = input.selectionStart ?? currentValue.length;
+              const selectionEnd = input.selectionEnd ?? selectionStart;
+              const nextValue = `${currentValue.slice(0, selectionStart)}${pastedDigits}${currentValue.slice(selectionEnd)}`
+                .replace(/\D/g, '')
+                .slice(0, 11);
+
+              change('phone', nextValue);
             }}
             onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))}
             placeholder="09XXXXXXXXX"
