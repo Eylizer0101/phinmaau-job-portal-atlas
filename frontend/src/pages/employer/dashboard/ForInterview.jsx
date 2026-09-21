@@ -785,7 +785,7 @@ const DeclineReasonModal = ({
           <textarea
             id="forInterviewDeclineComment"
             value={comment}
-            onChange={(e) => onCommentChange(e.target.value.slice(0, 30))}
+            onChange={(e) => onCommentChange(e.target.value.slice(0, 200))}
             disabled={isSubmitting}
             rows={4}
             maxLength={200}

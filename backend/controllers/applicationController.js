@@ -3105,7 +3105,7 @@ exports.updateApplicationStatus = async (req, res) => {
 
     if (nextStatus === 'declined') {
       let normalizedDeclineReason = String(declineReason || '').trim();
-      const normalizedDeclineComment = String(declineComment || '').trim().slice(0, 30);
+      const normalizedDeclineComment = String(declineComment || '').trim().slice(0, 200);
       const normalizedDeclinedFrom = String(declinedFrom || '').trim();
 
       if (normalizedDeclineReason === 'Other Not Listed Above' && !normalizedDeclineComment) {
