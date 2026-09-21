@@ -2538,16 +2538,58 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Contact Number</FormLabel>
           <PlainInput
             value={item.phone}
+            type="tel"
             maxLength={11}
             inputMode="numeric"
+            pattern="09[0-9]{9}"
+            autoComplete="tel"
+            onKeyDown={(e) => {
+              if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'].includes(e.key)) return;
+              if (e.ctrlKey || e.metaKey) return;
+              if (!/^\d$/.test(e.key)) {
+                e.preventDefault();
+                return;
+              }
+
+              const currentValue = String(item.phone || '');
+              const selectionStart = e.currentTarget.selectionStart ?? currentValue.length;
+              const selectionEnd = e.currentTarget.selectionEnd ?? currentValue.length;
+              const nextValue = `${currentValue.slice(0, selectionStart)}${e.key}${currentValue.slice(selectionEnd)}`;
+
+              if (nextValue.length > 11) {
+                e.preventDefault();
+                return;
+              }
+              if (nextValue.length >= 1 && nextValue[0] !== '0') {
+                e.preventDefault();
+                return;
+              }
+              if (nextValue.length >= 2 && nextValue[1] !== '9') {
+                e.preventDefault();
+              }
+            }}
+            onPaste={(e) => {
+              e.preventDefault();
+              const pastedDigits = e.clipboardData.getData('text').replace(/\D/g, '');
+              const currentValue = String(item.phone || '');
+              const selectionStart = e.currentTarget.selectionStart ?? currentValue.length;
+              const selectionEnd = e.currentTarget.selectionEnd ?? currentValue.length;
+              const nextValue = `${currentValue.slice(0, selectionStart)}${pastedDigits}${currentValue.slice(selectionEnd)}`.slice(0, 11);
+
+              if (!nextValue) {
+                change('phone', '');
+                return;
+              }
+              if (!/^0(?:9\d{0,9})?$/.test(nextValue)) return;
+              change('phone', nextValue);
+            }}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
               if (!digits) {
                 change('phone', '');
                 return;
               }
-              if (digits[0] !== '0') return;
-              if (digits.length >= 2 && digits[1] !== '9') return;
+              if (!/^0(?:9\d{0,9})?$/.test(digits)) return;
               change('phone', digits);
             }}
             placeholder="09XXXXXXXXX"
@@ -2555,7 +2597,16 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
-          <PlainInput value={item.email} type="email" onChange={(e) => change('email', e.target.value)} placeholder="Email address" />
+          <PlainInput
+            value={item.email}
+            type="email"
+            inputMode="email"
+            maxLength={100}
+            autoComplete="email"
+            pattern="(?=.*[A-Za-z])[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*@gmail\.com"
+            onChange={(e) => change('email', e.target.value)}
+            placeholder="name@gmail.com"
+          />
         </div>
       </>
     );
