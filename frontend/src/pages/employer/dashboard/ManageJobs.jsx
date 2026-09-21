@@ -1806,7 +1806,7 @@ const ManageJobs = () => {
                               });
                             }}
                           >
-                            <td className="px-6 py-4 align-middle text-sm font-medium text-gray-700">
+                            <td className="px-6 py-4 whitespace-nowrap align-middle text-sm font-medium text-gray-700">
                               {formatDate(job.createdAt)}
                             </td>
 
@@ -1868,7 +1868,7 @@ const ManageJobs = () => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 align-middle text-sm font-medium text-gray-600">
+                            <td className="px-6 py-4 whitespace-nowrap align-middle text-sm font-medium text-gray-600">
                               {formatDate(job.applicationDeadline)}
                             </td>
 
