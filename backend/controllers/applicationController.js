@@ -22,6 +22,20 @@ const VALID_DECLINE_REASONS = [
 const VALID_DECLINED_FROM = ['applicants', 'forInterview'];
 const DEFAULT_HIRING_STAGES = ['Initial Interview', 'Assessment', 'Final Interview', 'Job Offer'];
 
+const isApprovedJobseekerAccount = (user) => {
+  if (!user || user.role !== 'jobseeker') return false;
+
+  return (
+    user.isVerified === true ||
+    String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+    String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
+    (
+      String(user.status || '').toLowerCase() === 'active' &&
+      Boolean(String(user.username || '').trim())
+    )
+  );
+};
+
 const normalizeHiringStage = (value) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, 80);
 const sameHiringStage = (first, second) =>
   normalizeHiringStage(first).toLowerCase() === normalizeHiringStage(second).toLowerCase();
@@ -993,13 +1007,22 @@ exports.applyForJob = async (req, res) => {
       });
     }
 
-    const verificationStatus = jobseeker.jobSeekerProfile?.verificationStatus || 'not_submitted';
+    const verificationStatus = String(
+      jobseeker.jobSeekerProfile?.verificationStatus || 'not_submitted'
+    ).toLowerCase();
+    const accountVerified = isApprovedJobseekerAccount(jobseeker);
 
-    if (verificationStatus !== 'verified') {
+    if (!accountVerified) {
       return res.status(403).json({
         success: false,
         message: 'Your account is not verified. Please wait for admin approval before applying for jobs.'
       });
+    }
+
+    if (verificationStatus !== 'verified' || jobseeker.isVerified !== true) {
+      if (!jobseeker.jobSeekerProfile) jobseeker.jobSeekerProfile = {};
+      jobseeker.jobSeekerProfile.verificationStatus = 'verified';
+      jobseeker.isVerified = true;
     }
 
     const settingsVerification = jobseeker.settingsVerification || {};
@@ -1010,7 +1033,7 @@ exports.applyForJob = async (req, res) => {
     const hasRegisteredPhone = Boolean(String(jobseeker.jobSeekerProfile?.phoneNumber || '').trim());
     const phoneVerified = Boolean(
       settingsVerification.phoneVerified === true ||
-      (verificationStatus === 'verified' && hasRegisteredPhone)
+      (accountVerified && hasRegisteredPhone)
     );
 
     if (phoneVerified && settingsVerification.phoneVerified !== true) {
