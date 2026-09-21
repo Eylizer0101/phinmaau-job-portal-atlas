@@ -2224,7 +2224,7 @@ const EmployerDashboard = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-lg font-bold text-black leading-snug line-clamp-2 group-hover:text-[#2e66a6] transition-colors">
+                            <h3 className="text-lg font-bold text-black leading-snug truncate group-hover:text-[#2e66a6] transition-colors">
                               {String(job?.title || 'Job Title').replaceAll('"', '')}
                             </h3>
 
