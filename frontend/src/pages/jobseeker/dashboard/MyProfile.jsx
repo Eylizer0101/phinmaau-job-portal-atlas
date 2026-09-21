@@ -2536,55 +2536,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Contact Number</FormLabel>
-          <PlainInput
-            value={item.phone}
-            type="tel"
-            maxLength={11}
-            inputMode="numeric"
-            pattern="[0-9]*"
-            onKeyDown={(e) => {
-              const allowedKeys = [
-                'Backspace',
-                'Delete',
-                'Tab',
-                'ArrowLeft',
-                'ArrowRight',
-                'ArrowUp',
-                'ArrowDown',
-                'Home',
-                'End',
-              ];
-
-              if (e.ctrlKey || e.metaKey || allowedKeys.includes(e.key)) return;
-
-              if (!/^\d$/.test(e.key)) {
-                e.preventDefault();
-              }
-            }}
-            onBeforeInput={(e) => {
-              const incomingValue = e.nativeEvent?.data;
-              if (incomingValue && !/^\d+$/.test(incomingValue)) {
-                e.preventDefault();
-              }
-            }}
-            onPaste={(e) => {
-              e.preventDefault();
-
-              const pastedDigits = String(e.clipboardData?.getData('text') || '')
-                .replace(/\D/g, '');
-              const input = e.currentTarget;
-              const currentValue = String(item.phone || '');
-              const selectionStart = input.selectionStart ?? currentValue.length;
-              const selectionEnd = input.selectionEnd ?? selectionStart;
-              const nextValue = `${currentValue.slice(0, selectionStart)}${pastedDigits}${currentValue.slice(selectionEnd)}`
-                .replace(/\D/g, '')
-                .slice(0, 11);
-
-              change('phone', nextValue);
-            }}
-            onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))}
-            placeholder="09XXXXXXXXX"
-          />
+          <PlainInput value={item.phone} maxLength={11} inputMode="numeric" onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="09XXXXXXXXX" />
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
