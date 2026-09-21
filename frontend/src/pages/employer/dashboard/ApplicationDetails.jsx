@@ -1161,7 +1161,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
           <div className="relative mt-3">
             <textarea
               value={comment}
-              onChange={(event) => onCommentChange(event.target.value.slice(0, 30))}
+              onChange={(event) => onCommentChange(event.target.value.slice(0, 200))}
               rows={4}
               maxLength={200}
               disabled={submitting}
