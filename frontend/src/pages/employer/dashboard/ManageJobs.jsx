@@ -1729,9 +1729,9 @@ const ManageJobs = () => {
                     <colgroup>
                       <col className="w-[128px]" />
                       <col />
-                      <col className="w-[80px]" />
-                      <col className="w-[88px]" />
-                      <col className="w-[100px]" />
+                      <col className="w-[120px]" />
+                      <col className="w-[112px]" />
+                      <col className="w-[120px]" />
                       <col className="w-[128px]" />
                       <col className="w-[208px]" />
                     </colgroup>
