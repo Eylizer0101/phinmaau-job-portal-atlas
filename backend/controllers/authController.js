@@ -2229,8 +2229,8 @@ exports.updateProfile = async (req, res) => {
           if (!/^09\d{9}$/.test(phone)) {
             return res.status(400).json({ success: false, message: 'Reference contact number must be an 11-digit number starting with 09.' });
           }
-          if (!/^(?=[a-z0-9.]*[a-z])[a-z0-9]+(?:\.[a-z0-9]+)*@gmail\.com$/i.test(email)) {
-            return res.status(400).json({ success: false, message: 'Please enter a valid reference Gmail address with letters before @gmail.com.' });
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/[a-zA-Z]/.test(email.split('@')[0])) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid reference email address with a letter before @ and a complete domain.' });
           }
           reference.phone = phone;
           reference.email = email.toLowerCase();

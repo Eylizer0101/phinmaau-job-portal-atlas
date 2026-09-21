@@ -2536,77 +2536,11 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Contact Number</FormLabel>
-          <PlainInput
-            value={item.phone}
-            type="tel"
-            maxLength={11}
-            inputMode="numeric"
-            pattern="09[0-9]{9}"
-            autoComplete="tel"
-            onKeyDown={(e) => {
-              if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'].includes(e.key)) return;
-              if (e.ctrlKey || e.metaKey) return;
-              if (!/^\d$/.test(e.key)) {
-                e.preventDefault();
-                return;
-              }
-
-              const currentValue = String(item.phone || '');
-              const selectionStart = e.currentTarget.selectionStart ?? currentValue.length;
-              const selectionEnd = e.currentTarget.selectionEnd ?? currentValue.length;
-              const nextValue = `${currentValue.slice(0, selectionStart)}${e.key}${currentValue.slice(selectionEnd)}`;
-
-              if (nextValue.length > 11) {
-                e.preventDefault();
-                return;
-              }
-              if (nextValue.length >= 1 && nextValue[0] !== '0') {
-                e.preventDefault();
-                return;
-              }
-              if (nextValue.length >= 2 && nextValue[1] !== '9') {
-                e.preventDefault();
-              }
-            }}
-            onPaste={(e) => {
-              e.preventDefault();
-              const pastedDigits = e.clipboardData.getData('text').replace(/\D/g, '');
-              const currentValue = String(item.phone || '');
-              const selectionStart = e.currentTarget.selectionStart ?? currentValue.length;
-              const selectionEnd = e.currentTarget.selectionEnd ?? currentValue.length;
-              const nextValue = `${currentValue.slice(0, selectionStart)}${pastedDigits}${currentValue.slice(selectionEnd)}`.slice(0, 11);
-
-              if (!nextValue) {
-                change('phone', '');
-                return;
-              }
-              if (!/^0(?:9\d{0,9})?$/.test(nextValue)) return;
-              change('phone', nextValue);
-            }}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
-              if (!digits) {
-                change('phone', '');
-                return;
-              }
-              if (!/^0(?:9\d{0,9})?$/.test(digits)) return;
-              change('phone', digits);
-            }}
-            placeholder="09XXXXXXXXX"
-          />
+          <PlainInput value={item.phone} maxLength={11} inputMode="numeric" onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="09XXXXXXXXX" />
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
-          <PlainInput
-            value={item.email}
-            type="email"
-            inputMode="email"
-            maxLength={100}
-            autoComplete="email"
-            pattern="(?=.*[A-Za-z])[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*@gmail\.com"
-            onChange={(e) => change('email', e.target.value)}
-            placeholder="name@gmail.com"
-          />
+          <PlainInput value={item.email} type="email" onChange={(e) => change('email', e.target.value)} placeholder="Email address" />
         </div>
       </>
     );
@@ -3965,6 +3899,9 @@ const ProfileEditModal = ({
                           value={item[field.key]}
                           onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)}
                           placeholder={field.placeholder}
+                          type={sectionKey === 'references' ? (field.key === 'phone' ? 'tel' : field.key === 'email' ? 'email' : 'text') : 'text'}
+                          maxLength={sectionKey === 'references' && field.key === 'phone' ? 11 : undefined}
+                          inputMode={sectionKey === 'references' && field.key === 'phone' ? 'numeric' : undefined}
                         />
                       )}
                     </div>
@@ -4101,8 +4038,8 @@ const getProfileEntryValidationError = (sectionKey, item = {}) => {
     if (!/^09\d{9}$/.test(value('phone'))) {
       return 'Contact number must be an 11-digit number starting with 09.';
     }
-    if (!/^(?=[a-z0-9.]*[a-z])[a-z0-9]+(?:\.[a-z0-9]+)*@gmail\.com$/i.test(value('email'))) {
-      return 'Please enter a valid Gmail address with letters before @gmail.com.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('email')) || !/[a-zA-Z]/.test(value('email').split('@')[0])) {
+      return 'Please enter a valid reference email address with a letter before @ and a complete domain.';
     }
   }
 
@@ -6604,6 +6541,10 @@ const MyProfile = () => {
   };
 
   const updateProfileListItem = (sectionKey, index, field, value) => {
+    if (sectionKey === 'references' && field === 'phone') {
+      value = String(value ?? '').replace(/\D/g, '').slice(0, 11);
+      if (value !== '' && value !== '0' && !/^09\d{0,9}$/.test(value)) return;
+    }
     setDrafts((prev) => ({
       ...prev,
       [sectionKey]: (Array.isArray(prev[sectionKey]) ? prev[sectionKey] : []).map((item, itemIndex) =>

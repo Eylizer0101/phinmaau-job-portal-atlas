@@ -371,7 +371,7 @@ const profileMoreEntrySchema = new mongoose.Schema(
     name: { type: String, default: '', trim: true, maxlength: 100 },
     position: { type: String, default: '', trim: true, maxlength: 100 },
     company: { type: String, default: '', trim: true, maxlength: 120 },
-    email: { type: String, default: '', trim: true, lowercase: true, validate: { validator: (value) => !value || /^(?=[a-z0-9.]*[a-z])[a-z0-9]+(?:\.[a-z0-9]+)*@gmail\.com$/i.test(value), message: 'Please enter a valid Gmail address with letters before @gmail.com.' } },
+    email: { type: String, default: '', trim: true, validate: { validator: (value) => !value || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && /[a-zA-Z]/.test(value.split('@')[0])), message: 'Please enter a valid reference email address with a letter before @ and a complete domain.' } },
     phone: { type: String, default: '', trim: true, maxlength: 11, match: [/^09\d{9}$/, 'Contact number must be an 11-digit number starting with 09.'] },
   },
   { _id: true, timestamps: true }
