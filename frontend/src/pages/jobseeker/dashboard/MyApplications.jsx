@@ -1771,7 +1771,7 @@ const MyApplications = () => {
                   className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]"
                   style={{ letterSpacing: "0.06em" }}
                 >
-                  PRIVACY NOTICE
+                  WITHDRAWAL NOTICE
                 </h2>
 
                 <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
