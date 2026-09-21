@@ -457,6 +457,19 @@ const createEmptyEducationEntry = () => ({
   description: '',
 });
 
+const getEducationTextValidationError = (entry = {}) => {
+  const attainment = String(entry.level || entry.educationalAttainment || '').trim();
+  const aliases = [attainment, entry.level, entry.educationalAttainment]
+    .filter((value) => value !== undefined && value !== null && String(value).trim() !== '');
+  if (!attainment || aliases.some((value) => !/\p{L}/u.test(String(value)))) {
+    return 'Educational attainment must contain at least one letter.';
+  }
+  if (!/\p{L}/u.test(String(entry.school || ''))) {
+    return 'School / University must contain at least one letter.';
+  }
+  return '';
+};
+
 const normalizeEducationEntry = (entry = {}) => {
   const level = String(entry.level || entry.educationalAttainment || '').trim();
   const school = String(entry.school || entry.campus || '').trim();
@@ -5915,6 +5928,13 @@ const MyProfile = () => {
           return false;
         }
 
+        const educationTextError = nextEducationEntries.map(getEducationTextValidationError).find(Boolean);
+        if (educationTextError) {
+          setError(educationTextError);
+          setSavingSection('');
+          return false;
+        }
+
         const monthNumber = (value) => MONTH_OPTIONS.indexOf(value) + 1;
         const invalidYearEntry = nextEducationEntries.find((entry) => {
           const startYear = Number(entry.startYear || 0);
@@ -6244,6 +6264,12 @@ const MyProfile = () => {
 
         if (!selectedEntry || !hasEducationEntryValue(selectedEntry)) {
           setError('Please complete the education entry before saving.');
+          return;
+        }
+
+        const educationTextError = getEducationTextValidationError(selectedEntry);
+        if (educationTextError) {
+          setError(educationTextError);
           return;
         }
 

@@ -308,9 +308,27 @@ const companyReviewSchema = new mongoose.Schema(
 // ---------------------------
 const educationEntrySchema = new mongoose.Schema(
   {
-    level: { type: String, default: '', trim: true },
-    educationalAttainment: { type: String, default: '', trim: true, maxlength: 100 },
-    school: { type: String, default: '', trim: true, maxlength: 100 },
+    level: {
+      type: String, default: '', trim: true,
+      validate: {
+        validator: (value) => !value || /\p{L}/u.test(value),
+        message: 'Educational attainment must contain at least one letter.',
+      },
+    },
+    educationalAttainment: {
+      type: String, default: '', trim: true, maxlength: 100,
+      validate: {
+        validator: (value) => !value || /\p{L}/u.test(value),
+        message: 'Educational attainment must contain at least one letter.',
+      },
+    },
+    school: {
+      type: String, default: '', trim: true, maxlength: 100,
+      validate: {
+        validator: (value) => !value || /\p{L}/u.test(value),
+        message: 'School / University must contain at least one letter.',
+      },
+    },
     campus: { type: String, default: '', trim: true, set: normalizeCampusValue },
     course: { type: String, default: '', trim: true, set: normalizeCourseValue },
     studyField: { type: String, default: '', trim: true, maxlength: 50 },

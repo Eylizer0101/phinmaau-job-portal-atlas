@@ -588,6 +588,19 @@ const isValidWorkExperienceDate = (value) => {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
+const getEducationTextValidationError = (entry = {}) => {
+  const attainment = String(entry.level || entry.educationalAttainment || '').trim();
+  const aliases = [attainment, entry.level, entry.educationalAttainment]
+    .filter((value) => value !== undefined && value !== null && String(value).trim() !== '');
+  if (!attainment || aliases.some((value) => !/\p{L}/u.test(String(value)))) {
+    return 'Educational attainment must contain at least one letter.';
+  }
+  if (!/\p{L}/u.test(String(entry.school || ''))) {
+    return 'School / University must contain at least one letter.';
+  }
+  return '';
+};
+
 const normalizeWorkExperienceOutput = (entry) => ({
   _id: entry?._id,
   companyName: entry?.companyName || '',
@@ -2261,6 +2274,18 @@ exports.updateProfile = async (req, res) => {
           });
         }
         updateData.jobSeekerProfile.aboutMe = sanitizedObjective;
+      }
+
+      if (requestedProfileKeys.includes('educationEntries')) {
+        if (!Array.isArray(updateData.jobSeekerProfile.educationEntries)) {
+          return res.status(400).json({ success: false, message: 'Education entries must be a list.' });
+        }
+        for (const entry of updateData.jobSeekerProfile.educationEntries) {
+          const educationTextError = getEducationTextValidationError(entry || {});
+          if (educationTextError) {
+            return res.status(400).json({ success: false, message: educationTextError });
+          }
+        }
       }
 
       const richTextEntryKeys = [
