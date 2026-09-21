@@ -2702,6 +2702,20 @@ const EditableProfileListSection = ({
   );
 };
 
+const getWorkExperienceToday = () => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const part = (type) => parts.find((item) => item.type === type).value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
+
+const isValidWorkExperienceDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value < '0001-01-01') return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
 const WorkExperienceModal = ({
   open,
   mode,
@@ -2712,6 +2726,18 @@ const WorkExperienceModal = ({
   onSave,
   saving,
 }) => {
+  const [today, setToday] = useState(getWorkExperienceToday);
+  useEffect(() => {
+    if (!open) return undefined;
+    const refresh = () => setToday(getWorkExperienceToday());
+    refresh();
+    const timer = setInterval(refresh, 1000);
+    window.addEventListener('focus', refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [open]);
   if (!open) return null;
 
   return (
@@ -2759,6 +2785,8 @@ const WorkExperienceModal = ({
               label="Start Date"
               type="date"
               value={form.startDate}
+              min="0001-01-01"
+              max={today}
               onChange={(e) => onChange('startDate', e.target.value)}
             />
             {!form.isPresent ? (
@@ -2766,6 +2794,8 @@ const WorkExperienceModal = ({
                 label="End Date"
                 type="date"
                 value={form.endDate}
+                min={isValidWorkExperienceDate(form.startDate) ? form.startDate : '0001-01-01'}
+                max={today}
                 onChange={(e) => onChange('endDate', e.target.value)}
               />
             ) : (
@@ -6842,6 +6872,12 @@ const MyProfile = () => {
   };
 
   const handleWorkExperienceFormChange = (field, value) => {
+    if ((field === 'startDate' || field === 'endDate') && value) {
+      if (!isValidWorkExperienceDate(value) || value > getWorkExperienceToday()) {
+        setWorkExperienceError('Enter a valid date on or before today.');
+        return;
+      }
+    }
     if (workExperienceError) setWorkExperienceError('');
     setWorkExperienceForm((prev) => {
       if (field === 'isPresent') {
@@ -6924,6 +6960,18 @@ const MyProfile = () => {
         new Date(workExperienceForm.startDate) > new Date(workExperienceForm.endDate)
       ) {
         setWorkExperienceError('Start date cannot be later than end date.');
+        return;
+      }
+
+      if (
+        !isValidWorkExperienceDate(workExperienceForm.startDate) ||
+        workExperienceForm.startDate > getWorkExperienceToday() ||
+        (!workExperienceForm.isPresent && (
+          !isValidWorkExperienceDate(workExperienceForm.endDate) ||
+          workExperienceForm.endDate > getWorkExperienceToday()
+        ))
+      ) {
+        setWorkExperienceError('Enter valid work experience dates on or before today.');
         return;
       }
 

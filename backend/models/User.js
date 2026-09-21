@@ -332,12 +332,46 @@ const educationEntrySchema = new mongoose.Schema(
 // ---------------------------
 // Work experience schema
 // ---------------------------
+const getWorkExperienceToday = () => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const part = (type) => parts.find((item) => item.type === type).value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
+
+const isValidWorkExperienceDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value < '0001-01-01') return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const isPastOrCurrentWorkDate = (value) => {
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return false;
+  const day = value.toISOString().slice(0, 10);
+  return isValidWorkExperienceDate(day) && day <= getWorkExperienceToday();
+};
+
 const workExperienceSchema = new mongoose.Schema(
   {
     companyName: { type: String, required: true, trim: true, maxlength: 120, default: '' },
     positionTitle: { type: String, required: true, trim: true, maxlength: 100, default: '' },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, default: null },
+    startDate: {
+      type: Date,
+      required: true,
+      validate: { validator: isPastOrCurrentWorkDate, message: 'Start date must be a valid date on or before today.' },
+    },
+    endDate: {
+      type: Date,
+      default: null,
+      required: function () { return !this.isPresent; },
+      validate: {
+        validator: function (value) {
+          return this.isPresent || (isPastOrCurrentWorkDate(value) && (!this.startDate || value >= this.startDate));
+        },
+        message: 'End date must be on or after start date and on or before today.',
+      },
+    },
     isPresent: { type: Boolean, default: false },
     description: {
       type: String,

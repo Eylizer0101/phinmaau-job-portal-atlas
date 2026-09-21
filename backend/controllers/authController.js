@@ -574,6 +574,20 @@ const makeUniqueUsername = async (base) => {
   }
 };
 
+const getWorkExperienceToday = () => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const part = (type) => parts.find((item) => item.type === type).value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
+
+const isValidWorkExperienceDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value < '0001-01-01') return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
 const normalizeWorkExperienceOutput = (entry) => ({
   _id: entry?._id,
   companyName: entry?.companyName || '',
@@ -2510,6 +2524,9 @@ exports.createWorkExperience = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Start date is required.' });
     }
 
+    if (!isValidWorkExperienceDate(startDate) || startDate > getWorkExperienceToday()) {
+      return res.status(400).json({ success: false, message: 'Start date must be a valid date on or before today.' });
+    }
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) {
       return res.status(400).json({ success: false, message: 'Invalid start date.' });
@@ -2519,6 +2536,9 @@ exports.createWorkExperience = async (req, res) => {
     const present = Boolean(isPresent);
 
     if (!present && endDate) {
+      if (!isValidWorkExperienceDate(endDate) || endDate > getWorkExperienceToday()) {
+        return res.status(400).json({ success: false, message: 'End date must be a valid date on or before today.' });
+      }
       normalizedEndDate = new Date(endDate);
       if (Number.isNaN(normalizedEndDate.getTime())) {
         return res.status(400).json({ success: false, message: 'Invalid end date.' });
@@ -2599,6 +2619,9 @@ exports.updateWorkExperience = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Start date is required.' });
     }
 
+    if (!isValidWorkExperienceDate(startDate) || startDate > getWorkExperienceToday()) {
+      return res.status(400).json({ success: false, message: 'Start date must be a valid date on or before today.' });
+    }
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) {
       return res.status(400).json({ success: false, message: 'Invalid start date.' });
@@ -2608,6 +2631,9 @@ exports.updateWorkExperience = async (req, res) => {
     const present = Boolean(isPresent);
 
     if (!present && endDate) {
+      if (!isValidWorkExperienceDate(endDate) || endDate > getWorkExperienceToday()) {
+        return res.status(400).json({ success: false, message: 'End date must be a valid date on or before today.' });
+      }
       normalizedEndDate = new Date(endDate);
       if (Number.isNaN(normalizedEndDate.getTime())) {
         return res.status(400).json({ success: false, message: 'Invalid end date.' });
