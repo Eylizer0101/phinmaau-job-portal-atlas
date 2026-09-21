@@ -2536,7 +2536,22 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Contact Number</FormLabel>
-          <PlainInput value={item.phone} maxLength={11} inputMode="numeric" onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="09XXXXXXXXX" />
+          <PlainInput
+            value={item.phone}
+            maxLength={11}
+            inputMode="numeric"
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+              if (!digits) {
+                change('phone', '');
+                return;
+              }
+              if (digits[0] !== '0') return;
+              if (digits.length >= 2 && digits[1] !== '9') return;
+              change('phone', digits);
+            }}
+            placeholder="09XXXXXXXXX"
+          />
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
@@ -4035,8 +4050,8 @@ const getProfileEntryValidationError = (sectionKey, item = {}) => {
     if (!/^09\d{9}$/.test(value('phone'))) {
       return 'Contact number must be an 11-digit number starting with 09.';
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('email')) || /^\d+$/.test(value('email'))) {
-      return 'Please enter a valid reference email address containing @.';
+    if (!/^(?=[a-z0-9.]*[a-z])[a-z0-9]+(?:\.[a-z0-9]+)*@gmail\.com$/i.test(value('email'))) {
+      return 'Please enter a valid Gmail address with letters before @gmail.com.';
     }
   }
 
