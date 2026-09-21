@@ -1818,7 +1818,7 @@ const MyApplications = () => {
                     className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
                     style={{ accentColor: "#1e4ba0", "--tw-ring-color": "#1e4ba0" }}
                   />
-                  <span className="leading-5">I have read and understood this Privacy Notice.</span>
+                  <span className="leading-5">I have read and understood this Withdrawal Notice.</span>
                 </label>
 
                 <div className="mt-4 flex justify-center gap-3 sm:mt-5">
@@ -2081,7 +2081,7 @@ const MyApplications = () => {
               </div>
 
               <h2 id="status-request-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>
-                PRIVACY NOTICE
+                Withdrawal NOTICE
               </h2>
 
               <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
@@ -2106,7 +2106,7 @@ const MyApplications = () => {
 
               <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer select-none items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] sm:mt-4">
                 <input type="checkbox" checked={statusRequestPrivacyAccepted} onChange={(event) => setStatusRequestPrivacyAccepted(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 accent-[#1e4ba0] focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2" />
-                <span className="leading-5">I have read and understood this Privacy Notice.</span>
+                <span className="leading-5">I have read and understood this Withdrawal Notice.</span>
               </label>
 
               <div className="mt-4 flex justify-center gap-3 sm:mt-5">
