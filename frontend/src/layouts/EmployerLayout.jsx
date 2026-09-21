@@ -238,9 +238,9 @@ const EmployerLayout = ({ children }) => {
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2";
 
-  // Keep the bottom sidebar profile unavailable while the initial account
-  // check is still loading and while the mandatory password gate is active.
-  const isSidebarProfileLocked = !hasCheckedVerification || isPasswordGateLocked;
+  // Keep the bottom sidebar profile unavailable only while the mandatory
+  // password gate is active. Route changes must not temporarily disable it.
+  const isSidebarProfileLocked = isPasswordGateLocked;
 
   const sidebarProfile = sidebarUser?.employerProfile || {};
   const sidebarCompanyName =
