@@ -1725,38 +1725,38 @@ const ManageJobs = () => {
                 )}
               >
                 <div className="">
-                  <table className="min-w-full border-separate border-spacing-0">
+                  <table className="w-full table-fixed border-separate border-spacing-0">
                     <colgroup>
-                      <col className="w-[12%]" />
-                      <col className="w-[22%]" />
-                      <col className="w-[8%]" />
-                      <col className="w-[9%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[14%]" />
-                      <col className="w-[24%]" />
+                      <col className="w-[128px]" />
+                      <col />
+                      <col className="w-[80px]" />
+                      <col className="w-[88px]" />
+                      <col className="w-[100px]" />
+                      <col className="w-[128px]" />
+                      <col className="w-[208px]" />
                     </colgroup>
 
                     <thead className="bg-gray-50">
                       <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-gray-50 [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Posted
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Job Title
                         </th>
-                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-3 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Vacancy
                         </th>
-                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-3 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Applicant
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Status
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Valid Until
                         </th>
-                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-3 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Actions
                         </th>
                       </tr>
@@ -1806,11 +1806,11 @@ const ManageJobs = () => {
                               });
                             }}
                           >
-                            <td className="px-6 py-4 whitespace-nowrap align-middle text-sm font-medium text-gray-700">
+                            <td className="px-3 py-4 whitespace-nowrap align-middle text-sm font-medium text-gray-700">
                               {formatDate(job.createdAt)}
                             </td>
 
-                            <td className="px-6 py-4 align-middle">
+                            <td className="px-3 py-4 align-middle">
                               <div className="flex items-center gap-3">
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100">
                                   {logoUrl && !badLogos[job._id] ? (
@@ -1851,15 +1851,15 @@ const ManageJobs = () => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
+                            <td className="px-3 py-4 text-center align-middle text-sm font-medium text-gray-800">
                               {job.vacancies ?? '—'}
                             </td>
 
-                            <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
+                            <td className="px-3 py-4 text-center align-middle text-sm font-medium text-gray-800">
                               {getApplicantValue(job)}
                             </td>
 
-                            <td className="px-6 py-4 align-middle">
+                            <td className="px-3 py-4 align-middle">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
                                   {getStatusText(job)}
@@ -1868,11 +1868,11 @@ const ManageJobs = () => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 whitespace-nowrap align-middle text-sm font-medium text-gray-600">
+                            <td className="px-3 py-4 whitespace-nowrap align-middle text-sm font-medium text-gray-600">
                               {formatDate(job.applicationDeadline)}
                             </td>
 
-                            <td className="px-6 py-4 text-center align-middle">
+                            <td className="px-3 py-4 text-center align-middle">
                               <div className="flex flex-nowrap items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/manage-jobs/${job._id}/view`}
