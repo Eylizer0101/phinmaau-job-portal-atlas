@@ -2536,7 +2536,31 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Contact Number</FormLabel>
-          <PlainInput value={item.phone} maxLength={11} inputMode="numeric" onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="09XXXXXXXXX" />
+          <PlainInput
+            value={item.phone}
+            type="tel"
+            maxLength={11}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            onKeyDown={(e) => {
+              const allowedKeys = [
+                'Backspace',
+                'Delete',
+                'ArrowLeft',
+                'ArrowRight',
+                'ArrowUp',
+                'ArrowDown',
+                'Tab',
+                'Home',
+                'End',
+              ];
+
+              if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+              if (!/^\d$/.test(e.key)) e.preventDefault();
+            }}
+            onChange={(e) => change('phone', e.target.value.replace(/\D/g, '').slice(0, 11))}
+            placeholder="09XXXXXXXXX"
+          />
         </div>
         <div>
           <FormLabel required>Email</FormLabel>
