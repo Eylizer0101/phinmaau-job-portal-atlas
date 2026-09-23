@@ -696,8 +696,8 @@ const AdminAnalytics = () => {
   };
 
   return (
-    <main className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl px-1 py-8">
+    <main className="min-h-screen">
+      <div className="mx-auto max-w-[1480px] px-1 py-8">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2e66a6]">Reports & Analytics</p>
@@ -770,7 +770,7 @@ const AdminAnalytics = () => {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Global KPI bar">
+        <section className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Global KPI bar">
           {globalKpis.map((item) => <GlobalKpiCard key={item.label} {...item} />)}
         </section>
 
