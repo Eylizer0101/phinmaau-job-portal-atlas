@@ -707,14 +707,7 @@ const AdminAnalytics = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => fetchAnalytics(appliedFilters)}
-              disabled={loading}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
-            </button>
+          
             <button
               type="button"
               onClick={() => setExportOpen(true)}
