@@ -696,8 +696,8 @@ const AdminAnalytics = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#f6f8fb] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-[1600px] space-y-4">
+    <main className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-1 py-8">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2e66a6]">Reports & Analytics</p>
