@@ -1915,10 +1915,6 @@ const RegistrationTrafficChart = ({ data = [] }) => {
           )}
         </div>
       </div>
-      <div className="mt-10 flex items-center gap-5 text-xs text-slate-500">
-        <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#2e66a6]" />Job seekers + employers</span>
-        <span>Last 6 months</span>
-      </div>
     </div>
   );
 };
@@ -1937,7 +1933,7 @@ const OperationsCalendar = ({ userGrowth = {} }) => {
   const growth = Number(userGrowth.percentChange || 0);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Operations Calendar</p>
@@ -2151,7 +2147,7 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Monthly Registration Traffic</h2>
                 <p className="mt-1 text-xs text-slate-400">Job seekers and employers · Last 6 months</p>
