@@ -1850,21 +1850,56 @@ const RegistrationTrafficChart = ({ data = [] }) => {
   const rows = Array.isArray(data) ? data.slice(-6) : [];
   const maxValue = Math.max(1, ...rows.map((item) => Number(item.total || 0)));
 
+  const rawStep = maxValue / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(Math.max(rawStep, 1)));
+  const normalizedStep = rawStep / magnitude;
+  const niceStep =
+    normalizedStep <= 1
+      ? magnitude
+      : normalizedStep <= 2
+        ? 2 * magnitude
+        : normalizedStep <= 5
+          ? 5 * magnitude
+          : 10 * magnitude;
+  const axisMax = niceStep * 4;
+
+  const formatAxisValue = (value) => {
+    if (value >= 1000000) {
+      const millions = value / 1000000;
+      return `${Number.isInteger(millions) ? millions : millions.toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      const thousands = value / 1000;
+      return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)}K`;
+    }
+    return numberFormat.format(value);
+  };
+
   return (
     <div className="mt-7">
       <div className="relative h-[265px] border-b border-slate-200">
-        {[0, 1, 2, 3, 4].map((line) => (
-          <div
-            key={line}
-            className="absolute left-0 right-0 border-t border-dashed border-slate-200"
-            style={{ top: `${line * 25}%` }}
-          />
-        ))}
+        {[0, 1, 2, 3, 4].map((line) => {
+          const value = axisMax - line * niceStep;
+          return (
+            <React.Fragment key={line}>
+              <span
+                className="absolute left-0 w-10 -translate-y-1/2 text-right text-[11px] font-medium text-slate-400"
+                style={{ top: `${line * 25}%` }}
+              >
+                {formatAxisValue(value)}
+              </span>
+              <div
+                className="absolute left-12 right-0 border-t border-dashed border-slate-200"
+                style={{ top: `${line * 25}%` }}
+              />
+            </React.Fragment>
+          );
+        })}
 
-        <div className="absolute inset-0 flex items-end justify-around gap-4 px-4 pb-0">
+        <div className="absolute bottom-0 left-12 right-0 top-0 flex items-end justify-around gap-4 px-4 pb-0">
           {rows.length ? rows.map((item) => {
             const total = Number(item.total || 0);
-            const height = total > 0 ? Math.max(12, (total / maxValue) * 88) : 4;
+            const height = total > 0 ? Math.max(12, (total / axisMax) * 100) : 4;
             return (
               <div key={item.month || item.label} className="group relative flex h-full flex-1 items-end justify-center">
                 <div
