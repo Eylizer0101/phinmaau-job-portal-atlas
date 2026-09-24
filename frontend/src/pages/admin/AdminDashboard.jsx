@@ -1877,7 +1877,7 @@ const RegistrationTrafficChart = ({ data = [] }) => {
 
   return (
     <div className="mt-7">
-      <div className="relative h-[265px] border-b border-slate-200">
+      <div className="relative h-[258px] border-b border-slate-200">
         {[0, 1, 2, 3, 4].map((line) => {
           const value = axisMax - line * niceStep;
           return (
@@ -1907,7 +1907,7 @@ const RegistrationTrafficChart = ({ data = [] }) => {
                   style={{ height: `${height}%` }}
                   title={`${item.label}: ${numberFormat.format(total)} registrations`}
                 />
-                <div className="absolute -bottom-7 text-xs font-medium text-slate-500">{item.label}</div>
+                <div className="absolute -bottom-5 text-xs font-medium text-slate-500">{item.label}</div>
               </div>
             );
           }) : (
