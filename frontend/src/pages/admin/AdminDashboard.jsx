@@ -1667,65 +1667,6 @@ const AdminTopActions = () => {
         ) : null}
       </div>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            setIsProfileOpen((prev) => !prev);
-            setIsNotificationOpen(false);
-          }}
-          className="inline-flex items-center gap-2 rounded-full px-1.5 py-1 transition hover:bg-slate-100"
-          aria-label="Open admin profile"
-        >
-          <img
-            src={adminImage}
-            alt={`${adminName} organization logo`}
-            className="h-9 w-9 rounded-full border border-slate-200 bg-white object-contain p-0.5"
-            onError={(event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = "/images/phinma-logo.png";
-            }}
-          />
-          <span className="hidden max-w-[120px] truncate text-xs font-bold text-slate-800 sm:block">{adminName}</span>
-          <ChevronDown size={14} className="text-slate-500" />
-        </button>
-
-        {isProfileOpen ? (
-          <div
-            onClick={(event) => event.stopPropagation()}
-            className="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
-          >
-            <div className="px-4 py-4">
-              <p className="truncate text-sm font-semibold text-slate-900">{adminName}</p>
-              <p className="mt-0.5 truncate text-xs text-slate-500">{admin?.email || "Admin account"}</p>
-            </div>
-
-            <div className="border-t border-slate-100 p-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsProfileOpen(false);
-                  navigate("/admin/profile");
-                }}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-              >
-                <UserRound size={16} />
-                Admin Profile
-              </button>
-
-              <button
-                type="button"
-                onClick={openSignOutModal}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-              >
-                <LogOut size={16} />
-                Sign Out
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
       {showSignOutModal ? (
         <div
           className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/10 px-4 transition-opacity duration-200 ${

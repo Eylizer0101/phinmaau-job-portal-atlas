@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useMatch, useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -8,6 +9,16 @@ const AdminLayout = ({ children }) => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
+  const [sidebarProfileOpen, setSidebarProfileOpen] = useState(false);
+  const [sidebarUser, setSidebarUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const [sidebarAvatarFailed, setSidebarAvatarFailed] = useState(false);
+  const sidebarProfileRef = useRef(null);
   const [openDropdowns, setOpenDropdowns] = useState({
     Main: true,
     Records: true,
@@ -59,6 +70,94 @@ const AdminLayout = ({ children }) => {
 
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2";
+
+  const getSidebarAdminName = (user) => {
+    const fullName = [
+      user?.firstName,
+      user?.middleName,
+      user?.lastName,
+      user?.extensionName,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    return fullName || user?.fullName || user?.name || user?.username || "System Admin";
+  };
+
+  const sidebarAdminName = getSidebarAdminName(sidebarUser);
+  const sidebarEmail = sidebarUser?.email || "";
+  const rawSidebarAvatar = String(
+    sidebarUser?.organizationLogo ||
+      sidebarUser?.profileImage ||
+      sidebarUser?.avatar ||
+      sidebarUser?.image ||
+      "/images/phinma-logo.png"
+  ).trim();
+  const apiOrigin = String(
+    api?.defaults?.baseURL || process.env.REACT_APP_API_URL || ""
+  ).replace(/\/api\/?$/, "");
+  const sidebarAvatar = !rawSidebarAvatar
+    ? "/images/phinma-logo.png"
+    : /^https?:\/\//i.test(rawSidebarAvatar)
+      ? rawSidebarAvatar
+      : rawSidebarAvatar.startsWith("/images/")
+        ? rawSidebarAvatar
+        : `${apiOrigin}/${rawSidebarAvatar.replace(/^\/+/, "")}`;
+
+  useEffect(() => {
+    const syncAdminProfile = async () => {
+      try {
+        const response = await api.get("/admin/profile");
+        const profile = response.data?.profile || {};
+        let storedAdmin = {};
+        try {
+          storedAdmin = JSON.parse(localStorage.getItem("user") || "{}");
+        } catch {
+          storedAdmin = {};
+        }
+
+        const nextAdmin = {
+          ...storedAdmin,
+          ...profile,
+          profileImage:
+            profile.organizationLogo ||
+            storedAdmin.profileImage ||
+            "/images/phinma-logo.png",
+        };
+
+        setSidebarUser(nextAdmin);
+        setSidebarAvatarFailed(false);
+        localStorage.setItem("user", JSON.stringify(nextAdmin));
+      } catch {
+        try {
+          setSidebarUser(JSON.parse(localStorage.getItem("user") || "null"));
+        } catch {
+          setSidebarUser(null);
+        }
+      }
+    };
+
+    syncAdminProfile();
+    window.addEventListener("admin-profile-updated", syncAdminProfile);
+    return () => window.removeEventListener("admin-profile-updated", syncAdminProfile);
+  }, []);
+
+  useEffect(() => {
+    if (!sidebarProfileOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (
+        sidebarProfileRef.current &&
+        !sidebarProfileRef.current.contains(event.target)
+      ) {
+        setSidebarProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [sidebarProfileOpen]);
 
 
   const navSections = useMemo(
@@ -502,6 +601,124 @@ const AdminLayout = ({ children }) => {
     </nav>
   );
 
+  const SidebarProfile = ({ mobile = false }) => (
+    <div
+      ref={mobile ? undefined : sidebarProfileRef}
+      className="relative border-t border-gray-200 bg-white p-3"
+    >
+      {sidebarProfileOpen ? (
+        <div className="absolute bottom-[calc(100%+8px)] left-3 right-3 z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarProfileOpen(false);
+              setIsMobileNavOpen(false);
+              navigate("/admin/profile");
+            }}
+            className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <svg
+              className="h-5 w-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.7"
+                d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8m8 2h4m-2-2v4"
+              />
+            </svg>
+            Admin Profile
+          </button>
+
+          <div className="border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarProfileOpen(false);
+                setIsMobileNavOpen(false);
+                openLogoutModal();
+              }}
+              className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.7"
+                  d="M17 16l4-4m0 0l-4-4m4 4H9m4 8H7a2 2 0 01-2-2V6a2 2 0 012-2h6"
+                />
+              </svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setSidebarProfileOpen((open) => !open)}
+        className={[
+          "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition",
+          "hover:bg-gray-100",
+          focusRing,
+        ].join(" ")}
+        aria-haspopup="menu"
+        aria-expanded={sidebarProfileOpen}
+      >
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+          <img
+            src={
+              sidebarAvatarFailed
+                ? "/images/phinma-logo.png"
+                : sidebarAvatar
+            }
+            alt={`${sidebarAdminName} profile`}
+            className="h-full w-full object-contain bg-white p-0.5"
+            onError={() => setSidebarAvatarFailed(true)}
+          />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-900">
+            {sidebarAdminName}
+          </p>
+          {sidebarEmail ? (
+            <p className="truncate text-xs text-gray-500">{sidebarEmail}</p>
+          ) : (
+            <p className="truncate text-xs text-gray-500">Administrator</p>
+          )}
+        </div>
+
+        <svg
+          className={`h-4 w-4 shrink-0 text-gray-500 transition ${
+            sidebarProfileOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+
   const logoSrc = "/images/phinma-logo.png";
 
   return (
@@ -650,23 +867,7 @@ const AdminLayout = ({ children }) => {
         <div className="h-[calc(100%-72px)] overflow-y-auto">
           <NavList onItemClick={() => setIsMobileNavOpen(false)} />
 
-          <div className="border-t border-gray-200 p-4">
-            <button
-              type="button"
-              onClick={openLogoutModal}
-              disabled={isLoggingOut}
-              className={[
-                "flex w-full items-center justify-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
-                "border border-gray-200",
-                focusRing,
-                isLoggingOut
-                  ? "cursor-not-allowed bg-gray-100 text-gray-400"
-                  : "text-gray-700 hover:bg-red-600 hover:text-white",
-              ].join(" ")}
-            >
-              <span>{isLoggingOut ? "Logging out…" : "Logout"}</span>
-            </button>
-          </div>
+          <SidebarProfile mobile />
         </div>
       </aside>
 
@@ -708,6 +909,7 @@ const AdminLayout = ({ children }) => {
           <NavList />
         </div>
 
+        <SidebarProfile />
       </aside>
 
       {/* content */}
