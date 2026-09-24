@@ -1807,26 +1807,42 @@ const DashboardGrowthText = ({ value = 0, inverse = false }) => {
   );
 };
 
-const DashboardMetricCard = ({ label, value, growth, highlighted = false, onClick }) => (
+const DashboardMetricCard = ({ label, value, growth, imageSrc = "/images/case.png", onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`min-h-[142px] rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 ${
-      highlighted
-        ? "border-[#2e66a6] bg-gradient-to-br from-[#255b96] to-[#2e66a6] text-white"
-        : "border-slate-200 bg-white text-slate-900"
-    }`}
+    className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-[#2e66a6] bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] p-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.16)] transition-all duration-500 ease-out hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(0,0,0,0.22)] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 focus:ring-offset-2"
   >
-    <div className="flex items-start justify-between gap-3">
-      <span className={`text-sm font-medium ${highlighted ? "text-white/80" : "text-slate-500"}`}>{label}</span>
-      <span className={`flex h-8 w-8 items-center justify-center rounded-full ${highlighted ? "bg-white/10 text-white" : "bg-slate-50 text-slate-500"}`}>
-        <Users size={16} />
-      </span>
+    <div
+      className="pointer-events-none absolute right-8 top-1/2 h-[76px] w-[76px] -translate-y-1/2 rounded-full blur-[36px] transition-all duration-700 ease-out group-hover:scale-110 group-hover:blur-[44px]"
+      style={{
+        background:
+          "radial-gradient(circle, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.14) 48%, transparent 76%)",
+      }}
+    />
+
+    <img
+      src={imageSrc}
+      alt=""
+      aria-hidden="true"
+      className="pointer-events-none absolute right-[-16px] top-1/2 h-24 w-24 -translate-y-1/2 object-contain opacity-45 mix-blend-soft-light saturate-150 transition-all duration-700 ease-out group-hover:right-[-12px] group-hover:scale-105 group-hover:opacity-55"
+      style={{
+        WebkitMaskImage:
+          "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.65) 58%, rgba(0,0,0,0) 82%)",
+        maskImage:
+          "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.65) 58%, rgba(0,0,0,0) 82%)",
+      }}
+    />
+
+    <div className="relative z-10">
+      <span className="text-sm font-medium text-white/85">{label}</span>
+      <div className="mt-7 text-3xl font-extrabold tracking-tight">{numberFormat.format(Number(value || 0))}</div>
+      <div className="[&_*]:!text-white/80">
+        <DashboardGrowthText value={growth} />
+      </div>
     </div>
-    <div className="mt-7 text-3xl font-extrabold tracking-tight">{numberFormat.format(Number(value || 0))}</div>
-    <div className={highlighted ? "[&_*]:!text-white/80" : ""}>
-      <DashboardGrowthText value={growth} />
-    </div>
+
+    <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition-all duration-500 ease-out group-hover:border-white/20" />
   </button>
 );
 
@@ -2067,25 +2083,28 @@ const AdminDashboard = () => {
             label="Registered Users"
             value={stats.registeredUsers}
             growth={growth.registeredUsers}
-            highlighted
+            imageSrc={statCardImages.jobSeekers}
             onClick={() => navigate("/admin/users")}
           />
           <DashboardMetricCard
             label="Pending Job Seekers"
             value={stats.pendingSeekers}
             growth={growth.pendingSeekers}
+            imageSrc={statCardImages.pendingSeekers}
             onClick={() => navigate("/admin/jobseeker-verification")}
           />
           <DashboardMetricCard
             label="Pending Employers"
             value={stats.pendingEmployers}
             growth={growth.pendingEmployers}
+            imageSrc={statCardImages.pendingEmployers}
             onClick={() => navigate("/admin/employer-verification")}
           />
           <DashboardMetricCard
             label="Pending Request Edit"
             value={stats.pendingRequestEdits}
             growth={growth.pendingRequestEdits}
+            imageSrc={statCardImages.jobs}
             onClick={() => navigate("/admin/employer-job-edit-requests")}
           />
         </div>
