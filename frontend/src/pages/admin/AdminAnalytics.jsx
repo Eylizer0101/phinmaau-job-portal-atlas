@@ -816,7 +816,7 @@ const AdminAnalytics = () => {
           {globalKpis.map((item) => <GlobalKpiCard key={item.label} {...item} />)}
         </section>
 
-        <nav className="flex gap-7 overflow-x-auto border-b border-slate-200 bg-transparent" aria-label="Analytics tabs">
+        <nav className="mt-4 mb-4 flex gap-7 overflow-x-auto border-b border-slate-200 bg-transparent" aria-label="Analytics tabs">
           {tabs.map(([key, label]) => (
             <button
               type="button"
