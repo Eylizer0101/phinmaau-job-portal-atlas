@@ -2,18 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   RefreshCw,
   CalendarDays,
-  Briefcase,
   Users,
-  Building2,
-  UserCheck,
-  FileClock,
-  Download,
   Bell,
   ChevronDown,
   UserRound,
   LogOut,
 } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import * as XLSX from "xlsx";
 
@@ -47,8 +42,25 @@ const defaultDashboard = {
     totalJobs: 0,
     totalJobSeekers: 0,
     totalEmployers: 0,
+    registeredUsers: 0,
     pendingSeekers: 0,
     pendingEmployers: 0,
+    pendingRequestEdits: 0,
+    growth: {
+      registeredUsers: 0,
+      pendingSeekers: 0,
+      pendingEmployers: 0,
+      pendingRequestEdits: 0,
+    },
+  },
+  overview: {
+    registrationTraffic: [],
+    userGrowth: {
+      percentChange: 0,
+      currentMonth: 0,
+      previousMonth: 0,
+      progress: 0,
+    },
   },
   filters: {
     options: {
@@ -1780,19 +1792,169 @@ const AdminTopActions = () => {
   );
 };
 
+const DashboardGrowthText = ({ value = 0, inverse = false }) => {
+  const numeric = Number(value || 0);
+  const positive = inverse ? numeric <= 0 : numeric >= 0;
+  const arrow = numeric > 0 ? "↗" : numeric < 0 ? "↘" : "→";
+
+  return (
+    <div className="mt-3 flex items-center gap-1.5 text-[11px]">
+      <span className={positive ? "font-bold text-emerald-600" : "font-bold text-rose-500"}>
+        {arrow} {numeric > 0 ? "+" : ""}{numeric.toFixed(1)}%
+      </span>
+      <span className="text-slate-400">from last month</span>
+    </div>
+  );
+};
+
+const DashboardMetricCard = ({ label, value, growth, highlighted = false, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`min-h-[142px] rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 ${
+      highlighted
+        ? "border-[#2e66a6] bg-gradient-to-br from-[#255b96] to-[#2e66a6] text-white"
+        : "border-slate-200 bg-white text-slate-900"
+    }`}
+  >
+    <div className="flex items-start justify-between gap-3">
+      <span className={`text-sm font-medium ${highlighted ? "text-white/80" : "text-slate-500"}`}>{label}</span>
+      <span className={`flex h-8 w-8 items-center justify-center rounded-full ${highlighted ? "bg-white/10 text-white" : "bg-slate-50 text-slate-500"}`}>
+        <Users size={16} />
+      </span>
+    </div>
+    <div className="mt-7 text-3xl font-extrabold tracking-tight">{numberFormat.format(Number(value || 0))}</div>
+    <div className={highlighted ? "[&_*]:!text-white/80" : ""}>
+      <DashboardGrowthText value={growth} />
+    </div>
+  </button>
+);
+
+const RegistrationTrafficChart = ({ data = [] }) => {
+  const rows = Array.isArray(data) ? data.slice(-6) : [];
+  const maxValue = Math.max(1, ...rows.map((item) => Number(item.total || 0)));
+
+  return (
+    <div className="mt-7">
+      <div className="relative h-[265px] border-b border-slate-200">
+        {[0, 1, 2, 3, 4].map((line) => (
+          <div
+            key={line}
+            className="absolute left-0 right-0 border-t border-dashed border-slate-200"
+            style={{ top: `${line * 25}%` }}
+          />
+        ))}
+
+        <div className="absolute inset-0 flex items-end justify-around gap-4 px-4 pb-0">
+          {rows.length ? rows.map((item) => {
+            const total = Number(item.total || 0);
+            const height = total > 0 ? Math.max(12, (total / maxValue) * 88) : 4;
+            return (
+              <div key={item.month || item.label} className="group relative flex h-full flex-1 items-end justify-center">
+                <div
+                  className="w-full max-w-[52px] rounded-t-xl bg-[#2e66a6] shadow-sm transition-all duration-300 group-hover:bg-[#255487]"
+                  style={{ height: `${height}%` }}
+                  title={`${item.label}: ${numberFormat.format(total)} registrations`}
+                />
+                <div className="absolute -bottom-7 text-xs font-medium text-slate-500">{item.label}</div>
+              </div>
+            );
+          }) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">No registration data available</div>
+          )}
+        </div>
+      </div>
+      <div className="mt-10 flex items-center gap-5 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#2e66a6]" />Job seekers + employers</span>
+        <span>Last 6 months</span>
+      </div>
+    </div>
+  );
+};
+
+const OperationsCalendar = ({ userGrowth = {} }) => {
+  const [offset, setOffset] = useState(0);
+  const today = new Date();
+  const anchor = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+  const days = Array.from({ length: 5 }, (_, index) => {
+    const date = new Date(anchor);
+    date.setDate(anchor.getDate() + index - 2);
+    return date;
+  });
+  const isToday = (date) => date.toDateString() === today.toDateString();
+  const progress = Math.max(0, Math.min(100, Number(userGrowth.progress || 0)));
+  const growth = Number(userGrowth.percentChange || 0);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Operations Calendar</p>
+          <h3 className="mt-1 text-lg font-bold text-slate-900">
+            {anchor.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          </h3>
+        </div>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => setOffset((value) => value - 5)} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#2e66a6]" aria-label="Previous dates">‹</button>
+          <button type="button" onClick={() => setOffset((value) => value + 5)} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#2e66a6]" aria-label="Next dates">›</button>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-5 gap-2">
+        {days.map((date) => (
+          <button
+            type="button"
+            key={date.toISOString()}
+            onClick={() => setOffset(Math.round((date - today) / 86400000))}
+            className={`rounded-2xl border px-2 py-4 text-center transition ${
+              isToday(date)
+                ? "border-[#2e66a6] bg-[#2e66a6] text-white shadow-md"
+                : "border-slate-200 bg-white text-slate-700 hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5"
+            }`}
+          >
+            <span className={`block text-[10px] font-bold uppercase ${isToday(date) ? "text-white/70" : "text-slate-400"}`}>
+              {date.toLocaleDateString("en-US", { weekday: "short" })}
+            </span>
+            <span className="mt-1 block text-lg font-extrabold">{date.getDate()}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 border-t border-slate-100 pt-6">
+        <div className="grid items-center gap-6 sm:grid-cols-[150px_1fr]">
+          <div className="relative mx-auto h-32 w-32 rounded-full" style={{ background: `conic-gradient(${BRAND_BLUE} ${progress * 3.6}deg, #e2e8f0 0deg)` }}>
+            <div className="absolute inset-[12px] flex flex-col items-center justify-center rounded-full bg-white">
+              <span className="text-2xl font-extrabold text-slate-900">{progress}%</span>
+              <span className="text-[10px] text-slate-400">recent share</span>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-slate-900">User Growth</h4>
+            <DashboardGrowthText value={growth} />
+            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-xl bg-slate-50 p-3">
+                <span className="block text-slate-400">This month</span>
+                <strong className="mt-1 block text-base text-slate-800">{numberFormat.format(Number(userGrowth.currentMonth || 0))}</strong>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <span className="block text-slate-400">Last month</span>
+                <strong className="mt-1 block text-base text-slate-800">{numberFormat.format(Number(userGrowth.previousMonth || 0))}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState(
-    location.pathname === "/admin/analytics" ? "trends" : "overview"
-  );
   const [dashboard, setDashboard] = useState(defaultDashboard);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [exportingCharts, setExportingCharts] = useState(false);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
-    date: "all",
+    date: "thisMonth",
     startDate: "",
     endDate: "",
     campus: "all",
@@ -1801,39 +1963,29 @@ const AdminDashboard = () => {
     workMode: "all",
   });
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [useSampleData, setUseSampleData] = useState(false);
-
-  const sampleDashboard = useMemo(() => buildDummyDashboardData(filters), [filters]);
-  const activeDashboard = useSampleData ? sampleDashboard : dashboard;
-
-  useEffect(() => {
-    setActiveTab(location.pathname === "/admin/analytics" ? "trends" : "overview");
-  }, [location.pathname]);
 
   const fetchDashboard = async () => {
     try {
       setLoading(true);
       setError("");
       const response = await api.get("/admin/dashboard", { params: filters });
-      const payload = response.data || defaultDashboard;
-      const campuses = uniqueCampuses(payload?.filters?.options?.campuses || []);
-      const payloadCharts = payload?.charts || defaultDashboard.charts;
-      const normalizedCharts = {
-        ...payloadCharts,
-        applicationTrends: mergeCampusSeries(payloadCharts.applicationTrends || []),
-        jobPostingTrends: mergeCampusSeries(payloadCharts.jobPostingTrends || []),
-        registrationTrends: mergeCampusSeries(payloadCharts.registrationTrends || []),
-        hireRateByCampus: mergeCampusSeries(payloadCharts.hireRateByCampus || []),
-      };
-
       setDashboard({
-        ...payload,
-        charts: normalizedCharts,
-        filters: {
-          ...(payload.filters || {}),
-          options: {
-            ...(payload?.filters?.options || {}),
-            campuses,
+        ...defaultDashboard,
+        ...(response.data || {}),
+        stats: {
+          ...defaultDashboard.stats,
+          ...(response.data?.stats || {}),
+          growth: {
+            ...defaultDashboard.stats.growth,
+            ...(response.data?.stats?.growth || {}),
+          },
+        },
+        overview: {
+          ...defaultDashboard.overview,
+          ...(response.data?.overview || {}),
+          userGrowth: {
+            ...defaultDashboard.overview.userGrowth,
+            ...(response.data?.overview?.userGrowth || {}),
           },
         },
       });
@@ -1845,222 +1997,115 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleExport = () => {
-    try {
-      setExporting(true);
-      const workbook = buildDashboardWorkbook({ dashboard: activeDashboard, filters, campusKeys });
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(workbook, `admin-dashboard-export-${dateStamp}.xlsx`);
-    } catch (err) {
-      console.error("Admin dashboard export error:", err);
-      setError("Unable to export dashboard data.");
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleExportCharts = () => {
-    try {
-      setExportingCharts(true);
-      const workbook = buildChartsWorkbook({ dashboard: activeDashboard, filters, campusKeys });
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(workbook, `admin-dashboard-charts-export-${dateStamp}.xlsx`);
-    } catch (err) {
-      console.error("Admin dashboard charts export error:", err);
-      setError("Unable to export chart data.");
-    } finally {
-      setExportingCharts(false);
-    }
-  };
-
   useEffect(() => {
     fetchDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.date, filters.startDate, filters.endDate, filters.campus, filters.applicationStatus, filters.employmentType, filters.workMode]);
+  }, [filters.date, filters.startDate, filters.endDate]);
 
-  const filterOptions = activeDashboard?.filters?.options || defaultDashboard.filters.options;
-
-  const campusKeys = useMemo(() => {
-    const campuses = uniqueCampuses(filterOptions.campuses || []);
-    if (filters.campus !== "all") {
-      const selectedCampus = normalizeCampusLabel(filters.campus);
-      return campuses.filter((campus) => campus === selectedCampus);
-    }
-    return campuses;
-  }, [filterOptions.campuses, filters.campus]);
-
-  const updateFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
-  const updateDateFilter = (value) => {
-    if (value === "custom") {
-      setShowCustomDateModal(true);
-      return;
-    }
-
-    setFilters((prev) => ({ ...prev, date: value, startDate: "", endDate: "" }));
+  const updatePeriod = (value) => {
+    setFilters((previous) => ({ ...previous, date: value, startDate: "", endDate: "" }));
   };
+
   const applyCustomDateRange = (startDate, endDate) => {
-    setFilters((prev) => ({ ...prev, date: "custom", startDate, endDate }));
+    setFilters((previous) => ({ ...previous, date: "custom", startDate, endDate }));
     setShowCustomDateModal(false);
   };
-  const clearFilters = () => setFilters({ date: "all", startDate: "", endDate: "", campus: "all", applicationStatus: "all", employmentType: "all", workMode: "all" });
 
-  const hasFilter = filters.date !== "all" || filters.campus !== "all" || filters.applicationStatus !== "all" || filters.employmentType !== "all" || filters.workMode !== "all";
-  const stats = activeDashboard?.stats || defaultDashboard.stats;
-  const charts = activeDashboard?.charts || defaultDashboard.charts;
+  const stats = dashboard.stats || defaultDashboard.stats;
+  const overview = dashboard.overview || defaultDashboard.overview;
+  const growth = stats.growth || defaultDashboard.stats.growth;
+  const periodButtons = [
+    { label: "Day", value: "today" },
+    { label: "Week", value: "thisWeek" },
+    { label: "Month", value: "thisMonth" },
+    { label: "Year", value: "thisYear" },
+  ];
 
   return (
     <div className="mx-auto max-w-7xl px-1 py-8">
       <div className="space-y-5">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900">Admin Dashboard</h1>
-            <p className="text-xs text-slate-500">Overview of jobs, users, applications, and hiring activity.</p>
+            <h1 className="text-2xl font-extrabold text-slate-900">Admin Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Overview of registered users, verification queues, edit requests, and monthly growth.</p>
           </div>
-
           <AdminTopActions />
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <SampleDataToggle enabled={useSampleData} onChange={setUseSampleData} />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+            {periodButtons.map((period) => (
+              <button
+                type="button"
+                key={period.value}
+                onClick={() => updatePeriod(period.value)}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition ${filters.date === period.value ? "bg-[#2e66a6] text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
 
           <button
             type="button"
-            onClick={handleExportCharts}
-            disabled={(loading && !useSampleData) || exportingCharts}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-white px-4 text-xs font-bold text-[#2e66a6] shadow-sm transition hover:bg-[#2e66a6]/10 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+            onClick={() => setShowCustomDateModal(true)}
+            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-xs font-bold shadow-sm transition ${filters.date === "custom" ? "border-[#2e66a6] bg-[#2e66a6]/5 text-[#2e66a6]" : "border-slate-200 bg-white text-slate-600 hover:border-[#2e66a6]/30 hover:text-[#2e66a6]"}`}
           >
-            {exportingCharts ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
-            {exportingCharts ? "Exporting Charts..." : "Export Charts"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={(loading && !useSampleData) || exporting}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#255487] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {exporting ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
-            {exporting ? "Exporting..." : "Export"}
+            <CalendarDays size={15} />
+            {filters.date === "custom" && filters.startDate && filters.endDate
+              ? `${formatDateLabel(filters.startDate)} – ${formatDateLabel(filters.endDate)}`
+              : "Select date range"}
           </button>
         </div>
 
-        {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div> : null}
-
-        {useSampleData ? (
-          <div className="rounded-xl border border-[#2e66a6]/20 bg-[#2e66a6]/10 px-4 py-3 text-xs font-semibold text-[#2e66a6]">
-            Sample Data Mode is ON. Charts and cards are using 6,000 generated demo records from 1950 to the current year.
-          </div>
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
         ) : null}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
-          <StatCard
-            label="Jobs"
-            value={stats.totalJobs}
-            imageSrc={statCardImages.jobs}
-            icon={Briefcase}
-            onClick={() => navigate("/admin/dashboard/jobs")}
-            ariaLabel="Open all jobs"
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <DashboardMetricCard
+            label="Registered Users"
+            value={stats.registeredUsers}
+            growth={growth.registeredUsers}
+            highlighted
+            onClick={() => navigate("/admin/users")}
           />
-          <StatCard
-            label="Job Seekers"
-            value={stats.totalJobSeekers}
-            imageSrc={statCardImages.jobSeekers}
-            icon={Users}
-            onClick={() => navigate("/admin/dashboard/job-seekers")}
-            ariaLabel="Open all job seekers"
-          />
-          <StatCard
-            label="Employers"
-            value={stats.totalEmployers}
-            imageSrc={statCardImages.employers}
-            icon={Building2}
-            onClick={() => navigate("/admin/dashboard/employers")}
-            ariaLabel="Open all employers"
-          />
-          <StatCard
-            label="Pending Seekers"
+          <DashboardMetricCard
+            label="Pending Job Seekers"
             value={stats.pendingSeekers}
-            imageSrc={statCardImages.pendingSeekers}
-            icon={UserCheck}
-            onClick={() => navigate("/admin/dashboard/pending-seekers")}
-            ariaLabel="Open pending job seekers"
+            growth={growth.pendingSeekers}
+            onClick={() => navigate("/admin/jobseeker-verification")}
           />
-          <StatCard
+          <DashboardMetricCard
             label="Pending Employers"
             value={stats.pendingEmployers}
-            imageSrc={statCardImages.pendingEmployers}
-            icon={FileClock}
-            onClick={() => navigate("/admin/dashboard/pending-employers")}
-            ariaLabel="Open pending employers"
+            growth={growth.pendingEmployers}
+            onClick={() => navigate("/admin/employer-verification")}
+          />
+          <DashboardMetricCard
+            label="Pending Request Edit"
+            value={stats.pendingRequestEdits}
+            growth={growth.pendingRequestEdits}
+            onClick={() => navigate("/admin/employer-job-edit-requests")}
           />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
-            <DateFilterDropdown value={filters.date} startDate={filters.startDate} endDate={filters.endDate} disabled={loading} onSelect={updateDateFilter} />
-            <FilterSelect label="Campus" value={filters.campus} disabled={loading} onChange={(value) => updateFilter("campus", value)} options={[{ value: "all", label: "All Campus" }, ...(filterOptions.campuses || []).map((campus) => ({ value: campus, label: campus }))]} />
-            <FilterSelect label="Application Status" value={filters.applicationStatus} disabled={loading} onChange={(value) => updateFilter("applicationStatus", value)} options={[{ value: "all", label: "All Status" }, ...(filterOptions.applicationStatuses || []).map((status) => ({ value: status, label: status.charAt(0).toUpperCase() + status.slice(1) }))]} />
-            <FilterSelect label="Employment Type" value={filters.employmentType} disabled={loading} onChange={(value) => updateFilter("employmentType", value)} options={[{ value: "all", label: "All Types" }, ...(filterOptions.employmentTypes || []).map((type) => ({ value: type, label: type }))]} />
-            <FilterSelect label="Work Mode" value={filters.workMode} disabled={loading} onChange={(value) => updateFilter("workMode", value)} options={[{ value: "all", label: "All Modes" }, ...(filterOptions.workModes || []).map((mode) => ({ value: mode, label: mode }))]} />
-            <button
-              type="button"
-              onClick={clearFilters}
-              disabled={loading || !hasFilter}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RefreshCw size={13} /> Clear All
-            </button>
-          </div>
-        </div>
-
-        <div className="border-b border-slate-200">
-          {[
-            { key: "overview", label: "Overview" },
-            { key: "trends", label: "Trends" },
-          ].map((tab) => (
-            <button
-              type="button"
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`mr-6 border-b-2 px-1 pb-3 text-xs font-bold transition ${activeTab === tab.key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {loading && !useSampleData ? null : activeTab === "overview" ? (
-          <div className="grid gap-5 lg:grid-cols-2">
-            <ChartCard title="Applications Trend" subtitle="Last records by campus">
-              <LineChart data={charts.applicationTrends || []} keys={campusKeys} />
-            </ChartCard>
-            <ChartCard title="Top Job Categories" subtitle="Active jobs grouped by category">
-              <VerticalBarChart data={charts.topJobCategories || []} />
-            </ChartCard>
-            <ChartCard title="Application Status" subtitle="Breakdown by current status">
-              <DonutChart data={(charts.applicationStatus || []).filter((item) => item.value > 0)} />
-            </ChartCard>
-            <ChartCard title="Work Mode Distribution" subtitle="Across all active jobs">
-              <DonutChart data={(charts.workModeDistribution || []).filter((item) => item.value > 0)} colors={["#6366f1", "#063b69", "#c48a00", "#198754"]} />
-            </ChartCard>
-            <ChartCard title="Top 5 Companies Hiring" subtitle="By number of active job postings" className="lg:col-span-2">
-              <BarChart data={charts.topHiringCompanies || []} horizontal />
-            </ChartCard>
+        {loading ? (
+          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
+            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
           </div>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-2">
-            <ChartCard title="Applications by Campus" subtitle="Monthly trend overview">
-              <LineChart data={charts.applicationTrends || []} keys={campusKeys} />
-            </ChartCard>
-            <ChartCard title="Active Jobs by Employment Type" subtitle="Current active jobs grouped by type">
-              <SimpleBarList data={charts.employmentTypeDistribution || []} />
-            </ChartCard>
-            <ChartCard title="Job Seeker Registrations" subtitle="Monthly new registrations by campus">
-              <BarChart data={charts.registrationTrends || []} keys={campusKeys} />
-            </ChartCard>
-            <ChartCard title="Hire Rate by Campus" subtitle="Hired jobseekers by campus over time">
-              <LineChart data={charts.hireRateByCampus || []} keys={campusKeys} />
-            </ChartCard>
+          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Monthly Registration Traffic</h2>
+                <p className="mt-1 text-xs text-slate-400">Job seekers and employers · Last 6 months</p>
+              </div>
+              <RegistrationTrafficChart data={overview.registrationTraffic || []} />
+            </div>
+
+            <OperationsCalendar userGrowth={overview.userGrowth || {}} />
           </div>
         )}
 
@@ -2071,8 +2116,6 @@ const AdminDashboard = () => {
           onCancel={() => setShowCustomDateModal(false)}
           onApply={applyCustomDateRange}
         />
-
-       
       </div>
     </div>
   );

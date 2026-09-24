@@ -938,27 +938,30 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
     const workModeFilter = normalizeDashboardText(req.query.workMode || 'all');
     const range = getDashboardDateRange(dateFilter, req.query.startDate, req.query.endDate);
 
-    const [users, jobs, applications] = await Promise.all([
+    const [users, jobs, applications, editRequests] = await Promise.all([
       User.find({ status: { $ne: 'deleted' } }).select('-password').lean(),
       Job.find({ isArchived: { $ne: true } }).populate('employer', 'employerProfile companyName firstName lastName').lean(),
       Application.find({}).populate('job').populate('jobseeker', 'jobSeekerProfile').lean(),
+      JobEditRequest.find({}).lean(),
     ]);
 
     const jobseekers = users.filter((user) => user.role === 'jobseeker');
     const employers = users.filter((user) => user.role === 'employer');
+    const registeredUsers = [...jobseekers, ...employers];
 
-    const pendingSeekers = jobseekers.filter((user) => {
+    const pendingSeekerUsers = jobseekers.filter((user) => {
       const status = String(user?.jobSeekerProfile?.verificationDocs?.overallStatus || user?.jobSeekerProfile?.verificationStatus || '').toLowerCase();
       return status === 'pending';
-    }).length;
+    });
 
-    const pendingEmployers = employers.filter((user) => {
+    const pendingEmployerUsers = employers.filter((user) => {
       const status = String(user?.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
       return status === 'pending';
-    }).length;
+    });
+
+    const pendingEditRequests = editRequests.filter((request) => String(request.status || '').toLowerCase() === 'pending');
 
     const campusOptions = DASHBOARD_CAMPUSES;
-
     const employmentTypeOptions = [...new Set(jobs.map((job) => job.jobType).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const workModeOptions = [...new Set(jobs.map((job) => job.workMode).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
@@ -974,6 +977,7 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
       const normalizedCampus = normalizeDashboardCampus(campus);
       return campusFilter.toLowerCase() === 'all' || normalizedCampus.toLowerCase() === campusFilter.toLowerCase();
     };
+
     const jobMatches = (job) => {
       if (!job) return false;
       if (!inRange(job.createdAt)) return false;
@@ -1090,6 +1094,53 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // Compact dashboard data used by the redesigned Admin Dashboard.
+    // The latest six complete/current calendar months are intentionally independent
+    // from the advanced dashboard filters so the registration traffic card always
+    // shows a stable six-month trend, matching the dashboard reference design.
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const countCreatedBetween = (items, start, end) => items.filter((item) => {
+      const createdAt = new Date(item.createdAt);
+      return !Number.isNaN(createdAt.getTime()) && createdAt >= start && createdAt < end;
+    }).length;
+
+    const percentChange = (current, previous) => {
+      if (previous === 0) return current === 0 ? 0 : 100;
+      return Number((((current - previous) / previous) * 100).toFixed(1));
+    };
+
+    const registeredThisMonth = countCreatedBetween(registeredUsers, monthStart, nextMonthStart);
+    const registeredLastMonth = countCreatedBetween(registeredUsers, previousMonthStart, monthStart);
+    const pendingSeekersThisMonth = countCreatedBetween(pendingSeekerUsers, monthStart, nextMonthStart);
+    const pendingSeekersLastMonth = countCreatedBetween(pendingSeekerUsers, previousMonthStart, monthStart);
+    const pendingEmployersThisMonth = countCreatedBetween(pendingEmployerUsers, monthStart, nextMonthStart);
+    const pendingEmployersLastMonth = countCreatedBetween(pendingEmployerUsers, previousMonthStart, monthStart);
+    const pendingEditsThisMonth = countCreatedBetween(pendingEditRequests, monthStart, nextMonthStart);
+    const pendingEditsLastMonth = countCreatedBetween(pendingEditRequests, previousMonthStart, monthStart);
+
+    const registrationTraffic = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+      const start = new Date(date.getFullYear(), date.getMonth(), 1);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+      const jobSeekerCount = countCreatedBetween(jobseekers, start, end);
+      const employerCount = countCreatedBetween(employers, start, end);
+
+      return {
+        label: start.toLocaleDateString('en-US', { month: 'short' }),
+        month: start.toISOString().slice(0, 7),
+        jobSeekers: jobSeekerCount,
+        employers: employerCount,
+        total: jobSeekerCount + employerCount,
+      };
+    });
+
+    const recentTotal = registeredThisMonth + registeredLastMonth;
+    const growthShare = recentTotal > 0 ? Math.round((registeredThisMonth / recentTotal) * 100) : 0;
+
     return res.status(200).json({
       success: true,
       filters: {
@@ -1113,8 +1164,25 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
         totalJobs: jobs.filter((job) => job.isActive !== false && job.isPublished !== false && job.isArchived !== true).length,
         totalJobSeekers: jobseekers.length,
         totalEmployers: employers.length,
-        pendingSeekers,
-        pendingEmployers,
+        registeredUsers: registeredUsers.length,
+        pendingSeekers: pendingSeekerUsers.length,
+        pendingEmployers: pendingEmployerUsers.length,
+        pendingRequestEdits: pendingEditRequests.length,
+        growth: {
+          registeredUsers: percentChange(registeredThisMonth, registeredLastMonth),
+          pendingSeekers: percentChange(pendingSeekersThisMonth, pendingSeekersLastMonth),
+          pendingEmployers: percentChange(pendingEmployersThisMonth, pendingEmployersLastMonth),
+          pendingRequestEdits: percentChange(pendingEditsThisMonth, pendingEditsLastMonth),
+        },
+      },
+      overview: {
+        registrationTraffic,
+        userGrowth: {
+          percentChange: percentChange(registeredThisMonth, registeredLastMonth),
+          currentMonth: registeredThisMonth,
+          previousMonth: registeredLastMonth,
+          progress: growthShare,
+        },
       },
       charts: {
         applicationTrends,
