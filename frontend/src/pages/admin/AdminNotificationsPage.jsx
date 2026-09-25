@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Bell, Check, ChevronLeft, Search, Trash2, UserRound } from "lucide-react";
+import { Bell, Check, ChevronLeft, Search, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
@@ -173,18 +173,6 @@ const AdminNotificationsPage = () => {
     }
   };
 
-  const handleClearAll = async () => {
-    try {
-      setActionLoading(true);
-      await api.delete("/notifications/clear-all");
-      setNotifications([]);
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Error clearing notifications:", error);
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleOpenNotification = async (notification) => {
     try {
@@ -296,18 +284,6 @@ const AdminNotificationsPage = () => {
               <Check size={16} />
               Mark all as read
             </button>
-
-            {notifications.length > 0 ? (
-              <button
-                type="button"
-                onClick={handleClearAll}
-                disabled={actionLoading}
-                className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Trash2 size={16} />
-                Clear all
-              </button>
-            ) : null}
           </div>
         </div>
 

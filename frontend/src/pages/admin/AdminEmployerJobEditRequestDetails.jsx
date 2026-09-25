@@ -796,9 +796,15 @@ const AdminEmployerJobEditRequestDetails = () => {
                 {job.title || 'Untitled Job'}
               </h1>
 
-              <div className="mt-2 inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
-                <BuildingIcon className="h-4 w-4 shrink-0 text-black/60" />
-                <span className="min-w-0 truncate">{industryName}</span>
+              <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-sm text-black/70 sm:flex-nowrap">
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <BuildingIcon className="h-4 w-4 shrink-0 text-black/60" />
+                  <span className="min-w-0 truncate">{company}</span>
+                </span>
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <SvgIcon name="building" className="h-4 w-4 shrink-0 text-black/60" />
+                  <span className="min-w-0 truncate">{industryName}</span>
+                </span>
               </div>
 
               <div className="mt-1 flex items-center gap-2 text-sm text-black/70">

@@ -2100,11 +2100,12 @@ const UserManagementDetails = () => {
                     <span className="truncate">{formatApplicationDeadline(job)}</span>
                   </div>
 
-                  <div className="mt-4 flex min-h-[28px] flex-wrap items-center gap-2">
+                  <div className="mt-4 flex min-h-[28px] min-w-0 flex-wrap items-center gap-2 overflow-hidden">
                     {badges.map((badge) => (
                       <span
                         key={badge}
-                        className="whitespace-nowrap rounded-full border border-[#2e66a6]/30 bg-white px-2.5 py-1 text-[10px] font-semibold text-[#2e66a6] shadow-sm"
+                        title={badge}
+                        className="inline-block max-w-[145px] truncate whitespace-nowrap rounded-full border border-[#2e66a6]/30 bg-white px-2.5 py-1 text-[10px] font-semibold text-[#2e66a6] shadow-sm"
                       >
                         {badge}
                       </span>
@@ -2547,7 +2548,7 @@ const UserManagementDetails = () => {
                           className="inline-flex w-fit items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                           aria-label={`View ${reviewItems.length} company review${reviewItems.length === 1 ? "" : "s"}`}
                         >
-                          <ReviewStars rating={averageReview} sizeClass="text-[15px]" />
+                          <ReviewStars rating={averageReview} sizeClass="text-[17px]" />
                           <span className="text-[13px] font-medium text-[#6b7280]">
                             {averageReview.toFixed(1)} ({reviewItems.length} review{reviewItems.length === 1 ? "" : "s"})
                           </span>
@@ -2557,7 +2558,7 @@ const UserManagementDetails = () => {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 pb-4 lg:mt-0 lg:min-h-[185px] lg:w-[290px] lg:pb-0">
+                  <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 pb-4 lg:mt-3 lg:min-h-[185px] lg:w-[290px] lg:pb-0">
                     <button
                       type="button"
                       disabled={!jobPosts.length}
