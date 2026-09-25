@@ -123,7 +123,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
             <h2 className="text-[26px] font-semibold leading-tight text-black sm:text-[32px]">
               How would you like to use the platform?
             </h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+            <p className="mx-auto mt-2 max-w-4xl whitespace-nowrap text-sm leading-6 text-gray-600 sm:text-base">
               Choose your role to get started and enjoy a personalized experience tailored to your goals.
             </p>
           </div>
