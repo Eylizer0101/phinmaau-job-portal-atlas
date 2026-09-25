@@ -3060,7 +3060,7 @@ const ApplicationDetails = () => {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+            <div className="max-h-[360px] overflow-y-auto pr-2">
               <div className="divide-y divide-gray-200">
                 <div className="py-4">
                   <div className="flex items-start justify-between gap-4">
