@@ -19,11 +19,25 @@ const AdminLayout = ({ children }) => {
   });
   const [sidebarAvatarFailed, setSidebarAvatarFailed] = useState(false);
   const sidebarProfileRef = useRef(null);
-  const [openDropdowns, setOpenDropdowns] = useState({
-    Main: true,
-    Records: true,
-    Approvals: false,
-    Settings: false,
+  const [openDropdowns, setOpenDropdowns] = useState(() => {
+    const defaultState = {
+      Main: true,
+      Records: true,
+      Approvals: false,
+      Settings: false,
+    };
+
+    try {
+      const saved = sessionStorage.getItem("adminSidebarOpenDropdowns");
+      if (!saved) return defaultState;
+
+      return {
+        ...defaultState,
+        ...JSON.parse(saved),
+      };
+    } catch {
+      return defaultState;
+    }
   });
 
   // ✅ Logout modal state (QA/UI confirm)
@@ -246,28 +260,15 @@ const AdminLayout = ({ children }) => {
   );
 
   useEffect(() => {
-    const activeSections = navSections
-      .filter((section) =>
-        section.items.some((item) => location.pathname.startsWith(item.path))
-      )
-      .map((section) => section.name);
-
-    if (!activeSections.length) return;
-
-    setOpenDropdowns((previous) => {
-      let changed = false;
-      const next = { ...previous };
-
-      activeSections.forEach((sectionName) => {
-        if (!next[sectionName]) {
-          next[sectionName] = true;
-          changed = true;
-        }
-      });
-
-      return changed ? next : previous;
-    });
-  }, [location.pathname, navSections]);
+    try {
+      sessionStorage.setItem(
+        "adminSidebarOpenDropdowns",
+        JSON.stringify(openDropdowns)
+      );
+    } catch {
+      // Keep sidebar behavior working even if sessionStorage is unavailable.
+    }
+  }, [openDropdowns]);
 
   const currentLabel = useMemo(() => {
     const match = navItems
