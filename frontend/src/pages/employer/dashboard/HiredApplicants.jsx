@@ -1751,13 +1751,27 @@ const selectBase =
               </div>
             </div>
 
-            <label className="mt-3 block text-sm font-semibold text-gray-800">
-              Select Reason for Decline
-              <select value={declineReason} onChange={(event) => setDeclineReason(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15">
-                <option value="" disabled>Choose a reason</option>
-                {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other Not Listed Above'].map((reason) => <option key={reason} value={reason}>{reason}</option>)}
-              </select>
-            </label>
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-gray-800">Select Reason for Decline</p>
+              <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other Not Listed Above'].map((reason) => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setDeclineReason(declineReason === reason ? '' : reason)}
+                    disabled={reviewLoading}
+                    className={cn(
+                      'min-h-[56px] rounded-lg border px-4 py-3 text-[13px] font-medium leading-[18px] transition disabled:cursor-not-allowed disabled:opacity-60',
+                      declineReason === reason
+                        ? 'border-[#2f67e8] bg-[#2f67e8] text-white shadow-sm'
+                        : 'border-gray-200 bg-[#f7f7f8] text-gray-800 hover:border-[#bfd0f8] hover:bg-[#f2f6ff]'
+                    )}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
             <label className="mt-3 block text-sm font-semibold text-gray-800">
               Reason for Declining
               <div className="relative mt-1.5">
