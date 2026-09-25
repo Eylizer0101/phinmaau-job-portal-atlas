@@ -625,7 +625,7 @@ const JobseekerCompanies = () => {
               </div>
 
               <img
-                src="/images/findjob.png"
+                src="/images/findcompanies.png"
                 alt="Companies illustration"
                 className="
                   pointer-events-none absolute right-[20px] md:right-[40px]

@@ -825,7 +825,7 @@ const Companies = () => {
                 />
               </div>
               <img
-                src="/images/findjob.png"
+                src="/images/findcompanies.png"
                 alt="Companies illustration"
                 className="pointer-events-none absolute right-[20px] md:right-[40px] top-1/3 -translate-y-1/2 w-34 h-34 md:w-49 md:h-48 object-contain opacity-50 mix-blend-soft-light saturate-120 z-0"
                 style={{
