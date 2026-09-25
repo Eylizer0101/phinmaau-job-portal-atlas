@@ -1136,8 +1136,39 @@ const AdminJobApplicants = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const backPath = location.state?.backPath || `/admin/jobs/${jobId}`;
-  const backLabel = location.state?.backLabel || "Back to job details";
+  const archiveNavigation = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const isArchivedView =
+      location.state?.isArchivedView === true || params.get("archive") === "1";
+    const archiveBackPath =
+      location.state?.archiveBackPath ||
+      params.get("archiveBack") ||
+      "/admin/archive";
+
+    const archivedJobPath = `/admin/jobs/${jobId}?archive=1&archiveBack=${encodeURIComponent(
+      archiveBackPath
+    )}`;
+
+    return {
+      isArchivedView,
+      archiveBackPath,
+      archivedJobPath,
+      applicantsPath: `/admin/jobs/${jobId}/applicants?archive=1&archiveBack=${encodeURIComponent(
+        archiveBackPath
+      )}`,
+    };
+  }, [jobId, location.search, location.state]);
+
+  const backPath =
+    location.state?.backPath ||
+    (archiveNavigation.isArchivedView
+      ? archiveNavigation.archivedJobPath
+      : `/admin/jobs/${jobId}`);
+  const backLabel =
+    location.state?.backLabel ||
+    (archiveNavigation.isArchivedView
+      ? "Archived Job Details"
+      : "Back to job details");
 
   const fetchApplicants = useCallback(async () => {
     try {
@@ -1331,15 +1362,16 @@ const AdminJobApplicants = () => {
     const applicantUserId = getApplicantUserId(application);
     if (!applicantUserId) return;
 
-    const isArchivedView = location.state?.isArchivedView === true;
+    const isArchivedView = archiveNavigation.isArchivedView;
 
     navigate(`/admin/users/${applicantUserId}?tab=resume${isArchivedView ? "&archive=1" : ""}`, {
       state: isArchivedView
         ? {
             fromArchive: true,
-            archiveBackPath: `/admin/jobs/${jobId}/applicants`,
-            backPath: `/admin/jobs/${jobId}/applicants`,
+            archiveBackPath: archiveNavigation.applicantsPath,
+            backPath: archiveNavigation.applicantsPath,
             backLabel: "Applicant List",
+            isArchivedView: true,
           }
         : {
             backPath: `/admin/jobs/${jobId}/applicants`,

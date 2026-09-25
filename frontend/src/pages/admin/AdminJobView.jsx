@@ -667,13 +667,30 @@ const AdminJobView = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const isArchivedView = useMemo(() => {
+  const archiveNavigation = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return Boolean(location.state?.isArchivedView) || params.get('archive') === '1';
+    const isArchived =
+      Boolean(location.state?.isArchivedView) || params.get('archive') === '1';
+
+    const queryArchiveBack = params.get('archiveBack');
+    const archiveBackPath =
+      location.state?.archiveBackPath ||
+      location.state?.backPath ||
+      queryArchiveBack ||
+      '/admin/archive';
+
+    return {
+      isArchivedView: isArchived,
+      archiveBackPath,
+    };
   }, [location.search, location.state]);
 
-  const backPath = location.state?.backPath || (isArchivedView ? '/admin/archive' : '/admin/job-offers');
-  const backLabel = location.state?.backLabel || (isArchivedView ? 'Archive' : 'Job Offers');
+  const isArchivedView = archiveNavigation.isArchivedView;
+  const backPath =
+    location.state?.backPath ||
+    (isArchivedView ? archiveNavigation.archiveBackPath : '/admin/job-offers');
+  const backLabel =
+    location.state?.backLabel || (isArchivedView ? 'Archive' : 'Job Offers');
 
   const handleBack = () => {
     navigate(backPath);
@@ -1058,14 +1075,22 @@ const AdminJobView = () => {
                       <button
                         type="button"
                         onClick={() =>
-                          navigate(`/admin/jobs/${jobId}/applicants`, {
-                            state: {
-                              jobTitle: job.title,
-                              backPath: `/admin/jobs/${jobId}?archive=1`,
-                              backLabel: "Archived Job Details",
-                              isArchivedView: true,
-                            },
-                          })
+                          navigate(
+                            `/admin/jobs/${jobId}/applicants?archive=1&archiveBack=${encodeURIComponent(
+                              archiveNavigation.archiveBackPath
+                            )}`,
+                            {
+                              state: {
+                                jobTitle: job.title,
+                                backPath: `/admin/jobs/${jobId}?archive=1&archiveBack=${encodeURIComponent(
+                                  archiveNavigation.archiveBackPath
+                                )}`,
+                                backLabel: "Archived Job Details",
+                                isArchivedView: true,
+                                archiveBackPath: archiveNavigation.archiveBackPath,
+                              },
+                            }
+                          )
                         }
                         className={`group flex h-14 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`}
                         aria-label={`View ${applicants.length} ${applicants.length === 1 ? "applicant" : "applicants"}`}

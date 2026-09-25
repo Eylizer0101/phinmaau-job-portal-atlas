@@ -1249,13 +1249,18 @@ const AdminArchiveDetails = () => {
 
   const handleViewRecord = (record) => {
     if (record.archiveType === "job-post" && record.jobId) {
-      navigate(`/admin/jobs/${record.jobId}?archive=1`, {
-        state: {
-          isArchivedView: true,
-          backPath: `/admin/archive/account/${id}`,
-          backLabel: "Archive Details",
-        },
-      });
+      const archiveDetailsPath = `/admin/archive/account/${id}`;
+      navigate(
+        `/admin/jobs/${record.jobId}?archive=1&archiveBack=${encodeURIComponent(archiveDetailsPath)}`,
+        {
+          state: {
+            isArchivedView: true,
+            backPath: archiveDetailsPath,
+            backLabel: "Archive Details",
+            archiveBackPath: archiveDetailsPath,
+          },
+        }
+      );
       return;
     }
 
