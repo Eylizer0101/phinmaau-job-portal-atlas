@@ -968,7 +968,7 @@ const HiredApplicants = () => {
       ? 'No Decline reason was provided.'
       : declineExplanation.trim();
 
-    if (decision === 'declined' && (!finalDeclineReason || (declineReason !== 'Other Not Listed Above' && !finalExplanation))) {
+    if (decision === 'declined' && (!finalDeclineReason || !declineExplanation.trim())) {
       setError('Select a decline reason and add a comment.');
       return;
     }
@@ -1773,16 +1773,16 @@ const selectBase =
               </div>
             </div>
             <label className="mt-3 block text-sm font-semibold text-gray-800">
-              Reason for Declining
+              Reason for Declining <span className="text-red-500">*</span>
               <div className="relative mt-1.5">
-                <textarea value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={2} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+                <textarea required aria-required="true" value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={2} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
                 <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineExplanation.length}/500</span>
               </div>
             </label>
             {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-3 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
-              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || (declineReason !== 'Other Not Listed Above' && !declineExplanation.trim()) || reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
+              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || !declineExplanation.trim() || reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
             </div>
           </div>
         </div>
