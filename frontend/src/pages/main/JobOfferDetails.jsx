@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainNavbar from '../../components/shared/MainNavbar';
 import api from '../../services/api';
-import { isOpenJobListing } from '../../utils/jobVisibility';
+import { formatJobLifecycleText, isOpenJobListing } from '../../utils/jobVisibility';
 import { BuildingIcon } from '../../components/shared/JobseekerIcons';
 
 /**
@@ -1284,10 +1284,7 @@ const JobOfferDetails = () => {
                           <SvgIcon name="clock" className="w-4 h-4" />
                         </span>
                         <span>
-                          {formatPostedRelative(job.createdAt)}
-                          {job.applicationDeadline
-                            ? ` and deadline of application is on ${formatApplicationDeadline(job.applicationDeadline)}`
-                            : ''}
+                          {formatJobLifecycleText(job)}
                         </span>
                       </div>
                     </div>

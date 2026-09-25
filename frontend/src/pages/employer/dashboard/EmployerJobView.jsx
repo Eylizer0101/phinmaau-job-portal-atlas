@@ -7,6 +7,7 @@ import {
   JobDetailsSvgIcon,
   LocationIcon,
 } from '../../../components/shared/JobseekerIcons';
+import { formatJobLifecycleText } from '../../../utils/jobVisibility';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -1000,7 +1001,7 @@ const EmployerJobView = () => {
                       <span className={isDraftJob && isVacanciesMissing ? compactPlaceholderChipClass : UI.chip}><SvgIcon name="users" className={isDraftJob && isVacanciesMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />{!isVacanciesMissing ? `${job.vacancies} Vacancies` : 'Number of vacancies not specified'}</span>
                       <span className={isDraftJob && isRelocationMissing ? compactRelocationChipClass : UI.chip}><LocationIcon className={isDraftJob && isRelocationMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />{getRelocationDisplayLabel(job.willingToRelocate)}</span>
                     </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80"><SvgIcon name="clock" className="h-4 w-4 shrink-0" /><span>{formatPostedRelative(job.createdAt)}{job.applicationDeadline ? hasExtendedDeadline ? ` and deadline extended until ${formatFullDate(job.applicationDeadline)}` : ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}` : ' and no application deadline specified'}</span></div>
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80"><SvgIcon name="clock" className="h-4 w-4 shrink-0" /><span>{formatJobLifecycleText(job)}</span></div>
                   </div>
                 </div>
 

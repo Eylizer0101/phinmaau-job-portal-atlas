@@ -1816,7 +1816,7 @@ exports.restoreJob = async (req, res) => {
 
 exports.updateJobStatus = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id).select('_id employer status isActive isPublished');
+    const job = await Job.findById(req.params.id).select('_id employer status isActive isPublished closedAt filledAt');
 
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found' });
@@ -1845,7 +1845,8 @@ exports.updateJobStatus = async (req, res) => {
     const statusUpdate = {
       isActive: shouldActivate,
       isPublished: true,
-      status: shouldActivate ? 'published' : 'closed'
+      status: shouldActivate ? 'published' : 'closed',
+      closedAt: shouldActivate ? null : new Date()
     };
 
     if (shouldActivate) {

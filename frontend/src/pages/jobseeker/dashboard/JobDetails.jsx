@@ -6,7 +6,7 @@ import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
-import { getJobPostingStatus, isOpenJobListing } from '../../../utils/jobVisibility';
+import { formatJobLifecycleText, getJobPostingStatus, isOpenJobListing } from '../../../utils/jobVisibility';
 
 /**
  * UPDATED:
@@ -1489,10 +1489,7 @@ const JobDetails = () => {
                     <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
                       <SvgIcon name="clock" className="h-4 w-4 flex-shrink-0" />
                       <span>
-                        {formatPostedRelative(job.createdAt)}
-                        {job.applicationDeadline
-                          ? ` and deadline of application is on ${formatApplicationDeadline(job.applicationDeadline)}`
-                          : ''}
+                        {formatJobLifecycleText(job)}
                       </span>
                     </div>
                   </div>

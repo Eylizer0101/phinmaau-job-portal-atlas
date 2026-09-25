@@ -285,6 +285,10 @@ const jobSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    closedAt: {
+        type: Date,
+        default: null
+    },
     filledAt: {
         type: Date,
         default: null
