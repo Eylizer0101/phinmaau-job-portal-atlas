@@ -3182,9 +3182,9 @@ const CompanyProfile = () => {
         ) : null}
 
         {isEditOpen && (
-          <div className="fixed inset-y-0 right-0 left-0 z-[70] bg-white md:left-[18rem]">
+          <div className="fixed inset-0 z-[70] bg-[#f5f7fb]">
             <div className="h-full overflow-y-auto">
-              <div data-company-edit-top="true" className="mx-auto max-w-7xl px-1 py-8">
+              <div data-company-edit-top="true" className="mx-auto min-h-full max-w-[1180px] px-4 py-5 sm:px-6 lg:px-8">
                 <div className="mb-5">
                   <button
                     type="button"
