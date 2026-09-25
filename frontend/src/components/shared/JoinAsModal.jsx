@@ -209,7 +209,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
               </svg>
             </button>
 
-            <p className="mt-3 whitespace-nowrap text-center text-xs text-gray-600 sm:text-sm">
+            <p className="relative left-1/2 mt-3 w-max -translate-x-1/2 whitespace-nowrap text-center text-xs text-gray-600 sm:text-sm">
               Select a role to continue • Already have an account?{" "}
               <Link to="/login" className="font-medium underline underline-offset-2" style={{ color: BLUE.primary }}>
                 Sign In here
