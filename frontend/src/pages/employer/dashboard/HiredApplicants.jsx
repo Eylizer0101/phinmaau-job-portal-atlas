@@ -1579,7 +1579,7 @@ const selectBase =
       {updateApplication && updateStep === 'privacy' && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 px-3 py-3 backdrop-blur-[1px] sm:px-4 sm:py-4" role="dialog" aria-modal="true" aria-labelledby="employer-privacy-title">
           <div className="relative max-h-[96vh] w-full max-w-[860px] overflow-y-auto rounded-[22px] border border-gray-200 bg-white px-5 pb-5 pt-4 shadow-[0_18px_55px_rgba(15,23,42,0.18)] sm:px-9 sm:pb-7 sm:pt-5 lg:px-12">
-            <button type="button" onClick={closeEmploymentUpdate} disabled={updateLoading} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2 disabled:opacity-50 sm:right-6 sm:top-5" aria-label="Close Privacy Notice" title="Close"><span className="text-2xl leading-none" aria-hidden="true">×</span></button>
+            <button type="button" onClick={closeEmploymentUpdate} disabled={updateLoading} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2 disabled:opacity-50 sm:right-6 sm:top-5" aria-label="Close Employment Status Update Notice" title="Close"><span className="text-2xl leading-none" aria-hidden="true">×</span></button>
             <div className="-mt-1 flex justify-center sm:-mt-2">
               <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
                 <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
@@ -1590,7 +1590,7 @@ const selectBase =
                 <img src="/images/lock.png" alt="" className="relative h-16 w-16 object-contain sm:h-20 sm:w-20" draggable="false" />
               </div>
             </div>
-            <h2 id="employer-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>PRIVACY NOTICE</h2>
+            <h2 id="employer-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>EMPLOYMENT STATUS UPDATE NOTICE</h2>
             <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
               <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" /></svg>
@@ -1605,7 +1605,7 @@ const selectBase =
             </div>
             <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer select-none items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] sm:mt-4">
               <input type="checkbox" checked={updatePrivacyAccepted} onChange={(event) => setUpdatePrivacyAccepted(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 accent-[#1e4ba0] focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2" />
-              <span className="leading-5">I have read and understood this Privacy Notice.</span>
+              <span className="leading-5">I have read and understood this Employment Status Update Notice.</span>
             </label>
             <div className="mt-4 flex justify-center gap-3 sm:mt-5">
               <button type="button" onClick={() => setUpdateStep('reason')} disabled={updateLoading} className="h-11 min-w-[120px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-[#0f2442] transition hover:bg-slate-50 disabled:opacity-50">Back</button>
@@ -1754,7 +1754,7 @@ const selectBase =
             <div className="mt-3">
               <p className="text-sm font-semibold text-gray-800">Select Reason for Decline</p>
               <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other Not Listed Above'].map((reason) => (
+                {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Other Not Listed Above'].map((reason) => (
                   <button
                     key={reason}
                     type="button"
@@ -1775,8 +1775,8 @@ const selectBase =
             <label className="mt-3 block text-sm font-semibold text-gray-800">
               Reason for Declining <span className="text-red-500">*</span>
               <div className="relative mt-1.5">
-                <textarea required aria-required="true" value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={500} rows={2} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
-                <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineExplanation.length}/500</span>
+                <textarea required aria-required="true" value={declineExplanation} onChange={(event) => setDeclineExplanation(event.target.value)} maxLength={40} rows={2} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+                <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineExplanation.length}/40</span>
               </div>
             </label>
             {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}

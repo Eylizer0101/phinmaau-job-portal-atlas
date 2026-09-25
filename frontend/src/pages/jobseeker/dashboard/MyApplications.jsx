@@ -1618,13 +1618,13 @@ const MyApplications = () => {
                               <Link
                                 to={`/jobseeker/job-details/${jobId}`}
                                 state={{ sourcePage: 'myapplications' }}
-                                className={`${UI.btnBase} ${UI.btnMd} w-[140px] ${UI.btnInfo} ${UI.ring}`}
+                                className={`${UI.btnBase} ${UI.btnMd} w-[100px] ${UI.btnInfo} ${UI.ring}`}
                               >
                                 <SvgIcon name="eye" className="w-4 h-4" />
                                 Job
                               </Link>
                             ) : (
-                              <span className={`${UI.btnBase} ${UI.btnMd} w-[140px] ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
+                              <span className={`${UI.btnBase} ${UI.btnMd} w-[100px] ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
                                 <SvgIcon name="eye" className="w-4 h-4" />
                                 Job
                               </span>
@@ -2081,7 +2081,7 @@ const MyApplications = () => {
               </div>
 
               <h2 id="status-request-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>
-                Withdrawal NOTICE
+                EMPLOYMENT STATUS REQUEST NOTICE
               </h2>
 
               <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
@@ -2106,7 +2106,7 @@ const MyApplications = () => {
 
               <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer select-none items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] sm:mt-4">
                 <input type="checkbox" checked={statusRequestPrivacyAccepted} onChange={(event) => setStatusRequestPrivacyAccepted(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 accent-[#1e4ba0] focus:ring-2 focus:ring-[#1e4ba0] focus:ring-offset-2" />
-                <span className="leading-5">I have read and understood this Withdrawal Notice.</span>
+                <span className="leading-5">I have read and understood this Employment Status Request Notice.</span>
               </label>
 
               <div className="mt-4 flex justify-center gap-3 sm:mt-5">

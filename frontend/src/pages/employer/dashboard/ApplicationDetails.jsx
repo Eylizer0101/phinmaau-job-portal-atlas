@@ -2270,7 +2270,7 @@ const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, 
           <div className="mt-3">
             <p className="text-sm font-semibold text-gray-800">Select Reason for Decline</p>
             <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other Not Listed Above'].map((item) => (
+              {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Other Not Listed Above'].map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -2292,8 +2292,8 @@ const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, 
           <label className="mt-3 block text-sm font-semibold text-gray-800">
             Reason for Declining <span className="text-red-500">*</span>
             <div className="relative mt-1.5">
-              <textarea required aria-required="true" value={declineComment} onChange={(event) => onDeclineCommentChange(event.target.value)} maxLength={500} rows={2} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
-              <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineComment.length}/500</span>
+              <textarea required aria-required="true" value={declineComment} onChange={(event) => onDeclineCommentChange(event.target.value)} maxLength={40} rows={2} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+              <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineComment.length}/40</span>
             </div>
           </label>
 
@@ -2742,14 +2742,24 @@ const ApplicationDetails = () => {
               <button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button>
               <button onClick={() => { setActiveTab('activity'); setShowAllActivities(false); }} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button>
             </div>
-            <button
-              type="button"
-              onClick={openFullResumePreview}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-[#174b91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
-            >
-              <SvgIcon name="eye" className="h-4 w-4" />
-              Full Resume
-            </button>
+            {activeTab === 'resume' ? (
+              <button
+                type="button"
+                onClick={openFullResumePreview}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-[#174b91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+              >
+                <SvgIcon name="eye" className="h-4 w-4" />
+                Full Resume
+              </button>
+            ) : hasMoreActivities ? (
+              <button
+                type="button"
+                onClick={() => setShowAllActivities((previous) => !previous)}
+                className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold text-[#2e66a6] transition hover:bg-gray-50 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+              >
+                {showAllActivities ? 'Show Less Activity' : 'View All Activity'}
+              </button>
+            ) : null}
           </div>
 
           {activeTab === 'resume' ? (
@@ -2951,16 +2961,6 @@ const ApplicationDetails = () => {
             </div>
           ) : (
             <div className="relative px-6 py-8 sm:px-10">
-              {hasMoreActivities ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAllActivities((previous) => !previous)}
-                  className="absolute right-10 top-5 z-10 bg-transparent p-0 text-sm font-semibold text-[#2e66a6] transition hover:underline sm:right-14"
-                >
-                  {showAllActivities ? 'Show Less Activity' : 'View All Activity'}
-                </button>
-              ) : null}
-
               {activities.length === 0 ? (
                 <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center">
                   <SvgIcon name="activity" className="h-8 w-8 text-gray-400" />
@@ -2997,7 +2997,7 @@ const ApplicationDetails = () => {
           )}
         </main>
 
-        <aside className="space-y-5">
+        <aside className="flex h-full min-h-0 flex-col gap-5">
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5">
             <h2 className="text-lg font-bold">
               {currentStatus === 'withdrawn' ? 'Application Withdrawn' : 'Employer Actions'}
@@ -3028,7 +3028,7 @@ const ApplicationDetails = () => {
               )}
             </div>
           </div>
-          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
+          <div className="flex min-h-0 flex-1 flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
             <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
 
         
@@ -3060,7 +3060,7 @@ const ApplicationDetails = () => {
               </div>
             </div>
 
-            <div className="max-h-[360px] overflow-y-auto pr-2">
+            <div className="min-h-0 flex-1 overflow-y-auto pr-2">
               <div className="divide-y divide-gray-200">
                 <div className="py-4">
                   <div className="flex items-start justify-between gap-4">

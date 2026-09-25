@@ -241,7 +241,7 @@ const applicationSchema = new mongoose.Schema({
             type: String,
             default: '',
             trim: true,
-            maxlength: 500
+            maxlength: 40
         },
         noResponseAt: {
             type: Date,
@@ -252,7 +252,7 @@ const applicationSchema = new mongoose.Schema({
             respondedAt: { type: Date, default: null },
             respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
             declineReason: { type: String, default: '', trim: true, maxlength: 40 },
-            explanation: { type: String, default: '', trim: true, maxlength: 500 }
+            explanation: { type: String, default: '', trim: true, maxlength: 40 }
         },
         adminDecision: {
             decision: { type: String, enum: ['pending', 'approved', 'declined'], default: 'pending' },

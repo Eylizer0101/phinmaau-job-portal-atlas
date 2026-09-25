@@ -1604,6 +1604,20 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       });
     }
 
+    if (decision === 'declined' && finalExplanation.length > 40) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reason for declining must not exceed 40 characters.'
+      });
+    }
+
+    if (decision === 'declined' && ['Rehired / Transfer', 'No HR Confirmation'].includes(declineReason)) {
+      return res.status(400).json({
+        success: false,
+        message: 'The selected decline reason is no longer available.'
+      });
+    }
+
     const existingApplication = await Application.findOne({
       _id: applicationId,
       employer: req.user._id,
