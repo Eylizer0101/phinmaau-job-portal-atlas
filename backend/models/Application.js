@@ -286,7 +286,7 @@ const applicationSchema = new mongoose.Schema({
         type: String,
         default: '',
         trim: true,
-        maxlength: 200
+        maxlength: 30
     },
 
     // ✅ NEW: save where the application was declined from

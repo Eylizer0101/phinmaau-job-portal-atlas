@@ -520,7 +520,6 @@ const HiredApplicants = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewStep, setReviewStep] = useState('actions');
   const [declineReason, setDeclineReason] = useState('');
-  const [customDeclineReason, setCustomDeclineReason] = useState('');
   const [declineExplanation, setDeclineExplanation] = useState('');
   const [reviewResult, setReviewResult] = useState(null);
   const [updateApplication, setUpdateApplication] = useState(null);
@@ -964,9 +963,13 @@ const HiredApplicants = () => {
   const handleReviewStatusRequest = async (decision) => {
     if (!reviewApplication?._id || reviewLoading) return;
 
-    const finalDeclineReason = declineReason === 'Other Not Listed Above' ? customDeclineReason.trim() : declineReason;
-    if (decision === 'declined' && (!finalDeclineReason || !declineExplanation.trim())) {
-      setError('Select or enter a decline reason and add a comment.');
+    const finalDeclineReason = declineReason;
+    const finalExplanation = declineReason === 'Other Not Listed Above' && !declineExplanation.trim()
+      ? 'No Decline reason was provided.'
+      : declineExplanation.trim();
+
+    if (decision === 'declined' && (!finalDeclineReason || (declineReason !== 'Other Not Listed Above' && !finalExplanation))) {
+      setError('Select a decline reason and add a comment.');
       return;
     }
 
@@ -975,7 +978,7 @@ const HiredApplicants = () => {
       setError('');
       const response = await axios.put(
         `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${reviewApplication._id}/employment-status-request/review`,
-        { decision, declineReason: finalDeclineReason, explanation: declineExplanation.trim() },
+        { decision, declineReason: finalDeclineReason, explanation: finalExplanation },
         { headers: getAuthHeaders() }
       );
 
@@ -991,7 +994,6 @@ const HiredApplicants = () => {
         setReviewApplication(null);
         setReviewStep('actions');
         setDeclineReason('');
-        setCustomDeclineReason('');
         setDeclineExplanation('');
         setReviewResult({
           decision,
@@ -1345,7 +1347,7 @@ const selectBase =
                                 String(app.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase() === 'pending' && (
                                 <button
                                   type="button"
-                                  onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setCustomDeclineReason(''); setDeclineExplanation(''); setError(''); }}
+                                  onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
                                   className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#2e66a6]/25 bg-[#2e66a6]/5 text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`Review employment status request from ${name}`}
                                   title="Review employment status request"
@@ -1466,7 +1468,7 @@ const selectBase =
                           String(app.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase() === 'pending' && (
                           <button
                             type="button"
-                            onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setCustomDeclineReason(''); setDeclineExplanation(''); setError(''); }}
+                            onClick={() => { setReviewApplication(app); setReviewStep('actions'); setDeclineReason(''); setDeclineExplanation(''); setError(''); }}
                             className="relative mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/5 px-4 py-2 text-sm font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/10"
                           >
                             <Icon name="request" className="h-4 w-4" />
@@ -1749,33 +1751,6 @@ const selectBase =
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 overflow-hidden rounded-xl bg-[#f1f6fc] sm:grid-cols-3">
-              <div className="border-b border-[#dbe5f0] px-4 py-3 sm:border-b-0 sm:border-r">
-                <p className="text-[11px] font-medium text-gray-500">Company</p>
-                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.companyName || 'Not specified'}</p>
-              </div>
-              <div className="border-b border-[#dbe5f0] px-4 py-3 sm:border-b-0 sm:border-r">
-                <p className="text-[11px] font-medium text-gray-500">Job Title</p>
-                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.title || 'Not specified'}</p>
-              </div>
-              <div className="px-4 py-3">
-                <p className="text-[11px] font-medium text-gray-500">Industry</p>
-                <p className="mt-1 text-sm font-semibold text-[#172033]">{reviewApplication.job?.industry || reviewApplication.employer?.employerProfile?.industry || 'Not specified'}</p>
-              </div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 border-b border-gray-200 pb-3 text-sm">
-              <div><p className="text-xs text-gray-500">Current Status</p><span className="mt-1 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span></div>
-              <div><p className="text-xs text-gray-500">Request Reason</p><p className="mt-1 font-semibold text-[#172033]">{reviewApplication.employmentStatusRequest?.reason === 'contract_ended' ? 'Contract Ended' : 'Employment Ended'}</p></div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 border-b border-gray-200 pb-3 text-sm sm:grid-cols-4">
-              <div><p className="text-xs text-gray-500">Applied</p><p className="mt-0.5 font-medium text-[#172033]">{formatDate(reviewApplication.appliedAt)}</p></div>
-              <div><p className="text-xs text-gray-500">Date Hired</p><p className="mt-0.5 font-medium text-[#172033]">{formatDate(reviewApplication.hiredAt || reviewApplication.reviewedAt)}</p></div>
-              <div><p className="text-xs text-gray-500">Employment Duration</p><p className="mt-0.5 font-medium text-[#172033]">{formatEmploymentDuration(reviewApplication)}</p></div>
-              <div><p className="text-xs text-gray-500">Request Date</p><p className="mt-0.5 font-medium text-[#172033]">{formatDate(reviewApplication.employmentStatusRequest?.requestedAt)}</p></div>
-            </div>
-
             <label className="mt-3 block text-sm font-semibold text-gray-800">
               Select Reason for Decline
               <select value={declineReason} onChange={(event) => setDeclineReason(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15">
@@ -1783,12 +1758,6 @@ const selectBase =
                 {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other Not Listed Above'].map((reason) => <option key={reason} value={reason}>{reason}</option>)}
               </select>
             </label>
-            {declineReason === 'Other Not Listed Above' && (
-              <label className="mt-3 block text-sm font-semibold text-gray-800">
-                Other Reason
-                <input value={customDeclineReason} onChange={(event) => setCustomDeclineReason(event.target.value)} maxLength={40} placeholder="Enter the decline reason" className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
-              </label>
-            )}
             <label className="mt-3 block text-sm font-semibold text-gray-800">
               Reason for Declining
               <div className="relative mt-1.5">
@@ -1799,7 +1768,7 @@ const selectBase =
             {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-3 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
-              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || (declineReason === 'Other Not Listed Above' && !customDeclineReason.trim()) || !declineExplanation.trim() || reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
+              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || (declineReason !== 'Other Not Listed Above' && !declineExplanation.trim()) || reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
             </div>
           </div>
         </div>

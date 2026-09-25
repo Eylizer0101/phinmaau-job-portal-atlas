@@ -5199,7 +5199,7 @@ const MyProfile = () => {
         const remaining = Math.max(0, required - counts[key]);
         if (!remaining) return '';
         const [singular, plural] = labelMap[key];
-        return `Add ${remaining} more ${remaining === 1 ? singular : plural} to reach ${nextTier.name}.`;
+        return `Add ${remaining} more ${remaining === 1 ? singular : plural}.`;
       })
       .filter(Boolean);
 

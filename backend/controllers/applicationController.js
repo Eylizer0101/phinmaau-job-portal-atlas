@@ -1586,7 +1586,11 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       });
     }
 
-    if (decision === 'declined' && (!declineReason || !explanation)) {
+    const finalExplanation = decision === 'declined' && declineReason === 'Other Not Listed Above' && !explanation
+      ? 'No Decline reason was provided.'
+      : explanation;
+
+    if (decision === 'declined' && (!declineReason || (declineReason !== 'Other Not Listed Above' && !finalExplanation))) {
       return res.status(400).json({
         success: false,
         message: 'A decline reason and Explanation are required.'
@@ -1648,7 +1652,7 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       'employmentStatusRequest.employerResponse.respondedAt': reviewedAt,
       'employmentStatusRequest.employerResponse.respondedBy': req.user._id,
       'employmentStatusRequest.employerResponse.declineReason': decision === 'declined' ? declineReason : '',
-      'employmentStatusRequest.employerResponse.explanation': decision === 'declined' ? explanation : '',
+      'employmentStatusRequest.employerResponse.explanation': decision === 'declined' ? finalExplanation : '',
       'employmentStatusRequest.adminDecision.decision': 'pending',
       'employmentStatusRequest.adminDecision.decidedAt': null,
       'employmentStatusRequest.adminDecision.decidedBy': null
@@ -1662,7 +1666,7 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       update.employmentStatus = 'active';
       update.employmentStatusCheckedAt = reviewedAt;
       update['employmentStatusRequest.declineReason'] = declineReason;
-      update['employmentStatusRequest.explanation'] = explanation;
+      update['employmentStatusRequest.explanation'] = finalExplanation;
     }
 
     const application = await Application.findOneAndUpdate(
@@ -1691,7 +1695,7 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       type: decision === 'declined' ? 'declined' : 'status_changed',
       title: decision === 'declined' ? 'Employment status request declined' : 'Employment status request approved',
       description: decision === 'declined'
-        ? [declineReason, explanation].filter(Boolean).join(' — ')
+        ? [declineReason, finalExplanation].filter(Boolean).join(' — ')
         : 'The employer approved the employment status change request.',
       fromStatus: 'hired',
       toStatus: 'hired',
@@ -3128,7 +3132,7 @@ exports.updateApplicationStatus = async (req, res) => {
 
     if (nextStatus === 'declined') {
       let normalizedDeclineReason = String(declineReason || '').trim();
-      const normalizedDeclineComment = String(declineComment || '').trim().slice(0, 200);
+      const normalizedDeclineComment = String(declineComment || '').trim().slice(0, 30);
       const normalizedDeclinedFrom = String(declinedFrom || '').trim();
 
       if (normalizedDeclineReason === 'Other Not Listed Above' && !normalizedDeclineComment) {
