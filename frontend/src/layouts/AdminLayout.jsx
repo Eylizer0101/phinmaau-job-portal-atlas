@@ -724,95 +724,92 @@ const AdminLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50" style={layoutVars}>
       {/* ✅ Logout Confirmation Modal (match screenshot style) */}
-{showLogoutModal && (
-  <div
-    className={[
-      "fixed inset-0 z-[70] flex items-center justify-center px-4",
-      "bg-black/50",
-      "transition-opacity duration-200",
-      isLogoutModalVisible ? "opacity-100" : "opacity-0",
-    ].join(" ")}
-    role="presentation"
-    onMouseDown={(e) => {
-      if (e.target === e.currentTarget) closeLogoutModal();
-    }}
-  >
-    <div
-      ref={logoutDialogRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="logout-title"
-      aria-describedby="logout-desc"
-      className={[
-        "w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden",
-        "transform transition-all duration-200",
-        isLogoutModalVisible ? "opacity-100 scale-100" : "opacity-0 scale-95",
-      ].join(" ")}
-    >
-
-
-      <div className="p-6 sm:p-7">
-        {/* ✅ warning icon */}
-        <div className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center">
-           <img
-    src="/images/error.png"
-    alt="Error"
-    className="w-14 h-14 object-contain"
-    draggable="false"
-  />
-        </div>
-
-        <h2
-          id="logout-title"
-          className="text-lg sm:text-xl font-extrabold text-gray-900 text-center"
+      {showLogoutModal && (
+        <div
+          className={[
+            "fixed inset-0 z-[10050] flex items-center justify-center px-4",
+            "bg-black/10",
+            "transition-opacity duration-200",
+            isLogoutModalVisible ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeLogoutModal();
+          }}
         >
-          Log out?
-        </h2>
-
-        <p
-          id="logout-desc"
-          className="mt-2 text-sm sm:text-base text-gray-600 text-center"
-        >
-          Are you sure you want to log out of your admin account?
-        </p>
-
-        <div className="mt-6 flex items-center justify-center gap-3">
-          {/* ✅ Log out (red) */}
-          <button
-            ref={logoutPrimaryBtnRef}
-            type="button"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
+          <div
+            ref={logoutDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-title"
+            aria-describedby="logout-desc"
             className={[
-              "px-6 py-3 rounded-xl font-semibold",
-              "bg-red-600 text-white hover:bg-red-700 transition-colors",
-              focusRing,
-              isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
+              "w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden",
+              "transform transition-all duration-200",
+              isLogoutModalVisible ? "opacity-100 scale-100" : "opacity-0 scale-95",
             ].join(" ")}
           >
-            {isLoggingOut ? "Logging out…" : "Log out"}
-          </button>
+            <div className="p-6 sm:p-7">
+              {/* ✅ warning icon */}
+              <div className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center">
+                <img
+                  src="/images/error.png"
+                  alt="Error"
+                  className="w-14 h-14 object-contain"
+                  draggable="false"
+                />
+              </div>
 
-          {/* ✅ Cancel (outline) */}
-          <button
-            ref={logoutCancelBtnRef}
-            type="button"
-            onClick={closeLogoutModal}
-            disabled={isLoggingOut}
-            className={[
-              "px-6 py-3 rounded-xl font-semibold",
-              "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50 transition-colors",
-              focusRing,
-              isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
-            ].join(" ")}
-          >
-            Cancel
-          </button>
+              <h2
+                id="logout-title"
+                className="text-lg sm:text-xl font-extrabold text-gray-900 text-center"
+              >
+                Sign out?
+              </h2>
+
+              <p
+                id="logout-desc"
+                className="mt-2 text-sm sm:text-base text-gray-600 text-center"
+              >
+                <span className="block">Are you sure you want to sign out of your account?</span>
+                <span className="block">You can sign in again anytime.</span>
+              </p>
+
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  ref={logoutCancelBtnRef}
+                  type="button"
+                  onClick={closeLogoutModal}
+                  disabled={isLoggingOut}
+                  className={[
+                    "px-6 py-3 rounded-xl font-semibold",
+                    "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50 transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2",
+                    isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
+                  ].join(" ")}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  ref={logoutPrimaryBtnRef}
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className={[
+                    "px-6 py-3 rounded-xl font-semibold",
+                    "bg-red-600 text-white hover:bg-red-700 transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2",
+                    isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
+                  ].join(" ")}
+                >
+                  {isLoggingOut ? "Logging out…" : "Sign out"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* overlay */}
       {isMobileNavOpen && (
