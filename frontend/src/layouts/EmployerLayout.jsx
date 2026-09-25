@@ -467,7 +467,7 @@ const EmployerLayout = ({ children }) => {
         type: "dropdown",
         name: "Jobs",
         icon:
-          "M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM10 5h4v2h-4V5z",
+          "M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z M3 13h18",
         items: [
           {
             name: "Post Job",
