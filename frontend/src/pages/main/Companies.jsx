@@ -827,7 +827,7 @@ const Companies = () => {
               <img
                 src="/images/findcompanies.png"
                 alt="Companies illustration"
-                className="pointer-events-none absolute right-[20px] md:right-[40px] top-1/3 -translate-y-1/2 w-34 h-34 md:w-49 md:h-48 object-contain opacity-50 mix-blend-soft-light saturate-120 z-0"
+                className="pointer-events-none absolute right-[20px] md:right-[40px] top-1/2 -translate-y-1/2 w-34 h-34 md:w-49 md:h-48 object-contain opacity-50 mix-blend-soft-light saturate-120 z-0"
                 style={{
                   WebkitMaskImage: "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 80%)",
                   maskImage: "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 80%)",
