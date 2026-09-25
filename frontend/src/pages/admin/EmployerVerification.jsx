@@ -1220,7 +1220,7 @@ const EmployerVerification = () => {
                         <th className="w-[18%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
                         <th className="w-[12%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
                         {archiveMode ? <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Declined</th> : null}
-                        <th className="w-[10%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
+                        <th className="w-[10%] px-4 py-4 text-center text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
                       </tr>
                     </thead>
 
@@ -1294,8 +1294,8 @@ const EmployerVerification = () => {
                                 {formatDate(item.rejectedAt)}
                               </td>
                             ) : null}
-                            <td className="px-4 py-4">
-                              <div className="flex items-center justify-end gap-2">
+                            <td className="px-4 py-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
                                 <button
                                   type="button"
                                   onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}

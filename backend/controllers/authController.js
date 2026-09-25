@@ -1565,22 +1565,38 @@ exports.checkRegistrationEmail = async (req, res) => {
       });
     }
 
-    const existingUser = await findExistingUserByEmail(email);
+    const [existingUser, existingContactNumber] = await Promise.all([
+      findExistingUserByEmail(email),
+      contactNumber ? findExistingUserByContactNumber(contactNumber) : Promise.resolve(null),
+    ]);
+
+    const fieldErrors = {};
     if (existingUser) {
-      return res.status(409).json({
-        code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'Email address is already registered.',
-      });
+      fieldErrors.email = 'Email address is already registered.';
+    }
+    if (existingContactNumber) {
+      fieldErrors.contactNumber = 'Contact Number is already registered.';
     }
 
-    if (contactNumber) {
-      const existingContactNumber = await findExistingUserByContactNumber(contactNumber);
-      if (existingContactNumber) {
-        return res.status(409).json({
-          code: 'CONTACT_NUMBER_ALREADY_REGISTERED',
-          message: 'Contact Number is already registered.',
-        });
-      }
+    if (Object.keys(fieldErrors).length > 0) {
+      const emailTaken = Boolean(fieldErrors.email);
+      const contactTaken = Boolean(fieldErrors.contactNumber);
+
+      return res.status(409).json({
+        code:
+          emailTaken && contactTaken
+            ? 'REGISTRATION_FIELDS_ALREADY_REGISTERED'
+            : emailTaken
+              ? 'EMAIL_ALREADY_REGISTERED'
+              : 'CONTACT_NUMBER_ALREADY_REGISTERED',
+        message:
+          emailTaken && contactTaken
+            ? 'Email address and Contact Number are already registered.'
+            : emailTaken
+              ? fieldErrors.email
+              : fieldErrors.contactNumber,
+        fieldErrors,
+      });
     }
 
     return res.status(200).json({

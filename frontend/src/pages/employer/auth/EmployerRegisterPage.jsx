@@ -880,22 +880,43 @@ const EmployerRegisterPage = () => {
       });
       return true;
     } catch (err) {
-      if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_ALREADY_REGISTERED') {
-        if (err.response?.data?.code === 'CONTACT_NUMBER_ALREADY_REGISTERED') {
-          setFieldErrors((prev) => ({
-            ...prev,
-            mobileNumber: 'Contact Number is already registered.',
-          }));
-          setServerError('');
-          focusField('mobileNumber');
-          return false;
-        }
-        setFieldErrors((prev) => ({
-          ...prev,
-          businessEmail: 'Email address is already registered.',
-        }));
+      if (err.response?.status === 409) {
+        const responseData = err.response?.data || {};
+        const responseFieldErrors = responseData.fieldErrors || {};
+        const duplicateEmail =
+          Boolean(responseFieldErrors.email) ||
+          responseData.code === 'EMAIL_ALREADY_REGISTERED' ||
+          responseData.code === 'REGISTRATION_FIELDS_ALREADY_REGISTERED';
+        const duplicateContactNumber =
+          Boolean(responseFieldErrors.contactNumber) ||
+          responseData.code === 'CONTACT_NUMBER_ALREADY_REGISTERED' ||
+          responseData.code === 'REGISTRATION_FIELDS_ALREADY_REGISTERED';
+
+        setFieldErrors((prev) => {
+          const next = { ...prev };
+          delete next.businessEmail;
+          delete next.mobileNumber;
+
+          if (duplicateEmail) {
+            next.businessEmail =
+              responseFieldErrors.email || 'Email address is already registered.';
+          }
+          if (duplicateContactNumber) {
+            next.mobileNumber =
+              responseFieldErrors.contactNumber || 'Contact Number is already registered.';
+          }
+
+          return next;
+        });
+
         setServerError('');
-        focusField('businessEmail');
+
+        if (duplicateEmail) {
+          focusField('businessEmail');
+        } else if (duplicateContactNumber) {
+          focusField('mobileNumber');
+        }
+
         return false;
       }
 

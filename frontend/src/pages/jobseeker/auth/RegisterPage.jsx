@@ -1174,22 +1174,42 @@ const RegisterPage = () => {
       });
       return true;
     } catch (err) {
-      if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_ALREADY_REGISTERED') {
-        if (err.response?.data?.code === 'CONTACT_NUMBER_ALREADY_REGISTERED') {
-          setFormErrors((prev) => ({
-            ...prev,
-            phoneNumber: 'Contact Number is already registered.',
-          }));
-          setServerError('');
-          document.getElementById('phoneNumber')?.focus?.();
-          return false;
-        }
-        setFormErrors((prev) => ({
-          ...prev,
-          email: 'Email address is already registered.',
-        }));
+      if (err.response?.status === 409) {
+        const responseData = err.response?.data || {};
+        const responseFieldErrors = responseData.fieldErrors || {};
+        const duplicateEmail =
+          Boolean(responseFieldErrors.email) ||
+          responseData.code === 'EMAIL_ALREADY_REGISTERED' ||
+          responseData.code === 'REGISTRATION_FIELDS_ALREADY_REGISTERED';
+        const duplicateContactNumber =
+          Boolean(responseFieldErrors.contactNumber) ||
+          responseData.code === 'CONTACT_NUMBER_ALREADY_REGISTERED' ||
+          responseData.code === 'REGISTRATION_FIELDS_ALREADY_REGISTERED';
+
+        setFormErrors((prev) => {
+          const next = { ...prev };
+          delete next.email;
+          delete next.phoneNumber;
+
+          if (duplicateEmail) {
+            next.email = responseFieldErrors.email || 'Email address is already registered.';
+          }
+          if (duplicateContactNumber) {
+            next.phoneNumber =
+              responseFieldErrors.contactNumber || 'Contact Number is already registered.';
+          }
+
+          return next;
+        });
+
         setServerError('');
-        document.getElementById('email')?.focus?.();
+
+        if (duplicateEmail) {
+          document.getElementById('email')?.focus?.();
+        } else if (duplicateContactNumber) {
+          document.getElementById('phoneNumber')?.focus?.();
+        }
+
         return false;
       }
 
