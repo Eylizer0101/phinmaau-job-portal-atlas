@@ -834,7 +834,7 @@ const EmployerVerification = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [archiveMode, setArchiveMode] = useState(false);
+  const [archiveMode, setArchiveMode] = useState(() => new URLSearchParams(window.location.search).get("archived") === "1");
   const [restoringId, setRestoringId] = useState("");
   const [restoreTarget, setRestoreTarget] = useState(null);
 
@@ -1143,7 +1143,7 @@ const EmployerVerification = () => {
                   className={inputBase}
                   disabled={loading}
                 >
-                  <option value="all">All Industries</option>
+                  <option value="all">All Industry</option>
                   {filterOptions.industries.map((industry) => (
                     <option key={industry} value={industry}>
                       {industry}
@@ -1246,13 +1246,13 @@ const EmployerVerification = () => {
                             tabIndex={0}
                             onClick={(event) => {
                               if (event.target.closest("button, a, input, select, textarea, label")) return;
-                              navigate(`/admin/employer-verification/${item._id}`);
+                              navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`);
                             }}
                             onKeyDown={(event) => {
                               if (event.target !== event.currentTarget) return;
                               if (event.key === "Enter" || event.key === " ") {
                                 event.preventDefault();
-                                navigate(`/admin/employer-verification/${item._id}`);
+                                navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`);
                               }
                             }}
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
@@ -1296,27 +1296,26 @@ const EmployerVerification = () => {
                             ) : null}
                             <td className="px-4 py-4">
                               <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  leftIcon={<Icon name="eye" className="h-4 w-4" />}
+                                <button
+                                  type="button"
                                   onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
-                                  className="h-10 w-16 !gap-0 !p-0"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   title="View"
+                                  aria-label={`View ${companyName}`}
                                 >
-                                
-                                </Button>
+                                  <Icon name="eye" className="h-4 w-4" />
+                                </button>
                                 {archiveMode ? (
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    leftIcon={<Icon name="restore" className="h-4 w-4" />}
+                                  <button
+                                    type="button"
                                     onClick={() => setRestoreTarget(item)}
                                     disabled={restoringId === item._id}
-                                    className="h-10 w-16 !gap-0 !p-0"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
                                     title="Restore"
                                     aria-label={`Restore ${companyName}`}
-                                  />
+                                  >
+                                    <Icon name="restore" className="h-4 w-4" />
+                                  </button>
                                 ) : null}
                               </div>
                             </td>

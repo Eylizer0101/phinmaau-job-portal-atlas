@@ -640,6 +640,8 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
 // ======================= MAIN PAGE =======================
 const JobseekerVerificationDetails = () => {
   const { id } = useParams();
+  const fromArchived = new URLSearchParams(window.location.search).get("archived") === "1";
+  const verificationListPath = `/admin/jobseeker-verification${fromArchived ? "?archived=1" : ""}`;
 
   const [jobseeker, setJobseeker] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1038,9 +1040,9 @@ const JobseekerVerificationDetails = () => {
     }
   };
 
-  const fetchJobseekerDetails = useCallback(async () => {
+  const fetchJobseekerDetails = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError("");
 
       const res = await api.get(`/admin/jobseekers/verification/${id}`);
@@ -1059,7 +1061,7 @@ const JobseekerVerificationDetails = () => {
         e.response?.data?.message || "Failed to load jobseeker details.",
       );
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [id]);
 
@@ -1137,7 +1139,7 @@ const JobseekerVerificationDetails = () => {
               : newStatus;
 
         setSuccess(`Jobseeker ${successLabel} successfully.`);
-        await fetchJobseekerDetails();
+        await fetchJobseekerDetails({ silent: true });
         setShowApproveModal(false);
         setApprovalPassword("");
         approvalPasswordRef.current = "";
@@ -1207,7 +1209,6 @@ const JobseekerVerificationDetails = () => {
   const handleDeclineSubmit = async () => {
     const finalDeclineMessage = declineMessage.trim();
     if (!declineReason || !finalDeclineMessage) {
-      setError("Please select a decline reason and enter a message.");
       return;
     }
     const remarks = `Declined verification request. Message to user: ${finalDeclineMessage}`;
@@ -1292,7 +1293,7 @@ const JobseekerVerificationDetails = () => {
             <p className="mt-2 text-sm text-black/70">{error}</p>
             <div className="mt-6">
               <Link
-                to="/admin/jobseeker-verification"
+                to={verificationListPath}
                 className={cn(UI.btnBase, UI.btnLg, UI.btnPrimary, UI.ring)}
               >
                 <SvgIcon name="back" className="w-4 h-4" />
@@ -1320,7 +1321,7 @@ const JobseekerVerificationDetails = () => {
             </p>
             <div className="mt-6">
               <Link
-                to="/admin/jobseeker-verification"
+                to={verificationListPath}
                 className={cn(UI.btnBase, UI.btnLg, UI.btnSecondary, UI.ring)}
               >
                 <SvgIcon name="back" className="w-4 h-4" />
@@ -1434,7 +1435,7 @@ const JobseekerVerificationDetails = () => {
         <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
-              to="/admin/jobseeker-verification"
+              to={verificationListPath}
               className={cn(
                 "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#245487]",
                 UI.ring,
@@ -1610,10 +1611,10 @@ const JobseekerVerificationDetails = () => {
                   <img
                     src={buildFileUrl(jobseeker.profileImage)}
                     alt={`${fullName} registration`}
-                    className="h-28 w-28 rounded-full object-cover"
+                    className="h-28 w-28 object-cover"
                   />
                 ) : (
-                  <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
+                  <div className="flex h-28 w-28 items-center justify-center overflow-hidden bg-white">
                     <img
                       src="/images/profile.png"
                       alt="Default profile placeholder"
@@ -2069,7 +2070,7 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[500px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[570px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="hold-modal-title"
@@ -2083,21 +2084,21 @@ const JobseekerVerificationDetails = () => {
               >
                 <SvgIcon name="x" className="h-4 w-4" />
               </button>
-              <div className="max-h-[82vh] overflow-y-auto px-5 pb-4 pt-5 sm:px-6">
+              <div className="max-h-[86vh] overflow-y-auto px-7 pb-5 pt-7 sm:px-9">
                 <div>
                   <div className="flex items-start gap-3 pr-6">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
                       <SvgIcon name="pause" className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
                       <h3
                         id="hold-modal-title"
-                        className="text-xl font-bold leading-tight tracking-[-0.02em] text-black"
+                        className="text-2xl font-bold leading-tight tracking-[-0.02em] text-black"
                       >
                         Request Resubmission
                       </h3>
 
-                      <p className="mt-2 text-sm leading-5 text-[#344054]">
+                      <p className="mt-2 text-[15px] leading-6 text-[#344054]">
                         Select the documents that need to be resubmitted and
                         choose at least one reason or write message for{" "}
                         <span className="font-bold text-black">{fullName}</span>
@@ -2107,10 +2108,10 @@ const JobseekerVerificationDetails = () => {
                   </div>
 
                   <div className="mt-5">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#344054]">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.04em] text-[#344054]">
                       Documents needed
                     </p>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-2">
                       {documentTypes.filter((doc) => {
                         const status = String(documentDetails[doc.key]?.status || "").toLowerCase();
                         return ["pending", "submitted", "hold"].includes(status);
@@ -2119,16 +2120,16 @@ const JobseekerVerificationDetails = () => {
                         const isAlreadyOnHold = String(documentDetails[doc.key]?.status || "").toLowerCase() === "hold";
 
                         return (
-                          <div key={doc.key} className="rounded-lg border border-[#D8E0EA] bg-white/85 p-3">
+                          <div key={doc.key} className="rounded-xl border border-[#D8E0EA] bg-white/85 p-3">
                             <label className={cn("flex min-h-8 select-none items-center gap-3", isAlreadyOnHold ? "cursor-not-allowed opacity-60" : "cursor-pointer")}>
                               <input
                                 type="checkbox"
                                 checked={checked}
                                 disabled={isAlreadyOnHold}
                                 onChange={() => toggleHoldDocType(doc.key)}
-                                className="h-4 w-4 rounded border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
+                                className="h-5 w-5 rounded-md border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
                               />
-                              <span className="text-sm sm:text-[15px] font-medium text-black/75">{doc.label}</span>
+                              <span className="text-[15px] font-medium text-black">{doc.label}</span>
                               {isAlreadyOnHold && <span className="ml-auto text-xs font-medium text-[#2e66a6]">On Hold</span>}
                             </label>
                             {checked && (
@@ -2154,20 +2155,20 @@ const JobseekerVerificationDetails = () => {
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
                       maxLength={500}
-                      rows={4}
+                      rows={5}
                       placeholder="Explain what needs to be corrected or re-uploaded."
-                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#475467] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+              <div className="bg-[#F8FAFC] px-8 pb-7 pt-3 sm:px-10">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
+                    className="!h-11 rounded-lg border-[#CBD5E1] px-6 text-sm"
                     onClick={resetHoldModal}
                     disabled={actionLoading}
                   >
@@ -2177,7 +2178,7 @@ const JobseekerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-11 rounded-lg px-6 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleHoldSubmit}
                     disabled={
                       !holdDocTypes.length ||
@@ -2205,7 +2206,7 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[500px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[570px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
@@ -2219,7 +2220,7 @@ const JobseekerVerificationDetails = () => {
               >
                 <SvgIcon name="x" className="h-4 w-4" />
               </button>
-              <div className="px-6 pb-5 pt-6 sm:px-7">
+              <div className="px-8 pb-6 pt-8 sm:px-10">
                 <div className="flex items-start gap-3 pr-6">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
                     <SvgIcon
@@ -2231,12 +2232,12 @@ const JobseekerVerificationDetails = () => {
                   <div className="min-w-0">
                     <h3
                       id="decline-modal-title"
-                      className="text-xl font-bold leading-tight tracking-[-0.02em] text-black"
+                      className="text-2xl font-bold leading-tight tracking-[-0.02em] text-black"
                     >
                       Decline Verification
                     </h3>
 
-                    <p className="mt-2 text-sm leading-5 text-[#344054]">
+                    <p className="mt-2 text-[15px] leading-6 text-[#344054]">
                       Are you sure you want to decline{" "}
                       <span className="font-bold text-black">{fullName}</span>?
                       The Job Seeker will be notified that they do not meet the
@@ -2246,7 +2247,7 @@ const JobseekerVerificationDetails = () => {
                 </div>
 
                 <div className="mt-5">
-                  <label className="mb-1 block text-[13px] font-medium leading-5 text-[#344054]">
+                  <label className="mb-1 block text-[15px] font-medium leading-5 text-[#475467]">
                     Reason for Declining{" "}
                     <span className="font-semibold text-black">{fullName}</span>{" "}
                     <span className="text-red-600">*</span>
@@ -2274,14 +2275,14 @@ const JobseekerVerificationDetails = () => {
                 </div>
               </div>
 
-              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-6 py-4 sm:px-7">
+              <div className="bg-[#F8FAFC] px-8 pb-7 pt-3 sm:px-10">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
+                    className="!h-11 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetDeclineModal}
-                    disabled={actionLoading || !declineReason || !declineMessage.trim()}
+                    disabled={actionLoading}
                   >
                     Cancel
                   </Button>
@@ -2289,9 +2290,9 @@ const JobseekerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-11 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleDeclineSubmit}
-                    disabled={actionLoading}
+                    disabled={actionLoading || !declineReason || !declineMessage.trim()}
                     loading={actionLoading}
                   >
                     Decline

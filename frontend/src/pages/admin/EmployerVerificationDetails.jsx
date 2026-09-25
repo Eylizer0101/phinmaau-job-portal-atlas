@@ -627,6 +627,8 @@ const DocumentCard = ({
 // ======================= MAIN PAGE =======================
 const EmployerVerificationDetails = () => {
   const { employerId } = useParams();
+  const fromArchived = new URLSearchParams(window.location.search).get("archived") === "1";
+  const verificationListPath = `/admin/employer-verification${fromArchived ? "?archived=1" : ""}`;
 
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState(null);
@@ -808,7 +810,6 @@ const EmployerVerificationDetails = () => {
     const selectedReason = rejectionReasons[0] || "";
     const finalRejectionMessage = rejectionMessage.trim();
     if (!selectedReason || !finalRejectionMessage) {
-      setError("Please select a decline reason and enter a message.");
       return;
     }
 
@@ -1139,7 +1140,7 @@ const EmployerVerificationDetails = () => {
             <h3 className="mt-4 text-lg font-bold text-black">Not Found</h3>
             <p className="mt-2 text-sm text-black/70">The employer you're looking for doesn't exist or has been removed.</p>
             <div className="mt-6 flex items-center justify-center gap-2">
-              <Link to="/admin/employer-verification" className={cn(UI.btnBase, UI.btnLg, UI.btnSecondary, UI.ring)}>
+              <Link to={verificationListPath} className={cn(UI.btnBase, UI.btnLg, UI.btnSecondary, UI.ring)}>
                 <SvgIcon name="back" className="w-4 h-4" />
                 Back to List
               </Link>
@@ -1182,7 +1183,7 @@ const EmployerVerificationDetails = () => {
         <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
-              to="/admin/employer-verification"
+              to={verificationListPath}
               className={cn(
                 "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#255587]",
                 UI.ring
@@ -1658,7 +1659,7 @@ const EmployerVerificationDetails = () => {
 
                   <div className="mt-5">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.04em] text-[#344054]">Documents needed</p>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-2">
                       {DOC_TYPES.filter((doc) => {
                         const status = String(docs?.[doc.key]?.status || "").toLowerCase();
                         return Boolean(docs?.[doc.key]?.url) && ["pending", "submitted", "hold"].includes(status);
@@ -1813,7 +1814,7 @@ const EmployerVerificationDetails = () => {
                     size="lg"
                     className="!h-11 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetRejectModal}
-                    disabled={action === "reject" || !rejectionReasons[0] || !rejectionMessage.trim()}
+                    disabled={action === "reject"}
                   >
                     Cancel
                   </Button>
@@ -1823,7 +1824,7 @@ const EmployerVerificationDetails = () => {
                     size="lg"
                     className="!h-11 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleRejectSubmit}
-                    disabled={action === "reject"}
+                    disabled={action === "reject" || !rejectionReasons[0] || !rejectionMessage.trim()}
                     loading={action === "reject"}
                   >
                     Decline
