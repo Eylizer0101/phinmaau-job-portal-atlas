@@ -2955,7 +2955,7 @@ const ApplicationDetails = () => {
                 <button
                   type="button"
                   onClick={() => setShowAllActivities((previous) => !previous)}
-                  className="absolute right-6 top-5 z-10 rounded-lg border border-[#2e66a6] bg-white px-4 py-2 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/5 sm:right-10"
+                  className="absolute right-6 top-5 z-10 bg-transparent p-0 text-sm font-semibold text-[#2e66a6] transition hover:underline sm:right-10"
                 >
                   {showAllActivities ? 'Show Less Activity' : 'View All Activity'}
                 </button>
@@ -2971,7 +2971,6 @@ const ApplicationDetails = () => {
                 <div
                   className={cn(
                     'pr-2 pt-1',
-                    hasMoreActivities ? 'pt-12' : '',
                     showAllActivities ? 'max-h-[560px] overflow-y-auto' : ''
                   )}
                 >
