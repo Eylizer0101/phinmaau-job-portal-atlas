@@ -2997,7 +2997,7 @@ const ApplicationDetails = () => {
           )}
         </main>
 
-        <aside className="flex h-full min-h-0 flex-col gap-5">
+        <aside className="space-y-5">
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5">
             <h2 className="text-lg font-bold">
               {currentStatus === 'withdrawn' ? 'Application Withdrawn' : 'Employer Actions'}
@@ -3028,7 +3028,7 @@ const ApplicationDetails = () => {
               )}
             </div>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
+          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
             <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
 
         
