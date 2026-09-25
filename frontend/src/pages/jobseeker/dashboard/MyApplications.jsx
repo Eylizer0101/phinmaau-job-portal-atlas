@@ -1092,7 +1092,7 @@ const MyApplications = () => {
               className="
                 pointer-events-none absolute
                 right-[18px] sm:right-[28px]
-                top-[55%] -translate-y-1/2
+                top-1/2 -translate-y-1/2
                 w-44 h-44 sm:w-56 sm:h-56
                 object-contain opacity-60
                 mix-blend-soft-light saturate-120 z-0
