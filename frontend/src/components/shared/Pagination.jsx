@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 const PAGE_SIZE_OPTIONS = [10, 50, 100, 'all'];
 
@@ -30,6 +30,8 @@ const Pagination = ({
   showPageSize = true,
   ariaLabel = 'Pagination controls',
   className = '',
+  isLoading = false,
+  enableLoadingTransition = false,
 }) => {
   const isAll = pageSize === 'all';
   const numericPageSize = isAll ? Math.max(totalItems, 1) : Number(pageSize);
@@ -46,25 +48,61 @@ const Pagination = ({
       ? totalItems
       : Math.min(safePage * numericPageSize, totalItems);
 
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const transitionTimerRef = useRef(null);
+  const isBusy = Boolean(isLoading || isTransitioning);
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+      }
+    };
+  }, []);
+
+  const startLoadingTransition = () => {
+    if (!enableLoadingTransition) return;
+
+    setIsTransitioning(true);
+
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+    }
+
+    transitionTimerRef.current = setTimeout(() => {
+      setIsTransitioning(false);
+      transitionTimerRef.current = null;
+    }, 350);
+  };
+
 
   const changePage = (nextPage) => {
+    if (isBusy) return;
+
     const safeNextPage = Math.min(Math.max(nextPage, 1), totalPages);
-    if (safeNextPage !== safePage) onPageChange(safeNextPage);
+    if (safeNextPage !== safePage) {
+      startLoadingTransition();
+      onPageChange(safeNextPage);
+    }
   };
 
   const handlePageSizeChange = (event) => {
+    if (isBusy) return;
+
     const nextPageSize = event.target.value === 'all'
       ? 'all'
       : Number(event.target.value);
 
+    startLoadingTransition();
     onPageSizeChange(nextPageSize);
     onPageChange(1);
   };
 
   return (
     <div
-      className={`mt-0 flex min-h-[58px] flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 lg:flex-row lg:items-center lg:justify-between ${className}`}
+      className={`mt-0 flex min-h-[58px] flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 transition-opacity duration-200 lg:flex-row lg:items-center lg:justify-between ${isBusy ? 'pointer-events-none opacity-60' : ''} ${className}`}
       aria-label={ariaLabel}
+      aria-busy={isBusy}
     >
       <div className="whitespace-nowrap text-xs font-medium text-slate-500">
         Showing {rangeStart} to {rangeEnd} of {totalItems} results
@@ -76,6 +114,7 @@ const Pagination = ({
           <select
             value={pageSize}
             onChange={handlePageSizeChange}
+            disabled={isBusy}
             className="h-9 min-w-[74px] rounded-lg border border-gray-200 bg-white px-3 text-xs outline-none focus:border-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20"
           >
             {PAGE_SIZE_OPTIONS.map((option) => (
@@ -93,7 +132,7 @@ const Pagination = ({
           <button
             type="button"
             onClick={() => changePage(safePage - 1)}
-            disabled={safePage === 1}
+            disabled={isBusy || safePage === 1}
             className="inline-flex h-9 items-center gap-1 px-2 text-xs font-semibold text-slate-800 transition hover:text-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
            <svg
@@ -130,6 +169,7 @@ const Pagination = ({
                   onClick={() => changePage(item)}
                   aria-current={safePage === item ? 'page' : undefined}
                   aria-label={`Go to page ${item}`}
+                  disabled={isBusy}
                   className={`h-8 min-w-8 rounded-lg px-2 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/30 focus-visible:ring-offset-1 ${
                     safePage === item
                       ? 'bg-[#111b35] text-white shadow-sm'
@@ -145,7 +185,7 @@ const Pagination = ({
           <button
             type="button"
             onClick={() => changePage(safePage + 1)}
-            disabled={safePage === totalPages}
+            disabled={isBusy || safePage === totalPages}
             className="inline-flex h-9 items-center gap-1 px-2 text-xs font-semibold text-slate-800 transition hover:text-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Next

@@ -611,6 +611,8 @@ const AdminSystemLogs = () => {
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          isLoading={loading}
+          enableLoadingTransition
           ariaLabel="Activity logs pagination"
           className={`!min-h-[50px] !py-2 ${loading ? 'pointer-events-none opacity-60' : ''}`}
         />
