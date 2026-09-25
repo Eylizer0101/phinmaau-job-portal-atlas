@@ -1854,18 +1854,16 @@ const UserManagementDetails = () => {
 
     const formatExperienceBadge = (value) => {
       const raw = String(value || "").trim();
+      if (!raw) return "";
+
       const normalized = raw.toLowerCase();
 
-      if (!raw) return "";
-      if (normalized.includes("no experience")) return "No Experience Required";
+      if (normalized === "no experience required") return "No Experience";
+      if (["less than 1 yr", "less than 1 year", "less than 1 yr exp", "less than 1 year exp"].includes(normalized)) return "Less than 1 Yr Exp";
+      if (["1 year", "1 years", "2 year", "2 years", "3 year", "3 years", "1-3 years", "1-3 years exp"].includes(normalized)) return "1-3 Years Exp";
+      if (["4 year", "4 years", "5 year", "5 years", "4-5 years", "4-5 years exp"].includes(normalized)) return "4-5 Years Exp";
+      if (["6+ year", "6+ years", "6+ year exp", "6+ years exp"].includes(normalized)) return "6+ Years Exp";
 
-      const yearMatch = normalized.match(/(\d+)\s*\+?\s*year/);
-      if (yearMatch) {
-        const years = yearMatch[1];
-        return `${years} ${years === "1" ? "Year" : "Years"} Experience`;
-      }
-
-      if (normalized.includes("6+")) return "6+ Years Experience";
       return raw;
     };
 
@@ -1998,7 +1996,7 @@ const UserManagementDetails = () => {
               const badges = [
                 experienceBadge,
                 workModeBadge,
-                isOpenToFreshGraduate(job) ? "Open Fresh Grads" : "",
+                isOpenToFreshGraduate(job) ? "Open fresh grad" : "",
               ]
                 .map((badge) => String(badge || "").trim())
                 .filter(Boolean)
