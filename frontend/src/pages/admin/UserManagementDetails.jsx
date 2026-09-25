@@ -41,6 +41,22 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
     arrowLeft: <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />,
     user: <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
     briefcase: <path strokeLinecap="round" strokeLinejoin="round" d="M10 6h4a2 2 0 012 2v1h3a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2h3V8a2 2 0 012-2zm0 3h4V8h-4v1z" />,
+    employmentStatusBriefcase: (
+      <>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M3 13h18"
+        />
+      </>
+    ),
     search: <><circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="m20 20-3.5-3.5" /></>,
     contract: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m3 0H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2z" />,
     shield: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
@@ -1575,7 +1591,7 @@ const UserManagementDetails = () => {
 
         <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 shadow-sm sm:justify-self-center">
           <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
-            <Icon name={isCurrentlyEmployed ? "search" : "briefcase"} className="h-5 w-5" />
+            <Icon name={isCurrentlyEmployed ? "search" : "employmentStatusBriefcase"} className="h-5 w-5" />
           </span>
           <div className="inline-flex items-center justify-center text-sm">
             <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>

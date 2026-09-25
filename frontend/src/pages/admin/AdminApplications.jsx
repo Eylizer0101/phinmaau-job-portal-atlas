@@ -4,7 +4,8 @@ import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
-const STATUS_OPTIONS = ['Pending', 'For Interview', 'Hired', 'Declined', 'Withdrawn', 'Cancelled', 'Vacancy Full'];
+const STATUS_OPTIONS = ['Pending', 'For Interview', 'Hired', 'Declined'];
+const HIDDEN_APPLICATION_STATUSES = new Set(['withdrawn', 'cancelled', 'vacancy full']);
 const SORT_OPTIONS = [
   'Newest First',
   'Oldest First',
@@ -698,6 +699,11 @@ const AdminApplications = () => {
       const title = getJobTitle(app);
       const company = getCompany(app);
       const status = toTitleStatus(app.status);
+      const normalizedRawStatus = String(app.status || '').trim().toLowerCase();
+
+      if (HIDDEN_APPLICATION_STATUSES.has(normalizedRawStatus)) {
+        return false;
+      }
 
       const haystack = [
         applicant,

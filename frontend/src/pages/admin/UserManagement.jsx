@@ -1639,7 +1639,7 @@ const UserManagement = () => {
                     setCurrentPage(1);
                   }}
                   className={inputBase}
-                  placeholder="Search name, email..."
+                  placeholder="Search name, company, email..."
                   disabled={loading}
                   autoComplete="off"
                 />

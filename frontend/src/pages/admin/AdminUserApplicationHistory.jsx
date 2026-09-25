@@ -53,6 +53,22 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
         <path strokeLinecap="round" d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18" />
       </>
     ),
+    employmentStatusBriefcase: (
+      <>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M3 13h18"
+        />
+      </>
+    ),
     eye: (
       <>
         <path
@@ -67,6 +83,8 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
 
   return <svg {...common}>{icons[name] || null}</svg>;
 };
+
+const HIDDEN_APPLICATION_STATUSES = new Set(["withdrawn", "cancelled", "vacancy full"]);
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -522,6 +540,7 @@ const AdminUserApplicationHistory = () => {
       const normalizedStatus = String(application.status || "pending").toLowerCase();
       const appliedDate = application.appliedAt || application.createdAt;
 
+      if (HIDDEN_APPLICATION_STATUSES.has(normalizedStatus)) return false;
       if (companyFilter !== "all" && companyName !== companyFilter) return false;
       if (industryFilter !== "all" && industry !== industryFilter) return false;
       if (jobTitleFilter !== "all" && jobTitle !== jobTitleFilter) return false;
@@ -616,7 +635,7 @@ const AdminUserApplicationHistory = () => {
 
               <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 shadow-sm sm:justify-self-center">
                 <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
-                  <Icon name={isCurrentlyEmployed ? "search" : "briefcase"} className="h-5 w-5" />
+                  <Icon name={isCurrentlyEmployed ? "search" : "employmentStatusBriefcase"} className="h-5 w-5" />
                 </span>
                 <div className="inline-flex items-center justify-center text-sm">
                   <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>
@@ -657,7 +676,7 @@ const AdminUserApplicationHistory = () => {
                   [industryFilter, setIndustryFilter, "All Industry", filterOptions.industries],
                   [jobTitleFilter, setJobTitleFilter, "All Job Title", filterOptions.jobTitles],
                 ].map(([value, setter, label, options]) => <select key={label} value={value} onChange={(event) => setter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">{label}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>)}
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option><option value="withdrawn">Withdrawn</option><option value="cancelled">Cancelled</option><option value="vacancy full">Vacancy Full</option></select>
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option></select>
                 <ApplicationDateFilter
                   value={timeFilter}
                   dateFrom={dateFrom}
