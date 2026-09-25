@@ -2251,31 +2251,55 @@ const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, 
       </div>
     ) : null}
     {mode === 'decline' ? (
-      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4">
-        <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-          <CloseButton label="Close decline request modal" />
-          <h2 className="pr-10 text-lg font-bold text-gray-900">Decline Request?</h2>
-          <p className="mt-2 text-sm leading-6 text-gray-600">Select a reason and add a comment. The Job Seeker's employment status will remain Active.</p>
-          <label className="mt-5 block text-sm font-semibold text-gray-800">
-            Decline Reason
-            <select value={declineReason} onChange={(event) => onDeclineReasonChange(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 font-normal outline-none focus:border-[#2e66a6]">
-              <option value="">Choose a reason</option>
-              {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other'].map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4 py-3" role="dialog" aria-modal="true" aria-labelledby="decline-request-title">
+        <div className="relative w-full max-w-[680px] rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl sm:p-5">
+          <button type="button" onClick={() => { if (!loading) { onModeChange('review'); } }} disabled={loading} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 disabled:opacity-50" aria-label="Close decline request modal">
+            <SvgIcon name="x" className="h-5 w-5" />
+          </button>
+
+          <div className="flex items-start gap-3 pr-10">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-500">
+              <SvgIcon name="x" className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 id="decline-request-title" className="text-lg font-semibold text-[#172033] sm:text-xl">Decline Request?</h2>
+              <p className="mt-0.5 text-sm leading-5 text-gray-600">Are you sure you want to decline this request of job seeker current employment?</p>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <p className="text-sm font-semibold text-gray-800">Select Reason for Decline</p>
+            <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {['Still Employed / No Resignation', 'Ongoing Contract / Project', 'On Leave, Not Resigned', 'Pending Clearance / Accountabilities', 'Under Investigation / Case', 'Rehired / Transfer', 'No HR Confirmation', 'Other Not Listed Above'].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => onDeclineReasonChange(declineReason === item ? '' : item)}
+                  disabled={loading}
+                  className={cn(
+                    'min-h-[56px] rounded-lg border px-4 py-3 text-[13px] font-medium leading-[18px] transition disabled:cursor-not-allowed disabled:opacity-60',
+                    declineReason === item
+                      ? 'border-[#2f67e8] bg-[#2f67e8] text-white shadow-sm'
+                      : 'border-gray-200 bg-[#f7f7f8] text-gray-800 hover:border-[#bfd0f8] hover:bg-[#f2f6ff]'
+                  )}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="mt-3 block text-sm font-semibold text-gray-800">
+            Reason for Declining <span className="text-red-500">*</span>
+            <div className="relative mt-1.5">
+              <textarea required aria-required="true" value={declineComment} onChange={(event) => onDeclineCommentChange(event.target.value)} maxLength={500} rows={2} placeholder="Please provide a reason for declining this request." className="w-full resize-none rounded-lg border border-gray-300 p-3 pb-7 font-normal outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+              <span className="absolute bottom-2 right-3 text-[11px] text-gray-400">{declineComment.length}/500</span>
+            </div>
           </label>
-          {declineReason === 'Other' ? (
-            <label className="mt-4 block text-sm font-semibold text-gray-800">
-              Other Reason
-              <input value={customDeclineReason} onChange={(event) => onCustomDeclineReasonChange(event.target.value)} maxLength={120} placeholder="Enter the decline reason" className="mt-2 h-11 w-full rounded-xl border border-gray-300 px-3 font-normal outline-none focus:border-[#2e66a6]" />
-            </label>
-          ) : null}
-          <label className="mt-4 block text-sm font-semibold text-gray-800">
-            Comment
-            <textarea value={declineComment} onChange={(event) => onDeclineCommentChange(event.target.value)} maxLength={500} rows={4} placeholder="Enter your comment" className="mt-2 w-full resize-none rounded-xl border border-gray-300 p-3 font-normal outline-none focus:border-[#2e66a6]" />
-          </label>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <button type="button" onClick={() => onModeChange('review')} disabled={loading} className="h-11 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 disabled:opacity-50">Back</button>
-            <button type="button" onClick={() => onReview('declined')} disabled={loading || !declineReason || (declineReason === 'Other' && !customDeclineReason.trim()) || !declineComment.trim()} className="h-11 rounded-xl bg-red-600 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{loading ? 'Processing...' : 'Decline Request'}</button>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <button type="button" onClick={() => onModeChange('review')} disabled={loading} className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+            <button type="button" onClick={() => onReview('declined')} disabled={!declineReason || !declineComment.trim() || loading} className="inline-flex h-10 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{loading ? 'Processing...' : 'Decline Request'}</button>
           </div>
         </div>
       </div>
@@ -2437,11 +2461,9 @@ const ApplicationDetails = () => {
     try {
       setEmploymentLoading(true);
       setError('');
-      const finalDeclineReason = employmentDeclineReason === 'Other'
-        ? employmentCustomDeclineReason.trim()
-        : employmentDeclineReason;
+      const finalDeclineReason = employmentDeclineReason;
       if (decision === 'declined' && (!finalDeclineReason || !employmentDeclineComment.trim())) {
-        setError('Select or enter a decline reason and add a comment.');
+        setError('Select a decline reason and add a comment.');
         return;
       }
       const response = await axios.put(
