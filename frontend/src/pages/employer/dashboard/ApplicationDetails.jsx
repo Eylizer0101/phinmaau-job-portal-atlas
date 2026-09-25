@@ -2950,7 +2950,17 @@ const ApplicationDetails = () => {
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-white/0 via-white/80 to-white" aria-hidden="true" />
             </div>
           ) : (
-            <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10">
+            <div className="relative px-6 py-8 sm:px-10">
+              {hasMoreActivities ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllActivities((previous) => !previous)}
+                  className="absolute right-6 top-5 z-10 rounded-lg border border-[#2e66a6] bg-white px-4 py-2 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/5 sm:right-10"
+                >
+                  {showAllActivities ? 'Show Less Activity' : 'View All Activity'}
+                </button>
+              ) : null}
+
               {activities.length === 0 ? (
                 <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center">
                   <SvgIcon name="activity" className="h-8 w-8 text-gray-400" />
@@ -2958,7 +2968,13 @@ const ApplicationDetails = () => {
                   <p className="mt-1 max-w-md text-sm text-gray-500">Application activity will appear here when an actual action is recorded.</p>
                 </div>
               ) : (
-                <>
+                <div
+                  className={cn(
+                    'pr-2 pt-1',
+                    hasMoreActivities ? 'pt-12' : '',
+                    showAllActivities ? 'max-h-[560px] overflow-y-auto' : ''
+                  )}
+                >
                   <div className="relative ml-3 border-l-2 border-gray-200 pl-8">
                     {visibleActivities.map((item, index) => {
                       const dt = formatDateTime(item.occurredAt || item.createdAt);
@@ -2974,18 +2990,7 @@ const ApplicationDetails = () => {
                       );
                     })}
                   </div>
-                  {hasMoreActivities ? (
-                    <div className="mt-6 flex justify-center border-t border-gray-100 pt-5">
-                      <button
-                        type="button"
-                        onClick={() => setShowAllActivities((previous) => !previous)}
-                        className="rounded-lg border border-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/5"
-                      >
-                        {showAllActivities ? 'Show Less Activity' : 'View All Activity'}
-                      </button>
-                    </div>
-                  ) : null}
-                </>
+                </div>
               )}
             </div>
           )}
