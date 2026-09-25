@@ -383,6 +383,8 @@ const AdminNotificationsPage = () => {
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
+              isLoading={loading}
+              enableLoadingTransition
               ariaLabel="Admin notifications pagination"
             
                 className="!min-h-[50px] !py-2"

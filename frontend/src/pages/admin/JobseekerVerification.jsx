@@ -1219,6 +1219,8 @@ const JobseekerVerification = () => {
                     pageSize={filters.limit}
                     onPageChange={(page) => onChangeFilter("page", page)}
                     onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
+                    isLoading={loading}
+                    enableLoadingTransition
                     ariaLabel="Jobseeker verification pagination"
                     className="!min-h-[50px] !py-2"
                     />

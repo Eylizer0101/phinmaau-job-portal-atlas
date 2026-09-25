@@ -412,6 +412,8 @@ const AdminEmployerJobEditRequests = () => {
           pageSize={pageSize}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
+          isLoading={loading}
+          enableLoadingTransition
           className="!min-h-[50px] !py-2"
         />
       )}

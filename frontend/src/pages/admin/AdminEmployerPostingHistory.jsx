@@ -896,6 +896,8 @@ const AdminEmployerPostingHistory = () => {
                     pageSize={pageSize}
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
+                    isLoading={loading}
+                    enableLoadingTransition
                   
                   className="!min-h-[50px] !py-2"
                                 />
