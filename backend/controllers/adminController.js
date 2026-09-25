@@ -2008,12 +2008,29 @@ exports.getAllUsers = async (req, res) => {
     const verifiedParam = req.query.verified;
     const includeMeta = String(req.query.includeMeta || 'true').toLowerCase() !== 'false';
 
+    const verifiedUserCondition = {
+      $or: [
+        {
+          role: 'employer',
+          'employerProfile.verificationDocs.overallStatus': 'verified',
+        },
+        {
+          role: 'jobseeker',
+          $or: [
+            { 'jobSeekerProfile.verificationDocs.overallStatus': 'verified' },
+            { 'jobSeekerProfile.verificationStatus': 'verified' },
+            { isVerified: true },
+          ],
+        },
+      ],
+    };
+
     const baseQuery = {
       status: { $ne: 'deleted' },
       // System-archived inactive employers belong in Admin Archive, not User Management.
       $nor: [{ role: 'employer', inactiveBySystem: true }],
     };
-    const andConditions = [];
+    const andConditions = [verifiedUserCondition];
 
     if (role && role !== 'all') {
       baseQuery.role = role;
@@ -2118,6 +2135,7 @@ exports.getAllUsers = async (req, res) => {
     const metadataQuery = {
       status: { $ne: 'deleted' },
       $nor: [{ role: 'employer', inactiveBySystem: true }],
+      $and: [verifiedUserCondition],
     };
 
     const metadataPromise = includeMeta
