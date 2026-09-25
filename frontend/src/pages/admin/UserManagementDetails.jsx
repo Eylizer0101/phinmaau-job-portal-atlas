@@ -2100,12 +2100,12 @@ const UserManagementDetails = () => {
                     <span className="truncate">{formatApplicationDeadline(job)}</span>
                   </div>
 
-                  <div className="mt-4 flex min-w-0 flex-wrap items-center gap-2">
+                  <div className="mt-4 flex min-h-[28px] flex-wrap items-center gap-2">
                     {badges.map((badge) => (
                       <span
                         key={badge}
                         title={badge}
-                        className="inline-block max-w-full truncate whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6] sm:max-w-[145px]"
+                        className="inline-block max-w-[118px] truncate whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]"
                       >
                         {badge}
                       </span>
@@ -2558,7 +2558,7 @@ const UserManagementDetails = () => {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 pb-4 lg:mt-3 lg:min-h-[185px] lg:w-[290px] lg:pb-0">
+                  <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 pb-4 lg:mt-2 lg:min-h-[185px] lg:w-[290px] lg:translate-y-2 lg:pb-0">
                     <button
                       type="button"
                       disabled={!jobPosts.length}
