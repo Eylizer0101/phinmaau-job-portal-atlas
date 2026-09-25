@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
-  BriefcaseBusiness,
   Check,
   CalendarDays,
   Clock3,
@@ -383,18 +382,21 @@ const AdminEmployerJobEditRequestReview = () => {
           />
 
           <div className="min-w-0">
-            <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold text-black sm:text-2xl">
-              <BriefcaseBusiness className="h-5 w-5 shrink-0 text-[#55708f]" />
+            <h1 className="min-w-0 text-xl font-semibold text-black sm:text-2xl">
               <span className="truncate">{job.title || 'Untitled Job'}</span>
             </h1>
-            <p className="mt-1 flex items-center gap-2 text-sm text-[#55708f]">
-              <JobDetailsSvgIcon name="building" className="h-4 w-4 shrink-0" />
-              <span className="truncate">{companyName}</span>
-            </p>
-            <p className="mt-1 flex items-center gap-2 text-sm text-[#55708f]">
-              <BookmarksSvgIcon name="industry" className="h-4 w-4 shrink-0" />
-              <span className="truncate">{industry}</span>
-            </p>
+
+            <div className="mt-1 flex min-w-0 flex-nowrap items-center gap-x-5 text-sm text-[#55708f]">
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <JobDetailsSvgIcon name="building" className="h-4 w-4 shrink-0" />
+                <span className="truncate">{companyName}</span>
+              </span>
+
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <BookmarksSvgIcon name="industry" className="h-4 w-4 shrink-0" />
+                <span className="truncate">{industry}</span>
+              </span>
+            </div>
           </div>
         </header>
 
