@@ -2970,8 +2970,10 @@ const ApplicationDetails = () => {
               ) : (
                 <div
                   className={cn(
-                    'pr-2 pt-1',
-                    showAllActivities ? 'max-h-[560px] overflow-y-auto' : ''
+                    'pt-1',
+                    showAllActivities
+                      ? 'max-h-[560px] overflow-y-auto pr-5 [scrollbar-gutter:stable]'
+                      : 'pr-2'
                   )}
                 >
                   <div className="relative ml-3 border-l-2 border-gray-200 pl-8">
