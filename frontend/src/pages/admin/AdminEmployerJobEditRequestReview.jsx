@@ -6,6 +6,7 @@ import {
   Clock3,
   RefreshCw,
   FileEdit,
+  Eye,
   Search,
   ShieldAlert,
   UnlockKeyhole,
@@ -362,42 +363,55 @@ const AdminEmployerJobEditRequestReview = () => {
   return (
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={() => navigate(`/admin/employer-job-edit-requests/${requestId}`)}
-            className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-          >
-            <ArrowLeft size={17} /> Back
-          </button>
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={() => navigate(`/admin/employer-job-edit-requests/${requestId}`)}
+              className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+            >
+              <ArrowLeft size={17} /> Back
+            </button>
 
-          <img
-            src={assetUrl(job.companyLogo || employerProfile.companyLogo || employerProfile.logo)}
-            alt={`${companyName} logo`}
-            className="h-14 w-14 shrink-0 rounded-full border border-[#e6edf5] bg-white object-contain p-1"
-            onError={(event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = '/images/default-company-logo.png';
-            }}
-          />
+            <img
+              src={assetUrl(job.companyLogo || employerProfile.companyLogo || employerProfile.logo)}
+              alt={`${companyName} logo`}
+              className="h-14 w-14 shrink-0 rounded-full border border-[#e6edf5] bg-white object-contain p-1"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = '/images/default-company-logo.png';
+              }}
+            />
 
-          <div className="min-w-0">
-            <h1 className="min-w-0 text-xl font-semibold text-black sm:text-2xl">
-              <span className="truncate">{job.title || 'Untitled Job'}</span>
-            </h1>
+            <div className="min-w-0">
+              <h1 className="min-w-0 text-xl font-semibold text-black sm:text-2xl">
+                <span className="truncate">{job.title || 'Untitled Job'}</span>
+              </h1>
 
-            <div className="mt-1 flex min-w-0 flex-nowrap items-center gap-x-5 text-sm text-[#55708f]">
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <JobDetailsSvgIcon name="building" className="h-4 w-4 shrink-0" />
-                <span className="truncate">{companyName}</span>
-              </span>
+              <div className="mt-1 flex min-w-0 flex-nowrap items-center gap-x-5 text-sm text-[#55708f]">
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <JobDetailsSvgIcon name="building" className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{companyName}</span>
+                </span>
 
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <BookmarksSvgIcon name="industry" className="h-4 w-4 shrink-0" />
-                <span className="truncate">{industry}</span>
-              </span>
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <BookmarksSvgIcon name="industry" className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{industry}</span>
+                </span>
+              </div>
             </div>
           </div>
+
+          {job?._id && (
+            <button
+              type="button"
+              onClick={() => navigate(`/admin/jobs/${job._id}`)}
+              className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-[#2e66a6] bg-white px-5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] sm:self-auto"
+            >
+              <Eye size={17} />
+              View Job
+            </button>
+          )}
         </header>
 
         {error && (

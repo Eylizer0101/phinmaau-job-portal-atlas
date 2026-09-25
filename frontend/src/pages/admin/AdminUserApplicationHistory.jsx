@@ -623,33 +623,35 @@ const AdminUserApplicationHistory = () => {
           </button>
 
           <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-            <div className="grid gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start sm:gap-x-6">
-              <div>
+            <div className="grid gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-x-6">
+              <div className="min-w-0">
                 <h1 className="text-2xl font-bold text-black sm:text-3xl">
                   Full Application History
                 </h1>
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500 sm:whitespace-nowrap">
                   Every company this applicant has applied to, with stage-by-stage progress.
                 </p>
               </div>
 
-              <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 shadow-sm sm:justify-self-center">
-                <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
-                  <Icon name={isCurrentlyEmployed ? "search" : "employmentStatusBriefcase"} className="h-5 w-5" />
+              <div className="flex flex-col items-start gap-3 sm:items-end">
+                <span className="text-sm font-medium text-gray-500">
+                  {applications.length} Applications
                 </span>
-                <div className="inline-flex items-center justify-center text-sm">
-                  <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>
-                    {isCurrentlyEmployed ? "Employed" : "Unemployed"}
+
+                <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 shadow-sm">
+                  <span className={isCurrentlyEmployed ? "text-emerald-700" : "text-gray-500"}>
+                    <Icon name={isCurrentlyEmployed ? "search" : "employmentStatusBriefcase"} className="h-5 w-5" />
                   </span>
-                  <span className="ml-3 border-l border-gray-300 pl-3 text-gray-500">
-                    {isCurrentlyEmployed ? "Currently working in a role" : "Not working at the moment"}
-                  </span>
+                  <div className="inline-flex items-center justify-center text-sm">
+                    <span className={`font-semibold ${isCurrentlyEmployed ? "text-emerald-800" : "text-gray-800"}`}>
+                      {isCurrentlyEmployed ? "Employed" : "Unemployed"}
+                    </span>
+                    <span className="ml-3 border-l border-gray-300 pl-3 text-gray-500">
+                      {isCurrentlyEmployed ? "Currently working in a role" : "Not working at the moment"}
+                    </span>
+                  </div>
                 </div>
               </div>
-
-              <span className="text-sm font-medium text-gray-500 sm:justify-self-end">
-                {applications.length} Applications
-              </span>
             </div>
 
             <div className="mt-6 rounded-xl border border-[#d8e2ee] bg-[#fbfdff] p-3">

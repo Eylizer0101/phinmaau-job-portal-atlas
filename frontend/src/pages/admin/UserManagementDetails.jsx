@@ -2562,7 +2562,7 @@ const UserManagementDetails = () => {
                           className="inline-flex w-fit items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                           aria-label={`View ${reviewItems.length} company review${reviewItems.length === 1 ? "" : "s"}`}
                         >
-                          <ReviewStars rating={averageReview} sizeClass="text-[17px]" />
+                          <ReviewStars rating={averageReview} sizeClass="text-[20px]" />
                           <span className="text-[13px] font-medium text-[#6b7280]">
                             {averageReview.toFixed(1)} ({reviewItems.length} review{reviewItems.length === 1 ? "" : "s"})
                           </span>
