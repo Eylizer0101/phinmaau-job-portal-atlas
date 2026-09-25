@@ -2959,7 +2959,7 @@ const Bookmarks = () => {
               </div>
 
               <img
-                src="/images/myapplication1.png"
+                src="/images/savedjobheart.png"
                 alt=""
                 className="
                   pointer-events-none absolute
