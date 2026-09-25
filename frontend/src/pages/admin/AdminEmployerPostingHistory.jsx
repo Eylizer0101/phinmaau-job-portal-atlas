@@ -536,6 +536,7 @@ const AdminEmployerPostingHistory = () => {
   const [dateFilter, setDateFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -572,7 +573,7 @@ const AdminEmployerPostingHistory = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [search, jobTitle, status, dateFilter, dateFrom, dateTo]);
+  }, [search, jobTitle, status, dateFilter, dateFrom, dateTo, sortBy]);
 
   const companyName =
     user?.employerProfile?.companyName ||
@@ -584,8 +585,7 @@ const AdminEmployerPostingHistory = () => {
     jobTitle !== "all" ||
     status !== "all" ||
     dateFilter !== "all" ||
-    dateFrom !== "" ||
-    dateTo !== "";
+    sortBy !== "newest";
 
   const clearFilters = () => {
     setSearch("");
@@ -594,6 +594,7 @@ const AdminEmployerPostingHistory = () => {
     setDateFilter("all");
     setDateFrom("");
     setDateTo("");
+    setSortBy("newest");
     setPage(1);
   };
 
@@ -640,10 +641,33 @@ const AdminEmployerPostingHistory = () => {
       return matchesTitle && matchesStatus && matchesDate;
     });
 
-    return [...list].sort(
-      (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)
-    );
-  }, [jobs, search, jobTitle, status, dateFrom, dateTo, companyName]);
+    return [...list].sort((a, b) => {
+      if (sortBy === "oldest") {
+        return new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0);
+      }
+
+      if (sortBy === "titleAsc") {
+        return String(a?.title || a?.jobTitle || "").localeCompare(
+          String(b?.title || b?.jobTitle || "")
+        );
+      }
+
+      if (sortBy === "titleDesc") {
+        return String(b?.title || b?.jobTitle || "").localeCompare(
+          String(a?.title || a?.jobTitle || "")
+        );
+      }
+
+      if (sortBy === "mostApplicants") {
+        return (
+          Number(b?.applicantCount || 0) -
+          Number(a?.applicantCount || 0)
+        );
+      }
+
+      return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
+    });
+  }, [jobs, search, jobTitle, status, dateFrom, dateTo, sortBy, companyName]);
 
   const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filteredJobs.length / pageSize));
 
@@ -683,7 +707,7 @@ const AdminEmployerPostingHistory = () => {
           ) : (
             <>
               <section className="rounded-2xl border border-[#dfe5ec] bg-white p-5 shadow-sm">
-                <div className={`grid gap-3 ${hasActiveFilters ? "lg:grid-cols-[minmax(0,1.7fr)_minmax(170px,1fr)_minmax(150px,0.9fr)_minmax(180px,1fr)_auto]" : "lg:grid-cols-[minmax(0,1.7fr)_minmax(170px,1fr)_minmax(150px,0.9fr)_minmax(180px,1fr)]"}`}>
+                <div className={`grid gap-3 ${hasActiveFilters ? "lg:grid-cols-[1.7fr_1fr_0.9fr_1fr_1fr_auto]" : "lg:grid-cols-[1.7fr_1fr_0.9fr_1fr_1fr]"}`}>
                   <label className="relative block">
                     <span className="sr-only">Search jobs</span>
                     <Icon
@@ -694,7 +718,7 @@ const AdminEmployerPostingHistory = () => {
                       type="search"
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search job title, location, status"
+                      placeholder="Search job title, company, location, status."
                       className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     />
                   </label>
@@ -719,7 +743,6 @@ const AdminEmployerPostingHistory = () => {
                   >
                     <option value="all">All Status</option>
                     <option value="open">Open</option>
-                    <option value="draft">Draft</option>
                     <option value="filled">Filled</option>
                     <option value="closed">Closed</option>
                     <option value="expired">Expired</option>
@@ -735,6 +758,19 @@ const AdminEmployerPostingHistory = () => {
                       setDateTo(nextTo);
                     }}
                   />
+
+                  <select
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value)}
+                    className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  >
+                    <option value="newest">Sort By</option>
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="titleAsc">Job Title A–Z</option>
+                    <option value="titleDesc">Job Title Z–A</option>
+                    <option value="mostApplicants">Most Applicants</option>
+                  </select>
 
                   {hasActiveFilters && (
                     <button
@@ -755,13 +791,13 @@ const AdminEmployerPostingHistory = () => {
                 <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
                   <table className="min-w-[920px] w-full table-fixed text-left text-[15px]">
                     <colgroup>
-                      <col className="w-[15%]" />
-                      <col className="w-[24%]" />
-                      <col className="w-[10%]" />
-                      <col className="w-[10%]" />
-                      <col className="w-[13%]" />
+                      <col className="w-[16%]" />
                       <col className="w-[17%]" />
                       <col className="w-[11%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[13%]" />
                     </colgroup>
                     <thead className="border-y border-[#e5e7eb] text-xs font-semibold uppercase tracking-wide text-black/60 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
                       <tr>
@@ -810,11 +846,11 @@ const AdminEmployerPostingHistory = () => {
                               }}
                               className="cursor-pointer transition hover:bg-[#f8fbff] focus-within:bg-[#f8fbff] focus:outline-none"
                             >
-                              <td className="whitespace-nowrap px-4 py-6 text-[15px] font-normal text-black/70">
+                              <td className="whitespace-nowrap px-3 py-5 text-[15px] font-normal text-black/70">
                                 {formatDate(job?.createdAt)}
                               </td>
 
-                              <td className="px-4 py-6">
+                              <td className="px-3 py-5">
                                 <p className="truncate text-[16px] font-semibold text-black">
                                   {job?.title ||
                                     job?.jobTitle ||
@@ -825,11 +861,11 @@ const AdminEmployerPostingHistory = () => {
                                 </p>
                               </td>
 
-                              <td className="px-3 py-6 text-center text-[16px] font-medium text-black">
+                              <td className="px-2 py-5 text-center text-[16px] font-medium text-black">
                                 {Number(job?.vacancies || 0)}
                               </td>
 
-                              <td className="px-3 py-6 text-center text-[16px] font-medium text-black">
+                              <td className="px-2 py-5 text-center text-[16px] font-medium text-black">
                                 {Number(
                                   job?.applicantCount ??
                                     job?.applicantsCount ??
@@ -837,11 +873,11 @@ const AdminEmployerPostingHistory = () => {
                                 )}
                               </td>
 
-                              <td className="px-4 py-6">
+                              <td className="px-3 py-5">
                                 <StatusBadge status={jobStatus} />
                               </td>
 
-                              <td className="whitespace-nowrap px-4 py-6 text-[15px] font-normal text-black/70">
+                              <td className="whitespace-nowrap px-3 py-5 text-[15px] font-normal text-black/70">
                                 {formatDate(
                                   job?.applicationDeadline ||
                                     job?.validUntil ||
@@ -849,7 +885,7 @@ const AdminEmployerPostingHistory = () => {
                                 )}
                               </td>
 
-                              <td className="px-3 py-6 text-left">
+                              <td className="px-2 py-5 text-left">
                                 <button
                                   type="button"
                                   onClick={(event) => {
@@ -861,7 +897,7 @@ const AdminEmployerPostingHistory = () => {
                                       },
                                     });
                                   }}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#dfe5ec] bg-white text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#dfe5ec] bg-white text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                                   title="View job"
                                   aria-label={`View ${
                                     job?.title ||

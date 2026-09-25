@@ -2100,12 +2100,12 @@ const UserManagementDetails = () => {
                     <span className="truncate">{formatApplicationDeadline(job)}</span>
                   </div>
 
-                  <div className="mt-4 flex min-h-[28px] min-w-0 flex-wrap items-center gap-2 overflow-hidden">
+                  <div className="mt-4 flex min-w-0 flex-wrap items-center gap-2">
                     {badges.map((badge) => (
                       <span
                         key={badge}
                         title={badge}
-                        className="inline-block max-w-[145px] truncate whitespace-nowrap rounded-full border border-[#2e66a6]/30 bg-white px-2.5 py-1 text-[10px] font-semibold text-[#2e66a6] shadow-sm"
+                        className="inline-block max-w-full truncate whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6] sm:max-w-[145px]"
                       >
                         {badge}
                       </span>

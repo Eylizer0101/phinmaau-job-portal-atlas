@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   BriefcaseBusiness,
-  CalendarDays,
   Check,
   Clock3,
   FileEdit,
@@ -16,7 +15,6 @@ import api from '../../services/api';
 import { BookmarksSvgIcon, JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
 
 const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
-const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const assetUrl = (value, fallback = '/images/default-company-logo.png') => {
   const source = String(value || '').trim();
@@ -42,138 +40,6 @@ const startOfDay = (value) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 };
 
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-const formatDateInput = (date) => {
-  const value = new Date(date);
-  if (Number.isNaN(value.getTime())) return '';
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
-};
-
-const formatDateRangeLabel = (value) => {
-  if (!value) return 'Select date';
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return 'Select date';
-  return date.toLocaleDateString('en-PH', { month: 'short', day: '2-digit', year: 'numeric' });
-};
-
-const addCalendarMonths = (date, amount) => {
-  const next = new Date(date);
-  next.setMonth(next.getMonth() + amount);
-  return next;
-};
-
-const getYearOptions = () => {
-  const currentYear = new Date().getFullYear();
-  return Array.from({ length: currentYear - 1949 }, (_, index) => 1950 + index);
-};
-
-const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const firstWeekday = new Date(year, month, 1).getDay();
-  const gridStart = new Date(year, month, 1 - firstWeekday);
-  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
-  const days = Array.from({ length: 42 }, (_, index) => {
-    const day = new Date(gridStart);
-    day.setDate(gridStart.getDate() + index);
-    return day;
-  });
-  const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
-  const inRange = (day) => start && end && day >= start && day <= end;
-
-  return (
-    <div className="min-w-0 flex-1">
-      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
-        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, -1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-600 hover:bg-slate-100" aria-label="Previous month">‹</button>
-        <div className="grid grid-cols-[1fr_92px] gap-2">
-          <select value={month} onChange={(event) => onChangeMonth(new Date(year, Number(event.target.value), 1))} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select month">
-            {MONTH_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
-          </select>
-          <select value={year} onChange={(event) => onChangeMonth(new Date(Number(event.target.value), month, 1))} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select year">
-            {getYearOptions().map((yearOption) => <option key={yearOption} value={yearOption}>{yearOption}</option>)}
-          </select>
-        </div>
-        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, 1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-600 hover:bg-slate-100" aria-label="Next month">›</button>
-      </div>
-      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
-        {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map((day) => <div key={day}>{day}</div>)}
-      </div>
-      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
-        {days.map((day) => {
-          const value = formatDateInput(day);
-          const outside = day.getMonth() !== month;
-          const selected = isSameDay(day, start) || isSameDay(day, end);
-          return (
-            <button type="button" key={value} onClick={() => onPickDate(value)} className={cn(
-              'mx-auto flex h-10 w-full items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20',
-              outside ? 'text-slate-300' : 'text-slate-700',
-              inRange(day) ? 'bg-[#2e66a6]/10 text-[#2e66a6]' : '',
-              selected ? 'rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md' : 'hover:bg-[#2e66a6]/10'
-            )}>{day.getDate()}</button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
-  const todayValue = formatDateInput(new Date());
-  const initialStart = startDate || todayValue;
-  const initialEnd = endDate || todayValue;
-  const [draftStart, setDraftStart] = useState(initialStart);
-  const [draftEnd, setDraftEnd] = useState(initialEnd);
-  const [leftMonth, setLeftMonth] = useState(new Date(`${initialStart}T00:00:00`));
-  const [rightMonth, setRightMonth] = useState(new Date(`${initialEnd}T00:00:00`));
-
-  useEffect(() => {
-    if (!open) return;
-    const nextStart = startDate || formatDateInput(new Date());
-    const nextEnd = endDate || nextStart;
-    setDraftStart(nextStart);
-    setDraftEnd(nextEnd);
-    setLeftMonth(new Date(`${nextStart}T00:00:00`));
-    setRightMonth(new Date(`${nextEnd}T00:00:00`));
-  }, [open, startDate, endDate]);
-
-  if (!open) return null;
-
-  const pickDate = (value) => {
-    if (!draftStart || (draftStart && draftEnd)) {
-      setDraftStart(value);
-      setDraftEnd('');
-    } else if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
-      setDraftEnd(draftStart);
-      setDraftStart(value);
-    } else {
-      setDraftEnd(value);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true" aria-label="Select custom date range">
-      <div className="w-full max-w-[920px] overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="grid gap-6 px-6 pb-5 pt-6 md:grid-cols-[1fr_auto_1fr] md:items-end">
-          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Start Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#2e66a6]"><CalendarDays size={20} />{formatDateRangeLabel(draftStart)}</div></div>
-          <div className="hidden pb-4 text-3xl text-slate-500 md:block">→</div>
-          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">End Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#2e66a6]"><CalendarDays size={20} />{formatDateRangeLabel(draftEnd)}</div></div>
-        </div>
-        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
-          <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
-          <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
-        </div>
-        <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
-          <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600 transition hover:text-slate-900">Cancel</button>
-          <button type="button" onClick={() => draftStart && draftEnd && onApply(draftStart, draftEnd)} disabled={!draftStart || !draftEnd} className="h-12 rounded-xl bg-[#2e66a6] px-9 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60">Apply Range</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
 const AdminEmployerJobEditRequestReview = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
@@ -187,7 +53,6 @@ const AdminEmployerJobEditRequestReview = () => {
   const [sort, setSort] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [showCustomRange, setShowCustomRange] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(null);
@@ -247,11 +112,6 @@ const AdminEmployerJobEditRequestReview = () => {
     } else if (time === 'yesterday') {
       from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
       to = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59, 999);
-    } else if (time === 'thisWeek') {
-      const dayOfWeek = today.getDay();
-      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      from = new Date(today.getFullYear(), today.getMonth(), today.getDate() + mondayOffset);
-      to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
     } else if (time === 'sevenDays') {
       from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
       to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
@@ -261,12 +121,6 @@ const AdminEmployerJobEditRequestReview = () => {
     } else if (time === 'lastMonth') {
       from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       to = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
-    } else if (time === 'thisYear') {
-      from = new Date(today.getFullYear(), 0, 1);
-      to = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
-    } else if (time === 'lastYear') {
-      from = new Date(today.getFullYear() - 1, 0, 1);
-      to = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
     } else if (time === 'custom') {
       from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
       to = dateTo ? new Date(`${dateTo}T23:59:59.999`) : null;
@@ -329,18 +183,6 @@ const AdminEmployerJobEditRequestReview = () => {
     }
   };
 
-  const hasActiveFilters = Boolean(search.trim()) || status !== 'all' || time !== 'all' || sort !== '' || dateFrom || dateTo;
-
-  const clearFilters = () => {
-    setSearch('');
-    setStatus('all');
-    setTime('all');
-    setSort('');
-    setDateFrom('');
-    setDateTo('');
-    setShowCustomRange(false);
-  };
-
   if (loading) return null;
 
   if (!request) {
@@ -397,7 +239,7 @@ const AdminEmployerJobEditRequestReview = () => {
 
         <section className="overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
           <div className="border-b border-[#e6edf5] px-5 py-5 sm:px-6">
-            <div className={`grid gap-3 ${hasActiveFilters ? 'md:grid-cols-[minmax(0,1.55fr)_145px_145px_145px_auto]' : 'md:grid-cols-[minmax(0,1.55fr)_145px_145px_145px]'}`}>
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1.55fr)_145px_145px_145px]">
               <label className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7890aa]" size={17} />
                 <input
@@ -415,16 +257,13 @@ const AdminEmployerJobEditRequestReview = () => {
                 <option value="rejected">Declined</option>
               </select>
 
-              <select value={time} onChange={(event) => { const value = event.target.value; setTime(value); if (value === 'custom') { setShowCustomRange(true); } else { setDateFrom(''); setDateTo(''); } }} className="h-11 rounded-lg border border-[#cbdcf0] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]">
+              <select value={time} onChange={(event) => setTime(event.target.value)} className="h-11 rounded-lg border border-[#cbdcf0] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]">
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
                 <option value="yesterday">Yesterday</option>
-                <option value="thisWeek">This Week</option>
                 <option value="sevenDays">Last 7 Days</option>
                 <option value="month">This Month</option>
                 <option value="lastMonth">Last Month</option>
-                <option value="thisYear">This Year</option>
-                <option value="lastYear">Last Year</option>
                 <option value="custom">Custom Range</option>
               </select>
 
@@ -433,13 +272,20 @@ const AdminEmployerJobEditRequestReview = () => {
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
               </select>
-
-              {hasActiveFilters && (
-                <button type="button" onClick={clearFilters} className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-4 text-sm font-semibold text-[#24558d] transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white">
-                  Clear All
-                </button>
-              )}
             </div>
+
+            {time === 'custom' && (
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <label className="text-xs font-semibold text-[#55708f]">
+                  From
+                  <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="ml-2 h-10 rounded-lg border border-[#cbdcf0] px-3 text-sm text-black" />
+                </label>
+                <label className="text-xs font-semibold text-[#55708f]">
+                  To
+                  <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="ml-2 h-10 rounded-lg border border-[#cbdcf0] px-3 text-sm text-black" />
+                </label>
+              </div>
+            )}
           </div>
 
           <div className="bg-[#fbfdff] p-5 sm:p-6">
@@ -517,23 +363,6 @@ const AdminEmployerJobEditRequestReview = () => {
           </div>
         </section>
       </div>
-
-
-      <CustomDateRangeModal
-        open={showCustomRange}
-        startDate={dateFrom}
-        endDate={dateTo}
-        onCancel={() => {
-          setShowCustomRange(false);
-          if (!dateFrom || !dateTo) setTime('all');
-        }}
-        onApply={(start, end) => {
-          setDateFrom(start);
-          setDateTo(end);
-          setTime('custom');
-          setShowCustomRange(false);
-        }}
-      />
 
       {confirmation && (
         <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true" aria-labelledby="decision-title">
