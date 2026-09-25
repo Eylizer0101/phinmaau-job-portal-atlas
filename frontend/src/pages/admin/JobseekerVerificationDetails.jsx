@@ -1011,8 +1011,12 @@ const JobseekerVerificationDetails = () => {
         `/admin/jobseekers/verification/${id}/docs/${docType}/check`,
         {},
       );
-      setSuccess(response.data?.message || "Document marked as checked.");
-      await fetchJobseekerDetails();
+      setSuccess(
+        response.data?.accountAutoApproved
+          ? "All required credentials have been approved. The Job Seeker account has been approved automatically."
+          : response.data?.message || "Document marked as checked.",
+      );
+      await fetchJobseekerDetails({ silent: true });
     } catch (checkError) {
       setError(
         checkError.response?.data?.message || "Unable to check this document.",
