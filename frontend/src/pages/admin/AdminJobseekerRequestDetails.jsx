@@ -322,7 +322,7 @@ const AdminJobseekerRequestDetails = () => {
                 Status Request Decline Reason
               </p>
               <p className="mt-2 text-sm font-medium text-slate-900">
-                {employerResponse.declineReason || statusRequest.declineReason || '—'}
+                {employerResponse.declineReason || '—'}
               </p>
             </div>
 
@@ -331,7 +331,7 @@ const AdminJobseekerRequestDetails = () => {
                 Explanation
               </p>
               <p className="mt-2 text-sm font-medium text-slate-900">
-                {employerResponse.explanation || statusRequest.explanation || '—'}
+                {employerResponse.explanation || '—'}
               </p>
             </div>
           </div>
