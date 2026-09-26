@@ -558,7 +558,7 @@ const AdminArchiveDeclinedApplicants = () => {
                               "profile"
                           )
                         }
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff] disabled:cursor-wait disabled:opacity-60"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-wait disabled:opacity-60"
                         aria-label={`View ${applicant.applicantName || "applicant"} profile`}
                         title="View profile"
                       >

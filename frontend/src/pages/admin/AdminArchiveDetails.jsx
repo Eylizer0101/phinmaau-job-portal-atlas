@@ -1341,7 +1341,7 @@ const AdminArchiveDetails = () => {
           </div>
         </header>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="relative z-20 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div
             className={cn(
               "grid gap-3 border-b border-slate-200 p-4",
@@ -1474,7 +1474,7 @@ const AdminArchiveDetails = () => {
                           event.stopPropagation();
                           handleViewRecord(record);
                         }}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61]"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                         aria-label={`View ${record.typeLabel}`}
                         title={`View ${record.typeLabel}`}
                       >

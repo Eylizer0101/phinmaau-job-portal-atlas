@@ -6,7 +6,6 @@ import {
   Clock3,
   RefreshCw,
   FileEdit,
-  Eye,
   Search,
   ShieldAlert,
   UnlockKeyhole,
@@ -405,11 +404,16 @@ const AdminEmployerJobEditRequestReview = () => {
           {job?._id && (
             <button
               type="button"
-              onClick={() => navigate(`/admin/jobs/${job._id}`)}
-              className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-[#2e66a6] bg-white px-5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] sm:self-auto"
+              onClick={() => navigate(`/admin/jobs/${job._id}`, {
+                state: {
+                  backPath: `/admin/employer-job-edit-requests/${requestId}/review`,
+                  backLabel: 'Edit Request',
+                },
+              })}
+              className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:self-auto"
             >
-              <Eye size={17} />
               View Job
+              <ExternalLink size={17} />
             </button>
           )}
         </header>

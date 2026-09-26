@@ -370,7 +370,20 @@ const AdminEmployerJobEditRequests = () => {
               const applicants = item?.job?.applicationCount ?? 0;
               const typeAndMode = [item?.job?.jobType, item?.job?.workMode].filter(Boolean).join(' • ');
 
-              return <tr key={`${item.rowType}-${item._id}`} className="transition hover:bg-[#f7faff]">
+              return <tr
+                key={`${item.rowType}-${item._id}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(detailsPath)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    navigate(detailsPath);
+                  }
+                }}
+                className="cursor-pointer transition hover:bg-[#f7faff] focus-visible:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]/25"
+                aria-label={`View edit request for ${item?.job?.title || 'job'}`}
+              >
                 <td className="px-6 py-[18px] text-[13px] text-[#526d91]">{formatDate(item.createdAt)}</td>
                 <td className="px-6 py-[18px]">
                   <div className="flex min-w-[220px] items-center gap-3">
@@ -393,7 +406,7 @@ const AdminEmployerJobEditRequests = () => {
                   <span className={`inline-flex min-w-[74px] justify-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${statusBadgeClass(itemStatus)}`}>{displayStatus(itemStatus)}</span>
                 </td>
                 <td className="px-6 py-[18px] text-center">
-                  <button type="button" onClick={() => navigate(detailsPath)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#667f9f] transition hover:bg-[#edf4fb] hover:text-[#2e66a6]" aria-label="View request">
+                  <button type="button" onClick={(event) => { event.stopPropagation(); navigate(detailsPath); }} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15" aria-label="View request" title="View request">
                     <Eye size={17} />
                   </button>
                 </td>

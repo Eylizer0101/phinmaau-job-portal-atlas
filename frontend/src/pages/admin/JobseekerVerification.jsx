@@ -1108,7 +1108,7 @@ const JobseekerVerification = () => {
                                 <button
                                   type="button"
                                   onClick={() => navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   title="View"
                                   aria-label={`View ${fullName}`}
                                 >
@@ -1119,7 +1119,7 @@ const JobseekerVerification = () => {
                                     type="button"
                                     onClick={() => setRestoreTarget(item)}
                                     disabled={restoringId === item._id}
-                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
                                     title="Restore"
                                     aria-label={`Restore ${fullName}`}
                                   >
@@ -1185,14 +1185,15 @@ const JobseekerVerification = () => {
                             </div>
 
                             <div className="mt-4 flex justify-end gap-2">
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                leftIcon={<Icon name="eye" className="h-4 w-4" />}
+                              <button
+                                type="button"
                                 onClick={() => navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                title="View"
+                                aria-label={`View ${fullName}`}
                               >
-                                View
-                              </Button>
+                                <Icon name="eye" className="h-4 w-4" />
+                              </button>
                               {archiveMode ? (
                                 <Button
                                   variant="secondary"
@@ -1200,7 +1201,7 @@ const JobseekerVerification = () => {
                                   leftIcon={<Icon name="restore" className="h-4 w-4" />}
                                   onClick={() => setRestoreTarget(item)}
                                   disabled={restoringId === item._id}
-                                  className="h-10 w-16 !gap-0 !p-0"
+                                  className="h-10 w-10 !gap-0 !rounded-xl !border-slate-200 !p-0 !text-slate-600 hover:!border-[#2e66a6] hover:!bg-[#2e66a6] hover:!text-white"
                                   title="Restore"
                                   aria-label={`Restore ${fullName}`}
                                 />

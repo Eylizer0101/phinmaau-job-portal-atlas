@@ -1917,7 +1917,7 @@ const UserManagement = () => {
                                   type="button"
                                   onClick={() => handleViewDetails(user.key)}
                                   disabled={isLoading}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 group-hover:border-[#2e66a6]/15 group-hover:bg-white group-hover:text-[#2e66a6] group-hover:shadow-sm hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   aria-label={`View ${user.name}`}
                                 >
                                   <Icon name="eye" className="h-4 w-4" />
@@ -1976,7 +1976,7 @@ const UserManagement = () => {
                                   type="button"
                                   onClick={() => handleViewDetails(user.key)}
                                   disabled={isLoading}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6] transition-colors hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   aria-label={`View ${user.name}`}
                                 >
                                   <Icon name="eye" className="h-4 w-4" />

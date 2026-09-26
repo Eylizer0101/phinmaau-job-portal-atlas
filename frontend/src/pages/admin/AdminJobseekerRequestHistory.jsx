@@ -298,7 +298,7 @@ export default function AdminJobseekerRequestHistory() {
               <td className="px-6 py-5 font-semibold">{item?.job?.title || '—'}</td>
               <td className="px-6 py-5">{reasonLabel(item?.employmentStatusRequest?.reason)}</td>
               <td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${statusBadgeClass(requestStatus)}`}>{requestStatus.replace('_',' ')}</span></td>
-              <td className="px-6 py-5"><button onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`)} className="rounded-xl border p-3 text-[#2e66a6]"><Eye size={18}/></button></td>
+              <td className="px-6 py-5"><button onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"><Eye size={18}/></button></td>
             </tr>;
           })}
           {!loading && !filtered.length && <tr><td colSpan="6" className="p-12 text-center text-slate-500">No requests found.</td></tr>}

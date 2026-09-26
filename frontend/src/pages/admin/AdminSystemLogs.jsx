@@ -594,11 +594,10 @@ const AdminSystemLogs = () => {
           : logs.length === 0 ? <div className="flex min-h-[300px] flex-col items-center justify-center text-center"><Icon name="activity" className="h-8 w-8 text-[#212C61]" /><h2 className="mt-3 font-bold text-slate-900">No activity logs found</h2><p className="mt-1 text-sm text-slate-500">Jobseeker and Employer activities will appear here.</p></div>
           : <div className="divide-y divide-slate-100">{logs.map((log) => {
             const created = formatDateTime(log.createdAt);
-            const employer = String(log.actorRole).toLowerCase() === 'employer';
             return <div key={log.id} className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] items-center gap-5 px-5 py-4 transition-colors hover:bg-[#2e66a6]/[0.045]">
               <div><p className="text-sm font-bold text-slate-800">{created}</p></div>
               <div className="flex min-w-0 items-center gap-3"><ActorAvatar image={log.actorImage} name={log.actorName} /><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{log.actorEmail || 'No email recorded'}</p></div></div>
-              <span className={`w-fit rounded-full border px-3 py-1 text-[11px] font-bold capitalize ${employer ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{log.actorRole}</span>
+              <span className="text-sm font-normal capitalize text-black">{log.actorRole}</span>
               <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900" title={getActionCode(log.action)}>{getActionLabel(log.action)}</p><p className="truncate text-[11px] font-medium text-[#212C61]/70">{log.module || 'Activity'}</p></div>
             </div>;
           })}</div>}

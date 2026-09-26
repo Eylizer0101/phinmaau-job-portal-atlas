@@ -1299,7 +1299,7 @@ const EmployerVerification = () => {
                                 <button
                                   type="button"
                                   onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   title="View"
                                   aria-label={`View ${companyName}`}
                                 >
@@ -1310,7 +1310,7 @@ const EmployerVerification = () => {
                                     type="button"
                                     onClick={() => setRestoreTarget(item)}
                                     disabled={restoringId === item._id}
-                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
                                     title="Restore"
                                     aria-label={`Restore ${companyName}`}
                                   >
@@ -1381,7 +1381,7 @@ const EmployerVerification = () => {
                             </div>
 
                             <div className="mt-4 flex justify-end gap-2">
-                              <IconButton label={`View ${companyName}`} onClick={() => navigate(`/admin/employer-verification/${item._id}`)}>
+                              <IconButton label={`View ${companyName}`} onClick={() => navigate(`/admin/employer-verification/${item._id}`)} className="h-10 w-10 rounded-xl border-slate-200 text-slate-600 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white">
                                 <Icon name="eye" className="h-4 w-4" />
                               </IconButton>
 
@@ -1392,7 +1392,7 @@ const EmployerVerification = () => {
                                   leftIcon={<Icon name="restore" className="h-4 w-4" />}
                                   onClick={() => setRestoreTarget(item)}
                                   disabled={restoringId === item._id}
-                                  className="h-10 w-16 !gap-0 !p-0"
+                                  className="h-10 w-10 !gap-0 !rounded-xl !border-slate-200 !p-0 !text-slate-600 hover:!border-[#2e66a6] hover:!bg-[#2e66a6] hover:!text-white"
                                   title="Restore"
                                   aria-label={`Restore ${companyName}`}
                                 />
