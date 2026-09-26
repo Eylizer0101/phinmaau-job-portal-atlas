@@ -215,7 +215,6 @@ const requestRowSubtext = (item = {}) => {
   }
 
   return (
-    item?.employer?.employerProfile?.companyWebsiteUrl ||
     item?.employer?.email ||
     industryName(item)
   );
