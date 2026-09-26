@@ -442,7 +442,7 @@ const AdminEmployerJobEditRequests = () => {
     campusFilter !== 'all' ||
     courseFilter !== 'all' ||
     requestType !== 'all' ||
-    status !== 'all' ||
+    status !== 'pending' ||
     time !== 'all' ||
     Boolean(dateFrom) ||
     Boolean(dateTo);
