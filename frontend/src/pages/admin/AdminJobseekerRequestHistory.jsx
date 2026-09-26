@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CalendarDays, Eye, Search, UserRound } from 'lucide-react';
+import { ArrowLeft, Building2, CalendarDays, Eye, GraduationCap, Search, UserRound } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
@@ -269,7 +269,29 @@ export default function AdminJobseekerRequestHistory() {
     <section className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <button onClick={() => navigate(historyBackPath, { state: historyBackState })} className="inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold"><ArrowLeft size={17}/>Back</button>
       {jobseeker.profileImage ? <img src={jobseeker.profileImage} alt="" className="h-12 w-12 rounded-full object-cover"/> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-[#2e66a6]"><UserRound/></span>}
-      <div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-bold">{nameOf(jobseeker)}</h1>{jobseeker.jobSeekerProfile?.yearGraduated && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs">Class of {jobseeker.jobSeekerProfile.yearGraduated}</span>}</div><p className="mt-1 text-sm text-slate-500">{[jobseeker.jobSeekerProfile?.campus, jobseeker.jobSeekerProfile?.course].filter(Boolean).join(' • ') || jobseeker.email}</p></div>
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-bold">{nameOf(jobseeker)}</h1>
+          {jobseeker.jobSeekerProfile?.yearGraduated && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs">Class of {jobseeker.jobSeekerProfile.yearGraduated}</span>}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+          {jobseeker.jobSeekerProfile?.campus && (
+            <span className="inline-flex items-center gap-1.5">
+              <Building2 size={14} className="shrink-0 text-[#60758f]" />
+              {jobseeker.jobSeekerProfile.campus}
+            </span>
+          )}
+          {jobseeker.jobSeekerProfile?.course && (
+            <span className="inline-flex items-center gap-1.5">
+              <GraduationCap size={14} className="shrink-0 text-[#60758f]" />
+              {jobseeker.jobSeekerProfile.course}
+            </span>
+          )}
+          {!jobseeker.jobSeekerProfile?.campus && !jobseeker.jobSeekerProfile?.course && (
+            <span>{jobseeker.email}</span>
+          )}
+        </div>
+      </div>
     </section>
 
     <section className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(0,0.85fr)]">

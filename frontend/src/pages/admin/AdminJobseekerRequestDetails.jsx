@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
-  BriefcaseBusiness,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -271,7 +270,6 @@ const AdminJobseekerRequestDetails = () => {
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            {!isDeclined ? <BriefcaseBusiness size={21} className="text-emerald-600" /> : null}
             <h1 className="text-[28px] font-bold leading-tight text-slate-950">Employment Status Request</h1>
           </div>
           <p className="mt-1 text-sm text-[#60758f]">Review the job seeker's request and the employer's response.</p>

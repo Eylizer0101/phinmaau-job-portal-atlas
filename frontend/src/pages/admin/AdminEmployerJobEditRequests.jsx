@@ -207,7 +207,11 @@ const personName = (user = {}) =>
 const requestRowName = (item = {}) =>
   item.rowType === 'status_request'
     ? personName(item.jobseeker)
-    : companyName(item);
+    : (
+        item?.employer?.fullName ||
+        [item?.employer?.firstName, item?.employer?.middleName, item?.employer?.lastName].filter(Boolean).join(' ') ||
+        companyName(item)
+      );
 
 const requestRowSubtext = (item = {}) => {
   if (item.rowType === 'status_request') {
@@ -219,6 +223,21 @@ const requestRowSubtext = (item = {}) => {
     industryName(item)
   );
 };
+
+const requestCompany = (item = {}) =>
+  companyName(item);
+
+const requestIndustry = (item = {}) =>
+  industryName(item);
+
+const requestJobTitle = (item = {}) =>
+  String(item?.job?.title || '—');
+
+const requestCampus = (item = {}) =>
+  String(item?.jobseeker?.jobSeekerProfile?.campus || '—');
+
+const requestCourse = (item = {}) =>
+  String(item?.jobseeker?.jobSeekerProfile?.course || '—');
 
 const requestRoleLabel = (item = {}) =>
   item.rowType === 'status_request' ? 'Job Seeker' : 'Employer';
@@ -253,6 +272,10 @@ const AdminEmployerJobEditRequests = () => {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
+  const [jobTitleFilter, setJobTitleFilter] = useState('all');
+  const [campusFilter, setCampusFilter] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
   const [requestType, setRequestType] = useState('all');
   const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
@@ -304,7 +327,37 @@ const AdminEmployerJobEditRequests = () => {
     if (role === 'employer' && status === 'no_response') {
       setStatus('all');
     }
+
+    if (role !== 'employer') {
+      setCompanyFilter('all');
+      setJobTitleFilter('all');
+    }
+
+    if (role !== 'jobseeker') {
+      setCampusFilter('all');
+      setCourseFilter('all');
+    }
   }, [role, status]);
+
+  const employerCompanyOptions = useMemo(
+    () => [...new Set(requests.filter((item) => item.rowType === 'job_post').map(requestCompany).filter((value) => value && value !== 'Employer'))].sort((a, b) => a.localeCompare(b)),
+    [requests]
+  );
+
+  const employerJobTitleOptions = useMemo(
+    () => [...new Set(requests.filter((item) => item.rowType === 'job_post').map(requestJobTitle).filter((value) => value && value !== '—'))].sort((a, b) => a.localeCompare(b)),
+    [requests]
+  );
+
+  const jobseekerCampusOptions = useMemo(
+    () => [...new Set(requests.filter((item) => item.rowType === 'status_request').map(requestCampus).filter((value) => value && value !== '—'))].sort((a, b) => a.localeCompare(b)),
+    [requests]
+  );
+
+  const jobseekerCourseOptions = useMemo(
+    () => [...new Set(requests.filter((item) => item.rowType === 'status_request').map(requestCourse).filter((value) => value && value !== '—'))].sort((a, b) => a.localeCompare(b)),
+    [requests]
+  );
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -331,6 +384,10 @@ const AdminEmployerJobEditRequests = () => {
           item?.job?.companyName,
           item?.job?.title,
           industryName(item),
+          requestCompany(item),
+          requestIndustry(item),
+          requestCampus(item),
+          requestCourse(item),
         ]
           .filter(Boolean)
           .join(' ')
@@ -339,6 +396,10 @@ const AdminEmployerJobEditRequests = () => {
         return (
           (!query || searchable.includes(query)) &&
           (role === 'all' || role === rowRole) &&
+          (companyFilter === 'all' || requestCompany(item) === companyFilter) &&
+          (jobTitleFilter === 'all' || requestJobTitle(item) === jobTitleFilter) &&
+          (campusFilter === 'all' || requestCampus(item) === campusFilter) &&
+          (courseFilter === 'all' || requestCourse(item) === courseFilter) &&
           (requestType === 'all' || requestType === rowType) &&
           (status === 'all' || status === rowStatus) &&
           (!range.from || (!Number.isNaN(created.getTime()) && created >= range.from)) &&
@@ -350,11 +411,11 @@ const AdminEmployerJobEditRequests = () => {
           (new Date(requestDateValue(b)).getTime() || 0) -
           (new Date(requestDateValue(a)).getTime() || 0)
       );
-  }, [requests, search, role, requestType, status, time, dateFrom, dateTo]);
+  }, [requests, search, role, companyFilter, jobTitleFilter, campusFilter, courseFilter, requestType, status, time, dateFrom, dateTo]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, role, requestType, status, time, dateFrom, dateTo]);
+  }, [search, role, companyFilter, jobTitleFilter, campusFilter, courseFilter, requestType, status, time, dateFrom, dateTo]);
 
   const paginatedRows = useMemo(() => {
     if (pageSize === 'all') return rows;
@@ -376,6 +437,10 @@ const AdminEmployerJobEditRequests = () => {
   const hasActiveFilters =
     Boolean(search.trim()) ||
     role !== 'all' ||
+    companyFilter !== 'all' ||
+    jobTitleFilter !== 'all' ||
+    campusFilter !== 'all' ||
+    courseFilter !== 'all' ||
     requestType !== 'all' ||
     status !== 'all' ||
     time !== 'all' ||
@@ -385,6 +450,10 @@ const AdminEmployerJobEditRequests = () => {
   const clearFilters = () => {
     setSearch('');
     setRole('all');
+    setCompanyFilter('all');
+    setJobTitleFilter('all');
+    setCampusFilter('all');
+    setCourseFilter('all');
     setRequestType('all');
     setStatus('all');
     setTime('all');
@@ -423,9 +492,13 @@ const AdminEmployerJobEditRequests = () => {
 
     <section className={cn(
       'grid gap-3 rounded-2xl border border-[#dbe3ee] bg-white p-4 shadow-[0_2px_5px_rgba(15,23,42,0.08)] md:grid-cols-2',
-      hasActiveFilters
-        ? 'xl:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))_96px]'
-        : 'xl:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]'
+      role === 'employer' || role === 'jobseeker'
+        ? hasActiveFilters
+          ? 'xl:grid-cols-[1.45fr_repeat(6,minmax(0,1fr))_96px]'
+          : 'xl:grid-cols-[1.45fr_repeat(6,minmax(0,1fr))]'
+        : hasActiveFilters
+          ? 'xl:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))_96px]'
+          : 'xl:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]'
     )}>
       <label className="relative block min-w-0">
         <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#667f9f]" size={18} />
@@ -442,6 +515,32 @@ const AdminEmployerJobEditRequests = () => {
         <option value="jobseeker">Job Seeker</option>
         <option value="employer">Employer</option>
       </select>
+
+      {role === 'employer' && (
+        <>
+          <select value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} className="h-12 min-w-0 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+            <option value="all">All Company</option>
+            {employerCompanyOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+          <select value={jobTitleFilter} onChange={(e) => setJobTitleFilter(e.target.value)} className="h-12 min-w-0 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+            <option value="all">All Job Title</option>
+            {employerJobTitleOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </>
+      )}
+
+      {role === 'jobseeker' && (
+        <>
+          <select value={campusFilter} onChange={(e) => setCampusFilter(e.target.value)} className="h-12 min-w-0 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+            <option value="all">All Campus</option>
+            {jobseekerCampusOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+          <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="h-12 min-w-0 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+            <option value="all">All Course</option>
+            {jobseekerCourseOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </>
+      )}
 
       <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
         <option value="all">All Type</option>
@@ -493,7 +592,16 @@ const AdminEmployerJobEditRequests = () => {
             <tr>
               <th className="px-6 py-5">Request Date</th>
               <th className="px-6 py-5">Name</th>
-              <th className="px-6 py-5">Role</th>
+              {role === 'all' && <th className="px-6 py-5">Role</th>}
+              {role === 'employer' && <>
+                <th className="px-6 py-5">Company</th>
+                <th className="px-6 py-5">Industry</th>
+                <th className="px-6 py-5">Job Title</th>
+              </>}
+              {role === 'jobseeker' && <>
+                <th className="px-6 py-5">Campus</th>
+                <th className="px-6 py-5">Course</th>
+              </>}
               <th className="px-6 py-5">Request Type</th>
               <th className="px-6 py-5">Status</th>
               <th className="px-6 py-5 text-center">Action</th>
@@ -501,7 +609,7 @@ const AdminEmployerJobEditRequests = () => {
           </thead>
 
           <tbody className="divide-y divide-[#dbe3ee]">
-            {loading && <tr aria-hidden="true"><td colSpan="6" className="h-56 bg-white" /></tr>}
+            {loading && <tr aria-hidden="true"><td colSpan={role === 'employer' ? 8 : role === 'jobseeker' ? 7 : 6} className="h-56 bg-white" /></tr>}
 
             {!loading && paginatedRows.map((item) => {
               const name = requestRowName(item);
@@ -531,7 +639,19 @@ const AdminEmployerJobEditRequests = () => {
                   </div>
                 </td>
 
-                <td className="px-6 py-[18px] text-sm text-slate-900">{requestRoleLabel(item)}</td>
+                {role === 'all' && <td className="px-6 py-[18px] text-sm text-slate-900">{requestRoleLabel(item)}</td>}
+
+                {role === 'employer' && <>
+                  <td className="px-6 py-[18px] text-sm text-slate-900">{requestCompany(item)}</td>
+                  <td className="px-6 py-[18px] text-sm text-slate-900">{requestIndustry(item)}</td>
+                  <td className="px-6 py-[18px] text-sm font-medium text-slate-950">{requestJobTitle(item)}</td>
+                </>}
+
+                {role === 'jobseeker' && <>
+                  <td className="px-6 py-[18px] text-sm text-slate-900">{requestCampus(item)}</td>
+                  <td className="px-6 py-[18px] text-sm text-slate-900">{requestCourse(item)}</td>
+                </>}
+
                 <td className="px-6 py-[18px] text-sm text-slate-900">{requestTypeLabel(item)}</td>
 
                 <td className="px-6 py-[18px]">
@@ -559,7 +679,7 @@ const AdminEmployerJobEditRequests = () => {
 
             {!loading && !rows.length && (
               <tr>
-                <td colSpan="6" className="px-6 py-16 text-center text-sm text-slate-500">
+                <td colSpan={role === 'employer' ? 8 : role === 'jobseeker' ? 7 : 6} className="px-6 py-16 text-center text-sm text-slate-500">
                   No requests match the selected filters.
                 </td>
               </tr>
