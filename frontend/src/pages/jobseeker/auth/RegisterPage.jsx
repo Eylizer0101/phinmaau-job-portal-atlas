@@ -1136,8 +1136,8 @@ const RegisterPage = () => {
                       <strong>For your Resume:</strong> We highly recommend using a PDF format. It keeps your layout looking perfect on every recruiter's
                       screen!
                     </li>
-                    <li><strong>Diploma &amp; TOR:</strong> Upload clear scans or well-lit photos of the complete document.</li>
-                    <li><strong>Valid ID:</strong> Use an Alumni ID or an unexpired government-issued ID where possible.</li>
+                    <li><strong>Diploma &amp; TOR:</strong> Upload a clear scan or well-lit photo of the complete document. <strong>If your Diploma or TOR is not yet available, you may upload proof of request or a claim document from the Registrar’s Office.</strong></li>
+                    <li><strong>Valid ID:</strong> Upload a clear, unexpired government-issued Valid ID, if available.</li>
                     <li><strong>Before You Submit:</strong> Double-check every upload to avoid verification delays.</li>
                   </ul>
                 </div>

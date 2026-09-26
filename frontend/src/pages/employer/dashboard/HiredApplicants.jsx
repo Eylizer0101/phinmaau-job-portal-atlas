@@ -1590,7 +1590,7 @@ const selectBase =
                 <img src="/images/lock.png" alt="" className="relative h-16 w-16 object-contain sm:h-20 sm:w-20" draggable="false" />
               </div>
             </div>
-            <h2 id="employer-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>EMPLOYMENT STATUS UPDATE NOTICE</h2>
+            <h2 id="employer-privacy-title" className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[28px] lg:text-[32px]" style={{ letterSpacing: '0.06em' }}>Employment Status Update Notice</h2>
             <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
               <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" /></svg>
