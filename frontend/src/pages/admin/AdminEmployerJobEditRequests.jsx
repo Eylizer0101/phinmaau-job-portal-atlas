@@ -365,7 +365,7 @@ const AdminEmployerJobEditRequests = () => {
               const name = companyName(item);
               const itemIndustry = industryName(item);
               const itemStatus = String(item.status || 'pending').toLowerCase();
-              const detailsPath = `/admin/employer-job-edit-requests/${item._id}`;
+              const detailsPath = `/admin/employer-job-edit-requests/${item._id}/review`;
               const vacancy = item?.job?.vacancies ?? 0;
               const applicants = item?.job?.applicationCount ?? 0;
               const typeAndMode = [item?.job?.jobType, item?.job?.workMode].filter(Boolean).join(' • ');
