@@ -259,17 +259,17 @@ const AdminJobseekerRequestDetails = () => {
 
   return (
     <div className="mx-auto max-w-[1450px] space-y-5 px-1 py-8">
-      <header className="space-y-4">
+      <header className="flex items-center gap-5">
         <button
           type="button"
           onClick={() => navigate(backPath, { state: location.state?.backState })}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
           Back
         </button>
 
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             {!isDeclined ? <BriefcaseBusiness size={21} className="text-emerald-600" /> : null}
             <h1 className="text-[28px] font-bold leading-tight text-slate-950">Employment Status Request</h1>
