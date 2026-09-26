@@ -12,7 +12,7 @@ import {
   UnlockKeyhole,
   XCircle,
 } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import { BookmarksSvgIcon, JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
 
@@ -171,6 +171,7 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
 const AdminEmployerJobEditRequestReview = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [request, setRequest] = useState(null);
   const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -367,7 +368,12 @@ const AdminEmployerJobEditRequestReview = () => {
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
             <button
               type="button"
-              onClick={() => navigate(`/admin/employer-job-edit-requests/${requestId}`)}
+              onClick={() =>
+                navigate(
+                  location.state?.backPath || '/admin/employer-job-edit-requests',
+                  { state: location.state?.backState }
+                )
+              }
               className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
             >
               <ArrowLeft size={17} /> Back
@@ -407,8 +413,9 @@ const AdminEmployerJobEditRequestReview = () => {
               type="button"
               onClick={() => navigate(`/admin/jobs/${job._id}`, {
                 state: {
-                  backPath: `/admin/employer-job-edit-requests/${requestId}/review`,
+                  backPath: location.pathname,
                   backLabel: 'Edit Request',
+                  backState: location.state,
                 },
               })}
               className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:self-auto"

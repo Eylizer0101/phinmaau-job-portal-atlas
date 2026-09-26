@@ -408,7 +408,12 @@ const AdminEmployerJobEditRequests = () => {
       return;
     }
 
-    navigate(path);
+    navigate(path, {
+      state: {
+        backPath: '/admin/employer-job-edit-requests',
+        backLabel: 'Edit Requests',
+      },
+    });
   };
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
