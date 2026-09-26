@@ -4,9 +4,9 @@ const User = require('../models/User');
 const { sendEmploymentStatusNoResponseEmail } = require('../config/mailer');
 
 const REQUEST_SELECT = [
-  { path: 'job', select: 'title companyName companyLogo industry category jobType workMode' },
+  { path: 'job', select: 'title companyName companyLogo industry category jobType workMode location' },
   { path: 'jobseeker', select: 'fullName firstName middleName lastName email profileImage jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated' },
-  { path: 'employer', select: 'fullName firstName middleName lastName email employerProfile.companyName employerProfile.companyLogo employerProfile.industry' },
+  { path: 'employer', select: 'fullName firstName middleName lastName email phoneNumber employerProfile.companyName employerProfile.companyLogo employerProfile.industry employerProfile.contactNumber employerProfile.companyWebsiteUrl' },
   { path: 'employmentStatusRequest.employerResponse.respondedBy', select: 'fullName firstName middleName lastName email' },
   { path: 'employmentStatusRequest.adminDecision.decidedBy', select: 'fullName firstName middleName lastName email' }
 ];

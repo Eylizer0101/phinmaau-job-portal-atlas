@@ -3,7 +3,7 @@ import { ArrowLeft, CalendarDays, Eye, Search, UserRound } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
-const formatDate = (value) => value ? new Date(value).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const formatDate = (value) => value ? new Date(value).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 const reasonLabel = (value) => value === 'contract_ended' ? 'Contract Ended' : 'Employment Ended';
 const nameOf = (user = {}) => String(user?.fullName || [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(' ') || 'Job Seeker');
 const companyNameOf = (item = {}) => String(item?.job?.companyName || item?.employer?.employerProfile?.companyName || 'Company');
@@ -11,9 +11,16 @@ const companyIndustryOf = (item = {}) => String(item?.job?.industry || item?.job
 const companyLogoOf = (item = {}) => item?.job?.companyLogo || item?.employer?.employerProfile?.companyLogo || '';
 const adminRequestStatus = (item = {}) => {
   const request = item?.employmentStatusRequest || {};
-  const finalDecision = String(request.adminDecision?.decision || '').toLowerCase();
-  if (['approved', 'declined'].includes(finalDecision)) return finalDecision;
-  return String(request.status || '').toLowerCase() === 'no_response' ? 'no_response' : 'pending';
+  const directStatus = String(request.status || '').toLowerCase();
+  if (['approved', 'declined', 'no_response'].includes(directStatus)) return directStatus;
+
+  const employerDecision = String(request.employerResponse?.decision || '').toLowerCase();
+  if (['approved', 'declined', 'no_response'].includes(employerDecision)) return employerDecision;
+
+  const legacyAdminDecision = String(request.adminDecision?.decision || '').toLowerCase();
+  if (['approved', 'declined'].includes(legacyAdminDecision)) return legacyAdminDecision;
+
+  return 'pending';
 };
 const statusBadgeClass = (status = '') => ({
   pending: 'border-amber-300 bg-amber-50 text-amber-700',
@@ -159,7 +166,7 @@ export default function AdminJobseekerRequestHistory() {
   const [company, setCompany] = useState('all');
   const [jobTitle, setJobTitle] = useState('all');
   const [type, setType] = useState('all');
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [from, setFrom] = useState('');
@@ -267,7 +274,7 @@ export default function AdminJobseekerRequestHistory() {
       <select value={company} onChange={(e)=>setCompany(e.target.value)} className="rounded-xl border px-3"><option value="all">All Company</option>{companies.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} className="rounded-xl border px-3"><option value="all">All Job Title</option>{jobs.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={type} onChange={(e)=>setType(e.target.value)} className="rounded-xl border px-3"><option value="all">All Type</option><option value="contract_ended">Contract Ended</option><option value="employment_ended">Employment Ended</option></select>
-      <select value={status} onChange={(e)=>setStatus(e.target.value)} className="rounded-xl border px-3"><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
+      <select value={status} onChange={(e)=>setStatus(e.target.value)} className="rounded-xl border px-3"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
       <select value={time} onChange={(e)=>changeTime(e.target.value)} className="rounded-xl border px-3"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select>
     </section>
 
@@ -298,7 +305,7 @@ export default function AdminJobseekerRequestHistory() {
               <td className="px-6 py-5 font-semibold">{item?.job?.title || '—'}</td>
               <td className="px-6 py-5">{reasonLabel(item?.employmentStatusRequest?.reason)}</td>
               <td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${statusBadgeClass(requestStatus)}`}>{requestStatus.replace('_',' ')}</span></td>
-              <td className="px-6 py-5"><button onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"><Eye size={18}/></button></td>
+              <td className="px-6 py-5"><button onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`, { state: { backPath: `/admin/jobseeker-status-requests/${jobseekerId}`, backLabel: 'Request History' } })} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"><Eye size={18}/></button></td>
             </tr>;
           })}
           {!loading && !filtered.length && <tr><td colSpan="6" className="p-12 text-center text-slate-500">No requests found.</td></tr>}

@@ -1,182 +1,412 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   BriefcaseBusiness,
   Building2,
-  CalendarCheck2,
   CalendarDays,
-  Check,
   CheckCircle2,
   Clock3,
-  FileText,
-  MessageSquare,
+  ExternalLink,
+  Mail,
+  Phone,
   UserRound,
-  X,
+  XCircle,
 } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
-const date = (value, withTime = false) => value ? new Date(value).toLocaleString('en-PH', withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }) : '—';
-const name = (user = {}) => user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ') || '—';
-const reason = (value) => {
-  const normalized = String(value || '').trim().toLowerCase();
-  const labels = {
-    contract_ended: 'Contract Ended',
-    contract_end: 'Contract Ended',
-    resigned: 'Resigned',
-    resignation: 'Resigned',
-    terminated: 'Terminated',
-    termination: 'Terminated',
-    still_employed: 'Still Employed',
-    no_resignation: 'Still Employed / No Resignation',
-    employment_ended: 'Employment Ended',
-  };
-  return labels[normalized] || String(value || '').replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) || 'Employment Ended';
-};
-const duration = (item) => { const start = new Date(item.hiredAt || item.reviewedAt); const end = item.employmentEndedAt ? new Date(item.employmentEndedAt) : new Date(); if (Number.isNaN(start.getTime())) return '—'; const days = Math.max(0, Math.floor((end-start)/86400000)); return days < 30 ? `${days} days` : `${Math.floor(days/30)} months and ${days%30} days`; };
+const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
 
-export default function AdminJobseekerRequestDetails() {
+const assetUrl = (value, fallback = '/images/default-company-logo.png') => {
+  const source = String(value || '').trim();
+  if (!source) return fallback;
+  if (/^(https?:|data:|blob:)/i.test(source)) return source;
+  return `${API_ORIGIN}${source.startsWith('/') ? '' : '/'}${source}`;
+};
+
+const formatDate = (value) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+const formatDateTime = (value) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+
+  const dateLabel = date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const timeLabel = date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return `${dateLabel} • ${timeLabel}`;
+};
+
+const fullName = (user = {}) =>
+  user?.fullName ||
+  [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(' ') ||
+  '—';
+
+const requestReasonLabel = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'contract_ended' || normalized === 'contract_end') return 'Contract Ended';
+  if (normalized === 'employment_ended') return 'Employment Ended';
+  if (normalized === 'resigned' || normalized === 'resignation') return 'Resigned';
+  if (normalized === 'terminated' || normalized === 'termination') return 'Terminated';
+  return String(value || '').replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) || 'Employment Ended';
+};
+
+const requestStatus = (request = {}) => {
+  const statusRequest = request?.employmentStatusRequest || {};
+  const directStatus = String(statusRequest.status || '').toLowerCase();
+  if (['approved', 'declined', 'no_response'].includes(directStatus)) return directStatus;
+
+  const employerDecision = String(statusRequest.employerResponse?.decision || '').toLowerCase();
+  if (['approved', 'declined', 'no_response'].includes(employerDecision)) return employerDecision;
+
+  const legacyAdminDecision = String(statusRequest.adminDecision?.decision || '').toLowerCase();
+  if (['approved', 'declined'].includes(legacyAdminDecision)) return legacyAdminDecision;
+
+  return 'pending';
+};
+
+const employmentDuration = (request = {}) => {
+  const start = request?.hiredAt || request?.reviewedAt;
+  if (!start) return '—';
+
+  const startDate = new Date(start);
+  const endDate = request?.employmentEndedAt ? new Date(request.employmentEndedAt) : new Date();
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return '—';
+
+  const totalDays = Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / 86400000));
+  if (totalDays < 30) return `${totalDays} day${totalDays === 1 ? '' : 's'}`;
+
+  const months = Math.max(1, Math.floor(totalDays / 30));
+  return `${months} month${months === 1 ? '' : 's'}`;
+};
+
+const responseDeadline = (requestedAt) => {
+  const date = requestedAt ? new Date(requestedAt) : null;
+  if (!date || Number.isNaN(date.getTime())) return null;
+  return new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
+};
+
+const InfoValue = ({ label, value, icon = null }) => (
+  <div className="min-w-0">
+    <p className="flex items-center gap-2 text-[11px] font-medium text-[#60758f]">
+      {icon ? <span className="shrink-0 text-[#2e66a6]">{icon}</span> : null}
+      {label}
+    </p>
+    <p className="mt-1 break-words text-sm font-semibold text-slate-950">{value || '—'}</p>
+  </div>
+);
+
+const AdminJobseekerRequestDetails = () => {
   const { jobseekerId, requestId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [request, setRequest] = useState(null);
   const [error, setError] = useState('');
-  const load = () => api.get(`/applications/admin/employment-status-requests/jobseeker/${jobseekerId}/${requestId}`).then(({data})=>setRequest(data.request)).catch(err=>setError(err.response?.data?.message || 'Unable to load request.'));
+
   useEffect(() => {
-    load();
+    let active = true;
+
+    setError('');
+
+    api
+      .get(`/applications/admin/employment-status-requests/jobseeker/${jobseekerId}/${requestId}`)
+      .then(({ data }) => {
+        if (active) setRequest(data?.request || null);
+      })
+      .catch((requestError) => {
+        if (active) {
+          setError(requestError.response?.data?.message || 'Unable to load request.');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [jobseekerId, requestId]);
+
+  const status = useMemo(() => requestStatus(request), [request]);
+
   if (!request) {
-    if (error) return <div className="p-10 text-center">{error}</div>;
+    if (error) {
+      return <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">{error}</div>;
+    }
+
     return <div className="min-h-[70vh] w-full bg-white" aria-hidden="true" />;
   }
 
   const statusRequest = request.employmentStatusRequest || {};
   const employerResponse = statusRequest.employerResponse || {};
-  const employerDecision = String(employerResponse.decision || 'pending').toLowerCase();
-  const employerAnswered = ['approved','declined','no_response'].includes(employerDecision) || statusRequest.status === 'no_response';
-  const status = String(statusRequest.status || 'pending').toLowerCase();
+  const requestedAt = statusRequest.requestedAt;
+  const respondedAt = employerResponse.respondedAt || statusRequest.reviewedAt;
+  const noResponseAt = statusRequest.noResponseAt;
+  const deadline = responseDeadline(requestedAt);
+
+  const isPending = status === 'pending';
   const isApproved = status === 'approved';
   const isDeclined = status === 'declined';
-  const isWaiting = status === 'pending';
-  const showDecisionDetails = employerAnswered && employerDecision !== 'no_response';
-  const showDeclineDetails = employerDecision === 'declined';
-  const companyName = request.job?.companyName || request.employer?.employerProfile?.companyName || '—';
-  const responseReason = String(employerResponse.declineReason || employerResponse.reason || '').trim();
-  const responseComment = String(employerResponse.explanation || employerResponse.comment || '').trim();
-  const decisionPerson = employerResponse.respondedBy || request.employer;
-  const decisionDate = employerResponse.respondedAt || statusRequest.reviewedAt;
+  const isNoResponse = status === 'no_response';
 
-  return <div className="mx-auto max-w-[1450px] space-y-5 px-1 py-8">
-    <header className="flex flex-wrap items-center justify-between gap-4 px-1">
-      <div className="flex items-center gap-3">
+  const employer = request.employer || {};
+  const jobseeker = request.jobseeker || {};
+  const job = request.job || {};
+  const companyName = job.companyName || employer?.employerProfile?.companyName || fullName(employer);
+  const companyLogo = job.companyLogo || employer?.employerProfile?.companyLogo;
+  const companyAddress = job.location || 'Location not specified';
+  const employerContact =
+    employer.contactNumber ||
+    employer.phoneNumber ||
+    employer?.employerProfile?.contactNumber ||
+    '—';
+
+  const backPath =
+    location.state?.backPath ||
+    `/admin/jobseeker-status-requests/${jobseekerId}`;
+
+  const statusMeta = isApproved
+    ? {
+        title: 'Request Approved',
+        description: 'The employer has approved the request.',
+        sideLabel: 'Approved On',
+        sideValue: formatDateTime(respondedAt),
+        banner: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+        icon: <CheckCircle2 size={29} />,
+      }
+    : isDeclined
+      ? {
+          title: 'Request Declined',
+          description: 'The employer has declined this request.',
+          sideLabel: 'Declined On',
+          sideValue: formatDateTime(respondedAt),
+          banner: 'border-red-300 bg-red-50 text-red-700',
+          icon: <XCircle size={29} />,
+        }
+      : isNoResponse
+        ? {
+            title: 'No Response',
+            description: 'The employer did not respond within the 7-days response period.',
+            sideLabel: 'Requested On',
+            sideValue: formatDateTime(requestedAt),
+            banner: 'border-slate-300 bg-slate-100 text-slate-600',
+            icon: <Clock3 size={29} />,
+          }
+        : {
+            title: 'Awaiting Employer Response',
+            description: 'The employer has not responded to this request yet.',
+            sideLabel: 'Requested On',
+            sideValue: formatDateTime(requestedAt),
+            banner: 'border-amber-300 bg-amber-50 text-amber-700',
+            icon: <Clock3 size={29} />,
+          };
+
+  const responseCardClass = isApproved
+    ? 'border-emerald-200 bg-emerald-50'
+    : isDeclined
+      ? 'border-red-200 bg-red-50'
+      : 'border-slate-200 bg-slate-50';
+
+  const responseValue = isApproved
+    ? 'Approved'
+    : isDeclined
+      ? 'Declined'
+      : isNoResponse
+        ? 'No Response'
+        : 'Pending';
+
+  const responseTimeLabel = isNoResponse ? 'Response Deadline' : 'Response Date and Time';
+  const responseTimeValue = isPending
+    ? 'Awaiting response'
+    : isNoResponse
+      ? formatDateTime(deadline || noResponseAt)
+      : formatDateTime(respondedAt);
+
+  const responseNotice = isApproved
+    ? {
+        title: 'Status Updated',
+        text: "The job seeker's employment status has been updated to Inactive.",
+      }
+    : isDeclined
+      ? {
+          title: 'Request Declined',
+          text: 'The job seeker employment status remains Active.',
+        }
+      : isNoResponse
+        ? {
+            title: 'No Employer Response',
+            text: 'The employer did not respond within the 7-days response period.',
+          }
+        : {
+            title: 'Response Pending',
+            text: 'The employment status will remain unchanged until the employer responds.',
+          };
+
+  return (
+    <div className="mx-auto max-w-[1450px] space-y-5 px-1 py-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            {!isDeclined ? <BriefcaseBusiness size={21} className="text-emerald-600" /> : null}
+            <h1 className="text-[28px] font-bold leading-tight text-slate-950">Employment Status Request</h1>
+          </div>
+          <p className="mt-1 text-sm text-[#60758f]">Review the job seeker's request and the employer's response.</p>
+        </div>
+
         <button
           type="button"
-          onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}`)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-          aria-label="Back"
+          onClick={() => navigate(backPath)}
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
         >
-          <ArrowLeft size={19}/>
+          <ArrowLeft size={16} />
+          Back
         </button>
-        <div>
-          <h1 className="text-[22px] font-bold leading-tight text-slate-900">Employment Status Update Request</h1>
-          <p className="mt-1 text-sm text-slate-500">View the Employer's response to this employment status request.</p>
-        </div>
-      </div>
-    </header>
+      </header>
 
-    <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-      <div className="grid gap-y-5 md:grid-cols-[1.15fr_1fr_1fr_1.15fr_0.9fr] md:divide-x md:divide-slate-200">
-        <SummaryInfo
-          icon={<UserRound size={18}/>} 
-          label="Employer"
-          value={name(request.employer)}
-          sub={request.employer?.email}
-          first
-        />
-        <SummaryInfo icon={<CalendarDays size={17}/>} label="Requested Date" value={date(statusRequest.requestedAt)} />
-        <SummaryInfo icon={<Building2 size={17}/>} label="Company" value={companyName} />
-        <SummaryInfo icon={<BriefcaseBusiness size={17}/>} label="Job Title" value={request.job?.title} />
-        <SummaryInfo
-          icon={<FileText size={17}/>} 
-          label="Request"
-          value={reason(statusRequest.reason)}
-          badge
-        />
-      </div>
-    </section>
-
-    <div className="grid gap-5 lg:grid-cols-2">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-6 flex items-center gap-2 text-[16px] font-semibold text-emerald-700">
-          <CalendarCheck2 size={19}/>
-          Employment Details
-        </h2>
-        <div className="grid gap-5 sm:grid-cols-3">
-          <DetailItem icon={<CalendarDays size={16}/>} label="Applied Date" value={date(request.appliedAt)} />
-          <DetailItem icon={<Clock3 size={16}/>} label="Date Hired" value={date(request.hiredAt || request.reviewedAt)} />
-          <DetailItem icon={<Clock3 size={16}/>} label="Employment Duration" value={duration(request)} />
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${isDeclined ? 'bg-red-600' : isApproved ? 'bg-emerald-600' : status === 'no_response' ? 'bg-amber-500' : 'bg-slate-400'} text-white`}>
-            {isWaiting ? <Clock3 size={22}/> : isDeclined || status === 'no_response' ? <X size={22}/> : <Check size={22}/>} 
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className={`text-lg font-semibold capitalize ${isDeclined ? 'text-red-600' : isApproved ? 'text-emerald-700' : 'text-slate-700'}`}>
-              {status === 'no_response' ? 'No Response' : status.replace('_',' ')}
-            </h2>
-            <p className="mt-0.5 text-sm text-slate-500">
-              {status === 'pending'
-                ? 'Waiting for the employer to respond to this request.'
-                : status === 'no_response'
-                  ? 'The employer did not respond to this request within 7 days.'
-                  : status === 'approved'
-                    ? 'The Employment status has been approved.'
-                    : 'The Employment status has been declined.'}
-            </p>
+      <section className={`flex flex-col gap-4 rounded-xl border px-5 py-4 md:flex-row md:items-center md:justify-between ${statusMeta.banner}`}>
+        <div className="flex min-w-0 items-center gap-4">
+          <span className="shrink-0">{statusMeta.icon}</span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold">{statusMeta.title}</h2>
+            <p className="mt-1 text-xs">{statusMeta.description}</p>
           </div>
         </div>
 
-        {showDecisionDetails && <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <DetailItem
-            icon={<UserRound size={16}/>} 
-            label={employerResponse.decision === 'declined' ? 'Declined By' : 'Approved By'}
-            value={name(decisionPerson)}
-          />
-          <DetailItem
-            icon={<CalendarDays size={16}/>} 
-            label="Date & Time"
-            value={date(decisionDate, true)}
-          />
-        </div>}
+        <div className="shrink-0 border-t border-current/15 pt-3 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+          <p className="text-[11px] opacity-70">{statusMeta.sideLabel}</p>
+          <p className="mt-1 text-sm font-bold">{statusMeta.sideValue}</p>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-sm font-bold text-slate-950">Employer Response</h2>
+
+        <div className={`grid gap-4 rounded-lg border p-4 md:grid-cols-[1fr_1fr_1.15fr] md:items-stretch ${responseCardClass}`}>
+          <InfoValue label="Response" value={responseValue} />
+
+          <div className="border-t border-slate-200/70 pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+            <InfoValue label={responseTimeLabel} value={responseTimeValue} />
+          </div>
+
+          <div className="border-t border-slate-200/70 pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+            <div className="h-full rounded-lg border border-current/15 bg-white/35 px-4 py-3">
+              <p className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                {isApproved ? <CheckCircle2 size={15} /> : isDeclined ? <XCircle size={15} /> : <Clock3 size={15} />}
+                {responseNotice.title}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-slate-600">{responseNotice.text}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-5 text-sm font-bold text-slate-950">Employer Contact Details</h2>
+        <div className="grid gap-5 md:grid-cols-3">
+          <InfoValue label="Employer Name" value={fullName(employer)} icon={<UserRound size={16} />} />
+          <InfoValue label="Email" value={employer.email} icon={<Mail size={16} />} />
+          <InfoValue label="Contact Number" value={employerContact} icon={<Phone size={16} />} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-5 text-sm font-bold text-slate-950">Job Seeker Information</h2>
+        <div className="grid gap-5 md:grid-cols-[1.3fr_1fr_1fr] md:items-center">
+          <div className="flex min-w-0 items-center gap-3">
+            {jobseeker.profileImage ? (
+              <img src={assetUrl(jobseeker.profileImage, '/images/default-avatar.png')} alt={fullName(jobseeker)} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
+            ) : (
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef4fb] text-sm font-bold text-[#2e66a6]">
+                {fullName(jobseeker).split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-950">{fullName(jobseeker)}</p>
+              <p className="mt-1 truncate text-xs text-[#60758f]">{jobseeker.email || '—'}</p>
+            </div>
+          </div>
+
+          <InfoValue label="Course" value={jobseeker?.jobSeekerProfile?.course} />
+          <InfoValue label="Campus" value={jobseeker?.jobSeekerProfile?.campus} />
+        </div>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-5 text-sm font-bold text-slate-950">Company Information</h2>
+          <div className="flex items-center gap-4">
+            <img
+              src={assetUrl(companyLogo)}
+              alt={`${companyName} logo`}
+              className="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-cover"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = '/images/default-company-logo.png';
+              }}
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-950">{companyName}</p>
+              <p className="mt-1 text-xs text-[#60758f]">{companyAddress}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-5 text-sm font-bold text-slate-950">Job Details</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <InfoValue label="Job Title" value={job.title} icon={<BriefcaseBusiness size={15} />} />
+            <InfoValue label="Employment Type" value={job.jobType} />
+            <InfoValue label="Work Mode" value={job.workMode} />
+
+            <div className="flex items-end">
+              <button
+                type="button"
+                disabled={!job?._id}
+                onClick={() => {
+                  if (!job?._id) return;
+                  navigate(`/admin/jobs/${job._id}`, {
+                    state: {
+                      backPath: location.pathname,
+                      backLabel: 'Employment Status Request',
+                    },
+                  });
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-[#2e66a6] hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                View Job
+                <ExternalLink size={15} />
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+        <InfoValue label="Applied Date" value={formatDate(request.appliedAt)} icon={<CalendarDays size={15} />} />
+        <InfoValue label="Date Hired" value={formatDate(request.hiredAt || request.reviewedAt)} icon={<CalendarDays size={15} />} />
+        <InfoValue label="Employment Duration" value={employmentDuration(request)} icon={<Clock3 size={15} />} />
+        <InfoValue label="Request Date" value={formatDate(requestedAt)} icon={<Building2 size={15} />} />
+      </section>
+
+      <section className="sr-only" aria-hidden="true">
+        {requestReasonLabel(statusRequest.reason)}
       </section>
     </div>
+  );
+};
 
-    {showDeclineDetails && <div className="grid gap-5 lg:grid-cols-2">
-      <section className="rounded-2xl border border-purple-200 bg-purple-50/50 p-6 shadow-sm">
-        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-purple-800">
-          <FileText size={19}/>
-          Reason
-        </h2>
-        <div className="mt-4 rounded-xl border border-purple-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
-          {responseReason || 'No decline reason was provided.'}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
-        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-amber-800">
-          <MessageSquare size={19}/>
-          Comment
-        </h2>
-        <div className="mt-4 min-h-[64px] rounded-xl border border-amber-200 bg-white/80 px-4 py-4 text-sm leading-6 text-slate-700">
-          {responseComment || 'No additional comment was provided.'}
-        </div>
-      </section>
-    </div>}
-
-  </div>;
-}
-
-const SummaryInfo = ({ icon, label, value, sub, first = false, badge = false }) => <div className={`min-w-0 ${first ? 'md:pr-5' : 'md:px-5'}`}><div className="flex items-start gap-3">{first && <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">{icon}</span>}<div className="min-w-0"><p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-500">{!first && <span className="shrink-0 text-slate-500">{icon}</span>}{label}</p><p className={`mt-2 break-words text-sm font-semibold ${badge ? 'inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-medium text-red-500' : 'text-slate-900'}`}>{value || '—'}</p>{sub&&<p className="mt-0.5 break-all text-xs text-slate-500">{sub}</p>}</div></div></div>;
-const DetailItem = ({ icon, label, value }) => <div className="min-w-0"><p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-500"><span className="text-slate-400">{icon}</span>{label}</p><p className="mt-2 break-words text-sm font-semibold text-slate-900">{value || '—'}</p></div>;
+export default AdminJobseekerRequestDetails;

@@ -185,16 +185,77 @@ const presetRange = (filter) => {
   return result;
 };
 
+const statusRequestStatus = (item = {}) => {
+  const request = item?.employmentStatusRequest || {};
+  const directStatus = String(request.status || '').toLowerCase();
+  if (['approved', 'declined', 'no_response'].includes(directStatus)) return directStatus;
+
+  const employerDecision = String(request.employerResponse?.decision || '').toLowerCase();
+  if (['approved', 'declined', 'no_response'].includes(employerDecision)) return employerDecision;
+
+  const legacyAdminDecision = String(request.adminDecision?.decision || '').toLowerCase();
+  if (['approved', 'declined'].includes(legacyAdminDecision)) return legacyAdminDecision;
+
+  return 'pending';
+};
+
+const personName = (user = {}) =>
+  user?.fullName ||
+  [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(' ') ||
+  'Job Seeker';
+
+const requestRowName = (item = {}) =>
+  item.rowType === 'status_request'
+    ? personName(item.jobseeker)
+    : companyName(item);
+
+const requestRowSubtext = (item = {}) => {
+  if (item.rowType === 'status_request') {
+    return item?.jobseeker?.email || item?.job?.companyName || 'Job Seeker';
+  }
+
+  return (
+    item?.employer?.employerProfile?.companyWebsiteUrl ||
+    item?.employer?.email ||
+    industryName(item)
+  );
+};
+
+const requestRoleLabel = (item = {}) =>
+  item.rowType === 'status_request' ? 'Job Seeker' : 'Employer';
+
+const requestTypeLabel = (item = {}) =>
+  item.rowType === 'status_request' ? 'Status Request' : 'Job Post';
+
+const requestDateValue = (item = {}) =>
+  item.rowType === 'status_request'
+    ? item?.employmentStatusRequest?.requestedAt
+    : item?.createdAt;
+
+const normalizedRowStatus = (item = {}) => {
+  if (item.rowType === 'status_request') return statusRequestStatus(item);
+  const value = String(item.status || 'pending').toLowerCase();
+  return value === 'rejected' ? 'declined' : value;
+};
+
+const rowDetailsPath = (item = {}) => {
+  if (item.rowType === 'status_request') {
+    const jobseekerId = item?.jobseeker?._id || item?.jobseeker;
+    return jobseekerId ? `/admin/jobseeker-status-requests/${jobseekerId}` : '';
+  }
+
+  return item?._id ? `/admin/employer-job-edit-requests/${item._id}/review` : '';
+};
+
 const AdminEmployerJobEditRequests = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [company, setCompany] = useState('all');
-  const [industry, setIndustry] = useState('all');
-  const [jobTitle, setJobTitle] = useState('all');
-  const [status, setStatus] = useState('pending');
+  const [role, setRole] = useState('all');
+  const [requestType, setRequestType] = useState('all');
+  const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -204,47 +265,97 @@ const AdminEmployerJobEditRequests = () => {
 
   useEffect(() => {
     let active = true;
-    api.get('/job-edit-requests/admin').then((jobEditResponse) => {
-      if (!active) return;
-      const employerRequests = (jobEditResponse.data?.requests || []).map((item) => ({ ...item, rowType: 'job_post' }));
-      setRequests(employerRequests);
-    }).catch((requestError) => {
-      if (active) setError(requestError.response?.data?.message || 'Unable to load edit requests.');
-    }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+
+    setLoading(true);
+    setError('');
+
+    Promise.all([
+      api.get('/job-edit-requests/admin'),
+      api.get('/applications/admin/employment-status-requests'),
+    ])
+      .then(([jobEditResponse, statusRequestResponse]) => {
+        if (!active) return;
+
+        const employerRequests = (jobEditResponse.data?.requests || []).map((item) => ({
+          ...item,
+          rowType: 'job_post',
+        }));
+
+        const jobseekerRequests = (statusRequestResponse.data?.requests || []).map((item) => ({
+          ...item,
+          rowType: 'status_request',
+        }));
+
+        setRequests([...employerRequests, ...jobseekerRequests]);
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        setError(requestError.response?.data?.message || 'Unable to load edit requests.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const companyOptions = useMemo(() => [...new Set(requests.map((item) => companyName(item)).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
-  const industryOptions = useMemo(() => [...new Set(requests.map((item) => industryName(item)).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
-  const jobTitleOptions = useMemo(() => [...new Set(requests.map((item) => item?.job?.title).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
+  useEffect(() => {
+    if (role === 'employer' && status === 'no_response') {
+      setStatus('all');
+    }
+  }, [role, status]);
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
     const range = time === 'custom'
-      ? { from: dateFrom ? new Date(`${dateFrom}T00:00:00`) : null, to: dateTo ? new Date(`${dateTo}T23:59:59.999`) : null }
+      ? {
+          from: dateFrom ? new Date(`${dateFrom}T00:00:00`) : null,
+          to: dateTo ? new Date(`${dateTo}T23:59:59.999`) : null,
+        }
       : presetRange(time);
 
-    return requests.filter((item) => {
-      const itemStatus = String(item.status || 'pending').toLowerCase();
-      const created = new Date(item.createdAt);
-      const name = companyName(item);
-      const itemIndustry = industryName(item);
-      const title = item?.job?.title || '';
-      const searchable = [name, itemIndustry, title].join(' ').toLowerCase();
+    return requests
+      .filter((item) => {
+        const rowRole = item.rowType === 'status_request' ? 'jobseeker' : 'employer';
+        const rowType = item.rowType;
+        const rowStatus = normalizedRowStatus(item);
+        const created = new Date(requestDateValue(item));
+        const name = requestRowName(item);
+        const subtext = requestRowSubtext(item);
+        const searchable = [
+          name,
+          subtext,
+          requestRoleLabel(item),
+          requestTypeLabel(item),
+          item?.job?.companyName,
+          item?.job?.title,
+          industryName(item),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
 
-      return (!query || searchable.includes(query)) &&
-        (company === 'all' || company === name) &&
-        (industry === 'all' || industry === itemIndustry) &&
-        (jobTitle === 'all' || jobTitle === title) &&
-        (status === 'all' || status === itemStatus) &&
-        (!range.from || (!Number.isNaN(created.getTime()) && created >= range.from)) &&
-        (!range.to || (!Number.isNaN(created.getTime()) && created <= range.to));
-    }).sort((a, b) => (new Date(b.createdAt).getTime() || 0) - (new Date(a.createdAt).getTime() || 0));
-  }, [requests, search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
+        return (
+          (!query || searchable.includes(query)) &&
+          (role === 'all' || role === rowRole) &&
+          (requestType === 'all' || requestType === rowType) &&
+          (status === 'all' || status === rowStatus) &&
+          (!range.from || (!Number.isNaN(created.getTime()) && created >= range.from)) &&
+          (!range.to || (!Number.isNaN(created.getTime()) && created <= range.to))
+        );
+      })
+      .sort(
+        (a, b) =>
+          (new Date(requestDateValue(b)).getTime() || 0) -
+          (new Date(requestDateValue(a)).getTime() || 0)
+      );
+  }, [requests, search, role, requestType, status, time, dateFrom, dateTo]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
+  }, [search, role, requestType, status, time, dateFrom, dateTo]);
 
   const paginatedRows = useMemo(() => {
     if (pageSize === 'all') return rows;
@@ -253,7 +364,11 @@ const AdminEmployerJobEditRequests = () => {
   }, [rows, currentPage, pageSize]);
 
   const changeTime = (value) => {
-    if (value === 'custom') { setShowCustomDate(true); return; }
+    if (value === 'custom') {
+      setShowCustomDate(true);
+      return;
+    }
+
     setTime(value);
     setDateFrom('');
     setDateTo('');
@@ -261,58 +376,76 @@ const AdminEmployerJobEditRequests = () => {
 
   const hasActiveFilters =
     Boolean(search.trim()) ||
-    company !== 'all' ||
-    industry !== 'all' ||
-    jobTitle !== 'all' ||
-    status !== 'pending' ||
+    role !== 'all' ||
+    requestType !== 'all' ||
+    status !== 'all' ||
     time !== 'all' ||
     Boolean(dateFrom) ||
     Boolean(dateTo);
 
   const clearFilters = () => {
     setSearch('');
-    setCompany('all');
-    setIndustry('all');
-    setJobTitle('all');
-    setStatus('pending');
+    setRole('all');
+    setRequestType('all');
+    setStatus('all');
     setTime('all');
     setDateFrom('');
     setDateTo('');
     setShowCustomDate(false);
   };
 
+  const openRequest = (item) => {
+    const path = rowDetailsPath(item);
+    if (!path) return;
+
+    if (item.rowType === 'status_request') {
+      navigate(path);
+      return;
+    }
+
+    navigate(path);
+  };
+
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
     <header>
       <h1 className="text-[33px] font-semibold leading-[40px] text-slate-950">Edit Requests</h1>
-      <p className="mt-1 text-sm text-[#526d91]">Review employer requests and grant temporary edit access to locked job postings.</p>
+      <p className="mt-1 text-sm text-[#526d91]">Manage employer requests and job seeker status approvals.</p>
     </header>
 
-    <section className={cn('grid gap-3 rounded-2xl border border-[#dbe3ee] bg-white p-4 shadow-[0_2px_5px_rgba(15,23,42,0.08)] md:grid-cols-2', hasActiveFilters ? 'xl:grid-cols-[1.45fr_repeat(5,minmax(0,1fr))_96px]' : 'xl:grid-cols-[1.45fr_repeat(5,minmax(0,1fr))]')}> 
+    <section className={cn(
+      'grid gap-3 rounded-2xl border border-[#dbe3ee] bg-white p-4 shadow-[0_2px_5px_rgba(15,23,42,0.08)] md:grid-cols-2',
+      hasActiveFilters
+        ? 'xl:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))_96px]'
+        : 'xl:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]'
+    )}>
       <label className="relative block min-w-0">
         <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#667f9f]" size={18} />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company, job title..." className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-[#526d91] focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search request..."
+          className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-[#526d91] focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
+        />
       </label>
 
-      <select value={company} onChange={(e) => setCompany(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
-        <option value="all">All Company</option>
-        {companyOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+      <select value={role} onChange={(e) => setRole(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+        <option value="all">All Role</option>
+        <option value="jobseeker">Job Seeker</option>
+        <option value="employer">Employer</option>
       </select>
 
-      <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
-        <option value="all">All Industry</option>
-        {industryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
-
-      <select value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
-        <option value="all">All Job Title</option>
-        {jobTitleOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+      <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+        <option value="all">All Type</option>
+        <option value="status_request">Status Request</option>
+        <option value="job_post">Job Post</option>
       </select>
 
       <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
         <option value="all">All Status</option>
         <option value="pending">Pending</option>
         <option value="approved">Approved</option>
-        <option value="rejected">Declined</option>
+        <option value="declined">Declined</option>
+        {role !== 'employer' && <option value="no_response">No Response</option>}
       </select>
 
       <div className="relative min-w-0">
@@ -346,74 +479,82 @@ const AdminEmployerJobEditRequests = () => {
 
     <section className="overflow-hidden rounded-2xl border border-[#dbe3ee] bg-white shadow-[0_2px_5px_rgba(15,23,42,0.08)]">
       <div className={cn('overflow-x-auto overscroll-auto', pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto')}>
-        <table className="w-full min-w-[1120px] text-left">
+        <table className="w-full min-w-[1040px] text-left">
           <thead className="border-b border-[#dbe3ee] bg-white text-[11px] font-medium uppercase tracking-[0.08em] text-[#526d91]">
             <tr>
               <th className="px-6 py-5">Request Date</th>
-              <th className="px-6 py-5">Company</th>
-              <th className="px-6 py-5">Job Title</th>
-              <th className="px-6 py-5 text-center">Vacancy</th>
-              <th className="px-6 py-5 text-center">Applicant</th>
+              <th className="px-6 py-5">Name</th>
+              <th className="px-6 py-5">Role</th>
+              <th className="px-6 py-5">Request Type</th>
               <th className="px-6 py-5">Status</th>
-              <th className="px-6 py-5 text-center">Actions</th>
+              <th className="px-6 py-5 text-center">Action</th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-[#dbe3ee]">
-            {loading && <tr aria-hidden="true"><td colSpan="7" className="h-56 bg-white" /></tr>}
+            {loading && <tr aria-hidden="true"><td colSpan="6" className="h-56 bg-white" /></tr>}
 
             {!loading && paginatedRows.map((item) => {
-              const name = companyName(item);
-              const itemIndustry = industryName(item);
-              const itemStatus = String(item.status || 'pending').toLowerCase();
-              const detailsPath = `/admin/employer-job-edit-requests/${item._id}/review`;
-              const vacancy = item?.job?.vacancies ?? 0;
-              const applicants = item?.job?.applicationCount ?? 0;
-              const typeAndMode = [item?.job?.jobType, item?.job?.workMode].filter(Boolean).join(' • ');
+              const name = requestRowName(item);
+              const subtext = requestRowSubtext(item);
+              const itemStatus = normalizedRowStatus(item);
 
               return <tr
                 key={`${item.rowType}-${item._id}`}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate(detailsPath)}
+                onClick={() => openRequest(item)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
-                    navigate(detailsPath);
+                    openRequest(item);
                   }
                 }}
                 className="cursor-pointer transition hover:bg-[#f7faff] focus-visible:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]/25"
-                aria-label={`View edit request for ${item?.job?.title || 'job'}`}
+                aria-label={`View ${requestTypeLabel(item)} for ${name}`}
               >
-                <td className="px-6 py-[18px] text-[13px] text-[#526d91]">{formatDate(item.createdAt)}</td>
+                <td className="px-6 py-[18px] text-[13px] text-[#526d91]">{formatDate(requestDateValue(item))}</td>
+
                 <td className="px-6 py-[18px]">
-                  <div className="flex min-w-[220px] items-center gap-3">
-                    <CompanyLogo item={item} name={name} />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
-                      <p className="mt-1 truncate text-xs text-[#526d91]">{itemIndustry}</p>
-                    </div>
+                  <div className="min-w-[220px]">
+                    <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
+                    <p className="mt-1 truncate text-xs text-[#526d91]">{subtext || '—'}</p>
                   </div>
                 </td>
+
+                <td className="px-6 py-[18px] text-sm text-slate-900">{requestRoleLabel(item)}</td>
+                <td className="px-6 py-[18px] text-sm text-slate-900">{requestTypeLabel(item)}</td>
+
                 <td className="px-6 py-[18px]">
-                  <div className="min-w-[210px]">
-                    <p className="truncate text-sm font-semibold text-slate-950">{item?.job?.title || 'Untitled Job'}</p>
-                    <p className="mt-1 truncate text-xs text-[#526d91]">{typeAndMode || '—'}</p>
-                  </div>
+                  <span className={`inline-flex min-w-[82px] justify-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${statusBadgeClass(itemStatus)}`}>
+                    {displayStatus(itemStatus)}
+                  </span>
                 </td>
-                <td className="px-6 py-[18px] text-center text-sm font-semibold text-slate-950">{vacancy}</td>
-                <td className="px-6 py-[18px] text-center text-sm font-semibold text-slate-950">{applicants}</td>
-                <td className="px-6 py-[18px]">
-                  <span className={`inline-flex min-w-[74px] justify-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${statusBadgeClass(itemStatus)}`}>{displayStatus(itemStatus)}</span>
-                </td>
+
                 <td className="px-6 py-[18px] text-center">
-                  <button type="button" onClick={(event) => { event.stopPropagation(); navigate(detailsPath); }} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15" aria-label="View request" title="View request">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openRequest(item);
+                    }}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                    aria-label="View request"
+                    title="View request"
+                  >
                     <Eye size={17} />
                   </button>
                 </td>
               </tr>;
             })}
 
-            {!loading && !rows.length && <tr><td colSpan="7" className="px-6 py-16 text-center text-sm text-slate-500">No requests match the selected filters.</td></tr>}
+            {!loading && !rows.length && (
+              <tr>
+                <td colSpan="6" className="px-6 py-16 text-center text-sm text-slate-500">
+                  No requests match the selected filters.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -432,7 +573,18 @@ const AdminEmployerJobEditRequests = () => {
       )}
     </section>
 
-    <CustomDateRangeModal open={showCustomDate} startDate={dateFrom} endDate={dateTo} onCancel={() => setShowCustomDate(false)} onApply={(from, to) => { setDateFrom(from); setDateTo(to); setTime('custom'); setShowCustomDate(false); }} />
+    <CustomDateRangeModal
+      open={showCustomDate}
+      startDate={dateFrom}
+      endDate={dateTo}
+      onCancel={() => setShowCustomDate(false)}
+      onApply={(from, to) => {
+        setDateFrom(from);
+        setDateTo(to);
+        setTime('custom');
+        setShowCustomDate(false);
+      }}
+    />
   </div>;
 };
 
