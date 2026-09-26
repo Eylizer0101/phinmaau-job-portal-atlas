@@ -399,7 +399,12 @@ const AdminEmployerJobEditRequests = () => {
     if (!path) return;
 
     if (item.rowType === 'status_request') {
-      navigate(path);
+      navigate(path, {
+        state: {
+          backPath: '/admin/employer-job-edit-requests',
+          backLabel: 'Edit Requests',
+        },
+      });
       return;
     }
 

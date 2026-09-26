@@ -467,7 +467,9 @@ const UserManagementDetails = () => {
   const detailsBackLabel = location.state?.backLabel || "Back to Users";
 
   const handleBack = () => {
-    navigate(isArchiveView ? archiveBackPath : detailsBackPath);
+    navigate(isArchiveView ? archiveBackPath : detailsBackPath, {
+      state: location.state?.backState,
+    });
   };
 
   const [user, setUser] = useState(null);

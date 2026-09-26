@@ -693,7 +693,7 @@ const AdminJobView = () => {
     location.state?.backLabel || (isArchivedView ? 'Archive' : 'Job Offers');
 
   const handleBack = () => {
-    navigate(backPath);
+    navigate(backPath, { state: location.state?.backState });
   };
 
   const [job, setJob] = useState(null);
@@ -1088,6 +1088,7 @@ const AdminJobView = () => {
                                 backLabel: "Archived Job Details",
                                 isArchivedView: true,
                                 archiveBackPath: archiveNavigation.archiveBackPath,
+                                backState: location.state,
                               },
                             }
                           )
@@ -1140,8 +1141,9 @@ const AdminJobView = () => {
                         navigate(`/admin/jobs/${jobId}/applicants`, {
                           state: {
                             jobTitle: job.title,
-                            backPath: `/admin/jobs/${jobId}`,
+                            backPath: location.pathname,
                             backLabel: 'Job Details',
+                            backState: location.state,
                           },
                         })
                       }

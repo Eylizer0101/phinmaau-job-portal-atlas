@@ -1372,10 +1372,12 @@ const AdminJobApplicants = () => {
             backPath: archiveNavigation.applicantsPath,
             backLabel: "Applicant List",
             isArchivedView: true,
+            backState: location.state,
           }
         : {
-            backPath: `/admin/jobs/${jobId}/applicants`,
+            backPath: location.pathname,
             backLabel: "Applicant List",
+            backState: location.state,
           },
     });
   };
@@ -1386,7 +1388,7 @@ const AdminJobApplicants = () => {
         <div className="mx-auto max-w-7xl px-1 py-8">
           <button
             type="button"
-            onClick={() => navigate(backPath)}
+            onClick={() => navigate(backPath, { state: location.state?.backState })}
             className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm transition hover:bg-gray-50 ${UI.ring}`}
           >
             <SvgIcon name="arrowLeft" className="h-4 w-4" />

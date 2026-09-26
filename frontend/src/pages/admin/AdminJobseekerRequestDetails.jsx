@@ -270,7 +270,7 @@ const AdminJobseekerRequestDetails = () => {
 
         <button
           type="button"
-          onClick={() => navigate(backPath)}
+          onClick={() => navigate(backPath, { state: location.state?.backState })}
           className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
@@ -407,6 +407,7 @@ const AdminJobseekerRequestDetails = () => {
                     state: {
                       backPath: location.pathname,
                       backLabel: 'Employment Status Request',
+                      backState: location.state,
                     },
                   });
                 }}
