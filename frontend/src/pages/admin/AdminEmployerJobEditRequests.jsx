@@ -277,7 +277,7 @@ const AdminEmployerJobEditRequests = () => {
   const [campusFilter, setCampusFilter] = useState('all');
   const [courseFilter, setCourseFilter] = useState('all');
   const [requestType, setRequestType] = useState('all');
-  const [status, setStatus] = useState('all');
+  const [status, setStatus] = useState('pending');
   const [time, setTime] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -455,7 +455,7 @@ const AdminEmployerJobEditRequests = () => {
     setCampusFilter('all');
     setCourseFilter('all');
     setRequestType('all');
-    setStatus('all');
+    setStatus('pending');
     setTime('all');
     setDateFrom('');
     setDateTo('');
@@ -595,7 +595,6 @@ const AdminEmployerJobEditRequests = () => {
               {role === 'all' && <th className="px-6 py-5">Role</th>}
               {role === 'employer' && <>
                 <th className="px-6 py-5">Company</th>
-                <th className="px-6 py-5">Industry</th>
                 <th className="px-6 py-5">Job Title</th>
               </>}
               {role === 'jobseeker' && <>
@@ -609,7 +608,7 @@ const AdminEmployerJobEditRequests = () => {
           </thead>
 
           <tbody className="divide-y divide-[#dbe3ee]">
-            {loading && <tr aria-hidden="true"><td colSpan={role === 'employer' ? 8 : role === 'jobseeker' ? 7 : 6} className="h-56 bg-white" /></tr>}
+            {loading && <tr aria-hidden="true"><td colSpan={role === 'employer' ? 7 : role === 'jobseeker' ? 7 : 6} className="h-56 bg-white" /></tr>}
 
             {!loading && paginatedRows.map((item) => {
               const name = requestRowName(item);
@@ -642,8 +641,12 @@ const AdminEmployerJobEditRequests = () => {
                 {role === 'all' && <td className="px-6 py-[18px] text-sm text-slate-900">{requestRoleLabel(item)}</td>}
 
                 {role === 'employer' && <>
-                  <td className="px-6 py-[18px] text-sm text-slate-900">{requestCompany(item)}</td>
-                  <td className="px-6 py-[18px] text-sm text-slate-900">{requestIndustry(item)}</td>
+                  <td className="px-6 py-[18px]">
+                    <div className="min-w-[220px]">
+                      <p className="truncate text-sm font-semibold text-slate-950">{requestCompany(item)}</p>
+                      <p className="mt-1 truncate text-xs text-[#526d91]">{requestIndustry(item)}</p>
+                    </div>
+                  </td>
                   <td className="px-6 py-[18px] text-sm font-medium text-slate-950">{requestJobTitle(item)}</td>
                 </>}
 
@@ -679,7 +682,7 @@ const AdminEmployerJobEditRequests = () => {
 
             {!loading && !rows.length && (
               <tr>
-                <td colSpan={role === 'employer' ? 8 : role === 'jobseeker' ? 7 : 6} className="px-6 py-16 text-center text-sm text-slate-500">
+                <td colSpan={role === 'employer' ? 7 : role === 'jobseeker' ? 7 : 6} className="px-6 py-16 text-center text-sm text-slate-500">
                   No requests match the selected filters.
                 </td>
               </tr>
