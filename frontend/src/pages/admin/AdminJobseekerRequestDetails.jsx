@@ -314,6 +314,30 @@ const AdminJobseekerRequestDetails = () => {
         </div>
       </section>
 
+      {isDeclined && (
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#60758f]">
+                Status Request Decline Reason
+              </p>
+              <p className="mt-2 text-sm font-medium text-slate-900">
+                {employerResponse.declineReason || statusRequest.declineReason || '—'}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#60758f]">
+                Explanation
+              </p>
+              <p className="mt-2 text-sm font-medium text-slate-900">
+                {employerResponse.explanation || statusRequest.explanation || '—'}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="mb-5 text-sm font-bold text-slate-950">Employer Contact Details</h2>
         <div className="grid gap-5 md:grid-cols-3">
