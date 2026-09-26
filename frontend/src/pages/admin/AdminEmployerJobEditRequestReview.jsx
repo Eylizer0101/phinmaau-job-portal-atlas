@@ -6,6 +6,7 @@ import {
   Clock3,
   RefreshCw,
   FileEdit,
+  ExternalLink,
   Search,
   ShieldAlert,
   UnlockKeyhole,
