@@ -259,15 +259,7 @@ const AdminJobseekerRequestDetails = () => {
 
   return (
     <div className="mx-auto max-w-[1450px] space-y-5 px-1 py-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            {!isDeclined ? <BriefcaseBusiness size={21} className="text-emerald-600" /> : null}
-            <h1 className="text-[28px] font-bold leading-tight text-slate-950">Employment Status Request</h1>
-          </div>
-          <p className="mt-1 text-sm text-[#60758f]">Review the job seeker's request and the employer's response.</p>
-        </div>
-
+      <header className="space-y-4">
         <button
           type="button"
           onClick={() => navigate(backPath, { state: location.state?.backState })}
@@ -276,6 +268,14 @@ const AdminJobseekerRequestDetails = () => {
           <ArrowLeft size={16} />
           Back
         </button>
+
+        <div>
+          <div className="flex items-center gap-2">
+            {!isDeclined ? <BriefcaseBusiness size={21} className="text-emerald-600" /> : null}
+            <h1 className="text-[28px] font-bold leading-tight text-slate-950">Employment Status Request</h1>
+          </div>
+          <p className="mt-1 text-sm text-[#60758f]">Review the job seeker's request and the employer's response.</p>
+        </div>
       </header>
 
       <section className={`flex flex-col gap-4 rounded-xl border px-5 py-4 md:flex-row md:items-center md:justify-between ${statusMeta.banner}`}>
