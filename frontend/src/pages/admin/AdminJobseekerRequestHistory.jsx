@@ -272,7 +272,7 @@ export default function AdminJobseekerRequestHistory() {
       <div><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-bold">{nameOf(jobseeker)}</h1>{jobseeker.jobSeekerProfile?.yearGraduated && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs">Class of {jobseeker.jobSeekerProfile.yearGraduated}</span>}</div><p className="mt-1 text-sm text-slate-500">{[jobseeker.jobSeekerProfile?.campus, jobseeker.jobSeekerProfile?.course].filter(Boolean).join(' • ') || jobseeker.email}</p></div>
     </section>
 
-    <section className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-6">
+    <section className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-[1.45fr_1fr_1fr_0.9fr_0.9fr_0.9fr]">
       <label className="relative"><Search className="absolute left-3 top-3.5 text-slate-400" size={18}/><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search request..." className="h-11 w-full rounded-xl border pl-10 pr-3"/></label>
       <select value={company} onChange={(e)=>setCompany(e.target.value)} className="rounded-xl border px-3"><option value="all">All Company</option>{companies.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} className="rounded-xl border px-3"><option value="all">All Job Title</option>{jobs.map(value=><option key={value} value={value}>{value}</option>)}</select>
