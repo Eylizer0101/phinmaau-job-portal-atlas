@@ -170,6 +170,7 @@ const AdminJobseekerRequestDetails = () => {
   const companyLogo = job.companyLogo || employer?.employerProfile?.companyLogo;
   const companyAddress = job.location || 'Location not specified';
   const employerContact =
+    employer?.employerProfile?.mobileNumber ||
     employer.contactNumber ||
     employer.phoneNumber ||
     employer?.employerProfile?.contactNumber ||
