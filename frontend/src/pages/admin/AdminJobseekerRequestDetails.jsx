@@ -367,12 +367,12 @@ const AdminJobseekerRequestDetails = () => {
       )}
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid min-h-[126px] md:grid-cols-[1.28fr_0.86fr_0.86fr]">
+        <div className="grid min-h-[140px] md:grid-cols-[1.28fr_0.86fr_0.86fr]">
           <div
-            className="relative flex min-h-[126px] items-center overflow-hidden px-7 py-5 text-white"
+            className="relative flex min-h-[140px] items-center overflow-hidden px-7 py-5 text-white"
             style={{
               backgroundImage: "url('/images/papel.png')",
-              backgroundPosition: 'right center',
+              backgroundPosition: '75% center',
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'cover',
             }}
