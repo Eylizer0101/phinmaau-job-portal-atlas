@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const createMathChallenge = () => {
@@ -17,7 +16,7 @@ const LoginPage = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const LOGIN_API_URL = `${API_BASE_URL}/auth/login`;
   const FORGOT_PASSWORD_API_URL = `${API_BASE_URL}/auth/forgot-password`;
-  const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
+  const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY || '';
 
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
@@ -44,8 +43,8 @@ const LoginPage = () => {
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaError, setCaptchaError] = useState('');
   const [captchaRenderKey, setCaptchaRenderKey] = useState(0);
-  const [showCaptcha, setShowCaptcha] = useState(Boolean(RECAPTCHA_SITE_KEY));
-  const recaptchaRef = useRef(null);
+  const turnstileContainerRef = useRef(null);
+  const turnstileWidgetIdRef = useRef(null);
 
   // Forgot Password states
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
@@ -391,17 +390,87 @@ const LoginPage = () => {
     }
   };
 
-  const handleCaptchaChange = (token) => {
-    setCaptchaToken(token || '');
-    setCaptchaError('');
-    setError('');
-  };
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return undefined;
+
+    let cancelled = false;
+
+    const renderTurnstile = () => {
+      if (cancelled || !window.turnstile || !turnstileContainerRef.current) return;
+
+      try {
+        if (turnstileWidgetIdRef.current !== null) {
+          window.turnstile.remove(turnstileWidgetIdRef.current);
+          turnstileWidgetIdRef.current = null;
+        }
+
+        turnstileContainerRef.current.innerHTML = '';
+        turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          theme: 'light',
+          size: 'normal',
+          callback: (token) => {
+            setCaptchaToken(token || '');
+            setCaptchaError('');
+            setError('');
+          },
+          'expired-callback': () => {
+            setCaptchaToken('');
+            setCaptchaError('Verification expired. Please verify again.');
+          },
+          'error-callback': () => {
+            setCaptchaToken('');
+            setCaptchaError('Cloudflare verification failed to load. Please retry.');
+          },
+        });
+      } catch {
+        setCaptchaToken('');
+        setCaptchaError('Cloudflare verification failed to load. Please retry.');
+      }
+    };
+
+    const existingScript = document.querySelector('script[data-agapay-turnstile="true"]');
+
+    if (window.turnstile) {
+      renderTurnstile();
+    } else if (existingScript) {
+      existingScript.addEventListener('load', renderTurnstile, { once: true });
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.dataset.agapayTurnstile = 'true';
+      script.addEventListener('load', renderTurnstile, { once: true });
+      script.addEventListener(
+        'error',
+        () => {
+          if (!cancelled) {
+            setCaptchaToken('');
+            setCaptchaError('Cloudflare verification failed to load. Please retry.');
+          }
+        },
+        { once: true }
+      );
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+      if (window.turnstile && turnstileWidgetIdRef.current !== null) {
+        try {
+          window.turnstile.remove(turnstileWidgetIdRef.current);
+        } catch {}
+        turnstileWidgetIdRef.current = null;
+      }
+    };
+  }, [TURNSTILE_SITE_KEY, captchaRenderKey]);
 
   const resetCaptcha = () => {
     setCaptchaToken('');
-    if (recaptchaRef.current) {
+    if (window.turnstile && turnstileWidgetIdRef.current !== null) {
       try {
-        recaptchaRef.current.reset();
+        window.turnstile.reset(turnstileWidgetIdRef.current);
       } catch {}
     }
   };
@@ -409,12 +478,7 @@ const LoginPage = () => {
   const remountCaptcha = () => {
     setCaptchaToken('');
     setCaptchaError('');
-    setShowCaptcha(false);
-
-    setTimeout(() => {
-      setCaptchaRenderKey((prev) => prev + 1);
-      setShowCaptcha(true);
-    }, 250);
+    setCaptchaRenderKey((prev) => prev + 1);
   };
 
   const handleSubmit = async (e) => {
@@ -425,8 +489,8 @@ const LoginPage = () => {
     if (isLocked) return;
     if (!validateBasic()) return;
 
-    if (!RECAPTCHA_SITE_KEY) {
-      setError('reCAPTCHA site key is missing. Please check frontend environment settings.');
+    if (!TURNSTILE_SITE_KEY) {
+      setError('Cloudflare Turnstile site key is missing. Please check frontend environment settings.');
       return;
     }
 
@@ -441,7 +505,7 @@ const LoginPage = () => {
       const payload = {
         username: normalizeUsername(formData.username),
         password: formData.password,
-        recaptchaToken: captchaToken,
+        turnstileToken: captchaToken,
       };
 
       const response = await axios.post(LOGIN_API_URL, payload);
@@ -505,7 +569,7 @@ const LoginPage = () => {
         return;
       }
 
-      if (code === 'RECAPTCHA_REQUIRED' || code === 'RECAPTCHA_FAILED' || code === 'RECAPTCHA_NOT_CONFIGURED') {
+      if (code === 'TURNSTILE_REQUIRED' || code === 'TURNSTILE_FAILED' || code === 'TURNSTILE_NOT_CONFIGURED') {
         setError(message);
         setCaptchaError(message);
         resetCaptcha();
@@ -1018,29 +1082,8 @@ const LoginPage = () => {
                 <div className="space-y-1">
                   <div className="flex justify-center sm:justify-start -mt-2">
                     <div className="origin-left scale-90 min-h-[86px] flex items-center">
-                      {RECAPTCHA_SITE_KEY ? (
-                        showCaptcha ? (
-                          <ReCAPTCHA
-                            key={captchaRenderKey}
-                            ref={recaptchaRef}
-                            sitekey={RECAPTCHA_SITE_KEY}
-                            onChange={handleCaptchaChange}
-                            onExpired={() => setCaptchaToken('')}
-                            onErrored={() => {
-                              setCaptchaToken('');
-                              setCaptchaError('reCAPTCHA failed to load. Please click retry and try again.');
-                              setShowCaptcha(false);
-                            }}
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={remountCaptcha}
-                            className="h-11 px-4 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
-                          >
-                            Retry CAPTCHA
-                          </button>
-                        )
+                      {TURNSTILE_SITE_KEY ? (
+                        <div key={captchaRenderKey} ref={turnstileContainerRef} />
                       ) : null}
                     </div>
                   </div>

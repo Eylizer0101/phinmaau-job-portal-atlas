@@ -432,23 +432,23 @@ const sendBrevoSms = async ({ to, message }) => {
 };
 
 
-const verifyRecaptchaToken = (token, remoteIp) =>
+const verifyTurnstileToken = (token, remoteIp) =>
   new Promise((resolve, reject) => {
-    const secret = process.env.RECAPTCHA_SECRET_KEY;
+    const secret = process.env.TURNSTILE_SECRET_KEY;
 
     if (!secret) {
       return resolve({
         ok: false,
-        code: 'RECAPTCHA_NOT_CONFIGURED',
-        message: 'reCAPTCHA is not configured on the server.',
+        code: 'TURNSTILE_NOT_CONFIGURED',
+        message: 'Cloudflare Turnstile is not configured on the server.',
       });
     }
 
     if (!token || !String(token).trim()) {
       return resolve({
         ok: false,
-        code: 'RECAPTCHA_REQUIRED',
-        message: 'Please complete the CAPTCHA.',
+        code: 'TURNSTILE_REQUIRED',
+        message: 'Please complete the verification.',
       });
     }
 
@@ -460,8 +460,8 @@ const verifyRecaptchaToken = (token, remoteIp) =>
 
     const req = https.request(
       {
-        hostname: 'www.google.com',
-        path: '/recaptcha/api/siteverify',
+        hostname: 'challenges.cloudflare.com',
+        path: '/turnstile/v0/siteverify',
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -485,8 +485,8 @@ const verifyRecaptchaToken = (token, remoteIp) =>
 
             return resolve({
               ok: false,
-              code: 'RECAPTCHA_FAILED',
-              message: 'CAPTCHA verification failed. Please try again.',
+              code: 'TURNSTILE_FAILED',
+              message: 'Cloudflare verification failed. Please try again.',
               data: parsed,
             });
           } catch (error) {
@@ -1763,18 +1763,18 @@ exports.resendRegistrationEmailOtp = async (req, res) => {
 // ---------------------------
 exports.login = async (req, res) => {
   try {
-    const { username, password, role, recaptchaToken } = req.body;
+    const { username, password, role, turnstileToken } = req.body;
 
     if (!username || !password) {
       return res.status(400).json({ message: 'Please provide username and password' });
     }
 
-    const recaptcha = await verifyRecaptchaToken(recaptchaToken, req.ip);
-    if (!recaptcha.ok) {
-      const status = recaptcha.code === 'RECAPTCHA_NOT_CONFIGURED' ? 500 : 400;
+    const turnstile = await verifyTurnstileToken(turnstileToken, req.ip);
+    if (!turnstile.ok) {
+      const status = turnstile.code === 'TURNSTILE_NOT_CONFIGURED' ? 500 : 400;
       return res.status(status).json({
-        code: recaptcha.code,
-        message: recaptcha.message,
+        code: turnstile.code,
+        message: turnstile.message,
       });
     }
 
