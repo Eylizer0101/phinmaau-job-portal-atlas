@@ -379,7 +379,20 @@ const AdminJobseekerRequestDetails = () => {
           >
             <div className="relative z-10 flex min-w-0 items-center gap-4">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
-                <Building2 size={23} />
+                <svg
+                  className="h-[23px] w-[23px]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.7"
+                    d="M3.75 21h16.5M5.25 21V3h13.5v18M9 7h1.5M9 11h1.5m3-4H15m-1.5 4H15M9 21v-4.5h6V21"
+                  />
+                </svg>
               </span>
               <div className="min-w-0">
                 <p className="text-[10px] font-medium text-white/80">Employer Contact Details</p>
