@@ -443,13 +443,13 @@ const AdminJobseekerRequestDetails = () => {
                 )}
                 <div className="min-w-0">
                   <p
-                    className={`font-semibold leading-5 text-slate-950 ${
+                    className={`whitespace-nowrap font-semibold leading-5 text-slate-950 ${
                       fullName(jobseeker).length > 36
-                        ? 'text-[10px]'
+                        ? 'text-[9px]'
                         : fullName(jobseeker).length > 28
-                        ? 'text-[11px]'
+                        ? 'text-[10px]'
                         : fullName(jobseeker).length > 20
-                        ? 'text-[12px]'
+                        ? 'text-[11px]'
                         : 'text-sm'
                     }`}
                   >
@@ -593,7 +593,10 @@ const AdminJobseekerRequestDetails = () => {
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
                   <JobDetailsSvgIcon name="clock" className="h-4 w-4" />
                 </span>
-                <InfoValue label="Employment Duration" value={employmentDuration(request)} />
+                <div className="min-w-0">
+                  <p className="whitespace-nowrap text-[10px] font-medium text-[#60758f]">Employment Duration</p>
+                  <p className="mt-1 whitespace-nowrap text-sm font-semibold text-slate-950">{employmentDuration(request)}</p>
+                </div>
               </div>
 
               <div className="flex min-w-0 items-center sm:h-full sm:justify-center sm:border-l sm:border-slate-100 sm:px-4">
