@@ -307,7 +307,7 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
               letterSpacing: "0.08em",
             }}
           >
-            PRIVACY NOTICE
+            DATA PRIVACY NOTICE
           </h2>
 
           <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
@@ -321,7 +321,7 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
 
           {/* privacy text box - no side icons */}
           <div className="mt-4 sm:mt-5 mx-auto max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-7 sm:py-5">
-            <p className="text-center text-[12px] sm:text-[14px] text-[#0f2442] leading-5 sm:leading-6 whitespace-pre-line">
+            <p className="text-justify text-[12px] sm:text-[14px] text-[#0f2442] leading-5 sm:leading-6 whitespace-pre-line">
               {privacyNoticeText}
             </p>
           </div>
