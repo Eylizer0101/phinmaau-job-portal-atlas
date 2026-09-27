@@ -282,7 +282,7 @@ const AdminJobseekerRequestDetails = () => {
           }
         : {
             title: 'Response Pending',
-            text: 'Employment status will remain unchanged until the employer responds.',
+            text: "Waiting for the employer's response.",
           };
 
   return (
@@ -432,7 +432,7 @@ const AdminJobseekerRequestDetails = () => {
               </div>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-[1.25fr_1fr_0.8fr] md:items-center">
+            <div className="grid gap-5 md:grid-cols-[1.15fr_1.25fr_0.75fr] md:items-center">
               <div className="flex min-w-0 items-center gap-3">
                 {jobseeker.profileImage ? (
                   <img src={assetUrl(jobseeker.profileImage, '/images/default-avatar.png')} alt={fullName(jobseeker)} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
@@ -451,7 +451,12 @@ const AdminJobseekerRequestDetails = () => {
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
                   <GraduationCap size={17} />
                 </span>
-                <InfoValue label="Course" value={jobseeker?.jobSeekerProfile?.course} />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-[#60758f]">Course</p>
+                  <p className="mt-1 break-words text-[12px] font-semibold leading-5 text-slate-950">
+                    {jobseeker?.jobSeekerProfile?.course || '—'}
+                  </p>
+                </div>
               </div>
 
               <div className="flex min-w-0 items-center gap-3 border-slate-100 md:border-l md:pl-5">
@@ -563,20 +568,18 @@ const AdminJobseekerRequestDetails = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="grid gap-4 pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
                   <JobDetailsSvgIcon name="clock" className="h-4 w-4" />
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-[#60758f]">Employment Duration</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-950">{employmentDuration(request)}</span>
-                    <span className="inline-flex whitespace-nowrap rounded-full bg-[#fff1e8] px-2.5 py-1 text-[10px] font-semibold text-[#d96b2b]">
-                      {requestReasonLabel(statusRequest.reason)}
-                    </span>
-                  </div>
-                </div>
+                <InfoValue label="Employment Duration" value={employmentDuration(request)} />
+              </div>
+
+              <div className="flex min-w-0 items-center sm:justify-center">
+                <span className="inline-flex whitespace-nowrap rounded-full bg-[#fff1e8] px-3 py-1.5 text-[10px] font-semibold text-[#d96b2b]">
+                  {requestReasonLabel(statusRequest.reason)}
+                </span>
               </div>
 
               <button
@@ -592,7 +595,7 @@ const AdminJobseekerRequestDetails = () => {
                     },
                   });
                 }}
-                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/30 bg-white px-5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f4f8fd] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/30 bg-white px-5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f4f8fd] disabled:cursor-not-allowed disabled:opacity-50 sm:justify-self-end"
               >
                 View Job
                 <ExternalLink size={15} />
