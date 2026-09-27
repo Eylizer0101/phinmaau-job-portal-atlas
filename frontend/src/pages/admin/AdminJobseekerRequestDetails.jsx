@@ -5,9 +5,12 @@ import {
   Building2,
   CalendarDays,
   CheckCircle2,
+  CircleDollarSign,
+  GraduationCap,
   Clock3,
   ExternalLink,
   Mail,
+  MapPin,
   Phone,
   UserRound,
   XCircle,
@@ -56,6 +59,30 @@ const fullName = (user = {}) =>
   user?.fullName ||
   [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(' ') ||
   '—';
+
+
+const formatSalary = (job = {}) => {
+  if (job?.hideSalary) return 'Salary not disclosed';
+
+  const minimum = Number(job?.salaryMin);
+  const maximum = Number(job?.salaryMax);
+  const hasMinimum = Number.isFinite(minimum) && minimum > 0;
+  const hasMaximum = Number.isFinite(maximum) && maximum > 0;
+
+  const peso = (value) => `₱${Number(value).toLocaleString('en-PH')}`;
+
+  if (hasMinimum && hasMaximum) return `${peso(minimum)} – ${peso(maximum)}`;
+  if (hasMinimum) return peso(minimum);
+  if (hasMaximum) return peso(maximum);
+  return '—';
+};
+
+const experienceLabel = (value) => {
+  const normalized = String(value || '').trim();
+  if (!normalized) return '—';
+  if (normalized.toLowerCase() === 'no experience required') return 'No experience';
+  return normalized;
+};
 
 const requestReasonLabel = (value) => {
   const normalized = String(value || '').trim().toLowerCase();
@@ -338,93 +365,205 @@ const AdminJobseekerRequestDetails = () => {
         </section>
       )}
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-5 text-sm font-bold text-slate-950">Employer Contact Details</h2>
-        <div className="grid gap-5 md:grid-cols-3">
-          <InfoValue label="Employer Name" value={fullName(employer)} icon={<UserRound size={16} />} />
-          <InfoValue label="Email" value={employer.email} icon={<Mail size={16} />} />
-          <InfoValue label="Contact Number" value={employerContact} icon={<Phone size={16} />} />
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-5 text-sm font-bold text-slate-950">Job Seeker Information</h2>
-        <div className="grid gap-5 md:grid-cols-[1.3fr_1fr_1fr] md:items-center">
-          <div className="flex min-w-0 items-center gap-3">
-            {jobseeker.profileImage ? (
-              <img src={assetUrl(jobseeker.profileImage, '/images/default-avatar.png')} alt={fullName(jobseeker)} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
-            ) : (
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef4fb] text-sm font-bold text-[#2e66a6]">
-                {fullName(jobseeker).split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid min-h-[118px] md:grid-cols-[1.15fr_0.85fr_0.85fr]">
+          <div
+            className="relative flex min-h-[118px] items-center overflow-hidden px-6 py-5 text-white"
+            style={{
+              backgroundImage: "url('/images/papel.png')",
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'cover',
+            }}
+          >
+            <div className="relative z-10 flex min-w-0 items-center gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
+                <Building2 size={23} />
               </span>
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-950">{fullName(jobseeker)}</p>
-              <p className="mt-1 truncate text-xs text-[#60758f]">{jobseeker.email || '—'}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium text-white/80">Employer Contact Details</p>
+                <p className="mt-1 truncate text-[15px] font-semibold text-white">{fullName(employer)}</p>
+                <p className="mt-1 text-[11px] font-medium text-white/80">Employer</p>
+                <span className="mt-1.5 block h-[2px] w-10 rounded-full bg-white/90" />
+              </div>
             </div>
           </div>
 
-          <InfoValue label="Course" value={jobseeker?.jobSeekerProfile?.course} />
-          <InfoValue label="Campus" value={jobseeker?.jobSeekerProfile?.campus} />
+          <div className="flex items-center gap-3 border-t border-slate-100 px-6 py-5 md:border-l md:border-t-0">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+              <Mail size={18} />
+            </span>
+            <InfoValue label="Email" value={employer.email} />
+          </div>
+
+          <div className="flex items-center gap-3 border-t border-slate-100 px-6 py-5 md:border-l md:border-t-0">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+              <Phone size={18} />
+            </span>
+            <InfoValue label="Contact Number" value={employerContact} />
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-4">
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                <UserRound size={17} />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-slate-950">Job Seeker Information</h2>
+                <span className="mt-1 block h-[2px] w-10 rounded-full bg-[#2e66a6]" />
+              </div>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-[1.25fr_1fr_0.8fr] md:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                {jobseeker.profileImage ? (
+                  <img src={assetUrl(jobseeker.profileImage, '/images/default-avatar.png')} alt={fullName(jobseeker)} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
+                ) : (
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef4fb] text-sm font-bold text-[#2e66a6]">
+                    {fullName(jobseeker).split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-950">{fullName(jobseeker)}</p>
+                  <p className="mt-1 truncate text-xs text-[#60758f]">{jobseeker.email || '—'}</p>
+                </div>
+              </div>
+
+              <div className="flex min-w-0 items-center gap-3 border-slate-100 md:border-l md:pl-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <GraduationCap size={17} />
+                </span>
+                <InfoValue label="Course" value={jobseeker?.jobSeekerProfile?.course} />
+              </div>
+
+              <div className="flex min-w-0 items-center gap-3 border-slate-100 md:border-l md:pl-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <Building2 size={17} />
+                </span>
+                <InfoValue label="Campus" value={jobseeker?.jobSeekerProfile?.campus} />
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                <Building2 size={17} />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-slate-950">Company Information</h2>
+                <span className="mt-1 block h-[2px] w-10 rounded-full bg-[#2e66a6]" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <img
+                src={assetUrl(companyLogo)}
+                alt={`${companyName} logo`}
+                className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = '/images/default-company-logo.png';
+                }}
+              />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-950">{companyName}</p>
+                <p className="mt-1 flex items-center gap-2 text-xs text-[#60758f]">
+                  <BriefcaseBusiness size={13} className="shrink-0 text-[#2e66a6]" />
+                  <span className="truncate">{job.industry || employer?.employerProfile?.industry || '—'}</span>
+                </p>
+                <p className="mt-1 flex items-start gap-2 text-xs leading-5 text-[#60758f]">
+                  <MapPin size={13} className="mt-0.5 shrink-0 text-[#2e66a6]" />
+                  <span>{companyAddress}</span>
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-5 text-sm font-bold text-slate-950">Company Information</h2>
-          <div className="flex items-center gap-4">
-            <img
-              src={assetUrl(companyLogo)}
-              alt={`${companyName} logo`}
-              className="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-cover"
-              onError={(event) => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = '/images/default-company-logo.png';
-              }}
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-950">{companyName}</p>
-              <p className="mt-1 text-xs text-[#60758f]">{companyAddress}</p>
+          <div className="mb-5 flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+              <BriefcaseBusiness size={17} />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-slate-950">Job Details</h2>
+              <span className="mt-1 block h-[2px] w-10 rounded-full bg-[#2e66a6]" />
             </div>
           </div>
-        </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-5 text-sm font-bold text-slate-950">Job Details</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <InfoValue label="Job Title" value={job.title} icon={<BriefcaseBusiness size={15} />} />
-            <InfoValue label="Employment Type" value={job.jobType} />
-            <InfoValue label="Work Mode" value={job.workMode} />
-
-            <div className="flex items-end">
-              <button
-                type="button"
-                disabled={!job?._id}
-                onClick={() => {
-                  if (!job?._id) return;
-                  navigate(`/admin/jobs/${job._id}`, {
-                    state: {
-                      backPath: location.pathname,
-                      backLabel: 'Employment Status Request',
-                      backState: location.state,
-                    },
-                  });
-                }}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-[#2e66a6] hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                View Job
-                <ExternalLink size={15} />
-              </button>
+          <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><BriefcaseBusiness size={16} /></span>
+              <InfoValue label="Job Title" value={job.title} />
             </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><Building2 size={16} /></span>
+              <InfoValue label="Employment Type" value={job.jobType} />
+            </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><MapPin size={16} /></span>
+              <InfoValue label="Work Mode" value={job.workMode} />
+            </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><CircleDollarSign size={16} /></span>
+              <InfoValue label="Salary" value={formatSalary(job)} />
+            </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><UserRound size={16} /></span>
+              <InfoValue label="Experience" value={experienceLabel(job.experienceLevel)} />
+            </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><Clock3 size={16} /></span>
+              <div className="min-w-0">
+                <InfoValue label="Employment Duration" value={employmentDuration(request)} />
+                <span className="mt-1.5 inline-flex rounded-full bg-[#eaf2fb] px-2.5 py-1 text-[10px] font-semibold text-[#2e66a6]">
+                  {requestReasonLabel(statusRequest.reason)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              disabled={!job?._id}
+              onClick={() => {
+                if (!job?._id) return;
+                navigate(`/admin/jobs/${job._id}`, {
+                  state: {
+                    backPath: location.pathname,
+                    backLabel: 'Employment Status Request',
+                    backState: location.state,
+                  },
+                });
+              }}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2e66a6]/30 bg-white px-4 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f4f8fd] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              View Job
+              <ExternalLink size={15} />
+            </button>
           </div>
         </section>
       </div>
 
-      <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
-        <InfoValue label="Applied Date" value={formatDate(request.appliedAt)} icon={<CalendarDays size={15} />} />
-        <InfoValue label="Date Hired" value={formatDate(request.hiredAt || request.reviewedAt)} icon={<CalendarDays size={15} />} />
-        <InfoValue label="Employment Duration" value={employmentDuration(request)} icon={<Clock3 size={15} />} />
-        <InfoValue label="Request Date" value={formatDate(requestedAt)} icon={<Building2 size={15} />} />
+      <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><CalendarDays size={17} /></span>
+          <InfoValue label="Applied Date" value={formatDate(request.appliedAt)} />
+        </div>
+        <div className="flex items-center gap-3 border-slate-100 sm:border-l sm:pl-5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><CalendarDays size={17} /></span>
+          <InfoValue label="Date Hired" value={formatDate(request.hiredAt || request.reviewedAt)} />
+        </div>
+        <div className="flex items-center gap-3 border-slate-100 sm:border-l sm:pl-5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><CalendarDays size={17} /></span>
+          <InfoValue label="Request Date" value={formatDate(requestedAt)} />
+        </div>
       </section>
 
       <section className="sr-only" aria-hidden="true">
