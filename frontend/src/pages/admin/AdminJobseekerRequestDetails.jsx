@@ -442,7 +442,19 @@ const AdminJobseekerRequestDetails = () => {
                   </span>
                 )}
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-950">{fullName(jobseeker)}</p>
+                  <p
+                    className={`font-semibold leading-5 text-slate-950 ${
+                      fullName(jobseeker).length > 36
+                        ? 'text-[10px]'
+                        : fullName(jobseeker).length > 28
+                        ? 'text-[11px]'
+                        : fullName(jobseeker).length > 20
+                        ? 'text-[12px]'
+                        : 'text-sm'
+                    }`}
+                  >
+                    {fullName(jobseeker)}
+                  </p>
                   <p className="mt-1 truncate text-xs text-[#60758f]">{jobseeker.email || '—'}</p>
                 </div>
               </div>
