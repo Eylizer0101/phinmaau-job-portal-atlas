@@ -321,9 +321,29 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
 
           {/* privacy text box - no side icons */}
           <div className="mt-4 sm:mt-5 mx-auto max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-7 sm:py-5">
-            <p className="text-justify text-[12px] sm:text-[14px] text-[#0f2442] leading-5 sm:leading-6 whitespace-pre-line">
-              {privacyNoticeText}
-            </p>
+            <div className="text-justify text-[12px] sm:text-[14px] text-[#0f2442] leading-5 sm:leading-6">
+              {privacyNoticeText.split("\n\n").map((paragraph, index, paragraphs) => {
+                const isFinalParagraph = index === paragraphs.length - 1;
+                const privacyActText = "Data Privacy Act of 2012";
+                const privacyActIndex = paragraph.indexOf(privacyActText);
+
+                return (
+                  <p key={`${role}-privacy-${index}`} className={index === 0 ? "" : "mt-4"}>
+                    {isFinalParagraph ? (
+                      <strong className="font-bold">{paragraph}</strong>
+                    ) : privacyActIndex >= 0 ? (
+                      <>
+                        {paragraph.slice(0, privacyActIndex)}
+                        <strong className="font-bold">{privacyActText}</strong>
+                        {paragraph.slice(privacyActIndex + privacyActText.length)}
+                      </>
+                    ) : (
+                      paragraph
+                    )}
+                  </p>
+                );
+              })}
+            </div>
           </div>
 
           {/* checkbox row */}
