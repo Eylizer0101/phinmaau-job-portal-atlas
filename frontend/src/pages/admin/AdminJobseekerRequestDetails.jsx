@@ -410,7 +410,7 @@ const AdminJobseekerRequestDetails = () => {
         <div className="space-y-4">
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
                 <UserRound size={17} />
               </span>
               <div>
@@ -452,7 +452,7 @@ const AdminJobseekerRequestDetails = () => {
 
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
                 <Building2 size={17} />
               </span>
               <div>
@@ -488,7 +488,7 @@ const AdminJobseekerRequestDetails = () => {
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
               <JobDetailsSvgIcon name="briefcase" className="h-[17px] w-[17px]" />
             </span>
             <div>
@@ -508,7 +508,7 @@ const AdminJobseekerRequestDetails = () => {
 
               <div className="mt-4 flex min-w-0 items-center gap-3 border-slate-100 sm:mt-0 sm:border-l sm:pl-5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
-                  <JobDetailsSvgIcon name="building" className="h-4 w-4" />
+                  <JobDetailsSvgIcon name="briefcase" className="h-4 w-4" />
                 </span>
                 <InfoValue label="Employment Type" value={job.jobType} />
               </div>
@@ -543,10 +543,13 @@ const AdminJobseekerRequestDetails = () => {
                   <JobDetailsSvgIcon name="clock" className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <InfoValue label="Employment Duration" value={employmentDuration(request)} />
-                  <span className="mt-1.5 inline-flex rounded-full bg-[#fff1e8] px-2.5 py-1 text-[10px] font-semibold text-[#d96b2b]">
-                    {requestReasonLabel(statusRequest.reason)}
-                  </span>
+                  <p className="text-[11px] font-medium text-[#60758f]">Employment Duration</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-950">{employmentDuration(request)}</span>
+                    <span className="inline-flex whitespace-nowrap rounded-full bg-[#fff1e8] px-2.5 py-1 text-[10px] font-semibold text-[#d96b2b]">
+                      {requestReasonLabel(statusRequest.reason)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
