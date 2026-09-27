@@ -62,7 +62,7 @@ const fullName = (user = {}) =>
 
 
 const formatSalary = (job = {}) => {
-  if (job?.hideSalary) return 'Salary not disclosed';
+  if (job?.hideSalary) return 'Salary Undisclosed';
 
   const minimum = Number(job?.salaryMin);
   const maximum = Number(job?.salaryMax);
@@ -281,7 +281,7 @@ const AdminJobseekerRequestDetails = () => {
           }
         : {
             title: 'Response Pending',
-            text: 'The employment status will remain unchanged until the employer responds.',
+            text: 'Employment status will remain unchanged until the employer responds.',
           };
 
   return (
