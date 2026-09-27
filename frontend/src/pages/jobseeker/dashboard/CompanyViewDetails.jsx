@@ -2657,7 +2657,7 @@ const CompanyViewDetails = () => {
                         className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
                         style={{ accentColor: "#1e4ba0", "--tw-ring-color": "#1e4ba0" }}
                       />
-                      <span className="leading-5">I have read and understood the APPLICATION RATING NOTICE</span>
+                      <span className="leading-5">I have read and understood the Application Rating Notice</span>
                     </label>
 
                     <div className="mt-4 sm:mt-5 flex justify-center gap-3">
