@@ -3236,10 +3236,10 @@ const Bookmarks = () => {
                               className={`${UI.btnBase} ${UI.btnLg} ${
                                 !isJobActive(selectedJob)
                                   ? selectedJobPostingStatus === 'expired'
-                                    ? 'bg-orange-50 text-orange-700 border border-orange-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                    ? 'bg-orange-50 text-orange-700 border border-orange-200 disabled:opacity-100 disabled:!pointer-events-auto disabled:cursor-not-allowed'
                                     : selectedJobPostingStatus === 'closed'
-                                    ? 'bg-red-50 text-red-700 border border-red-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
-                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                    ? 'bg-red-50 text-red-700 border border-red-200 disabled:opacity-100 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:opacity-100 disabled:!pointer-events-auto disabled:cursor-not-allowed'
                                   : mainActionLoading
                                   ? 'bg-black/5 text-black/50 border border-black/10'
                                   : UI.btnPrimary
