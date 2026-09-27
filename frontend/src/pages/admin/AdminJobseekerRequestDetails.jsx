@@ -63,6 +63,8 @@ const fullName = (user = {}) =>
 
 
 const formatSalary = (job = {}) => {
+  if (job?.hideSalary) return 'Salary Undisclosed';
+
   const minimum = Number(job?.salaryMin);
   const maximum = Number(job?.salaryMax);
   const hasMinimum = Number.isFinite(minimum) && minimum > 0;
@@ -451,7 +453,20 @@ const AdminJobseekerRequestDetails = () => {
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
-                <Building2 size={17} />
+                <svg
+                  className="h-[17px] w-[17px]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.7"
+                    d="M3.75 21h16.5M5.25 21V3h13.5v18M9 7h1.5M9 11h1.5m3-4H15m-1.5 4H15M9 21v-4.5h6V21"
+                  />
+                </svg>
               </span>
               <div>
                 <h2 className="text-sm font-bold text-slate-950">Company Information</h2>
