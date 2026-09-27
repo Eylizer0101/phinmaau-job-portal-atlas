@@ -453,7 +453,15 @@ const AdminJobseekerRequestDetails = () => {
                 </span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium text-[#60758f]">Course</p>
-                  <p className="mt-1 break-words text-[12px] font-semibold leading-5 text-slate-950">
+                  <p
+                    className={`mt-1 break-words font-semibold leading-5 text-slate-950 ${
+                      String(jobseeker?.jobSeekerProfile?.course || '').length > 40
+                        ? 'text-[10px]'
+                        : String(jobseeker?.jobSeekerProfile?.course || '').length > 26
+                        ? 'text-[12px]'
+                        : 'text-sm'
+                    }`}
+                  >
                     {jobseeker?.jobSeekerProfile?.course || '—'}
                   </p>
                 </div>
