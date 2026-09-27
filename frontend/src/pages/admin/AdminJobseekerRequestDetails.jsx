@@ -537,7 +537,7 @@ const AdminJobseekerRequestDetails = () => {
           </section>
         </div>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
               <JobDetailsSvgIcon name="briefcase" className="h-[17px] w-[17px]" />
@@ -548,7 +548,7 @@ const AdminJobseekerRequestDetails = () => {
             </div>
           </div>
 
-          <div className="space-y-0">
+          <div className="flex flex-1 flex-col">
             <div className="grid gap-0 border-b border-slate-100 pb-4 sm:grid-cols-2">
               <div className="flex min-w-0 items-center gap-3 sm:pr-5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
@@ -588,7 +588,7 @@ const AdminJobseekerRequestDetails = () => {
               </div>
             </div>
 
-            <div className="grid gap-4 pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
+            <div className="grid flex-1 gap-4 pt-4 sm:grid-cols-3 sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
                   <JobDetailsSvgIcon name="clock" className="h-4 w-4" />
@@ -596,30 +596,32 @@ const AdminJobseekerRequestDetails = () => {
                 <InfoValue label="Employment Duration" value={employmentDuration(request)} />
               </div>
 
-              <div className="flex min-w-0 items-center sm:justify-center">
+              <div className="flex min-w-0 items-center sm:h-full sm:justify-center sm:border-l sm:border-slate-100 sm:px-4">
                 <span className="inline-flex whitespace-nowrap rounded-full bg-[#fff1e8] px-3 py-1.5 text-[10px] font-semibold text-[#d96b2b]">
                   {requestReasonLabel(statusRequest.reason)}
                 </span>
               </div>
 
-              <button
-                type="button"
-                disabled={!job?._id}
-                onClick={() => {
-                  if (!job?._id) return;
-                  navigate(`/admin/jobs/${job._id}`, {
-                    state: {
-                      backPath: location.pathname,
-                      backLabel: 'Employment Status Request',
-                      backState: location.state,
-                    },
-                  });
-                }}
-                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/30 bg-white px-5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f4f8fd] disabled:cursor-not-allowed disabled:opacity-50 sm:justify-self-end"
-              >
-                View Job
-                <ExternalLink size={15} />
-              </button>
+              <div className="flex min-w-0 items-center sm:h-full sm:justify-center sm:border-l sm:border-slate-100 sm:pl-4">
+                <button
+                  type="button"
+                  disabled={!job?._id}
+                  onClick={() => {
+                    if (!job?._id) return;
+                    navigate(`/admin/jobs/${job._id}`, {
+                      state: {
+                        backPath: location.pathname,
+                        backLabel: 'Employment Status Request',
+                        backState: location.state,
+                      },
+                    });
+                  }}
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/30 bg-white px-5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f4f8fd] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  View Job
+                  <ExternalLink size={15} />
+                </button>
+              </div>
             </div>
           </div>
         </section>
