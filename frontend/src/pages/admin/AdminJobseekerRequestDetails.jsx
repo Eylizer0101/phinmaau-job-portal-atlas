@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
+import { CompanyViewSvgIcon, JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
 
 const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
 
@@ -69,11 +70,11 @@ const formatSalary = (job = {}) => {
   const hasMinimum = Number.isFinite(minimum) && minimum > 0;
   const hasMaximum = Number.isFinite(maximum) && maximum > 0;
 
-  const peso = (value) => `₱${Number(value).toLocaleString('en-PH')}`;
+  const amount = (value) => Number(value).toLocaleString('en-PH');
 
-  if (hasMinimum && hasMaximum) return `${peso(minimum)} – ${peso(maximum)}`;
-  if (hasMinimum) return peso(minimum);
-  if (hasMaximum) return peso(maximum);
+  if (hasMinimum && hasMaximum) return `${amount(minimum)} – ${amount(maximum)}`;
+  if (hasMinimum) return amount(minimum);
+  if (hasMaximum) return amount(maximum);
   return '—';
 };
 
@@ -366,12 +367,12 @@ const AdminJobseekerRequestDetails = () => {
       )}
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid min-h-[118px] md:grid-cols-[1.15fr_0.85fr_0.85fr]">
+        <div className="grid min-h-[126px] md:grid-cols-[1.28fr_0.86fr_0.86fr]">
           <div
-            className="relative flex min-h-[118px] items-center overflow-hidden px-6 py-5 text-white"
+            className="relative flex min-h-[126px] items-center overflow-hidden px-7 py-5 text-white"
             style={{
               backgroundImage: "url('/images/papel.png')",
-              backgroundPosition: 'center',
+              backgroundPosition: 'right center',
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'cover',
             }}
@@ -488,7 +489,7 @@ const AdminJobseekerRequestDetails = () => {
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
-              <BriefcaseBusiness size={17} />
+              <JobDetailsSvgIcon name="briefcase" className="h-[17px] w-[17px]" />
             </span>
             <div>
               <h2 className="text-sm font-bold text-slate-950">Job Details</h2>
@@ -496,57 +497,78 @@ const AdminJobseekerRequestDetails = () => {
             </div>
           </div>
 
-          <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><BriefcaseBusiness size={16} /></span>
-              <InfoValue label="Job Title" value={job.title} />
-            </div>
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><Building2 size={16} /></span>
-              <InfoValue label="Employment Type" value={job.jobType} />
-            </div>
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><MapPin size={16} /></span>
-              <InfoValue label="Work Mode" value={job.workMode} />
-            </div>
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><CircleDollarSign size={16} /></span>
-              <InfoValue label="Salary" value={formatSalary(job)} />
-            </div>
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><UserRound size={16} /></span>
-              <InfoValue label="Experience" value={experienceLabel(job.experienceLevel)} />
-            </div>
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><Clock3 size={16} /></span>
-              <div className="min-w-0">
-                <InfoValue label="Employment Duration" value={employmentDuration(request)} />
-                <span className="mt-1.5 inline-flex rounded-full bg-[#eaf2fb] px-2.5 py-1 text-[10px] font-semibold text-[#2e66a6]">
-                  {requestReasonLabel(statusRequest.reason)}
+          <div className="space-y-0">
+            <div className="grid gap-0 border-b border-slate-100 pb-4 sm:grid-cols-2">
+              <div className="flex min-w-0 items-center gap-3 sm:pr-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <JobDetailsSvgIcon name="file" className="h-4 w-4" />
                 </span>
+                <InfoValue label="Job Title" value={job.title} />
+              </div>
+
+              <div className="mt-4 flex min-w-0 items-center gap-3 border-slate-100 sm:mt-0 sm:border-l sm:pl-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <JobDetailsSvgIcon name="building" className="h-4 w-4" />
+                </span>
+                <InfoValue label="Employment Type" value={job.jobType} />
               </div>
             </div>
-          </div>
 
-          <div className="mt-6 flex justify-end">
-            <button
-              type="button"
-              disabled={!job?._id}
-              onClick={() => {
-                if (!job?._id) return;
-                navigate(`/admin/jobs/${job._id}`, {
-                  state: {
-                    backPath: location.pathname,
-                    backLabel: 'Employment Status Request',
-                    backState: location.state,
-                  },
-                });
-              }}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2e66a6]/30 bg-white px-4 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f4f8fd] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              View Job
-              <ExternalLink size={15} />
-            </button>
+            <div className="grid gap-0 border-b border-slate-100 py-4 sm:grid-cols-3">
+              <div className="flex min-w-0 items-center gap-3 sm:pr-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <JobDetailsSvgIcon name="location" className="h-4 w-4" />
+                </span>
+                <InfoValue label="Work Mode" value={job.workMode} />
+              </div>
+
+              <div className="mt-4 flex min-w-0 items-center gap-3 border-slate-100 sm:mt-0 sm:border-l sm:px-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <CompanyViewSvgIcon name="money" className="h-4 w-4" />
+                </span>
+                <InfoValue label="Salary" value={formatSalary(job)} />
+              </div>
+
+              <div className="mt-4 flex min-w-0 items-center gap-3 border-slate-100 sm:mt-0 sm:border-l sm:pl-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <JobDetailsSvgIcon name="users" className="h-4 w-4" />
+                </span>
+                <InfoValue label="Experience" value={experienceLabel(job.experienceLevel)} />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <JobDetailsSvgIcon name="clock" className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <InfoValue label="Employment Duration" value={employmentDuration(request)} />
+                  <span className="mt-1.5 inline-flex rounded-full bg-[#fff1e8] px-2.5 py-1 text-[10px] font-semibold text-[#d96b2b]">
+                    {requestReasonLabel(statusRequest.reason)}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={!job?._id}
+                onClick={() => {
+                  if (!job?._id) return;
+                  navigate(`/admin/jobs/${job._id}`, {
+                    state: {
+                      backPath: location.pathname,
+                      backLabel: 'Employment Status Request',
+                      backState: location.state,
+                    },
+                  });
+                }}
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/30 bg-white px-5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:bg-[#f4f8fd] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                View Job
+                <ExternalLink size={15} />
+              </button>
+            </div>
           </div>
         </section>
       </div>
