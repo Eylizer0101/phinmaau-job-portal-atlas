@@ -1277,16 +1277,16 @@ const JobDetails = () => {
     ? 'Apply Now'
     : 'Application Closed';
 
-  const primaryCtaClassName = hasApplied && jobActive
-    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-    : !jobActive && !hasApplied
-    ? 'bg-black/5 text-black/50 border border-black/10'
+  const primaryCtaClassName = hasApplied
+    ? 'bg-emerald-100 text-emerald-800 border border-emerald-400 shadow-sm'
+    : !jobActive && jobPostingStatus === 'expired'
+    ? 'bg-orange-100 text-orange-800 border border-orange-400 shadow-sm'
+    : !jobActive && jobPostingStatus === 'closed'
+    ? 'bg-red-100 text-red-800 border border-red-400 shadow-sm'
+    : !jobActive && jobPostingStatus === 'filled'
+    ? 'bg-emerald-100 text-emerald-800 border border-emerald-400 shadow-sm'
     : !jobActive
-    ? jobPostingStatus === 'expired'
-      ? 'bg-orange-50 text-orange-700 border border-orange-200'
-      : jobPostingStatus === 'closed'
-      ? 'bg-red-50 text-red-700 border border-red-200'
-      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+    ? 'bg-slate-100 text-slate-800 border border-slate-400 shadow-sm'
     : UI.btnPrimary;
 
   const applyHelperText = hasApplied
