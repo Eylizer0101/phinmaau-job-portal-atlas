@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
-import { CompanyViewSvgIcon, JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
+import { JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
 
 const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
 
@@ -524,14 +524,14 @@ const AdminJobseekerRequestDetails = () => {
 
               <div className="mt-4 flex min-w-0 items-center gap-3 border-slate-100 sm:mt-0 sm:border-l sm:px-4">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
-                  <CompanyViewSvgIcon name="money" className="h-4 w-4" />
+                  <span className="text-[17px] font-bold leading-none">₱</span>
                 </span>
                 <InfoValue label="Salary" value={formatSalary(job)} />
               </div>
 
               <div className="mt-4 flex min-w-0 items-center gap-3 border-slate-100 sm:mt-0 sm:border-l sm:pl-4">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
-                  <JobDetailsSvgIcon name="users" className="h-4 w-4" />
+                  <UserRound size={16} />
                 </span>
                 <InfoValue label="Experience" value={experienceLabel(job.experienceLevel)} />
               </div>
