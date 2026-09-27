@@ -1355,8 +1355,8 @@ const JobDetails = () => {
             />
           </div>
 
-          <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>
-           <div className="absolute top-[-55px] left-4 sm:left-6 lg:left-8 z-30">
+          <div className={`${UI.container} mt-5 sm:mt-6 relative z-10`}>
+           <div className="mb-4">
               <button
                 onClick={handleBackButton}
                className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} shadow-sm bg-white`}
@@ -1390,7 +1390,7 @@ const JobDetails = () => {
               </div>
             )}
 
-            <div className={`${UI.card} ${UI.pad} mb-6 -mt-10 min-h-[210px] sm:min-h-[225px] lg:min-h-[240px] flex items-center`}>
+            <div className={`${UI.card} ${UI.pad} mb-6 min-h-[210px] sm:min-h-[225px] lg:min-h-[240px] flex items-center`}>
               <div className="flex w-full flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-start gap-4 min-w-0 flex-1">
                   <CompanyLogo src={job.companyLogo} name={job.companyName} />
