@@ -410,7 +410,7 @@ const AdminJobseekerRequestDetails = () => {
         <div className="space-y-4">
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
                 <UserRound size={17} />
               </span>
               <div>
@@ -452,7 +452,7 @@ const AdminJobseekerRequestDetails = () => {
 
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
                 <Building2 size={17} />
               </span>
               <div>
@@ -488,7 +488,7 @@ const AdminJobseekerRequestDetails = () => {
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
               <JobDetailsSvgIcon name="briefcase" className="h-[17px] w-[17px]" />
             </span>
             <div>
