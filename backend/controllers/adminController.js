@@ -12,7 +12,7 @@ const PendingEmailVerification = require('../models/PendingEmailVerification');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
-const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
+const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationResubmissionReminderEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
 
 const DEFAULT_ADMIN_LOGO = '/images/phinma-logo.png';
 
@@ -401,6 +401,34 @@ const EMPLOYER_DOC_LABELS = {
   cityPermit: 'City/Municipality Permit',
   businessPermit: 'Business Permit',
 };
+
+const RESUBMIT_DAY_MS = 24 * 60 * 60 * 1000;
+const RESUBMIT_REMINDER_DAY_7 = 7 * RESUBMIT_DAY_MS;
+const RESUBMIT_REMINDER_DAY_14 = 14 * RESUBMIT_DAY_MS;
+const RESUBMIT_AUTO_DECLINE_DAY_30 = 30 * RESUBMIT_DAY_MS;
+
+const createVerificationResubmitToken = ({ userId, requestedAt, docTypes = [] }) => {
+  const secret = process.env.RESUBMIT_TOKEN_SECRET || process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('RESUBMIT_TOKEN_SECRET or JWT_SECRET is required for verification resubmission links.');
+  }
+
+  return crypto
+    .createHmac('sha256', secret)
+    .update([
+      String(userId || ''),
+      new Date(requestedAt).toISOString(),
+      [...docTypes].map((item) => String(item || '').trim()).filter(Boolean).sort().join(','),
+    ].join('|'))
+    .digest('hex');
+};
+
+const verificationResubmitFrontendUrl = (accountType, rawToken) => {
+  const frontendUrl = (process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com').replace(/\/$/, '');
+  const path = accountType === 'employer' ? '/employer/resubmit-document' : '/resubmit-document';
+  return `${frontendUrl}${path}?token=${encodeURIComponent(rawToken)}`;
+};
+
 
 const areAllEmployerCredentialsApproved = (docs = {}) =>
   EMPLOYER_DOC_TYPES.every((docType) => {
@@ -3196,10 +3224,14 @@ exports.holdEmployerVerification = async (req, res) => {
       .map((item) => `${EMPLOYER_DOC_LABELS[item.docType] || item.docType}: ${item.reason}`)
       .join('\n');
 
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = User.hashToken(rawToken);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 48);
+    const rawToken = createVerificationResubmitToken({
+      userId: employer._id,
+      requestedAt: now,
+      docTypes: requestedDocTypes,
+    });
+    const tokenHash = User.hashToken(rawToken);
+    const expiresAt = new Date(now.getTime() + RESUBMIT_AUTO_DECLINE_DAY_30);
 
     verificationDocs.overallStatus = 'hold';
     verificationDocs.remarks = String(reasonMessage).trim();
@@ -3225,14 +3257,17 @@ exports.holdEmployerVerification = async (req, res) => {
       requestedAt: now,
       expiresAt,
       usedAt: null,
+      reminder7SentAt: null,
+      reminder14SentAt: null,
+      autoDeclinedAt: null,
+      autoDeclineEmailSentAt: null,
       requestedBy: req.user?._id || req.userId || null,
     };
 
     employer.employerProfile.verificationDocs = verificationDocs;
     await employer.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
-    const resubmitUrl = `${frontendUrl}/employer/resubmit-document?token=${rawToken}`;
+    const resubmitUrl = verificationResubmitFrontendUrl('employer', rawToken);
     const docLabels = requestedDocTypes.map((key) => EMPLOYER_DOC_LABELS[key] || key);
 
     sendResubmitDocumentEmail({
@@ -4027,10 +4062,14 @@ exports.holdJobseekerVerification = async (req, res) => {
       .join('\n');
 
     const wasAccountVerified = isApprovedJobseekerAccount(jobseeker);
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = User.hashToken(rawToken);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 48);
+    const rawToken = createVerificationResubmitToken({
+      userId: jobseeker._id,
+      requestedAt: now,
+      docTypes: requestedDocTypes,
+    });
+    const tokenHash = User.hashToken(rawToken);
+    const expiresAt = new Date(now.getTime() + RESUBMIT_AUTO_DECLINE_DAY_30);
 
     verificationDocs.overallStatus = 'hold';
     verificationDocs.adminRemarks = String(reasonMessage).trim();
@@ -4062,6 +4101,10 @@ exports.holdJobseekerVerification = async (req, res) => {
       requestedAt: now,
       expiresAt,
       usedAt: null,
+      reminder7SentAt: null,
+      reminder14SentAt: null,
+      autoDeclinedAt: null,
+      autoDeclineEmailSentAt: null,
       requestedBy: req.user?._id || req.userId || null,
     };
 
@@ -4078,8 +4121,7 @@ exports.holdJobseekerVerification = async (req, res) => {
       });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
-    const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
+    const resubmitUrl = verificationResubmitFrontendUrl('jobseeker', rawToken);
     const docLabels = requestedDocTypes.map((key) => JOBSEEKER_DOC_LABELS[key] || key);
 
     sendResubmitDocumentEmail({
@@ -5931,3 +5973,219 @@ exports.permanentlyDeleteAdminArchiveItem = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to permanently delete archive item' });
   }
 };
+
+// ==========================
+// Verification resubmission lifecycle:
+// Day 7 reminder, Day 14 reminder, and Day 30 automatic decline.
+// ==========================
+const getVerificationResubmitContext = (user) => {
+  if (user?.role === 'jobseeker') {
+    return {
+      accountType: 'jobseeker',
+      docs: user.jobSeekerProfile?.verificationDocs || null,
+      labels: JOBSEEKER_DOC_LABELS,
+      fullName: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.fullName || user.email,
+    };
+  }
+
+  if (user?.role === 'employer') {
+    return {
+      accountType: 'employer',
+      docs: user.employerProfile?.verificationDocs || null,
+      labels: EMPLOYER_DOC_LABELS,
+      fullName: user.employerProfile?.companyName || user.fullName || user.email,
+    };
+  }
+
+  return null;
+};
+
+const getVerificationResubmitDocTypes = (resubmitRequest = {}, labels = {}) =>
+  [...new Set(
+    (Array.isArray(resubmitRequest.docTypes) && resubmitRequest.docTypes.length
+      ? resubmitRequest.docTypes
+      : [resubmitRequest.docType])
+      .map((value) => String(value || '').trim())
+      .filter((value) => labels[value])
+  )];
+
+const getVerificationResubmitEmailData = ({ user, context, requestedDocTypes, rawToken }) => {
+  const request = context.docs.resubmitRequest || {};
+  const documentReasons = Array.isArray(request.documentReasons)
+    ? request.documentReasons
+        .filter((item) => requestedDocTypes.includes(String(item?.docType || '').trim()))
+        .map((item) => ({
+          docType: String(item?.docType || '').trim(),
+          docLabel: context.labels[String(item?.docType || '').trim()] || String(item?.docType || '').trim(),
+          reason: String(item?.reason || '').trim(),
+        }))
+    : [];
+
+  return {
+    to: user.email,
+    fullName: context.fullName,
+    docLabel: context.labels[requestedDocTypes[0]] || requestedDocTypes[0],
+    docLabels: requestedDocTypes.map((docType) => context.labels[docType] || docType),
+    documentReasons,
+    additionalMessage: String(request.additionalMessage || '').trim(),
+    resubmitUrl: verificationResubmitFrontendUrl(context.accountType, rawToken),
+  };
+};
+
+exports.processVerificationResubmissionLifecycle = async () => {
+  const candidates = await User.find({
+    $or: [
+      {
+        role: 'jobseeker',
+        'jobSeekerProfile.verificationDocs.overallStatus': 'hold',
+        'jobSeekerProfile.verificationDocs.resubmitRequest.requestedAt': { $ne: null },
+        'jobSeekerProfile.verificationDocs.resubmitRequest.usedAt': null,
+      },
+      {
+        role: 'employer',
+        'employerProfile.verificationDocs.overallStatus': 'hold',
+        'employerProfile.verificationDocs.resubmitRequest.requestedAt': { $ne: null },
+        'employerProfile.verificationDocs.resubmitRequest.usedAt': null,
+      },
+      {
+        role: 'jobseeker',
+        'jobSeekerProfile.verificationDocs.resubmitRequest.autoDeclinedAt': { $ne: null },
+        'jobSeekerProfile.verificationDocs.resubmitRequest.autoDeclineEmailSentAt': null,
+      },
+      {
+        role: 'employer',
+        'employerProfile.verificationDocs.resubmitRequest.autoDeclinedAt': { $ne: null },
+        'employerProfile.verificationDocs.resubmitRequest.autoDeclineEmailSentAt': null,
+      },
+    ],
+  });
+
+  const now = new Date();
+  let reminderCount = 0;
+  let declineCount = 0;
+
+  for (const user of candidates) {
+    try {
+      const context = getVerificationResubmitContext(user);
+      const docs = context?.docs;
+      const request = docs?.resubmitRequest;
+
+      if (!context || !docs || !request || request.usedAt) continue;
+
+      const requestedAt = request.requestedAt ? new Date(request.requestedAt) : null;
+      if (!requestedAt || Number.isNaN(requestedAt.getTime())) continue;
+
+      const requestedDocTypes = getVerificationResubmitDocTypes(request, context.labels);
+      if (!requestedDocTypes.length) continue;
+
+      const deadline = new Date(requestedAt.getTime() + RESUBMIT_AUTO_DECLINE_DAY_30);
+      const currentExpiresAt = request.expiresAt ? new Date(request.expiresAt) : null;
+      if (!currentExpiresAt || Number.isNaN(currentExpiresAt.getTime()) || currentExpiresAt.getTime() < deadline.getTime()) {
+        request.expiresAt = deadline;
+        await user.save();
+      }
+
+      const elapsedMs = now.getTime() - requestedAt.getTime();
+      const rawToken = createVerificationResubmitToken({
+        userId: user._id,
+        requestedAt,
+        docTypes: requestedDocTypes,
+      });
+
+      if (elapsedMs >= RESUBMIT_AUTO_DECLINE_DAY_30 || request.autoDeclinedAt) {
+        if (!request.autoDeclinedAt) {
+          const rejectionMessage =
+            'We were unable to verify your documents because you Failed to Resubmit Required Document within the required 30-day timeframe. As a result, your verification request has been declined.\n\nThank you for your understanding.';
+
+          requestedDocTypes.forEach((docType) => {
+            const document = docs?.[docType];
+            if (!document) return;
+            if (String(document.status || '').toLowerCase() === 'hold') {
+              document.status = 'rejected';
+              document.checked = false;
+              document.checkedAt = null;
+              document.checkedBy = null;
+            }
+          });
+
+          docs.overallStatus = 'rejected';
+          docs.rejectionReasons = ['Failed to Resubmit Required Document'];
+          docs.rejectionMessage = rejectionMessage;
+          docs.rejectedAt = now;
+          request.expiresAt = deadline;
+          request.tokenHash = '';
+          request.autoDeclinedAt = now;
+
+          if (context.accountType === 'jobseeker') {
+            docs.adminRemarks = 'Automatically declined after 30 days without the requested document resubmission.';
+            if (user.jobSeekerProfile) {
+              user.jobSeekerProfile.verificationStatus = 'rejected';
+            }
+          } else {
+            docs.remarks = 'Automatically declined after 30 days without the requested document resubmission.';
+          }
+
+          await user.save();
+          declineCount += 1;
+        }
+
+        if (!request.autoDeclineEmailSentAt) {
+          await sendVerificationRejectedEmail({
+            to: user.email,
+            fullName: context.fullName,
+            reasons: ['Failed to Resubmit Required Document'],
+            message:
+              'We were unable to verify your documents because you Failed to Resubmit Required Document within the required 30-day timeframe. As a result, your verification request has been declined.\n\nThank you for your understanding.',
+          });
+
+          request.autoDeclineEmailSentAt = new Date();
+          await user.save();
+        }
+
+        continue;
+      }
+
+      const reminderDay =
+        elapsedMs >= RESUBMIT_REMINDER_DAY_14 && !request.reminder14SentAt
+          ? 14
+          : elapsedMs >= RESUBMIT_REMINDER_DAY_7 && !request.reminder7SentAt
+            ? 7
+            : 0;
+
+      if (!reminderDay) continue;
+
+      // Keep the same deterministic token valid through the original 30-day deadline.
+      request.tokenHash = User.hashToken(rawToken);
+      request.expiresAt = deadline;
+      await user.save();
+
+      await sendVerificationResubmissionReminderEmail({
+        ...getVerificationResubmitEmailData({
+          user,
+          context,
+          requestedDocTypes,
+          rawToken,
+        }),
+        reminderDay,
+      });
+
+      if (reminderDay === 14) {
+        request.reminder14SentAt = new Date();
+      } else {
+        request.reminder7SentAt = new Date();
+      }
+
+      await user.save();
+      reminderCount += 1;
+    } catch (error) {
+      console.error(`Verification resubmission lifecycle error for user ${user?._id || 'unknown'}:`, error);
+    }
+  }
+
+  return {
+    checked: candidates.length,
+    remindersSent: reminderCount,
+    automaticallyDeclined: declineCount,
+  };
+};
+

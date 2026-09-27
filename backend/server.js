@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const dotenv = require('dotenv');
 const applicationRoutes = require('./routes/applicationRoutes');
 const { processNoResponseRequests } = require('./controllers/employmentStatusRequestController');
+const { processVerificationResubmissionLifecycle } = require('./controllers/adminController');
 const path = require('path');
 const fs = require('fs');
 
@@ -430,4 +431,9 @@ app.listen(PORT, () => {
     .catch((error) => console.error('Employment status no-response check failed:', error));
   runNoResponseCheck();
   setInterval(runNoResponseCheck, 60 * 60 * 1000);
+
+  const runVerificationResubmissionCheck = () => processVerificationResubmissionLifecycle()
+    .catch((error) => console.error('Verification resubmission lifecycle check failed:', error));
+  runVerificationResubmissionCheck();
+  setInterval(runVerificationResubmissionCheck, 60 * 60 * 1000);
 });

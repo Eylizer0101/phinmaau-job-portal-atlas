@@ -130,6 +130,10 @@ const employerResubmitRequestSchema = new mongoose.Schema(
     requestedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
     usedAt: { type: Date, default: null },
+    reminder7SentAt: { type: Date, default: null },
+    reminder14SentAt: { type: Date, default: null },
+    autoDeclinedAt: { type: Date, default: null },
+    autoDeclineEmailSentAt: { type: Date, default: null },
     requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { _id: false }
@@ -185,6 +189,10 @@ const alumniResubmitRequestSchema = new mongoose.Schema(
     requestedAt: { type: Date, default: null },
     expiresAt: { type: Date, default: null },
     usedAt: { type: Date, default: null },
+    reminder7SentAt: { type: Date, default: null },
+    reminder14SentAt: { type: Date, default: null },
+    autoDeclinedAt: { type: Date, default: null },
+    autoDeclineEmailSentAt: { type: Date, default: null },
     requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { _id: false }

@@ -148,6 +148,28 @@ const isValidIndustry = (value) => {
   return /^[^<>\u0000-\u001F\u007F]+$/u.test(clean) && !/^\s*(?:javascript|data):/i.test(clean);
 };
 const isValidBusinessEmail = (email) => /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(String(email || '').trim());
+const isValidPasswordRecoveryEmail = (email) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized || normalized.length > 254) return false;
+
+  const parts = normalized.split('@');
+  if (parts.length !== 2) return false;
+
+  const [localPart, domain] = parts;
+  if (!localPart || localPart.length > 64) return false;
+  if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(localPart)) return false;
+
+  const labels = domain.split('.');
+  if (labels.length < 2) return false;
+  if (labels[labels.length - 1].length < 2) return false;
+
+  return labels.every(
+    (label) =>
+      label.length > 0 &&
+      label.length <= 63 &&
+      /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label)
+  );
+};
 
 const normalizeCompanyWebsiteUrl = (value) => {
   const trimmed = String(value || '').trim();
@@ -2027,20 +2049,26 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
-    if (!isValidBusinessEmail(email)) {
+    if (!isValidPasswordRecoveryEmail(email)) {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
     const expiresInMinutes = 3;
     const expiresInSeconds = expiresInMinutes * 60;
-    const genericMessage = 'If the email exists, we sent a password reset OTP.';
+    const successMessage = 'A password reset OTP has been sent to your registered email.';
 
     const user = await User.findOne({ email }).collation({ locale: 'en', strength: 2 });
 
-    if (!user || !canUsePasswordRecovery(user)) {
-      return res.status(200).json({
-        message: genericMessage,
-        expiresInSeconds,
+    if (!user) {
+      return res.status(404).json({
+        message: 'Email ID is not registered! Please enter a registered email ID.',
+      });
+    }
+
+    if (!canUsePasswordRecovery(user)) {
+      return res.status(403).json({
+        code: 'ACCOUNT_NOT_ELIGIBLE_FOR_PASSWORD_RESET',
+        message: 'Password reset is unavailable until this account is active and approved.',
       });
     }
 
@@ -2093,7 +2121,7 @@ exports.forgotPassword = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: genericMessage,
+      message: successMessage,
       expiresInSeconds,
     });
   } catch (error) {
@@ -2115,7 +2143,7 @@ exports.resetPassword = async (req, res) => {
     const newPassword = String(req.body?.newPassword || '');
     const confirmPassword = String(req.body?.confirmPassword || '');
 
-    if (!email || !isValidBusinessEmail(email)) {
+    if (!email || !isValidPasswordRecoveryEmail(email)) {
       return res.status(400).json({ message: 'A valid registered email address is required.' });
     }
 

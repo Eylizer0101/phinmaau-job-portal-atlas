@@ -303,7 +303,27 @@ const LoginPage = () => {
   const validateForgotPasswordEmail = () => {
     const email = normalizeEmail(forgotPasswordEmail);
     if (!email) return 'Email is required.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
+    if (email.length > 254) return 'Please enter a valid email address.';
+
+    const parts = email.split('@');
+    if (parts.length !== 2) return 'Please enter a valid email address.';
+
+    const [localPart, domain] = parts;
+    const domainLabels = domain.split('.');
+    const hasValidFormat =
+      localPart.length > 0 &&
+      localPart.length <= 64 &&
+      /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(localPart) &&
+      domainLabels.length >= 2 &&
+      domainLabels.every(
+        (label) =>
+          label.length > 0 &&
+          label.length <= 63 &&
+          /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label)
+      ) &&
+      domainLabels[domainLabels.length - 1].length >= 2;
+
+    if (!hasValidFormat) return 'Please enter a valid email address.';
     return '';
   };
 

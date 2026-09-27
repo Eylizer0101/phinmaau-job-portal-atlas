@@ -341,6 +341,12 @@ const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [
 
           ${safeAdditionalMessage ? `<p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.7; white-space:pre-line;">${safeAdditionalMessage}</p>` : ''}
 
+          <div style="margin-top:20px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
+            <p style="margin:0; font-size:14px; color:#6b4b00; line-height:1.7;">
+              <strong>Important Note:</strong> Please resubmit the requested ${normalizedDocLabels.length > 1 ? 'documents' : 'document'} within 30 days from the date of the original request. Failure to resubmit within this timeframe will result in the automatic declining of your verification request.
+            </p>
+          </div>
+
           <p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.6;">Once you have submitted the required ${normalizedDocLabels.length > 1 ? 'documents, they' : 'document, it'} will be reviewed again.</p>
 
           <p style="font-size:14px; color:#374151;">Thank you.</p>
@@ -369,6 +375,102 @@ const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [
             This is an automated message from AGAPAY. Please do not reply.
           </p>
 
+        </div>
+      </div>
+    `,
+  });
+};
+
+
+const sendVerificationResubmissionReminderEmail = async ({
+  to,
+  fullName,
+  docLabel,
+  docLabels = [],
+  documentReasons = [],
+  additionalMessage = '',
+  resubmitUrl,
+  reminderDay = 7,
+}) => {
+  if (!to) throw new Error('Recipient email missing');
+
+  const safeName = escapeHtml(fullName || 'User');
+  const normalizedDocLabels = (Array.isArray(docLabels) && docLabels.length ? docLabels : [docLabel || 'Document'])
+    .map((label) => escapeHtml(label))
+    .filter(Boolean);
+  const normalizedDocumentReasons = Array.isArray(documentReasons)
+    ? documentReasons.map((item) => ({
+        label: escapeHtml(item?.docLabel || item?.docType || 'Document'),
+        reason: escapeHtml(item?.reason || ''),
+      })).filter((item) => item.reason)
+    : [];
+  const safeAdditionalMessage = escapeHtml(additionalMessage || '');
+  const safeResubmitUrl = escapeHtml(resubmitUrl);
+  const safeReminderDay = Number(reminderDay) === 14 ? 14 : 7;
+
+  const documentBlocks = normalizedDocumentReasons.length
+    ? normalizedDocumentReasons.map((item) => `
+        <div style="margin-top:14px; padding:14px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
+          <p style="margin:0; font-size:14px; color:#111827;"><strong>${item.label}</strong></p>
+          <p style="margin:7px 0 0; font-size:14px; color:#6b4b00; line-height:1.6;"><strong>Reason:</strong> ${item.reason}</p>
+        </div>`).join('')
+    : `<div style="margin-top:14px; padding:14px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
+        <p style="margin:0; font-size:14px; color:#111827;"><strong>${normalizedDocLabels[0] || 'Document'}</strong></p>
+      </div>`;
+
+  await sendMail({
+    to,
+    subject: `AGAPAY Document Resubmission Reminder - Day ${safeReminderDay}`,
+    html: `
+      <div style="background:#f4f6f9; padding:40px 15px; font-family:Arial, sans-serif;">
+        <div style="max-width:520px; margin:auto; background:#ffffff; padding:30px; border-radius:8px; border:1px solid #e5e7eb;">
+          <h2 style="margin:0; color:#1e3a8a; font-weight:600;">AGAPAY</h2>
+
+          <p style="margin-top:25px; font-size:15px; color:#111827;">
+            Hello <strong>${safeName}</strong>,
+          </p>
+
+          <p style="font-size:14px; color:#374151; line-height:1.7;">
+            ${safeReminderDay === 7
+              ? 'This is a friendly reminder regarding your pending document review. We previously notified you that the following document needs to be resubmitted:'
+              : 'We have not yet received your updated document. Please note that your verification request remains on hold until the following document is resubmitted:'}
+          </p>
+
+          ${documentBlocks}
+
+          ${safeAdditionalMessage ? `<p style="margin-top:18px; font-size:14px; color:#374151; line-height:1.7; white-space:pre-line;">${safeAdditionalMessage}</p>` : ''}
+
+          <div style="margin-top:20px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
+            <p style="margin:0; font-size:14px; color:#6b4b00; line-height:1.7;">
+              <strong>Important Note:</strong> Please resubmit the requested ${normalizedDocLabels.length > 1 ? 'documents' : 'document'} within 30 days from the date of the original request. Failure to resubmit within this timeframe will result in the automatic declining of your verification request.
+            </p>
+          </div>
+
+          <p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.6;">
+            Once you have submitted the required ${normalizedDocLabels.length > 1 ? 'documents, they' : 'document, it'} will be reviewed again.
+          </p>
+
+          <p style="font-size:14px; color:#374151;">Thank you.</p>
+
+          <div style="margin-top:25px;">
+            <a href="${safeResubmitUrl}"
+              style="display:inline-block; background:#1e3a8a; color:#ffffff; padding:12px 20px;
+                     text-decoration:none; border-radius:6px; font-size:14px; font-weight:600;">
+              Resubmit Document
+            </a>
+          </div>
+
+          <p style="margin-top:20px; font-size:13px; color:#6b7280; line-height:1.6;">
+            If the button above does not work, copy and paste this link into your browser:
+          </p>
+
+          <p style="font-size:12px; color:#374151; word-break:break-all;">
+            ${safeResubmitUrl}
+          </p>
+
+          <p style="margin-top:30px; font-size:12px; color:#9ca3af;">
+            This is an automated message from AGAPAY. Please do not reply.
+          </p>
         </div>
       </div>
     `,
@@ -626,6 +728,7 @@ module.exports = {
   sendPasswordResetEmail,
   sendPasswordResetOtpEmail,
   sendResubmitDocumentEmail,
+  sendVerificationResubmissionReminderEmail,
   sendVerificationRejectedEmail,
   sendVerificationRestoredEmail,
   sendSettingsEmailVerificationCode,
