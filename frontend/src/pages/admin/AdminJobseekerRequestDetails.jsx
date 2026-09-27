@@ -63,8 +63,6 @@ const fullName = (user = {}) =>
 
 
 const formatSalary = (job = {}) => {
-  if (job?.hideSalary) return 'Salary Undisclosed';
-
   const minimum = Number(job?.salaryMin);
   const maximum = Number(job?.salaryMax);
   const hasMinimum = Number.isFinite(minimum) && minimum > 0;
