@@ -2554,7 +2554,7 @@ const CompanyViewDetails = () => {
                 <div>
                   <h3 className="text-[22px] font-bold text-[#172033]">
                     {reviewStep === "privacy"
-                      ? "Privacy Notice & Rating Agreement"
+                      ? "Application Rating Notice"
                       : reviewStep === "confirm"
                         ? "Ready to Post Your Review?"
                         : reviewStep === "success"
@@ -2626,7 +2626,7 @@ const CompanyViewDetails = () => {
                       className="mt-0 text-center font-extrabold text-[#071b3a] text-[22px] sm:text-[28px] lg:text-[32px] leading-tight"
                       style={{ letterSpacing: "0.06em" }}
                     >
-                      PRIVACY NOTICE &amp; RATING AGREEMENT
+                      APPLICATION RATING NOTICE
                     </h3>
 
                     <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
@@ -2657,7 +2657,7 @@ const CompanyViewDetails = () => {
                         className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
                         style={{ accentColor: "#1e4ba0", "--tw-ring-color": "#1e4ba0" }}
                       />
-                      <span className="leading-5">I understand and agree to the Privacy Notice &amp; Rating Agreement.</span>
+                      <span className="leading-5">I have read and understood the APPLICATION RATING NOTICE</span>
                     </label>
 
                     <div className="mt-4 sm:mt-5 flex justify-center gap-3">

@@ -34,15 +34,23 @@ const JoinAsModal = () => {
 
   const privacyNoticeText = useMemo(() => {
     if (role === "jobseeker") {
-      return `AGAPAY prioritize the protection of your personal information. The details you provide, such as your basic information, career profile, and uploaded documents, will be used to create your account, verify your qualifications, and connect you with possible employers.
-Your information also helps us match you with suitable job opportunities and keep you updated with important announcements. All data is securely stored and can only be accessed by authorized AGAPAY personnel. We will not share your personal information with others without your permission.
-By registering on AGAPAY, you agree that your information will be handled carefully and used only for the purposes stated above.`;
+      return `AGAPAY prioritizes the protection of your personal information. The details you provide, including your basic information, career profile, valid ID, and uploaded documents, will be collected and used to create your account, verify your qualifications, and connect you with suitable job opportunities and potential employers.
+
+Your information may also be used to match you with relevant job opportunities and send important announcements or updates. All information collected will be treated as confidential, securely stored, and accessible only to authorized AGAPAY personnel for legitimate purposes. Your personal information will not be shared with third parties without your permission.
+
+In compliance with the Data Privacy Act of 2012, your information will be retained only for as long as necessary for the purposes stated above and applicable legal requirements.
+
+By registering on AGAPAY, you acknowledge and agree that your personal information will be collected, processed, stored, and used for the purposes stated in this Privacy Notice.`;
     }
 
     if (role === "employer") {
-      return `AGAPAY is committed to protecting your company’s information. The data you provide during registration—including company details, contact information, and verification documents—will be used to verify your organization, create a secure company account, and connect your company with qualified graduates.
-This information also allows your company to post job opportunities and communicate with potential candidates. All company data is securely stored and accessible only to authorized AGAPAY personnel, and will not be shared with third parties without your consent.
-By registering your organization on AGAPAY, you agree to the secure and responsible handling of your company information in accordance with this Privacy Notice.`;
+      return `AGAPAY is committed to protecting your company’s information. The data you provide during registration—including company details, contact information, business information, and verification documents—will be collected and used to verify your organization, create and manage your company account, and support your recruitment activities.
+
+This information also allows your company to post job opportunities, manage applications, communicate with qualified graduates, and connect with potential candidates. All company information will be treated as confidential, securely stored, and accessible only to authorized AGAPAY personnel. Your information will not be shared with third parties without your consent, except when required or permitted by law.
+
+In compliance with the Data Privacy Act of 2012, your company information will be retained only for as long as necessary for the purposes stated above and applicable legal requirements.
+
+By registering your organization on AGAPAY, you acknowledge and agree that your company information will be collected, processed, stored, and used for the purposes stated in this Privacy Notice.`;
     }
 
     return "";
