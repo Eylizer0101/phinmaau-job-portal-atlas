@@ -1520,7 +1520,7 @@ exports.getAdminAnalytics = async (req, res) => {
         .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.howSoonCanYouStart jobSeekerProfile.willingToRelocate jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.experience jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated jobSeekerProfile.educationEntries.educationalAttainment jobSeekerProfile.educationEntries.level jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
       Job.find({}).select('employer companyName status statusBeforeArchive isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount applicationDeadline publishedAt filledAt closedAt archivedAt createdAt updatedAt').lean(),
-      Application.find({}).select('job jobseeker employer status appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
+      Application.find({}).select('job jobseeker employer status lastActiveStatus withdrawalCount withdrawnAt appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
       JobEditRequest.find({}).select('job employer requestedSections status reviewedAt unlockUntil createdAt updatedAt').lean(),
       Message.find({}).select('conversationId sender receiver messageType isRead readAt job application createdAt updatedAt').lean(),
       ConversationPreference.find({}).select('user conversationId otherUser archived hiddenCompany deleted createdAt updatedAt').lean(),
@@ -1696,6 +1696,90 @@ exports.getAdminAnalytics = async (req, res) => {
       .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
       .slice(0, 5);
 
+    const hiredDurationsDays = hiredApplications
+      .map((item) => {
+        const appliedAt = item.appliedAt ? new Date(item.appliedAt) : null;
+        const hiredAt = item.hiredAt ? new Date(item.hiredAt) : null;
+        if (!appliedAt || !hiredAt || Number.isNaN(appliedAt.getTime()) || Number.isNaN(hiredAt.getTime())) return null;
+        const days = Math.max(0, Math.ceil((hiredAt.getTime() - appliedAt.getTime()) / (1000 * 60 * 60 * 24)));
+        return days;
+      })
+      .filter((value) => Number.isFinite(value));
+
+    const processDurationBuckets = [
+      { name: '< 1 week', min: 0, max: 6 },
+      { name: '1–2 weeks', min: 7, max: 13 },
+      { name: '2–4 weeks', min: 14, max: 27 },
+      { name: '1–2 months', min: 28, max: 59 },
+      { name: '> 2 months', min: 60, max: Infinity },
+    ].map((bucket) => ({
+      name: bucket.name,
+      value: hiredDurationsDays.filter((days) => days >= bucket.min && days <= bucket.max).length,
+    }));
+
+    const applicationProcessDuration = {
+      averageDays: hiredDurationsDays.length
+        ? Math.round(hiredDurationsDays.reduce((sum, days) => sum + days, 0) / hiredDurationsDays.length)
+        : 0,
+      shortestDays: hiredDurationsDays.length ? Math.min(...hiredDurationsDays) : 0,
+      longestDays: hiredDurationsDays.length ? Math.max(...hiredDurationsDays) : 0,
+      buckets: processDurationBuckets,
+    };
+
+    const withdrawnApplications = applications.filter((item) => analyticsLower(item.status) === 'withdrawn');
+    const withdrawalByStage = [
+      {
+        name: 'Pending',
+        value: withdrawnApplications.filter((item) => analyticsLower(item.lastActiveStatus) === 'pending').length,
+      },
+      {
+        name: 'For Interview',
+        value: withdrawnApplications.filter((item) => analyticsLower(item.lastActiveStatus) === 'for interview').length,
+      },
+    ];
+
+    const applicationsByJobseeker = new Map();
+    applications.forEach((item) => {
+      const seekerId = analyticsId(item.jobseeker);
+      if (!seekerId) return;
+      if (!applicationsByJobseeker.has(seekerId)) applicationsByJobseeker.set(seekerId, []);
+      applicationsByJobseeker.get(seekerId).push(item);
+    });
+
+    const applicationCountsBeforeHire = hiredApplications.map((hiredApplication) => {
+      const seekerId = analyticsId(hiredApplication.jobseeker);
+      const hiredAt = hiredApplication.hiredAt ? new Date(hiredApplication.hiredAt) : null;
+      const seekerApplications = applicationsByJobseeker.get(seekerId) || [];
+      if (!hiredAt || Number.isNaN(hiredAt.getTime())) return seekerApplications.length || 1;
+      const count = seekerApplications.filter((item) => {
+        const appliedAt = item.appliedAt ? new Date(item.appliedAt) : null;
+        return appliedAt && !Number.isNaN(appliedAt.getTime()) && appliedAt <= hiredAt;
+      }).length;
+      return Math.max(1, count);
+    });
+
+    const applicationsBeforeHire = [
+      { name: '1 time', value: applicationCountsBeforeHire.filter((count) => count === 1).length },
+      { name: '2 times', value: applicationCountsBeforeHire.filter((count) => count === 2).length },
+      { name: '3 times', value: applicationCountsBeforeHire.filter((count) => count === 3).length },
+      { name: '4+ times', value: applicationCountsBeforeHire.filter((count) => count >= 4).length },
+    ];
+
+    const campusHireRate = DASHBOARD_CAMPUSES.map((campus) => {
+      const campusApplications = applications.filter((item) => {
+        const seeker = userById.get(analyticsId(item.jobseeker));
+        return getJobseekerCampus(seeker) === campus;
+      });
+      const campusHired = campusApplications.filter((item) => analyticsLower(item.status) === 'hired').length;
+      const total = campusApplications.length;
+      return {
+        name: campus,
+        value: total ? Number(((campusHired / total) * 100).toFixed(1)) : 0,
+        hired: campusHired,
+        total,
+      };
+    });
+
     return res.status(200).json({
       success: true,
       generatedAt: new Date().toISOString(),
@@ -1772,6 +1856,10 @@ exports.getAdminAnalytics = async (req, res) => {
           hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
           employmentStatus: analyticsCountRows(hiredApplications, (item) => item.employmentStatus || 'not recorded'),
           topHiringCompanies,
+          applicationProcessDuration,
+          withdrawalByStage,
+          applicationsBeforeHire,
+          hireRateByCampus: campusHireRate,
         },
         verification: {
           emailRequests: verificationRequests.length,
