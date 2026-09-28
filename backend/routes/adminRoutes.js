@@ -20,9 +20,6 @@ router.get('/dashboard', adminController.getAdminDashboardAnalytics);
 
 // Dedicated Admin Analytics page data
 router.get('/analytics', adminController.getAdminAnalytics);
-router.get('/analytics/dummy-data/status', adminController.getAdminAnalyticsDummyStatus);
-router.post('/analytics/dummy-data', adminController.enableAdminAnalyticsDummyData);
-router.delete('/analytics/dummy-data', adminController.disableAdminAnalyticsDummyData);
 
 // Admin job offers route
 router.get('/job-offers', adminController.getAdminJobOffers);

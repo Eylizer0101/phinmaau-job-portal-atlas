@@ -185,6 +185,11 @@ const AdminLayout = ({ children }) => {
             path: "/admin/dashboard",
             icon: "M4 6a2 2 0 012-2h4a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h4a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h4a2 2 0 012 2v2a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2z",
           },
+          {
+            name: "Analytics",
+            path: "/admin/analytics",
+            icon: "M3 3v18h18M7 16l4-5 4 3 5-7",
+          },
         ],
       },
       {
