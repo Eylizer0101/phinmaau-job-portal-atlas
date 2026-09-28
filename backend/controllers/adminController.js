@@ -11,6 +11,7 @@ const ConversationPreference = require('../models/ConversationPreference');
 const PendingEmailVerification = require('../models/PendingEmailVerification');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const analyticsDummyDataService = require('../services/analyticsDummyDataService');
 const { v2: cloudinary } = require('cloudinary');
 const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationResubmissionReminderEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
 
@@ -1449,6 +1450,37 @@ const analyticsTrendRows = ({ users, jobs, applications, dateField = 'primary' }
   return Array.from(buckets.values()).sort((a, b) => a.key.localeCompare(b.key)).slice(-18);
 };
 
+exports.getAdminAnalyticsDummyStatus = async (req, res) => {
+  try {
+    const enabled = await analyticsDummyDataService.isEnabled();
+    const counts = await analyticsDummyDataService.getCounts();
+    return res.status(200).json({ success: true, enabled, counts });
+  } catch (error) {
+    console.error('Get analytics dummy status error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load Analytics Dummy Data status.' });
+  }
+};
+
+exports.enableAdminAnalyticsDummyData = async (req, res) => {
+  try {
+    const counts = await analyticsDummyDataService.enable({ userId: req.userId || req.user?._id || null });
+    return res.status(200).json({ success: true, enabled: true, counts, message: 'Analytics Dummy Data is ON.' });
+  } catch (error) {
+    console.error('Enable analytics dummy data error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to enable Analytics Dummy Data.' });
+  }
+};
+
+exports.disableAdminAnalyticsDummyData = async (req, res) => {
+  try {
+    const counts = await analyticsDummyDataService.disable({ userId: req.userId || req.user?._id || null });
+    return res.status(200).json({ success: true, enabled: false, counts, message: 'Analytics Dummy Data is OFF.' });
+  } catch (error) {
+    console.error('Disable analytics dummy data error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to disable Analytics Dummy Data.' });
+  }
+};
+
 exports.getAdminAnalytics = async (req, res) => {
   try {
     const filters = {
@@ -1478,7 +1510,7 @@ exports.getAdminAnalytics = async (req, res) => {
       endDate: filters.endDate,
     });
 
-    const [usersAll, jobsAll, applicationsAll, editRequestsAll] = await Promise.all([
+    const [usersReal, jobsReal, applicationsReal, editRequestsReal] = await Promise.all([
       User.find({
         status: { $ne: 'deleted' },
         role: { $in: ['jobseeker', 'employer'] },
@@ -1548,6 +1580,13 @@ exports.getAdminAnalytics = async (req, res) => {
         .select('job employer requestedSections status reviewedAt createdAt updatedAt')
         .lean(),
     ]);
+
+    const dummyAnalytics = await analyticsDummyDataService.getData();
+    const dummyModeEnabled = dummyAnalytics.enabled;
+    const usersAll = [...usersReal, ...dummyAnalytics.users];
+    const jobsAll = [...jobsReal, ...dummyAnalytics.jobs];
+    const applicationsAll = [...applicationsReal, ...dummyAnalytics.applications];
+    const editRequestsAll = [...editRequestsReal, ...dummyAnalytics.editRequests];
 
     const same = (actual, selected) =>
       analyticsIsAll(selected) || analyticsLower(actual) === analyticsLower(selected);
@@ -1921,6 +1960,7 @@ exports.getAdminAnalytics = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      dummyDataEnabled: dummyModeEnabled,
       generatedAt: new Date().toISOString(),
       timezone: 'Asia/Manila',
       appliedFilters: { ...filters, dateLabel: range.label },
