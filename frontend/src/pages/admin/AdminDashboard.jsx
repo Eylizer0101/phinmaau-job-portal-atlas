@@ -817,26 +817,38 @@ const DonutChart = ({ data = [] }) => {
 
 const TrendChart = ({ data = [] }) => {
   const series = [
-    ["registrations", "Registrations", "#dbeafe"],
-    ["jobs", "Jobs", "#6ee7b7"],
-    ["applications", "Applications", "#fcd34d"],
-    ["hires", "Hires", "#c4b5fd"],
+    ["registrations", "Registrations", "#93c5fd"],
+    ["jobs", "Jobs", "#34d399"],
+    ["applications", "Applications", "#fbbf24"],
+    ["hires", "Hires", "#a78bfa"],
   ];
 
   if (!data.length) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-xs font-medium text-white/65">
+      <div className="flex h-48 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-xs font-medium text-white/65">
         No data for the selected filters.
       </div>
     );
   }
 
-  const width = 920;
-  const height = 235;
-  const left = 48;
-  const right = 18;
-  const top = 14;
-  const bottom = 42;
+  const summary = series.map(([key, label, color]) => ({
+    key,
+    label,
+    color,
+    value: data.reduce((sum, item) => sum + Number(item[key] || 0), 0),
+  }));
+
+  const summaryTotal = Math.max(
+    1,
+    summary.reduce((sum, item) => sum + Number(item.value || 0), 0),
+  );
+
+  const width = 940;
+  const height = 330;
+  const left = 42;
+  const right = 10;
+  const top = 18;
+  const bottom = 44;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const max = Math.max(
@@ -845,124 +857,152 @@ const TrendChart = ({ data = [] }) => {
   );
 
   const groupWidth = plotWidth / data.length;
-  const groupPadding = Math.min(12, groupWidth * 0.13);
-  const usableGroupWidth = Math.max(8, groupWidth - groupPadding * 2);
-  const barGap = Math.min(4, usableGroupWidth * 0.04);
+  const groupPadding = Math.min(14, groupWidth * 0.12);
+  const usableGroupWidth = Math.max(12, groupWidth - groupPadding * 2);
+  const barGap = Math.min(5, usableGroupWidth * 0.05);
   const barWidth = Math.max(
-    2,
+    3,
     (usableGroupWidth - barGap * (series.length - 1)) / series.length,
   );
 
   const showLabel = (index) =>
-    data.length <= 10 ||
+    data.length <= 12 ||
     index % Math.ceil(data.length / 8) === 0 ||
     index === data.length - 1;
 
   return (
-    <div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="h-[205px] w-full"
-        role="img"
-        aria-label="Monthly analytics grouped bar chart"
-      >
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-          const y = top + plotHeight - ratio * plotHeight;
-          return (
-            <g key={ratio}>
-              <line
-                x1={left}
-                y1={y}
-                x2={width - right}
-                y2={y}
-                stroke="rgba(255,255,255,0.18)"
-                strokeWidth="1"
-              />
-              <text
-                x={left - 8}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="10"
-                fill="rgba(255,255,255,0.72)"
-              >
-                {Math.round(max * ratio)}
-              </text>
-            </g>
-          );
-        })}
-
-        {data.slice(0, -1).map((item, dataIndex) => {
-          const x = left + (dataIndex + 1) * groupWidth;
-          return (
-            <line
-              key={`divider-${item.key || item.label}-${dataIndex}`}
-              x1={x}
-              y1={top}
-              x2={x}
-              y2={top + plotHeight}
-              stroke="rgba(255,255,255,0.13)"
-              strokeWidth="1"
-            />
-          );
-        })}
-
-        {data.map((item, dataIndex) => {
-          const groupStart = left + dataIndex * groupWidth + groupPadding;
-
-          return (
-            <g key={`${item.key || item.label}-${dataIndex}`}>
-              {series.map(([key, label, color], seriesIndex) => {
-                const value = Number(item[key] || 0);
-                const barHeight = (value / max) * plotHeight;
-                const x = groupStart + seriesIndex * (barWidth + barGap);
-                const y = top + plotHeight - barHeight;
-
-                return (
-                  <rect
-                    key={`${key}-${dataIndex}`}
-                    x={x}
-                    y={y}
-                    width={barWidth}
-                    height={Math.max(0, barHeight)}
-                    rx={Math.min(3, barWidth / 3)}
-                    fill={color}
-                    opacity="0.96"
-                  >
-                    <title>{`${label}: ${numberFormat.format(value)}`}</title>
-                  </rect>
-                );
-              })}
-
-              {showLabel(dataIndex) ? (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-stretch">
+      <div className="min-w-0 xl:-ml-1">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-[300px] w-full"
+          role="img"
+          aria-label="Monthly analytics grouped bar chart"
+        >
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = top + plotHeight - ratio * plotHeight;
+            return (
+              <g key={ratio}>
+                <line
+                  x1={left}
+                  y1={y}
+                  x2={width - right}
+                  y2={y}
+                  stroke="rgba(255,255,255,0.22)"
+                  strokeWidth="1.15"
+                />
                 <text
-                  x={left + dataIndex * groupWidth + groupWidth / 2}
-                  y={height - 11}
-                  textAnchor="middle"
+                  x={left - 8}
+                  y={y + 4}
+                  textAnchor="end"
                   fontSize="10"
                   fill="rgba(255,255,255,0.78)"
                 >
-                  {item.label}
+                  {Math.round(max * ratio)}
                 </text>
-              ) : null}
-            </g>
-          );
-        })}
-      </svg>
+              </g>
+            );
+          })}
 
-      <div className="mt-1 flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-white/15 pt-3">
-        {series.map(([, label, color]) => (
-          <span
-            key={label}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-white/85"
-          >
-            <i
-              className="h-2.5 w-2.5 rounded-sm"
-              style={{ backgroundColor: color }}
-            />
-            {label}
-          </span>
-        ))}
+          {data.slice(0, -1).map((item, dataIndex) => {
+            const x = left + (dataIndex + 1) * groupWidth;
+            return (
+              <line
+                key={`divider-${item.key || item.label}-${dataIndex}`}
+                x1={x}
+                y1={top}
+                x2={x}
+                y2={top + plotHeight}
+                stroke="rgba(255,255,255,0.24)"
+                strokeWidth="1.15"
+              />
+            );
+          })}
+
+          {data.map((item, dataIndex) => {
+            const groupStart = left + dataIndex * groupWidth + groupPadding;
+
+            return (
+              <g key={`${item.key || item.label}-${dataIndex}`}>
+                {series.map(([key, label, color], seriesIndex) => {
+                  const value = Number(item[key] || 0);
+                  const barHeight = (value / max) * plotHeight;
+                  const x = groupStart + seriesIndex * (barWidth + barGap);
+                  const y = top + plotHeight - barHeight;
+
+                  return (
+                    <rect
+                      key={`${key}-${dataIndex}`}
+                      x={x}
+                      y={y}
+                      width={barWidth}
+                      height={Math.max(0, barHeight)}
+                      rx={Math.min(4, barWidth / 3)}
+                      fill={color}
+                      opacity="0.98"
+                    >
+                      <title>{`${label}: ${numberFormat.format(value)}`}</title>
+                    </rect>
+                  );
+                })}
+
+                {showLabel(dataIndex) ? (
+                  <text
+                    x={left + dataIndex * groupWidth + groupWidth / 2}
+                    y={height - 12}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="rgba(255,255,255,0.82)"
+                  >
+                    {item.label}
+                  </text>
+                ) : null}
+              </g>
+            );
+          })}
+        </svg>
       </div>
+
+      <aside className="flex min-h-[300px] flex-col rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+        <div className="border-b border-slate-200 pb-3">
+          <h3 className="text-sm font-extrabold text-slate-900">
+            Activity Breakdown
+          </h3>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            Total count and percentage share
+          </p>
+        </div>
+
+        <div className="flex flex-1 flex-col justify-center divide-y divide-slate-200">
+          {summary.map((item) => {
+            const percentage = (
+              (Number(item.value || 0) / summaryTotal) *
+              100
+            ).toFixed(1);
+
+            return (
+              <div
+                key={item.key}
+                className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-4"
+              >
+                <span className="flex min-w-0 items-center gap-3 text-sm font-semibold text-slate-700">
+                  <i
+                    className="h-3.5 w-3.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </span>
+                <strong className="w-10 text-right text-sm font-extrabold text-slate-900">
+                  {numberFormat.format(Number(item.value || 0))}
+                </strong>
+                <span className="w-14 text-right text-sm font-medium text-slate-500">
+                  {percentage}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </aside>
     </div>
   );
 };
