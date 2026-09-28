@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -557,7 +558,7 @@ const CustomDateRangeModal = ({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/65 px-3 py-5 backdrop-blur-[2px]"
       onMouseDown={(event) => {
@@ -653,7 +654,8 @@ const CustomDateRangeModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
@@ -671,7 +673,7 @@ const SpecificDateModal = ({ open, value, onCancel, onApply }) => {
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/65 px-3 py-5 backdrop-blur-[2px]"
       onMouseDown={(event) => {
@@ -711,7 +713,8 @@ const SpecificDateModal = ({ open, value, onCancel, onApply }) => {
           <button type="button" onClick={() => draftDate && onApply(draftDate)} className="h-10 rounded-xl bg-[#2e66a6] px-6 text-sm font-bold text-white shadow-md shadow-[#2e66a6]/20 hover:bg-[#255487]">Apply Date</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
@@ -1441,7 +1444,7 @@ const AdminDashboard = () => {
               onSelect={selectDateFilter}
               disabled={loading}
             />
-            <FilterSelect label="Campus" value={filters.campus} onChange={(value) => updateFilter("campus", value)} values={options.campuses || []} placeholderLabel="Select Campus" allLabel="All Campuses" preserveCase />
+            <FilterSelect label="Campus" value={filters.campus} onChange={(value) => updateFilter("campus", value)} values={["AU Main", "AU San Jose", "AU South"]} placeholderLabel="Select Campus" allLabel="All Campuses" preserveCase />
             <FilterSelect label="Application Status" value={filters.applicationStatus} onChange={(value) => updateFilter("applicationStatus", value)} values={options.applicationStatuses || []} placeholderLabel="Select Status" allLabel="All Application Status" />
             <FilterSelect label="Job Type" value={filters.jobType} onChange={(value) => updateFilter("jobType", value)} values={options.jobTypes || []} placeholderLabel="Select Job Type" allLabel="All Job Types" preserveCase />
             <FilterSelect label="Work Mode" value={filters.workMode} onChange={(value) => updateFilter("workMode", value)} values={options.workModes || []} placeholderLabel="Select Work Mode" allLabel="All Work Modes" preserveCase />

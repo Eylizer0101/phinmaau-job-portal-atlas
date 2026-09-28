@@ -828,7 +828,7 @@ const streamVerificationDocument = async (req, res, userRole) => {
 // ==========================
 // ✅ ADMIN DASHBOARD ANALYTICS
 // ==========================
-const DASHBOARD_CAMPUSES = ['AU Main', 'AU South', 'AU San Jose'];
+const DASHBOARD_CAMPUSES = ['AU Main', 'AU San Jose', 'AU South'];
 
 const toStartOfDay = (date) => {
   const d = new Date(date);
@@ -1674,7 +1674,7 @@ exports.getAdminAnalytics = async (req, res) => {
       appliedFilters: { ...filters, dateLabel: range.label },
       filters: {
         options: {
-          campuses: flattenProfileOptions('campus').filter((value) => value !== 'Unspecified'),
+          campuses: DASHBOARD_CAMPUSES,
           verificationStatuses: ['pending', 'verified', 'declined', 'on hold'],
           jobStatuses: ['open', 'closed', 'filled', 'expired'],
           industries: analyticsUnique(jobsAll.map((item) => item.category)),
