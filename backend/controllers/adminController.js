@@ -1543,6 +1543,16 @@ exports.getAdminAnalytics = async (req, res) => {
 
     const hiredApplications = applications.filter((item) => analyticsLower(item.status) === 'hired');
     const pendingVerification = users.filter((item) => ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
+    const totalJobseekers = users.filter((item) => analyticsLower(item.role) === 'jobseeker').length;
+    const totalEmployers = users.filter((item) => analyticsLower(item.role) === 'employer').length;
+    const totalRegisteredUsers = users.filter((item) => analyticsLower(item.role) !== 'admin').length;
+    const pendingJobseekers = usersAll.filter((item) =>
+      analyticsLower(item.role) === 'jobseeker' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))
+    ).length;
+    const pendingEmployers = usersAll.filter((item) =>
+      analyticsLower(item.role) === 'employer' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))
+    ).length;
+    const pendingEditRequests = editRequestsAll.filter((item) => analyticsLower(item.status) === 'pending').length;
     const activeJobs = jobs.filter((item) => !item.isArchived && item.isActive !== false && item.isPublished !== false && ['published', 'open'].includes(analyticsLower(item.status))).length;
     const failedLogs = systemLogs.filter((item) => analyticsLower(item.status) === 'failed').length;
     const applicationStatuses = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'];
@@ -1578,11 +1588,18 @@ exports.getAdminAnalytics = async (req, res) => {
       },
       kpis: {
         totalUsers: users.length,
+        totalJobseekers,
+        totalEmployers,
+        totalRegisteredUsers,
+        totalJobPosts: jobs.length,
         activeJobs,
         applications: applications.length,
         hired: hiredApplications.length,
         hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
         pendingVerification,
+        pendingJobseekers,
+        pendingEmployers,
+        pendingEditRequests,
         unreadMessages: messages.filter((item) => !item.isRead).length,
         systemFailures: failedLogs,
       },

@@ -35,11 +35,18 @@ const dateOptions = [
 const emptyAnalytics = {
   kpis: {
     totalUsers: 0,
+    totalJobseekers: 0,
+    totalEmployers: 0,
+    totalRegisteredUsers: 0,
+    totalJobPosts: 0,
     activeJobs: 0,
     applications: 0,
     hired: 0,
     hireRate: 0,
     pendingVerification: 0,
+    pendingJobseekers: 0,
+    pendingEmployers: 0,
+    pendingEditRequests: 0,
     unreadMessages: 0,
     systemFailures: 0,
   },
@@ -134,6 +141,15 @@ const titleCase = (value) =>
   String(value || "")
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const HeaderStatusCard = ({ label, value }) => (
+  <div className="relative inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 shadow-sm">
+    <span className="absolute -top-2 right-2 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#2e66a6] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm">
+      {numberFormat.format(Number(value || 0))}
+    </span>
+    <span className="whitespace-nowrap">{label}</span>
+  </div>
+);
 
 const StatCard = ({ label, value, suffix = "", imageSrc }) => (
   <div className="group relative min-h-[132px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-6 py-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
@@ -1042,16 +1058,19 @@ const AdminAnalytics = () => {
               verification, engagement, and operations.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={fetchAnalytics}
-              disabled={loading}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-60"
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
-              Refresh
-            </button>
+          <div className="flex flex-wrap items-center gap-2 pt-2 sm:justify-end">
+            <HeaderStatusCard
+              label="Pending Jobseeker"
+              value={kpis.pendingJobseekers}
+            />
+            <HeaderStatusCard
+              label="Pending Employers"
+              value={kpis.pendingEmployers}
+            />
+            <HeaderStatusCard
+              label="Edit Request"
+              value={kpis.pendingEditRequests}
+            />
             <button
               type="button"
               onClick={exportAnalytics}
@@ -1069,15 +1088,25 @@ const AdminAnalytics = () => {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <StatCard
-            label="Total Users"
-            value={kpis.totalUsers}
+            label="Jobseekers"
+            value={kpis.totalJobseekers}
             imageSrc={statCardImages.users}
           />
           <StatCard
-            label="Active Jobs"
-            value={kpis.activeJobs}
+            label="Employers"
+            value={kpis.totalEmployers}
+            imageSrc={statCardImages.verification}
+          />
+          <StatCard
+            label="Registered Users"
+            value={kpis.totalRegisteredUsers}
+            imageSrc={statCardImages.applications}
+          />
+          <StatCard
+            label="Job Posts"
+            value={kpis.totalJobPosts}
             imageSrc={statCardImages.jobs}
           />
           <StatCard
@@ -1086,30 +1115,10 @@ const AdminAnalytics = () => {
             imageSrc={statCardImages.applications}
           />
           <StatCard
-            label="Hired"
-            value={kpis.hired}
-            imageSrc={statCardImages.hired}
-          />
-          <StatCard
             label="Hire Rate"
             value={kpis.hireRate}
             suffix="%"
             imageSrc={statCardImages.rate}
-          />
-          <StatCard
-            label="Pending Verification"
-            value={kpis.pendingVerification}
-            imageSrc={statCardImages.verification}
-          />
-          <StatCard
-            label="Unread Messages"
-            value={kpis.unreadMessages}
-            imageSrc={statCardImages.messages}
-          />
-          <StatCard
-            label="System Failures"
-            value={kpis.systemFailures}
-            imageSrc={statCardImages.failures}
           />
         </div>
 
