@@ -1,566 +1,244 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  RefreshCw,
+  Activity,
   CalendarDays,
-  Users,
-  Bell,
   ChevronDown,
-  UserRound,
-  LogOut,
+  Download,
+  Filter,
+  RefreshCw,
+  X,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
 import * as XLSX from "xlsx";
+import api from "../../services/api";
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
-const BRAND_BLUE = "#2e66a6";
-
-const statCardImages = {
-  jobs: "/images/case.png",
-  jobSeekers: "/images/admin_1.png",
-  employers: "/images/admin_2.png",
-  pendingSeekers: "/images/admin_3.png",
-  pendingEmployers: "/images/admin_4.png",
-};
-
 const dateOptions = [
-  { value: "all", label: "All Time" },
-  { value: "today", label: "Today" },
-  { value: "yesterday", label: "Yesterday" },
-  { value: "thisWeek", label: "This Week" },
-  { value: "7days", label: "Last 7 Days" },
-  { value: "thisMonth", label: "This Month" },
-  { value: "lastMonth", label: "Last Month" },
-  { value: "thisYear", label: "This Year" },
-  { value: "lastYear", label: "Last Year" },
-  { value: "custom", label: "Custom Range" },
+  ["overall", "Overall"],
+  ["today", "Today"],
+  ["yesterday", "Yesterday"],
+  ["thisWeek", "This Week"],
+  ["lastWeek", "Last Week"],
+  ["thisMonth", "This Month"],
+  ["lastMonth", "Last Month"],
+  ["thisYear", "This Year"],
+  ["lastYear", "Last Year"],
+  ["specific", "Specific Date"],
+  ["range", "Date Range"],
 ];
 
-const defaultDashboard = {
-  stats: {
-    totalJobs: 0,
-    totalJobSeekers: 0,
+const emptyAnalytics = {
+  kpis: {
+    totalUsers: 0,
+    totalJobseekers: 0,
     totalEmployers: 0,
-    registeredUsers: 0,
-    pendingSeekers: 0,
+    totalRegisteredUsers: 0,
+    totalJobPosts: 0,
+    activeJobs: 0,
+    applications: 0,
+    hired: 0,
+    hireRate: 0,
+    pendingVerification: 0,
+    pendingJobseekers: 0,
     pendingEmployers: 0,
-    pendingRequestEdits: 0,
-    growth: {
-      registeredUsers: 0,
-      pendingSeekers: 0,
-      pendingEmployers: 0,
-      pendingRequestEdits: 0,
-    },
+    pendingEditRequests: 0,
+    unreadMessages: 0,
+    systemFailures: 0,
   },
-  overview: {
-    registrationTraffic: [],
-    userGrowth: {
-      percentChange: 0,
-      currentMonth: 0,
-      previousMonth: 0,
-      progress: 0,
-    },
-  },
-  filters: {
-    options: {
-      campuses: [],
+  trends: [],
+  filters: { options: {} },
+  sections: {
+    users: { roles: [], statuses: [], verification: [], campuses: [] },
+    jobs: {
+      statuses: [],
+      categories: [],
       employmentTypes: [],
       workModes: [],
-      applicationStatuses: [],
+      totalVacancies: 0,
+      totalViews: 0,
     },
-  },
-  charts: {
-    applicationTrends: [],
-    jobPostingTrends: [],
-    registrationTrends: [],
-    employmentTypeDistribution: [],
-    topJobCategories: [],
-    hireRateByCampus: [],
-    applicationStatus: [],
-    workModeDistribution: [],
-    topHiringCompanies: [],
-  },
-};
-
-const DUMMY_RECORD_COUNT = 6000;
-const DUMMY_START_YEAR = 1950;
-
-const ADMIN_DASHBOARD_CAMPUSES = ["AU Main", "AU South", "AU San Jose"];
-
-const dummyCampuses = ["AU Main", "AU South", "AU San Jose"];
-const dummyEmploymentTypes = ["Full-time", "Part-time", "Contractual", "Internship", "Project-based"];
-const dummyWorkModes = ["On-site", "Hybrid", "Remote", "Work From Home"];
-const dummyApplicationStatuses = ["pending", "for interview", "hired", "declined"];
-const dummyJobCategories = [
-  "Banking / Finance",
-  "Catering / Restaurant",
-  "Arts / Design",
-  "Chemical / Food Tech",
-  "Information Technology",
-  "Education",
-  "Healthcare",
-  "Engineering",
-  "Sales / Marketing",
-  "Administration",
-  "Customer Service",
-  "Hospitality",
-];
-const dummyCompanies = [
-  "Araw Talent Hub",
-  "Blue Harbor Solutions",
-  "NorthStar Careers",
-  "PrimePath Industries",
-  "Silverline Services",
-  "MetroBridge Corp",
-  "FutureWorks PH",
-  "BrightMind Careers",
-  "CampusConnect Jobs",
-  "Agapay Partner Group",
-];
-
-const seededRandom = (seed) => {
-  const value = Math.sin(seed) * 10000;
-  return value - Math.floor(value);
-};
-
-const pickDummyValue = (items, seed) => items[Math.floor(seededRandom(seed) * items.length) % items.length];
-
-const getDummyDateForRecord = (index, endYear) => {
-  const yearSpan = endYear - DUMMY_START_YEAR + 1;
-  const year = DUMMY_START_YEAR + (index % yearSpan);
-  const month = Math.floor(seededRandom(index * 17 + 3) * 12);
-  const day = 1 + Math.floor(seededRandom(index * 19 + 7) * 28);
-  return new Date(year, month, day);
-};
-
-const getDummyDateRange = (filters = {}) => {
-  const today = new Date();
-  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-  let start = new Date(DUMMY_START_YEAR, 0, 1);
-  let end = endOfToday;
-
-  if (filters.date === "today") {
-    start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  } else if (filters.date === "yesterday") {
-    start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-    end = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59);
-  } else if (filters.date === "thisWeek") {
-    const dayOfWeek = today.getDay();
-    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset);
-  } else if (filters.date === "7days") {
-    start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
-  } else if (filters.date === "thisMonth") {
-    start = new Date(today.getFullYear(), today.getMonth(), 1);
-  } else if (filters.date === "lastMonth") {
-    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
-  } else if (filters.date === "thisYear") {
-    start = new Date(today.getFullYear(), 0, 1);
-  } else if (filters.date === "lastYear") {
-    start = new Date(today.getFullYear() - 1, 0, 1);
-    end = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
-  } else if (filters.date === "custom" && filters.startDate && filters.endDate) {
-    start = new Date(`${filters.startDate}T00:00:00`);
-    end = new Date(`${filters.endDate}T23:59:59`);
-  }
-
-  return { start, end };
-};
-
-const isWithinDummyFilters = (record, filters = {}) => {
-  const { start, end } = getDummyDateRange(filters);
-  const recordDate = record.date;
-
-  if (recordDate < start || recordDate > end) return false;
-  if (filters.campus !== "all" && record.campus !== filters.campus) return false;
-  if (filters.applicationStatus !== "all" && record.status !== filters.applicationStatus) return false;
-  if (filters.employmentType !== "all" && record.employmentType !== filters.employmentType) return false;
-  if (filters.workMode !== "all" && record.workMode !== filters.workMode) return false;
-
-  return true;
-};
-
-const getMonthLabel = (date) => {
-  return date.toLocaleDateString("en-US", { month: "short" });
-};
-
-const addCampusValue = (map, label, campus, value = 1) => {
-  if (!map.has(label)) map.set(label, { label });
-  const row = map.get(label);
-  row[campus] = Number(row[campus] || 0) + value;
-};
-
-const addCountValue = (map, key, value = 1) => {
-  map.set(key, Number(map.get(key) || 0) + value);
-};
-
-const mapToNameValueRows = (map) => {
-  return Array.from(map.entries())
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-};
-
-const buildDummyDashboardData = (filters = {}) => {
-  const endYear = new Date().getFullYear();
-  const records = Array.from({ length: DUMMY_RECORD_COUNT }, (_, index) => {
-    const date = getDummyDateForRecord(index, endYear);
-    const campus = pickDummyValue(dummyCampuses, index + 11);
-    const employmentType = pickDummyValue(dummyEmploymentTypes, index + 23);
-    const workMode = pickDummyValue(dummyWorkModes, index + 37);
-    const status = pickDummyValue(dummyApplicationStatuses, index + 41);
-    const category = pickDummyValue(dummyJobCategories, index + 53);
-    const companyName = pickDummyValue(dummyCompanies, index + 67);
-    const isJobRecord = seededRandom(index + 79) > 0.42;
-    const isEmployerRecord = seededRandom(index + 83) > 0.58;
-    const isPendingSeeker = status === "pending" && seededRandom(index + 89) > 0.35;
-    const isPendingEmployer = isEmployerRecord && seededRandom(index + 97) > 0.72;
-
-    return {
-      id: index + 1,
-      date,
-      campus,
-      employmentType,
-      workMode,
-      status,
-      category,
-      companyName,
-      isJobRecord,
-      isEmployerRecord,
-      isPendingSeeker,
-      isPendingEmployer,
-    };
-  }).filter((record) => isWithinDummyFilters(record, filters));
-
-  const applicationTrendsMap = new Map();
-  const jobPostingTrendsMap = new Map();
-  const registrationTrendsMap = new Map();
-  const hireRateByCampusMap = new Map();
-  const employmentTypeMap = new Map();
-  const topJobCategoriesMap = new Map();
-  const applicationStatusMap = new Map();
-  const workModeMap = new Map();
-  const topHiringCompaniesMap = new Map();
-
-  records.forEach((record) => {
-    const label = getMonthLabel(record.date);
-
-    addCampusValue(applicationTrendsMap, label, record.campus, 1);
-
-    if (record.isJobRecord) {
-      addCampusValue(jobPostingTrendsMap, label, record.campus, 1);
-      addCountValue(employmentTypeMap, record.employmentType, 1);
-      addCountValue(topJobCategoriesMap, record.category, 1);
-      addCountValue(workModeMap, record.workMode, 1);
-      addCountValue(topHiringCompaniesMap, record.companyName, 1);
-    }
-
-    addCampusValue(registrationTrendsMap, label, record.campus, record.status === "pending" ? 1 : 0);
-    addCampusValue(hireRateByCampusMap, label, record.campus, record.status === "hired" ? 1 : 0);
-    addCountValue(applicationStatusMap, record.status, 1);
-  });
-
-  const sortedSeries = (map) => sortMonthlySeries(Array.from(map.values()));
-
-  const jobRecords = records.filter((record) => record.isJobRecord);
-  const employerRecords = records.filter((record) => record.isEmployerRecord);
-
-  return {
-    stats: {
-      totalJobs: jobRecords.length,
-      totalJobSeekers: records.length,
-      totalEmployers: employerRecords.length,
-      pendingSeekers: records.filter((record) => record.isPendingSeeker).length,
-      pendingEmployers: records.filter((record) => record.isPendingEmployer).length,
+    applications: {
+      funnel: [],
+      interviewRate: 0,
+      hireRate: 0,
+      employmentStatus: [],
     },
-    filters: {
-      options: {
-        campuses: dummyCampuses,
-        employmentTypes: dummyEmploymentTypes,
-        workModes: dummyWorkModes,
-        applicationStatuses: dummyApplicationStatuses,
+    verification: {
+      emailRequests: 0,
+      emailVerified: 0,
+      emailCompletionRate: 0,
+      byRole: [],
+    },
+    operations: {
+      editRequests: [],
+      editRequestSections: [],
+      messages: [],
+      messageRead: [],
+      conversationPreferences: [],
+      notifications: [],
+      notificationRead: [],
+      system: {
+        statuses: [],
+        modules: [],
+        methods: [],
+        p95DurationMs: 0,
+        serverErrors: 0,
       },
     },
-    charts: {
-      applicationTrends: sortedSeries(applicationTrendsMap),
-      jobPostingTrends: sortedSeries(jobPostingTrendsMap),
-      registrationTrends: sortedSeries(registrationTrendsMap),
-      employmentTypeDistribution: mapToNameValueRows(employmentTypeMap),
-      topJobCategories: mapToNameValueRows(topJobCategoriesMap),
-      hireRateByCampus: sortedSeries(hireRateByCampusMap),
-      applicationStatus: mapToNameValueRows(applicationStatusMap),
-      workModeDistribution: mapToNameValueRows(workModeMap),
-      topHiringCompanies: Array.from(topHiringCompaniesMap.entries())
-        .map(([companyName, count]) => ({ companyName, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10),
-    },
-  };
+  },
 };
 
-const SampleDataToggle = ({ enabled, onChange }) => (
-  <button
-    type="button"
-    onClick={() => onChange((prev) => !prev)}
-    aria-pressed={enabled}
-    className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-bold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:ring-offset-2 ${
-      enabled
-        ? "border-[#2e66a6]/30 bg-[#2e66a6]/10 text-[#2e66a6]"
-        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-    }`}
-  >
-    <span
-      className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${
-        enabled ? "bg-[#2e66a6]" : "bg-slate-300"
-      }`}
-    >
-      <span
-        className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${
-          enabled ? "translate-x-4" : "translate-x-0.5"
-        }`}
-      />
+const initialFilters = {
+  date: "overall",
+  dateField: "primary",
+  specificDate: "",
+  startDate: "",
+  endDate: "",
+  role: "all",
+  campus: "all",
+  userStatus: "all",
+  verificationStatus: "all",
+  jobStatus: "all",
+  category: "all",
+  jobType: "all",
+  workMode: "all",
+  applicationStatus: "all",
+  company: "all",
+  editRequestStatus: "all",
+  messageType: "all",
+  notificationType: "all",
+  logStatus: "all",
+  logModule: "all",
+};
+
+const statCardImages = {
+  users: "/images/admin_1.png",
+  jobs: "/images/case.png",
+  applications: "/images/admin_3.png",
+  hired: "/images/admin_2.png",
+  rate: "/images/admin_4.png",
+  verification: "/images/admin_3.png",
+  messages: "/images/admin_1.png",
+  failures: "/images/case.png",
+};
+
+const colors = [
+  "#2e66a6",
+  "#16a36f",
+  "#dc9300",
+  "#6366f1",
+  "#dc2626",
+  "#64748b",
+  "#0891b2",
+];
+
+const titleCase = (value) =>
+  String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const HeaderStatusCard = ({ label, value }) => (
+  <div className="relative inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 shadow-sm">
+    <span className="absolute -top-2 right-2 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#2e66a6] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm">
+      {numberFormat.format(Number(value || 0))}
     </span>
-    {enabled ? "Sample Data ON" : "Sample Data OFF"}
-  </button>
+    <span className="whitespace-nowrap">{label}</span>
+  </div>
 );
 
-const sanitizeSheetName = (name) => String(name || "Sheet").replace(/[\\/?*\[\]:]/g, " ").slice(0, 31);
+const StatCard = ({ label, value, suffix = "", imageSrc }) => (
+  <div className="group relative min-h-[132px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-6 py-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
+    <div
+      className="pointer-events-none absolute right-8 top-1/2 h-[70px] w-[70px] -translate-y-1/2 rounded-full blur-[35px]"
+      style={{
+        background:
+          "radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,.14) 45%, transparent 75%)",
+      }}
+    />
+    <img
+      src={imageSrc}
+      alt=""
+      aria-hidden="true"
+      className="pointer-events-none absolute right-[-18px] top-1/2 h-20 w-20 -translate-y-1/2 object-contain opacity-50 mix-blend-soft-light saturate-150 transition-all duration-700 group-hover:right-[-15px] group-hover:scale-105"
+      style={{
+        WebkitMaskImage:
+          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+        maskImage:
+          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+      }}
+    />
+    <div className="relative z-10">
+      <h3 className="text-3xl font-semibold leading-none">
+        {numberFormat.format(Number(value || 0))}
+        {suffix}
+      </h3>
+      <p className="mt-3 flex items-center gap-1 whitespace-nowrap text-sm text-white/90">
+        <span>{label}</span>
+        <span className="ml-1 text-base font-bold">&gt;</span>
+      </p>
+    </div>
+    <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition group-hover:border-white/20" />
+  </div>
+);
 
-const toSheetRows = (rows = []) => {
-  if (!Array.isArray(rows) || rows.length === 0) return [{ Message: "No data available" }];
-  return rows.map((row) => {
-    if (!row || typeof row !== "object") return { Value: row };
-    return Object.fromEntries(
-      Object.entries(row).map(([key, value]) => [
-        key,
-        value && typeof value === "object" ? JSON.stringify(value) : value,
-      ])
-    );
-  });
-};
-
-const addWorksheet = (workbook, sheetName, rows) => {
-  const worksheet = XLSX.utils.json_to_sheet(toSheetRows(rows));
-  XLSX.utils.book_append_sheet(workbook, worksheet, sanitizeSheetName(sheetName));
-};
-
-const buildDashboardWorkbook = ({ dashboard, filters, campusKeys }) => {
-  const workbook = XLSX.utils.book_new();
-  const stats = dashboard?.stats || defaultDashboard.stats;
-  const charts = dashboard?.charts || defaultDashboard.charts;
-
-  addWorksheet(workbook, "Summary", [
-    { Metric: "Total Jobs", Value: stats.totalJobs || 0 },
-    { Metric: "Total Job Seekers", Value: stats.totalJobSeekers || 0 },
-    { Metric: "Total Employers", Value: stats.totalEmployers || 0 },
-    { Metric: "Pending Seekers", Value: stats.pendingSeekers || 0 },
-    { Metric: "Pending Employers", Value: stats.pendingEmployers || 0 },
-  ]);
-
-  addWorksheet(workbook, "Filters", [
-    { Filter: "Date", Value: filters.date || "all" },
-    { Filter: "Start Date", Value: filters.startDate || "" },
-    { Filter: "End Date", Value: filters.endDate || "" },
-    { Filter: "Campus", Value: filters.campus || "all" },
-    { Filter: "Application Status", Value: filters.applicationStatus || "all" },
-    { Filter: "Employment Type", Value: filters.employmentType || "all" },
-    { Filter: "Work Mode", Value: filters.workMode || "all" },
-    { Filter: "Exported At", Value: new Date().toLocaleString("en-US") },
-  ]);
-
-  addWorksheet(workbook, "Applications Trend", mergeCampusSeries(charts.applicationTrends || []));
-  addWorksheet(workbook, "Job Posting Trends", mergeCampusSeries(charts.jobPostingTrends || []));
-  addWorksheet(workbook, "Registration Trends", mergeCampusSeries(charts.registrationTrends || []));
-  addWorksheet(workbook, "Hire Rate By Campus", mergeCampusSeries(charts.hireRateByCampus || []));
-  addWorksheet(workbook, "Employment Types", charts.employmentTypeDistribution || []);
-  addWorksheet(workbook, "Top Job Categories", charts.topJobCategories || []);
-  addWorksheet(workbook, "Application Status", charts.applicationStatus || []);
-  addWorksheet(workbook, "Work Mode", charts.workModeDistribution || []);
-  addWorksheet(workbook, "Top Hiring Companies", charts.topHiringCompanies || []);
-  addWorksheet(workbook, "Campus Keys", (campusKeys || []).map((campus) => ({ Campus: campus })));
-
-  return workbook;
-};
-
-const buildChartsWorkbook = ({ dashboard, filters, campusKeys }) => {
-  const workbook = XLSX.utils.book_new();
-  const charts = dashboard?.charts || defaultDashboard.charts;
-
-  addWorksheet(workbook, "Export Info", [
-    { Field: "Report", Value: "Admin Dashboard Charts Export" },
-    { Field: "Date", Value: filters.date || "all" },
-    { Field: "Start Date", Value: filters.startDate || "" },
-    { Field: "End Date", Value: filters.endDate || "" },
-    { Field: "Campus", Value: filters.campus || "all" },
-    { Field: "Application Status", Value: filters.applicationStatus || "all" },
-    { Field: "Employment Type", Value: filters.employmentType || "all" },
-    { Field: "Work Mode", Value: filters.workMode || "all" },
-    { Field: "Exported At", Value: new Date().toLocaleString("en-US") },
-  ]);
-
-  addWorksheet(workbook, "Applications Trend", mergeCampusSeries(charts.applicationTrends || []));
-  addWorksheet(workbook, "Applications By Campus", mergeCampusSeries(charts.applicationTrends || []));
-  addWorksheet(workbook, "Top Job Categories", charts.topJobCategories || []);
-  addWorksheet(workbook, "Application Status", charts.applicationStatus || []);
-  addWorksheet(workbook, "Work Mode Distribution", charts.workModeDistribution || []);
-  addWorksheet(workbook, "Top Hiring Companies", charts.topHiringCompanies || []);
-  addWorksheet(workbook, "Employment Types", charts.employmentTypeDistribution || []);
-  addWorksheet(workbook, "Job Seeker Registrations", mergeCampusSeries(charts.registrationTrends || []));
-  addWorksheet(workbook, "Hire Rate By Campus", mergeCampusSeries(charts.hireRateByCampus || []));
-  addWorksheet(workbook, "Job Posting Trends", mergeCampusSeries(charts.jobPostingTrends || []));
-  addWorksheet(workbook, "Campus Keys", (campusKeys || []).map((campus) => ({ Campus: campus })));
-
-  return workbook;
-};
-
-const normalizeCampusLabel = (value) => {
-  const text = String(value || "").trim();
-  if (!text) return "";
-
-  const compact = text
-    .toLowerCase()
-    .replace(/phinma/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!compact) return "";
-
-  if (compact.includes("san jose") || compact.includes("sanjose")) return "AU San Jose";
-  if (compact.includes("south")) return "AU South";
-  if (compact.includes("main")) return "AU Main";
-
-  return text;
-};
-
-const mergeCampusSeries = (series = []) => {
-  const mergedByMonth = new Map();
-
-  series.forEach((item) => {
-    const monthLabel = String(item?.label || "").slice(0, 3);
-    const label = monthShortNames.includes(monthLabel) ? monthLabel : item?.label;
-
-    if (!mergedByMonth.has(label)) {
-      mergedByMonth.set(label, { label });
-    }
-
-    const merged = mergedByMonth.get(label);
-
-    Object.entries(item || {}).forEach(([key, value]) => {
-      if (key === "label") return;
-      const campus = normalizeCampusLabel(key);
-      merged[campus] = Number(merged[campus] || 0) + Number(value || 0);
-    });
-  });
-
-  return sortMonthlySeries(Array.from(mergedByMonth.values()));
-};
-
-const uniqueCampuses = (campuses = []) => {
-  const normalized = campuses.map(normalizeCampusLabel).filter((campus) => ADMIN_DASHBOARD_CAMPUSES.includes(campus));
-  const merged = [...new Set([...ADMIN_DASHBOARD_CAMPUSES, ...normalized])];
-  return ADMIN_DASHBOARD_CAMPUSES.filter((campus) => merged.includes(campus));
-};
-
-const campusColors = ["#063b69", "#0f9f6e", "#d89000", "#6366f1", "#ef4444", "#64748b"];
-const statusColors = ["#f59e0b", "#2563eb", "#10b981", "#ef4444", "#8b5cf6", "#64748b"];
-
-const StatCard = ({ label, value, icon: Icon, imageSrc = "/images/case.png", onClick, ariaLabel }) => {
-  const cardContent = (
-    <>
-      <div
-        className="pointer-events-none absolute right-8 top-1/2 h-[70px] w-[70px] -translate-y-1/2 rounded-full blur-[35px] transition-all duration-700 ease-out group-hover:scale-110 group-hover:blur-[45px]"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.14) 45%, transparent 75%)",
-        }}
-      />
-
-      <img
-        src={imageSrc}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[-18px] top-1/2 -translate-y-1/2 w-20 h-20 md:w-22 md:h-22 object-contain opacity-50 mix-blend-soft-light saturate-150
-          transition-all duration-700 ease-out group-hover:opacity-50 group-hover:saturate-180 group-hover:scale-105 group-hover:right-[-15px]"
-        style={{
-          WebkitMaskImage:
-            'radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0) 80%)',
-          maskImage:
-            'radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0) 80%)',
-        }}
-      />
-
-      <div className="relative z-10">
-        <h3 className="text-3xl font-semibold leading-none transition-all duration-300 ease-out group-hover:text-[34px]">
-          {numberFormat.format(value || 0)}
-        </h3>
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="flex items-center gap-1 whitespace-nowrap text-sm text-white/90 transition-all duration-300 group-hover:text-white">
-            <span>{label}</span>
-            <span className="ml-1 text-base font-bold opacity-90 transition-all duration-300 group-hover:ml-2 group-hover:opacity-100">
-              &gt;
-            </span>
-          </p>
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition-all duration-500 ease-out group-hover:border-white/20" />
-    </>
-  );
-
-  const className =
-    "group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-6 py-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)] focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2 active:scale-[0.99]";
-
-  if (onClick) {
-    return (
-      <button type="button" onClick={onClick} className={className} aria-label={ariaLabel || `Open ${label}`}>
-        {cardContent}
-      </button>
-    );
-  }
-
-  return <div className={className}>{cardContent}</div>;
-};
-
-const FilterSelect = ({ label, value, onChange, options, disabled }) => (
-  <label className="block">
-    <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</span>
+const FilterSelect = ({
+  label,
+  value,
+  onChange,
+  values = [],
+  allLabel = "All",
+  disabled = false,
+}) => (
+  <label className="block min-w-0">
+    <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+      {label}
+    </span>
     <select
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value)}
-      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:cursor-not-allowed disabled:bg-slate-50"
+      className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-slate-50"
     >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
+      <option value="all">{allLabel}</option>
+      {values.map((item) => (
+        <option key={item} value={item}>
+          {titleCase(item)}
         </option>
       ))}
     </select>
   </label>
 );
 
+const DateInput = ({ label, value, onChange }) => (
+  <label className="block">
+    <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+      {label}
+    </span>
+    <input
+      type="date"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+    />
+  </label>
+);
+
 const formatDateInput = (date) => {
   if (!date) return "";
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return "";
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return "";
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 };
 
 const formatDateLabel = (value) => {
   if (!value) return "Select date";
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return "Select date";
-  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-};
-
-const getDateOptionLabel = (value, startDate, endDate) => {
-  if (value === "custom" && startDate && endDate) return `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`;
-  return dateOptions.find((option) => option.value === value)?.label || "Date Filter";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
 };
 
 const addCalendarMonths = (date, amount) => {
@@ -584,93 +262,56 @@ const monthNames = [
   "December",
 ];
 
-const monthShortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const getMonthIndex = (label) => {
-  const text = String(label || "").slice(0, 3);
-  const index = monthShortNames.indexOf(text);
-  return index === -1 ? 999 : index;
-};
-
-const sortMonthlySeries = (series = []) => {
-  return [...series].sort((a, b) => getMonthIndex(a.label) - getMonthIndex(b.label));
-};
-
-const normalizeMonthlyChartSeries = (series = [], keys = []) => {
-  const mergedByMonth = new Map();
-  const normalizedKeys = uniqueCampuses(keys);
-
-  (series || []).forEach((item) => {
-    const monthLabel = String(item?.label || "").slice(0, 3);
-    const label = monthShortNames.includes(monthLabel) ? monthLabel : item?.label;
-
-    if (!label) return;
-
-    if (!mergedByMonth.has(label)) {
-      mergedByMonth.set(label, { label });
-    }
-
-    const row = mergedByMonth.get(label);
-    normalizedKeys.forEach((key) => {
-      row[key] = Number(row[key] || 0);
-    });
-
-    Object.entries(item || {}).forEach(([key, value]) => {
-      if (key === "label") return;
-
-      const campus = normalizeCampusLabel(key);
-      if (!normalizedKeys.includes(campus)) return;
-
-      row[campus] = Number(row[campus] || 0) + Number(value || 0);
-    });
-  });
-
-  return sortMonthlySeries(Array.from(mergedByMonth.values()));
-};
-
 const getYearOptions = () => {
-  const startYear = 1950;
-  const endYear = new Date().getFullYear();
-  return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
+  const firstYear = 1950;
+  const currentYear = new Date().getFullYear();
+  return Array.from(
+    { length: currentYear - firstYear + 1 },
+    (_, index) => currentYear - index,
+  );
 };
 
-const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
+const CalendarMonth = ({
+  monthDate,
+  startDate,
+  endDate,
+  onPickDate,
+  onChangeMonth,
+}) => {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const firstDay = new Date(year, month, 1);
-  const firstWeekday = firstDay.getDay();
-  const gridStart = new Date(year, month, 1 - firstWeekday);
+  const gridStart = new Date(year, month, 1 - firstDay.getDay());
   const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
   const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
   const days = Array.from({ length: 42 }, (_, index) => {
-    const d = new Date(gridStart);
-    d.setDate(gridStart.getDate() + index);
-    return d;
+    const day = new Date(gridStart);
+    day.setDate(gridStart.getDate() + index);
+    return day;
   });
 
-  const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
-  const inRange = (d) => start && end && d >= start && d <= end;
-  const changeByMonth = (amount) => onChangeMonth(addCalendarMonths(monthDate, amount));
-  const changeMonthSelect = (nextMonth) => onChangeMonth(new Date(year, Number(nextMonth), 1));
-  const changeYearSelect = (nextYear) => onChangeMonth(new Date(Number(nextYear), month, 1));
+  const sameDay = (first, second) =>
+    first && second && first.toDateString() === second.toDateString();
+  const withinRange = (day) => start && end && day >= start && day <= end;
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
+      <div className="mb-3 grid grid-cols-[34px_1fr_34px] items-center gap-2">
         <button
           type="button"
-          onClick={() => changeByMonth(-1)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100"
+          onClick={() => onChangeMonth(addCalendarMonths(monthDate, -1))}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-600 transition hover:bg-slate-100"
           aria-label="Previous month"
         >
           ‹
         </button>
-
-        <div className="grid grid-cols-[1fr_86px] gap-2">
+        <div className="grid grid-cols-[1fr_82px] gap-2">
           <select
             value={month}
-            onChange={(event) => changeMonthSelect(event.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            onChange={(event) =>
+              onChangeMonth(new Date(year, Number(event.target.value), 1))
+            }
+            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs font-bold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select month"
           >
             {monthNames.map((name, index) => (
@@ -679,47 +320,49 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
               </option>
             ))}
           </select>
-
           <select
             value={year}
-            onChange={(event) => changeYearSelect(event.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            onChange={(event) =>
+              onChangeMonth(new Date(Number(event.target.value), month, 1))
+            }
+            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs font-bold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select year"
           >
-            {getYearOptions(monthDate).map((yearOption) => (
-              <option key={yearOption} value={yearOption}>
-                {yearOption}
+            {getYearOptions().map((option) => (
+              <option key={option} value={option}>
+                {option}
               </option>
             ))}
           </select>
         </div>
-
         <button
           type="button"
-          onClick={() => changeByMonth(1)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100"
+          onClick={() => onChangeMonth(addCalendarMonths(monthDate, 1))}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-600 transition hover:bg-slate-100"
           aria-label="Next month"
         >
           ›
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
-        {["SU", "MO", "TU", "WE", "TH", "FR", "SA"].map((day) => <div key={day}>{day}</div>)}
+      <div className="grid grid-cols-7 text-center text-[10px] font-bold uppercase text-slate-400">
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+          <div key={day}>{day}</div>
+        ))}
       </div>
-
-      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
+      <div className="mt-2 grid grid-cols-7 gap-y-1 text-center text-xs">
         {days.map((day) => {
           const value = formatDateInput(day);
           const outside = day.getMonth() !== month;
-          const selected = isSameDay(day, start) || isSameDay(day, end);
-          const ranged = inRange(day);
+          const selected = sameDay(day, start) || sameDay(day, end);
+          const ranged = withinRange(day);
           return (
             <button
               type="button"
               key={value}
               onClick={() => onPickDate(value)}
-              className={`mx-auto flex h-9 w-full items-center justify-center transition ${outside ? "text-slate-300" : "text-slate-700"} ${ranged ? "bg-[#2e66a6]/10 text-[#2e66a6]" : ""} ${selected ? "rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md" : "hover:bg-[#2e66a6]/10"}`}
+              className={`mx-auto flex h-8 w-full items-center justify-center transition ${outside ? "text-slate-300" : "text-slate-700"} ${ranged ? "bg-[#2e66a6]/10 text-[#2e66a6]" : ""} ${selected ? "rounded-lg bg-[#2e66a6] font-bold text-white shadow-sm" : "rounded-md hover:bg-[#2e66a6]/10"}`}
+              aria-label={formatDateLabel(value)}
             >
               {day.getDate()}
             </button>
@@ -730,34 +373,76 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
   );
 };
 
-const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
-  const today = new Date();
-  const initialStart = startDate || formatDateInput(today);
-  const initialEnd = endDate || formatDateInput(today);
-  const [draftStart, setDraftStart] = useState(initialStart);
-  const [draftEnd, setDraftEnd] = useState(initialEnd);
-  const [leftMonth, setLeftMonth] = useState(new Date(`${initialStart}T00:00:00`));
-  const [rightMonth, setRightMonth] = useState(addCalendarMonths(new Date(`${initialEnd}T00:00:00`), 0));
+const CustomDateRangeModal = ({
+  open,
+  startDate,
+  endDate,
+  onCancel,
+  onApply,
+}) => {
+  const today = formatDateInput(new Date());
+  const [draftStart, setDraftStart] = useState(startDate || today);
+  const [draftEnd, setDraftEnd] = useState(endDate || today);
+  const [leftMonth, setLeftMonth] = useState(
+    new Date(`${startDate || today}T00:00:00`),
+  );
+  const [rightMonth, setRightMonth] = useState(
+    addCalendarMonths(new Date(`${endDate || today}T00:00:00`), 1),
+  );
+  const dialogRef = useRef(null);
+  const closeRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
   useEffect(() => {
-    if (!open) return;
-    const nextStart = startDate || formatDateInput(today);
-    const nextEnd = endDate || formatDateInput(today);
+    if (!open) return undefined;
+    const nextStart = startDate || today;
+    const nextEnd = endDate || today;
     setDraftStart(nextStart);
     setDraftEnd(nextEnd);
     setLeftMonth(new Date(`${nextStart}T00:00:00`));
-    setRightMonth(addCalendarMonths(new Date(`${nextEnd}T00:00:00`), 0));
-  }, [open, startDate, endDate]);
+    setRightMonth(addCalendarMonths(new Date(`${nextEnd}T00:00:00`), 1));
+    const previousOverflow = document.body.style.overflow;
+    previousFocusRef.current = document.activeElement;
+    document.body.style.overflow = "hidden";
+    const focusTimer = setTimeout(() => closeRef.current?.focus(), 0);
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onCancel();
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll(
+        'button:not([disabled]), select:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus?.();
+    };
+    // onCancel is intentionally omitted because the parent supplies an inline close handler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, startDate, endDate, today]);
 
   if (!open) return null;
 
   const pickDate = (value) => {
-    if (!draftStart || (draftStart && draftEnd)) {
+    if (!draftStart || draftEnd) {
       setDraftStart(value);
       setDraftEnd("");
-      return;
-    }
-    if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
+    } else if (
+      new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)
+    ) {
       setDraftEnd(draftStart);
       setDraftStart(value);
     } else {
@@ -765,31 +450,66 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
     }
   };
 
-  const apply = () => {
-    if (!draftStart || !draftEnd) return;
-    onApply(draftStart, draftEnd);
-  };
-
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
-      <div className="w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="grid gap-5 px-6 pb-5 pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/65 px-3 py-5 backdrop-blur-[2px]"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="analytics-date-range-title"
+        className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
           <div>
-            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">Start Date</div>
-            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]">
-              <CalendarDays size={18} /> {formatDateLabel(draftStart)}
-            </div>
+            <h2
+              id="analytics-date-range-title"
+              className="text-base font-bold text-slate-900"
+            >
+              Select Date Range
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Choose the starting and ending dates for the analytics report.
+            </p>
           </div>
-          <div className="hidden pb-3 text-3xl text-slate-500 md:block">→</div>
-          <div>
-            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">End Date</div>
-            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]">
-              <CalendarDays size={18} /> {formatDateLabel(draftEnd)}
-            </div>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onCancel}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/25"
+            aria-label="Close date range modal"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="grid gap-3 bg-slate-50/80 px-5 py-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              Start Date
+            </span>
+            <span className="mt-1 flex items-center gap-2 text-sm font-bold text-[#2e66a6]">
+              <CalendarDays size={16} />
+              {formatDateLabel(draftStart)}
+            </span>
+          </div>
+          <span className="hidden text-lg text-slate-400 sm:block">→</span>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              End Date
+            </span>
+            <span className="mt-1 flex items-center gap-2 text-sm font-bold text-[#2e66a6]">
+              <CalendarDays size={16} />
+              {formatDateLabel(draftEnd)}
+            </span>
           </div>
         </div>
 
-        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
+        <div className="grid gap-7 px-5 py-5 md:grid-cols-2">
           <CalendarMonth
             monthDate={leftMonth}
             startDate={draftStart}
@@ -806,317 +526,197 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
           />
         </div>
 
-        <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
-          <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600">Cancel</button>
-          <button type="button" onClick={apply} disabled={!draftStart || !draftEnd} className="h-11 rounded-xl bg-[#2e66a6] px-8 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:opacity-60">Apply Range</button>
+        <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-slate-100 bg-white px-5 py-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-10 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              draftStart && draftEnd && onApply(draftStart, draftEnd)
+            }
+            disabled={!draftStart || !draftEnd}
+            className="h-10 rounded-xl bg-[#2e66a6] px-6 text-sm font-bold text-white shadow-md shadow-[#2e66a6]/20 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Apply Range
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) => {
+const DateFilterDropdown = ({
+  value,
+  startDate,
+  endDate,
+  onSelect,
+  disabled,
+}) => {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+  const selectedLabel =
+    value === "range" && startDate && endDate
+      ? `${formatDateLabel(startDate)} – ${formatDateLabel(endDate)}`
+      : dateOptions.find(([optionValue]) => optionValue === value)?.[1] ||
+        "Overall";
 
   useEffect(() => {
     if (!open) return undefined;
-    const close = () => setOpen(false);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
+    const close = (event) => {
+      if (!containerRef.current?.contains(event.target)) setOpen(false);
+    };
+    const closeWithEscape = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", closeWithEscape);
+    return () => {
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("keydown", closeWithEscape);
+    };
   }, [open]);
 
   return (
-    <div className="relative">
-      <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">Date</span>
+    <div ref={containerRef} className="relative min-w-0">
+      <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        Date Range
+      </span>
       <button
         type="button"
         disabled={disabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
-        className="flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition hover:bg-slate-50 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:cursor-not-allowed disabled:bg-slate-50"
+        onClick={() => setOpen((current) => !current)}
+        className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-left text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-slate-50"
+        aria-expanded={open}
       >
-        <span className="truncate">{getDateOptionLabel(value, startDate, endDate)}</span>
-        <CalendarDays size={14} className="text-slate-500" />
+        <span className="truncate">{selectedLabel}</span>
+        <ChevronDown
+          size={14}
+          className={`shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`}
+        />
       </button>
-
       {open ? (
-        <div onClick={(event) => event.stopPropagation()} className="absolute left-0 top-[44px] z-50 w-52 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl">
-          <div className="space-y-1">
-            {dateOptions.map((option) => (
-              <button
-                type="button"
-                key={option.value}
-                onClick={() => {
-                  setOpen(false);
-                  onSelect(option.value);
-                }}
-                className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${value === option.value ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-slate-600 hover:bg-slate-50"}`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+        <div className="absolute left-0 top-[48px] z-40 w-56 rounded-xl border border-slate-100 bg-white p-2 shadow-xl">
+          {dateOptions.map(([optionValue, label]) => (
+            <button
+              type="button"
+              key={optionValue}
+              onClick={() => {
+                setOpen(false);
+                onSelect(optionValue);
+              }}
+              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${value === optionValue ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-slate-600 hover:bg-slate-50"}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       ) : null}
     </div>
   );
 };
 
-const EmptyState = () => <div className="flex h-44 items-center justify-center text-xs text-slate-400">No data available</div>;
+const ChartCard = ({ title, subtitle, children, className = "" }) => (
+  <section
+    className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}
+  >
+    <div className="mb-3 border-b border-slate-100 pb-3">
+      <h2 className="text-sm font-bold text-slate-800">{title}</h2>
+      {subtitle ? (
+        <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
+      ) : null}
+    </div>
+    {children}
+  </section>
+);
 
-const MultiValueTooltip = ({ tooltip, width, padding = 32 }) => {
-  if (!tooltip) return null;
+const EmptyChart = () => (
+  <div className="flex h-32 items-center justify-center rounded-xl bg-slate-50 text-xs font-medium text-slate-400">
+    No data for the selected filters.
+  </div>
+);
 
-  const rowHeight = 16;
-  const boxWidth = 132;
-  const boxHeight = 28 + tooltip.items.length * rowHeight;
-  const boxX = Math.min(Math.max(tooltip.x - boxWidth / 2, 8), width - boxWidth - 8);
-  const boxY = Math.max(tooltip.y - boxHeight - 8, 8);
-
+const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
+  const rows = data.slice(0, maxItems);
+  const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
+  if (!rows.length) return <EmptyChart />;
   return (
-    <g pointerEvents="none">
-      <line x1={tooltip.x} y1={padding} x2={tooltip.x} y2={tooltip.chartHeight - padding} stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
-      <rect x={boxX} y={boxY} width={boxWidth} height={boxHeight} rx="8" fill="#ffffff" stroke="#e2e8f0" filter="drop-shadow(0 6px 10px rgb(15 23 42 / 0.14))" />
-      <text x={boxX + 12} y={boxY + 18} fontSize="10" fontWeight="700" fill="#0f172a">
-        {tooltip.label}
-      </text>
-      {tooltip.items.map((item, index) => (
-        <g key={item.key} transform={`translate(${boxX + 12}, ${boxY + 34 + index * rowHeight})`}>
-          <circle cx="4" cy="-4" r="3.5" fill={item.color} />
-          <text x="14" y="0" fontSize="10" fill="#334155">
-            {item.key}: {numberFormat.format(item.value)}
-          </text>
-        </g>
+    <div className="space-y-2.5">
+      {rows.map((item, index) => (
+        <div
+          key={`${item.name}-${index}`}
+          className="grid grid-cols-[minmax(90px,140px)_1fr_auto] items-center gap-3 text-xs"
+        >
+          <span
+            className="truncate text-right font-semibold text-slate-600"
+            title={titleCase(item.name)}
+          >
+            {titleCase(item.name)}
+          </span>
+          <div className="h-6 overflow-hidden rounded-md bg-slate-100">
+            <div
+              className="h-full min-w-[3px] rounded-lg transition-all"
+              style={{
+                width: `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`,
+                backgroundColor: colors[index % colors.length],
+              }}
+            />
+          </div>
+          <span className="w-10 text-right font-bold text-slate-700">
+            {numberFormat.format(Number(item.value || 0))}
+            {percentage ? "%" : ""}
+          </span>
+        </div>
       ))}
-    </g>
-  );
-};
-
-const LineChart = ({ data, keys }) => {
-  const [tooltip, setTooltip] = useState(null);
-  const monthlyData = normalizeMonthlyChartSeries(data || [], keys);
-  const width = 560;
-  const height = 210;
-  const padding = 32;
-  const allValues = monthlyData.flatMap((item) => keys.map((key) => Number(item[key] || 0)));
-  const max = Math.max(...allValues, 1);
-  const stepX = monthlyData.length > 1 ? (width - padding * 2) / (monthlyData.length - 1) : 0;
-  const y = (value) => height - padding - (Number(value || 0) / max) * (height - padding * 2);
-
-  if (!monthlyData.length || !keys.length) return <EmptyState />;
-
-  const showTooltip = (item, index) => {
-    const cx = padding + index * stepX;
-    const values = keys.map((key, keyIndex) => ({
-      key,
-      value: Number(item[key] || 0),
-      color: campusColors[keyIndex % campusColors.length],
-    }));
-    const highestValue = Math.max(...values.map((entry) => entry.value), 0);
-
-    setTooltip({
-      x: cx,
-      y: y(highestValue),
-      label: item.label,
-      items: values,
-      chartHeight: height,
-    });
-  };
-
-  return (
-    <div className="overflow-hidden">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-56 w-full" onMouseLeave={() => setTooltip(null)}>
-        {[0, 1, 2, 3].map((line) => {
-          const gy = padding + line * ((height - padding * 2) / 3);
-          return <line key={line} x1={padding} y1={gy} x2={width - padding} y2={gy} stroke="#edf2f7" strokeWidth="1" />;
-        })}
-        {keys.map((key, index) => {
-          const points = monthlyData.map((item, i) => `${padding + i * stepX},${y(item[key])}`).join(" ");
-          return <polyline key={key} fill="none" stroke={campusColors[index % campusColors.length]} strokeWidth="2.5" points={points} strokeLinecap="round" strokeLinejoin="round" />;
-        })}
-        {keys.map((key, keyIndex) =>
-          monthlyData.map((item, pointIndex) => {
-            const cx = padding + pointIndex * stepX;
-            const cy = y(item[key]);
-
-            return (
-              <circle
-                key={`${key}-${item.label}-${pointIndex}`}
-                cx={cx}
-                cy={cy}
-                r="4"
-                fill={campusColors[keyIndex % campusColors.length]}
-                stroke="#ffffff"
-                strokeWidth="1.5"
-                className={tooltip?.label === item.label ? "opacity-100" : "opacity-0 transition"}
-              />
-            );
-          })
-        )}
-        {monthlyData.map((item, index) => {
-          const cx = padding + index * stepX;
-          return (
-            <rect
-              key={`hover-${item.label}-${index}`}
-              x={cx - Math.max(stepX / 2, 14)}
-              y={padding}
-              width={Math.max(stepX, 28)}
-              height={height - padding * 2}
-              fill="transparent"
-              className="cursor-pointer"
-              onMouseEnter={() => showTooltip(item, index)}
-              onMouseMove={() => showTooltip(item, index)}
-            />
-          );
-        })}
-        {monthlyData.map((item, index) => (
-          <text key={`${item.label}-${index}`} x={padding + index * stepX} y={height - 8} textAnchor="middle" fontSize="9" fill="#94a3b8">
-            {item.label}
-          </text>
-        ))}
-        <MultiValueTooltip tooltip={tooltip} width={width} padding={padding} />
-      </svg>
-      <Legend keys={keys} colors={campusColors} />
     </div>
   );
 };
 
-const BarChart = ({ data, keys, horizontal = false }) => {
-  const [tooltip, setTooltip] = useState(null);
-
-  if (!data.length) return <EmptyState />;
-
-  if (horizontal) {
-    const max = Math.max(...data.map((item) => item.count || 0), 1);
-    return (
-      <div className="space-y-3 pt-4">
-        {data.map((item) => (
-          <div key={item.companyName} className="group relative grid grid-cols-[150px_1fr_35px] items-center gap-3 text-xs">
-            <span className="truncate text-right text-slate-600">{item.companyName}</span>
-            <div className="h-6 overflow-hidden rounded bg-slate-100">
-              <div className="h-full rounded bg-[#2e66a6]" style={{ width: `${Math.max((item.count / max) * 100, 4)}%` }} />
-            </div>
-            <span className="font-semibold text-slate-700">{item.count}</span>
-            <div className="pointer-events-none absolute left-40 top-[-38px] z-10 hidden rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-lg group-hover:block">
-              {item.companyName}: {numberFormat.format(item.count || 0)}
-            </div>
-          </div>
-        ))}
+const DonutChart = ({ data = [] }) => {
+  const rows = data.filter((item) => Number(item.value || 0) > 0);
+  const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
+  if (!rows.length || !total) return <EmptyChart />;
+  let cursor = 0;
+  const stops = rows.map((item, index) => {
+    const start = cursor;
+    cursor += (Number(item.value || 0) / total) * 100;
+    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+  });
+  return (
+    <div className="grid min-h-40 items-center gap-4 sm:grid-cols-[150px_1fr]">
+      <div
+        className="relative mx-auto h-32 w-32 rounded-full"
+        style={{ background: `conic-gradient(${stops.join(",")})` }}
+      >
+        <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
+          <span className="text-2xl font-extrabold text-slate-800">
+            {numberFormat.format(total)}
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+            Total
+          </span>
+        </div>
       </div>
-    );
-  }
-
-  const monthlyData = normalizeMonthlyChartSeries(data || [], keys);
-  const width = 560;
-  const height = 210;
-  const padding = 34;
-  const max = Math.max(...monthlyData.flatMap((item) => keys.map((key) => Number(item[key] || 0))), 1);
-  const groupWidth = (width - padding * 2) / Math.max(monthlyData.length, 1);
-  const barWidth = Math.max(groupWidth / Math.max(keys.length + 1, 2), 5);
-
-  const showTooltip = (item, index) => {
-    const values = keys.map((key, keyIndex) => ({
-      key,
-      value: Number(item[key] || 0),
-      color: campusColors[keyIndex % campusColors.length],
-    }));
-    const highestValue = Math.max(...values.map((entry) => entry.value), 0);
-    const barHeight = (highestValue / max) * (height - padding * 2);
-
-    setTooltip({
-      x: padding + index * groupWidth + groupWidth / 2,
-      y: height - padding - barHeight,
-      label: item.label,
-      items: values,
-      chartHeight: height,
-    });
-  };
-
-  return (
-    <div className="overflow-hidden">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-56 w-full" onMouseLeave={() => setTooltip(null)}>
-        {[0, 1, 2, 3].map((line) => {
-          const gy = padding + line * ((height - padding * 2) / 3);
-          return <line key={line} x1={padding} y1={gy} x2={width - padding} y2={gy} stroke="#edf2f7" strokeWidth="1" />;
-        })}
-        {monthlyData.map((item, i) =>
-          keys.map((key, ki) => {
-            const barHeight = (Number(item[key] || 0) / max) * (height - padding * 2);
-            const x = padding + i * groupWidth + ki * barWidth + 5;
-            const y = height - padding - barHeight;
-            return (
-              <rect
-                key={`${item.label}-${key}`}
-                x={x}
-                y={y}
-                width={barWidth - 2}
-                height={barHeight}
-                rx="2"
-                fill={campusColors[ki % campusColors.length]}
+      <div className="space-y-2">
+        {rows.slice(0, 8).map((item, index) => (
+          <div
+            key={item.name}
+            className="flex items-center justify-between gap-3 text-xs"
+          >
+            <span className="flex min-w-0 items-center gap-2 text-slate-600">
+              <i
+                className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                style={{ backgroundColor: colors[index % colors.length] }}
               />
-            );
-          })
-        )}
-        {monthlyData.map((item, index) => {
-          const x = padding + index * groupWidth;
-          return (
-            <rect
-              key={`bar-hover-${item.label}-${index}`}
-              x={x}
-              y={padding}
-              width={groupWidth}
-              height={height - padding * 2}
-              fill="transparent"
-              className="cursor-pointer"
-              onMouseEnter={() => showTooltip(item, index)}
-              onMouseMove={() => showTooltip(item, index)}
-            />
-          );
-        })}
-        {monthlyData.map((item, index) => (
-          <text key={`${item.label}-${index}`} x={padding + index * groupWidth + groupWidth / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#94a3b8">
-            {item.label}
-          </text>
-        ))}
-        <MultiValueTooltip tooltip={tooltip} width={width} padding={padding} />
-      </svg>
-      <Legend keys={keys} colors={campusColors} />
-    </div>
-  );
-};
-
-const DonutChart = ({ data, colors = statusColors }) => {
-  const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0);
-  let current = 0;
-
-  if (!total) return <EmptyState />;
-
-  const circle = 2 * Math.PI * 42;
-
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-6 py-3">
-      <svg viewBox="0 0 120 120" className="h-44 w-44 -rotate-90">
-        <circle cx="60" cy="60" r="42" fill="none" stroke="#eef2f7" strokeWidth="18" />
-        {data.map((item, index) => {
-          const length = (Number(item.value || 0) / total) * circle;
-          const dash = `${length} ${circle - length}`;
-          const offset = -current;
-          current += length;
-          return (
-            <circle key={item.name} cx="60" cy="60" r="42" fill="none" stroke={colors[index % colors.length]} strokeWidth="18" strokeDasharray={dash} strokeDashoffset={offset}>
-              <title>{`${item.name}: ${numberFormat.format(Number(item.value || 0))}`}</title>
-            </circle>
-          );
-        })}
-      </svg>
-      <div className="grid gap-2 text-xs">
-        {data.map((item, index) => (
-          <div key={item.name} className="flex items-center gap-2 text-slate-600">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
-            <span className="capitalize">{item.name}</span>
-            <span className="font-bold text-slate-900">{Math.round((Number(item.value || 0) / total) * 100)}%</span>
+              <span className="truncate">{titleCase(item.name)}</span>
+            </span>
+            <strong className="text-slate-800">
+              {numberFormat.format(item.value)}
+            </strong>
           </div>
         ))}
       </div>
@@ -1124,142 +724,157 @@ const DonutChart = ({ data, colors = statusColors }) => {
   );
 };
 
+const TrendChart = ({ data = [] }) => {
+  const series = [
+    ["registrations", "Registrations", "#2e66a6"],
+    ["jobs", "Jobs", "#16a36f"],
+    ["applications", "Applications", "#dc9300"],
+    ["hires", "Hires", "#6366f1"],
+  ];
 
-const VerticalBarChart = ({ data = [], labelKey = "name", valueKey = "value" }) => {
-  const [tooltip, setTooltip] = useState(null);
-  const filtered = (data || []).filter((item) => Number(item[valueKey] || 0) > 0).slice(0, 6);
+  if (!data.length) return <EmptyChart />;
 
-  if (!filtered.length) return <EmptyState />;
+  const width = 920;
+  const height = 280;
+  const left = 48;
+  const right = 18;
+  const top = 18;
+  const bottom = 48;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const max = Math.max(
+    1,
+    ...data.flatMap((item) => series.map(([key]) => Number(item[key] || 0))),
+  );
 
-  const width = 560;
-  const height = 220;
-  const padding = 36;
-  const max = Math.max(...filtered.map((item) => Number(item[valueKey] || 0)), 1);
-  const barSpace = (width - padding * 2) / Math.max(filtered.length, 1);
-  const barWidth = Math.min(46, Math.max(barSpace * 0.48, 18));
+  const groupWidth = plotWidth / data.length;
+  const groupPadding = Math.min(14, groupWidth * 0.16);
+  const usableGroupWidth = Math.max(8, groupWidth - groupPadding * 2);
+  const barGap = Math.min(4, usableGroupWidth * 0.04);
+  const barWidth = Math.max(
+    2,
+    (usableGroupWidth - barGap * (series.length - 1)) / series.length,
+  );
 
-  const shortLabel = (label) => {
-    const text = String(label || "Unknown");
-    return text.length > 13 ? `${text.slice(0, 12)}…` : text;
-  };
+  const showLabel = (index) =>
+    data.length <= 10 ||
+    index % Math.ceil(data.length / 8) === 0 ||
+    index === data.length - 1;
 
   return (
-    <div className="overflow-hidden">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-56 w-full" onMouseLeave={() => setTooltip(null)}>
-        {[0, 1, 2, 3].map((line) => {
-          const gy = padding + line * ((height - padding * 2) / 3);
-          return <line key={line} x1={padding} y1={gy} x2={width - padding} y2={gy} stroke="#edf2f7" strokeWidth="1" />;
-        })}
-
-        {filtered.map((item, index) => {
-          const label = item[labelKey] || "Unknown";
-          const value = Number(item[valueKey] || 0);
-          const barHeight = (value / max) * (height - padding * 2);
-          const x = padding + index * barSpace + (barSpace - barWidth) / 2;
-          const y = height - padding - barHeight;
-          const color = campusColors[index % campusColors.length];
-
+    <div>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-[240px] w-full"
+        role="img"
+        aria-label="Monthly analytics grouped bar chart"
+      >
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const y = top + plotHeight - ratio * plotHeight;
           return (
-            <g key={label}>
-              <rect
-                x={x}
-                y={y}
-                width={barWidth}
-                height={barHeight}
-                rx="6"
-                fill={color}
-                className="transition-opacity hover:opacity-90"
+            <g key={ratio}>
+              <line
+                x1={left}
+                y1={y}
+                x2={width - right}
+                y2={y}
+                stroke="#e2e8f0"
               />
-              <rect
-                x={padding + index * barSpace}
-                y={padding}
-                width={barSpace}
-                height={height - padding * 2}
-                fill="transparent"
-                className="cursor-pointer"
-                onMouseEnter={() =>
-                  setTooltip({
-                    x: padding + index * barSpace + barSpace / 2,
-                    y: Math.max(y - 10, 28),
-                    label,
-                    value,
-                    color,
-                  })
-                }
-                onMouseMove={() =>
-                  setTooltip({
-                    x: padding + index * barSpace + barSpace / 2,
-                    y: Math.max(y - 10, 28),
-                    label,
-                    value,
-                    color,
-                  })
-                }
-              />
-              <text x={x + barWidth / 2} y={Math.max(y - 6, 20)} textAnchor="middle" fontSize="10" fontWeight="700" fill="#334155">
-                {numberFormat.format(value)}
-              </text>
-              <text x={x + barWidth / 2} y={height - 10} textAnchor="middle" fontSize="9" fill="#64748b">
-                {shortLabel(label)}
+              <text
+                x={left - 8}
+                y={y + 4}
+                textAnchor="end"
+                fontSize="10"
+                fill="#64748b"
+              >
+                {Math.round(max * ratio)}
               </text>
             </g>
           );
         })}
 
-        {tooltip && (
-          <g>
-            <rect
-              x={Math.min(Math.max(tooltip.x - 72, 8), width - 150)}
-              y={Math.max(tooltip.y - 48, 8)}
-              width="144"
-              height="42"
-              rx="8"
-              fill="white"
-              stroke="#e2e8f0"
-              filter="drop-shadow(0 8px 14px rgba(15, 23, 42, 0.14))"
-            />
-            <circle cx={Math.min(Math.max(tooltip.x - 60, 20), width - 138)} cy={Math.max(tooltip.y - 24, 32)} r="4" fill={tooltip.color} />
-            <text x={Math.min(Math.max(tooltip.x - 50, 30), width - 128)} y={Math.max(tooltip.y - 27, 29)} fontSize="10" fontWeight="700" fill="#0f172a">
-              {String(tooltip.label).length > 18 ? `${String(tooltip.label).slice(0, 17)}…` : tooltip.label}
-            </text>
-            <text x={Math.min(Math.max(tooltip.x - 50, 30), width - 128)} y={Math.max(tooltip.y - 13, 43)} fontSize="10" fill="#475569">
-              Jobs: {numberFormat.format(tooltip.value)}
-            </text>
-          </g>
-        )}
+        {data.map((item, dataIndex) => {
+          const groupStart = left + dataIndex * groupWidth + groupPadding;
+
+          return (
+            <g key={`${item.key || item.label}-${dataIndex}`}>
+              {series.map(([key, label, color], seriesIndex) => {
+                const value = Number(item[key] || 0);
+                const barHeight = (value / max) * plotHeight;
+                const x =
+                  groupStart + seriesIndex * (barWidth + barGap);
+                const y = top + plotHeight - barHeight;
+
+                return (
+                  <rect
+                    key={`${key}-${dataIndex}`}
+                    x={x}
+                    y={y}
+                    width={barWidth}
+                    height={Math.max(0, barHeight)}
+                    rx={Math.min(3, barWidth / 3)}
+                    fill={color}
+                  >
+                    <title>{`${label}: ${numberFormat.format(value)}`}</title>
+                  </rect>
+                );
+              })}
+
+              {showLabel(dataIndex) ? (
+                <text
+                  x={left + dataIndex * groupWidth + groupWidth / 2}
+                  y={height - 12}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#64748b"
+                >
+                  {item.label}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
       </svg>
+
+      <div className="flex flex-wrap justify-center gap-4">
+        {series.map(([, label, color]) => (
+          <span
+            key={label}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600"
+          >
+            <i
+              className="h-2.5 w-2.5 rounded-sm"
+              style={{ backgroundColor: color }}
+            />
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };
 
-
-const SimpleBarList = ({ data, labelKey = "name", valueKey = "value" }) => {
-  const filtered = (data || []).filter((item) => Number(item[valueKey] || 0) > 0);
-  const max = Math.max(...filtered.map((item) => Number(item[valueKey] || 0)), 1);
-
-  if (!filtered.length) return <EmptyState />;
-
+const FunnelChart = ({ data = [] }) => {
+  const rows = data.filter((item) => Number(item.value || 0) > 0);
+  const max = Math.max(1, ...rows.map((item) => item.value));
+  if (!rows.length) return <EmptyChart />;
   return (
-    <div className="space-y-3 pt-4">
-      {filtered.map((item, index) => {
-        const label = item[labelKey] || "Unknown";
-        const value = Number(item[valueKey] || 0);
-
+    <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 py-1">
+      {rows.map((item, index) => {
+        const proportionalWidth = (Number(item.value || 0) / max) * 100;
+        const width = Math.max(44, Math.min(100, proportionalWidth));
         return (
-          <div key={label} className="group relative grid grid-cols-[150px_1fr_40px] items-center gap-3 text-xs">
-            <span className="truncate text-right font-semibold text-slate-600">{label}</span>
-            <div className="h-7 overflow-hidden rounded-lg bg-slate-100">
-              <div
-                className="h-full rounded-lg transition-all group-hover:opacity-90"
-                style={{
-                  width: `${Math.max((value / max) * 100, 5)}%`,
-                  backgroundColor: campusColors[index % campusColors.length],
-                }}
-              />
-            </div>
-            <span className="font-extrabold text-slate-800">{numberFormat.format(value)}</span>
-            <div className="pointer-events-none absolute left-40 top-[-38px] z-10 hidden rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-lg group-hover:block">
-              {label}: {numberFormat.format(value)}
+          <div key={item.name} className="w-full text-center">
+            <div
+              className="mx-auto flex h-8 items-center justify-center rounded-lg px-3 text-xs font-bold text-white shadow-sm"
+              style={{
+                width: `${width}%`,
+                backgroundColor: colors[index % colors.length],
+              }}
+            >
+              <span className="truncate">
+                {titleCase(item.name)} · {numberFormat.format(item.value)}
+              </span>
             </div>
           </div>
         );
@@ -1268,837 +883,559 @@ const SimpleBarList = ({ data, labelKey = "name", valueKey = "value" }) => {
   );
 };
 
-const Legend = ({ keys, colors }) => (
-  <div className="flex flex-wrap justify-center gap-4 text-[10px] font-semibold text-slate-600">
-    {keys.map((key, index) => (
-      <span key={key} className="inline-flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
-        {key}
-      </span>
-    ))}
-  </div>
-);
-
-const ChartCard = ({ title, subtitle, children, className = "" }) => (
-  <div className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
-    <div className="mb-3">
-      <h2 className="text-sm font-extrabold text-slate-800">{title}</h2>
-      <p className="text-[11px] text-slate-500">{subtitle}</p>
-    </div>
-    {children}
-  </div>
-);
-
-const getStoredAdmin = () => {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-};
-
-const getAdminName = (user) => {
-  const fullName = [user?.firstName, user?.middleName, user?.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return user?.fullName || fullName || user?.username || user?.email || "Admin";
-};
-
-const getInitials = (name) => {
-  const clean = String(name || "Admin").trim();
-  const parts = clean.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  return clean.slice(0, 2).toUpperCase();
-};
-
-const formatNotificationTime = (value) => {
-  if (!value) return "";
-  const date = new Date(value);
-  const diff = Date.now() - date.getTime();
-
-  if (Number.isNaN(diff)) return "";
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-
-  if (diff < minute) return "Just now";
-  if (diff < hour) return `${Math.floor(diff / minute)} minute${Math.floor(diff / minute) === 1 ? "" : "s"} ago`;
-  if (diff < day) return `${Math.floor(diff / hour)} hour${Math.floor(diff / hour) === 1 ? "" : "s"} ago`;
-  if (diff < day * 2) return "Yesterday";
-
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-};
-
-const getNotificationGroupLabel = (dateString) => {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return "Last Week";
-
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfNotificationDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.floor((startOfToday - startOfNotificationDay) / 86400000);
-
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  return "Last Week";
-};
-
-const getNotificationId = (value) => {
-  const resolvedValue = value?._id || value;
-  return resolvedValue ? String(resolvedValue) : "";
-};
-
-const getAdminNotificationLink = (notification) => {
-  const metadata = notification?.metadata || {};
-  const type = String(notification?.type || "").toLowerCase();
-  const title = String(notification?.title || "").toLowerCase();
-  const storedLink = String(notification?.link || "").trim();
-  const relatedId = getNotificationId(notification?.relatedId);
-  const relatedModel = String(notification?.relatedModel || "").toLowerCase();
-  const accountType = String(metadata.accountType || metadata.userRole || "").toLowerCase();
-
-  const requestId = getNotificationId(metadata.requestId);
-  if (type === "job_edit_request" || title.includes("job edit request")) {
-    return requestId
-      ? `/admin/employer-job-edit-requests/${requestId}`
-      : storedLink || "/admin/employer-job-edit-requests";
-  }
-
-  const isVerificationNotification =
-    type.includes("verification") ||
-    title.includes("verification") ||
-    metadata.adminCategory === "new_registration";
-
-  if (isVerificationNotification) {
-    const employerId = getNotificationId(
-      metadata.employerId ||
-        (accountType === "employer" ? metadata.subjectUserId || metadata.userId || relatedId : "")
-    );
-    const jobseekerId = getNotificationId(
-      metadata.jobseekerId ||
-        (accountType === "jobseeker" ? metadata.subjectUserId || metadata.userId || relatedId : "")
-    );
-
-    if (employerId || storedLink.includes("/admin/employer-verification/")) {
-      return employerId ? `/admin/employer-verification/${employerId}` : storedLink;
-    }
-    if (jobseekerId || storedLink.includes("/admin/jobseeker-verification/")) {
-      return jobseekerId ? `/admin/jobseeker-verification/${jobseekerId}` : storedLink;
-    }
-  }
-
-  const applicationId = getNotificationId(metadata.applicationId);
-  if (applicationId || relatedModel === "application") {
-    return `/admin/applications/${applicationId || relatedId}`;
-  }
-
-  const jobId = getNotificationId(metadata.jobId);
-  if (metadata.adminCategory === "new_job_posted" || (relatedModel === "job" && type !== "job_edit_request")) {
-    return jobId || relatedId ? `/admin/jobs/${jobId || relatedId}` : storedLink;
-  }
-
-  return storedLink;
-};
-
-const AdminTopActions = () => {
-  const navigate = useNavigate();
-  const [admin, setAdmin] = useState(getStoredAdmin);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [showSignOutModal, setShowSignOutModal] = useState(false);
-  const [isSignOutModalVisible, setIsSignOutModalVisible] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
-  const groupedDropdownNotifications = useMemo(() => {
-    const groups = {
-      Today: [],
-      Yesterday: [],
-      "Last Week": [],
-    };
-
-    notifications.slice(0, 10).forEach((notification) => {
-      groups[getNotificationGroupLabel(notification.createdAt)].push(notification);
-    });
-
-    return ["Today", "Yesterday", "Last Week"]
-      .map((label) => ({ label, items: groups[label] }))
-      .filter((group) => group.items.length > 0);
-  }, [notifications]);
-
-  const adminName = getAdminName(admin);
-  const adminImage = admin?.organizationLogo || admin?.profileImage || admin?.avatar || admin?.image || "/images/phinma-logo.png";
-
-  const openSignOutModal = () => {
-    if (isSigningOut) return;
-    setIsProfileOpen(false);
-    setIsNotificationOpen(false);
-    setShowSignOutModal(true);
-    window.setTimeout(() => setIsSignOutModalVisible(true), 30);
-  };
-
-  const closeSignOutModal = () => {
-    if (isSigningOut) return;
-    setIsSignOutModalVisible(false);
-    window.setTimeout(() => setShowSignOutModal(false), 180);
-  };
-
-  const handleSignOut = () => {
-    if (isSigningOut) return;
-
-    setIsSigningOut(true);
-    setIsSignOutModalVisible(false);
-
-    window.setTimeout(() => {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      sessionStorage.clear();
-      setShowSignOutModal(false);
-      setIsSigningOut(false);
-      navigate("/admin/login");
-    }, 180);
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const response = await api.get("/notifications");
-      const data = response.data || {};
-      setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
-      setUnreadCount(Number(data.unreadCount || 0));
-    } catch (error) {
-      console.error("Admin notifications error:", error);
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  useEffect(() => {
-    const syncAdminProfile = async () => {
-      try {
-        const response = await api.get("/admin/profile");
-        const profile = response.data?.profile || {};
-        const storedAdmin = getStoredAdmin() || {};
-        const nextAdmin = {
-          ...storedAdmin,
-          ...profile,
-          profileImage: profile.organizationLogo || storedAdmin.profileImage || "/images/phinma-logo.png",
-        };
-
-        setAdmin(nextAdmin);
-        localStorage.setItem("user", JSON.stringify(nextAdmin));
-      } catch (error) {
-        setAdmin(getStoredAdmin());
-      }
-    };
-
-    syncAdminProfile();
-    window.addEventListener("admin-profile-updated", syncAdminProfile);
-    return () => window.removeEventListener("admin-profile-updated", syncAdminProfile);
-  }, []);
-
-  useEffect(() => {
-    const closeDropdowns = () => {
-      setIsNotificationOpen(false);
-      setIsProfileOpen(false);
-    };
-
-    window.addEventListener("click", closeDropdowns);
-    return () => window.removeEventListener("click", closeDropdowns);
-  }, []);
-
-  const markAllAsRead = async () => {
-    try {
-      await api.put("/notifications/mark-all-read");
-      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Mark all notifications error:", error);
-    }
-  };
-
-  const openNotification = async (notification) => {
-    try {
-      if (!notification?.isRead && notification?._id) {
-        await api.put(`/notifications/${notification._id}/read`);
-        setNotifications((prev) =>
-          prev.map((item) => (item._id === notification._id ? { ...item, isRead: true } : item))
-        );
-        setUnreadCount((prev) => Math.max(prev - 1, 0));
-      }
-
-      const link = getAdminNotificationLink(notification);
-      setIsNotificationOpen(false);
-      if (link) navigate(link);
-    } catch (error) {
-      console.error("Open notification error:", error);
-    }
-  };
-
-  return (
-    <div className="relative flex items-center justify-end gap-2">
-      <div className="relative">
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            const next = !isNotificationOpen;
-            setIsNotificationOpen(next);
-            setIsProfileOpen(false);
-            if (next) fetchNotifications();
-          }}
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
-          aria-label="Open notifications"
-        >
-          <Bell size={18} />
-          {unreadCount > 0 ? (
-            <span
-              className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[10px] font-bold leading-none text-white shadow-sm"
-              aria-label={`${unreadCount} unread notifications`}
-            >
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          ) : null}
-        </button>
-
-        {isNotificationOpen ? (
-          <div
-            onClick={(event) => event.stopPropagation()}
-            className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
-          >
-            <div className="border-b border-gray-100 px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-[#2e66a6]/10 p-2 text-[#2e66a6]">
-                    <Bell size={16} />
-                  </div>
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
-                </div>
-                {unreadCount > 0 ? (
-                  <button
-                    type="button"
-                    onClick={markAllAsRead}
-                    className="rounded-md px-2 py-1 text-sm font-medium text-[#2e66a6] transition hover:bg-[#2e66a6]/5 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-                  >
-                    Mark all as read
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="max-h-[430px] overflow-y-auto px-1 py-2">
-              {notifications.length ? (
-                <div className="space-y-3">
-                  {groupedDropdownNotifications.map((group) => (
-                    <div key={group.label}>
-                      <div className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">
-                        {group.label}
-                      </div>
-
-                      <div className="space-y-1">
-                        {group.items.map((notification) => (
-                          <button
-                            type="button"
-                            key={notification._id}
-                            onClick={() => openNotification(notification)}
-                            className={`flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left outline-none transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#2e66a6]/20 ${
-                              !notification.isRead ? "bg-blue-50" : "bg-white"
-                            }`}
-                          >
-                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-                              !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
-                            }`}>
-                              <UserRound size={20} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-3">
-                                <h5 className="min-w-0 flex-1 break-words text-sm font-semibold leading-5 text-gray-900">
-                                  {notification.title}
-                                </h5>
-                                <span className="shrink-0 text-xs text-gray-500">
-                                  {formatNotificationTime(notification.createdAt)}
-                                </span>
-                              </div>
-                              <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-gray-700">
-                                {notification.message}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-8 text-center">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                    <Bell size={22} />
-                  </div>
-                  <p className="text-sm text-gray-600">No new notifications</p>
-                  <p className="mt-1 text-xs text-gray-400">You're all caught up!</p>
-                </div>
-              )}
-            </div>
-
-            {notifications.length > 0 ? (
-              <div className="border-t border-gray-100 px-4 py-3">
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setIsNotificationOpen(false);
-                    navigate("/admin/notifications");
-                  }}
-                  className="flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-[#2e66a6] transition hover:bg-[#2e66a6]/5 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-                >
-                  View all notifications
-                  <ChevronDown size={14} className="ml-2 -rotate-90" />
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+const MetricTile = ({ label, value, suffix = "", icon: Icon }) => (
+  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+          {label}
+        </p>
+        <p className="mt-1 text-2xl font-extrabold text-slate-800">
+          {numberFormat.format(Number(value || 0))}
+          {suffix}
+        </p>
       </div>
-
-      {showSignOutModal ? (
-        <div
-          className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/10 px-4 transition-opacity duration-200 ${
-            isSignOutModalVisible ? "opacity-100" : "opacity-0"
-          }`}
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) closeSignOutModal();
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-signout-title"
-            aria-describedby="admin-signout-description"
-            className={`w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200 ${
-              isSignOutModalVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-            }`}
-          >
-            <div className="p-6 text-center sm:p-7">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
-                <img
-                  src="/images/error.png"
-                  alt=""
-                  aria-hidden="true"
-                  className="h-14 w-14 object-contain"
-                  draggable="false"
-                />
-              </div>
-
-              <h2 id="admin-signout-title" className="text-xl font-bold text-slate-900">
-                Sign out?
-              </h2>
-
-              <p id="admin-signout-description" className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
-                <span className="block">Are you sure you want to sign out of your account?</span>
-                <span className="block">You can sign in again anytime.</span>
-              </p>
-
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={closeSignOutModal}
-                  disabled={isSigningOut}
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  disabled={isSigningOut}
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-6 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {isSigningOut ? "Signing out..." : "Sign Out"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <div className="rounded-xl bg-[#2e66a6]/10 p-2.5 text-[#2e66a6]">
+        <Icon size={20} />
+      </div>
     </div>
-  );
-};
+  </div>
+);
 
-const DashboardGrowthText = ({ value = 0, inverse = false }) => {
-  const numeric = Number(value || 0);
-  const positive = inverse ? numeric <= 0 : numeric >= 0;
-  const arrow = numeric > 0 ? "↗" : numeric < 0 ? "↘" : "→";
-
-  return (
-    <div className="mt-3 flex items-center gap-1.5 text-[11px]">
-      <span className={positive ? "font-bold text-emerald-600" : "font-bold text-rose-500"}>
-        {arrow} {numeric > 0 ? "+" : ""}{numeric.toFixed(1)}%
-      </span>
-      <span className="text-slate-400">from last month</span>
-    </div>
-  );
-};
-
-const DashboardMetricCard = ({ label, value, growth, imageSrc = "/images/case.png", onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-[#2e66a6] bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] p-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.16)] transition-all duration-500 ease-out hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(0,0,0,0.22)] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 focus:ring-offset-2"
+const AnalyticsSkeleton = () => (
+  <div
+    className="grid animate-pulse grid-cols-1 gap-4 xl:grid-cols-12"
+    aria-label="Loading analytics charts"
   >
-    <div
-      className="pointer-events-none absolute right-8 top-1/2 h-[76px] w-[76px] -translate-y-1/2 rounded-full blur-[36px] transition-all duration-700 ease-out group-hover:scale-110 group-hover:blur-[44px]"
-      style={{
-        background:
-          "radial-gradient(circle, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.14) 48%, transparent 76%)",
-      }}
-    />
-
-    <img
-      src={imageSrc}
-      alt=""
-      aria-hidden="true"
-      className="pointer-events-none absolute right-[-16px] top-1/2 h-24 w-24 -translate-y-1/2 object-contain opacity-45 mix-blend-soft-light saturate-150 transition-all duration-700 ease-out group-hover:right-[-12px] group-hover:scale-105 group-hover:opacity-55"
-      style={{
-        WebkitMaskImage:
-          "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.65) 58%, rgba(0,0,0,0) 82%)",
-        maskImage:
-          "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.65) 58%, rgba(0,0,0,0) 82%)",
-      }}
-    />
-
-    <div className="relative z-10">
-      <span className="text-sm font-medium text-white/85">{label}</span>
-      <div className="mt-7 text-3xl font-extrabold tracking-tight">{numberFormat.format(Number(value || 0))}</div>
-      <div className="[&_*]:!text-white/80">
-        <DashboardGrowthText value={growth} />
-      </div>
+    <div className="h-56 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-12">
+      <div className="h-4 w-40 rounded bg-slate-200" />
+      <div className="mt-5 h-36 rounded-xl bg-slate-100" />
     </div>
-
-    <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition-all duration-500 ease-out group-hover:border-white/20" />
-  </button>
-);
-
-const RegistrationTrafficChart = ({ data = [] }) => {
-  const rows = Array.isArray(data) ? data.slice(-6) : [];
-  const maxValue = Math.max(1, ...rows.map((item) => Number(item.total || 0)));
-
-  const rawStep = maxValue / 4;
-  const magnitude = 10 ** Math.floor(Math.log10(Math.max(rawStep, 1)));
-  const normalizedStep = rawStep / magnitude;
-  const niceStep =
-    normalizedStep <= 1
-      ? magnitude
-      : normalizedStep <= 2
-        ? 2 * magnitude
-        : normalizedStep <= 5
-          ? 5 * magnitude
-          : 10 * magnitude;
-  const axisMax = niceStep * 4;
-
-  const formatAxisValue = (value) => {
-    if (value >= 1000000) {
-      const millions = value / 1000000;
-      return `${Number.isInteger(millions) ? millions : millions.toFixed(1)}M`;
-    }
-    if (value >= 1000) {
-      const thousands = value / 1000;
-      return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)}K`;
-    }
-    return numberFormat.format(value);
-  };
-
-  return (
-    <div className="mt-7">
-      <div className="relative h-[258px] border-b border-slate-200">
-        {[0, 1, 2, 3, 4].map((line) => {
-          const value = axisMax - line * niceStep;
-          return (
-            <React.Fragment key={line}>
-              <span
-                className="absolute left-0 w-10 -translate-y-1/2 text-right text-[11px] font-medium text-slate-400"
-                style={{ top: `${line * 25}%` }}
-              >
-                {formatAxisValue(value)}
-              </span>
-              <div
-                className="absolute left-12 right-0 border-t border-dashed border-slate-200"
-                style={{ top: `${line * 25}%` }}
-              />
-            </React.Fragment>
-          );
-        })}
-
-        <div className="absolute bottom-0 left-12 right-0 top-0 flex items-end justify-around gap-4 px-4 pb-0">
-          {rows.length ? rows.map((item) => {
-            const total = Number(item.total || 0);
-            const height = total > 0 ? Math.max(12, (total / axisMax) * 100) : 4;
-            return (
-              <div key={item.month || item.label} className="group relative flex h-full flex-1 items-end justify-center">
-                <div
-                  className="w-full max-w-[52px] rounded-t-xl bg-[#2e66a6] shadow-sm transition-all duration-300 group-hover:bg-[#255487]"
-                  style={{ height: `${height}%` }}
-                  title={`${item.label}: ${numberFormat.format(total)} registrations`}
-                />
-                <div className="absolute -bottom-5 text-xs font-medium text-slate-500">{item.label}</div>
-              </div>
-            );
-          }) : (
-            <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">No registration data available</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const OperationsCalendar = ({ userGrowth = {} }) => {
-  const [offset, setOffset] = useState(0);
-  const today = new Date();
-  const anchor = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
-  const days = Array.from({ length: 5 }, (_, index) => {
-    const date = new Date(anchor);
-    date.setDate(anchor.getDate() + index - 2);
-    return date;
-  });
-  const isToday = (date) => date.toDateString() === today.toDateString();
-  const progress = Math.max(0, Math.min(100, Number(userGrowth.progress || 0)));
-  const growth = Number(userGrowth.percentChange || 0);
-
-  return (
-    <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Operations Calendar</p>
-          <h3 className="mt-1 text-lg font-bold text-slate-900">
-            {anchor.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-          </h3>
-        </div>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={() => setOffset((value) => value - 5)} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#2e66a6]" aria-label="Previous dates">‹</button>
-          <button type="button" onClick={() => setOffset((value) => value + 5)} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#2e66a6]" aria-label="Next dates">›</button>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-5 gap-2">
-        {days.map((date) => (
-          <button
-            type="button"
-            key={date.toISOString()}
-            onClick={() => setOffset(Math.round((date - today) / 86400000))}
-            className={`rounded-2xl border px-2 py-4 text-center transition ${
-              isToday(date)
-                ? "border-[#2e66a6] bg-[#2e66a6] text-white shadow-md"
-                : "border-slate-200 bg-white text-slate-700 hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5"
-            }`}
-          >
-            <span className={`block text-[10px] font-bold uppercase ${isToday(date) ? "text-white/70" : "text-slate-400"}`}>
-              {date.toLocaleDateString("en-US", { weekday: "short" })}
-            </span>
-            <span className="mt-1 block text-lg font-extrabold">{date.getDate()}</span>
-          </button>
+    <div className="h-60 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-7">
+      <div className="h-4 w-36 rounded bg-slate-200" />
+      <div className="mt-5 space-y-3">
+        {[100, 86, 72, 58].map((width) => (
+          <div
+            key={width}
+            className="mx-auto h-7 rounded-lg bg-slate-100"
+            style={{ width: `${width}%` }}
+          />
         ))}
       </div>
-
-      <div className="mt-6 border-t border-slate-100 pt-6">
-        <div className="grid items-center gap-6 sm:grid-cols-[150px_1fr]">
-          <div className="relative mx-auto h-32 w-32 rounded-full" style={{ background: `conic-gradient(${BRAND_BLUE} ${progress * 3.6}deg, #e2e8f0 0deg)` }}>
-            <div className="absolute inset-[12px] flex flex-col items-center justify-center rounded-full bg-white">
-              <span className="text-2xl font-extrabold text-slate-900">{progress}%</span>
-              <span className="text-[10px] text-slate-400">recent share</span>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-base font-bold text-slate-900">User Growth</h4>
-            <DashboardGrowthText value={growth} />
-            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-xl bg-slate-50 p-3">
-                <span className="block text-slate-400">This month</span>
-                <strong className="mt-1 block text-base text-slate-800">{numberFormat.format(Number(userGrowth.currentMonth || 0))}</strong>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <span className="block text-slate-400">Last month</span>
-                <strong className="mt-1 block text-base text-slate-800">{numberFormat.format(Number(userGrowth.previousMonth || 0))}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
+    </div>
+    <div className="h-60 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-5">
+      <div className="h-4 w-32 rounded bg-slate-200" />
+      <div className="mt-5 space-y-3">
+        {["w-full", "w-4/5", "w-3/5", "w-2/5"].map((width) => (
+          <div key={width} className={`h-6 rounded-md bg-slate-100 ${width}`} />
+        ))}
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const [dashboard, setDashboard] = useState(defaultDashboard);
+  const [analytics, setAnalytics] = useState(emptyAnalytics);
+  const [filters, setFilters] = useState(initialFilters);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState({
-    date: "thisMonth",
-    startDate: "",
-    endDate: "",
-    campus: "all",
-    applicationStatus: "all",
-    employmentType: "all",
-    workMode: "all",
-  });
-  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const fetchDashboard = async () => {
+  const options = analytics?.filters?.options || {};
+  const kpis = analytics?.kpis || emptyAnalytics.kpis;
+  const sections = analytics?.sections || emptyAnalytics.sections;
+
+  const requestParams = useMemo(() => {
+    const next = { ...filters };
+    if (next.date !== "specific") delete next.specificDate;
+    if (next.date !== "range") {
+      delete next.startDate;
+      delete next.endDate;
+    }
+    return next;
+  }, [filters]);
+
+  const fetchAnalytics = async () => {
     try {
       setLoading(true);
       setError("");
-      const response = await api.get("/admin/dashboard", { params: filters });
-      setDashboard({
-        ...defaultDashboard,
+      const response = await api.get("/admin/analytics", {
+        params: requestParams,
+      });
+      setAnalytics({
+        ...emptyAnalytics,
         ...(response.data || {}),
-        stats: {
-          ...defaultDashboard.stats,
-          ...(response.data?.stats || {}),
-          growth: {
-            ...defaultDashboard.stats.growth,
-            ...(response.data?.stats?.growth || {}),
-          },
-        },
-        overview: {
-          ...defaultDashboard.overview,
-          ...(response.data?.overview || {}),
-          userGrowth: {
-            ...defaultDashboard.overview.userGrowth,
-            ...(response.data?.overview?.userGrowth || {}),
-          },
+        sections: {
+          ...emptyAnalytics.sections,
+          ...(response.data?.sections || {}),
         },
       });
     } catch (err) {
-      console.error("Admin dashboard error:", err);
-      setError(err?.response?.data?.message || "Unable to load dashboard data.");
+      console.error("Admin analytics error:", err);
+      setError(
+        err?.response?.data?.message || "Unable to load analytics data.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboard();
+    const timer = setTimeout(fetchAnalytics, 180);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.date, filters.startDate, filters.endDate]);
+  }, [requestParams]);
 
-  const updatePeriod = (value) => {
-    setFilters((previous) => ({ ...previous, date: value, startDate: "", endDate: "" }));
+  const updateFilter = (name, value) =>
+    setFilters((previous) => ({ ...previous, [name]: value }));
+  const selectDateFilter = (value) => {
+    if (value === "range") {
+      setShowCustomDateModal(true);
+      return;
+    }
+    setFilters((previous) => ({
+      ...previous,
+      date: value,
+      specificDate: value === "specific" ? previous.specificDate : "",
+      startDate: "",
+      endDate: "",
+    }));
   };
-
   const applyCustomDateRange = (startDate, endDate) => {
-    setFilters((previous) => ({ ...previous, date: "custom", startDate, endDate }));
+    setFilters((previous) => ({
+      ...previous,
+      date: "range",
+      specificDate: "",
+      startDate,
+      endDate,
+    }));
     setShowCustomDateModal(false);
   };
+  const resetFilters = () => setFilters(initialFilters);
+  const hasFilters = JSON.stringify(filters) !== JSON.stringify(initialFilters);
 
-  const stats = dashboard.stats || defaultDashboard.stats;
-  const overview = dashboard.overview || defaultDashboard.overview;
-  const growth = stats.growth || defaultDashboard.stats.growth;
-  const periodButtons = [
-    { label: "Day", value: "today" },
-    { label: "Week", value: "thisWeek" },
-    { label: "Month", value: "thisMonth" },
-    { label: "Year", value: "thisYear" },
+  const exportAnalytics = () => {
+    try {
+      setExporting(true);
+      const workbook = XLSX.utils.book_new();
+      const addSheet = (name, rows) =>
+        XLSX.utils.book_append_sheet(
+          workbook,
+          XLSX.utils.json_to_sheet(
+            rows?.length ? rows : [{ Message: "No data" }],
+          ),
+          name.slice(0, 31),
+        );
+      addSheet(
+        "KPIs",
+        Object.entries(kpis).map(([metric, value]) => ({
+          Metric: titleCase(metric),
+          Value: value,
+        })),
+      );
+      addSheet("Trends", analytics.trends || []);
+      addSheet("Application Funnel", sections.applications?.funnel || []);
+      addSheet("Job Categories", sections.jobs?.categories || []);
+      addSheet("User Verification", sections.users?.verification || []);
+      addSheet("Messages", sections.operations?.messages || []);
+      addSheet("Notifications", sections.operations?.notifications || []);
+      addSheet("System Modules", sections.operations?.system?.modules || []);
+      XLSX.writeFile(
+        workbook,
+        `admin-analytics-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      );
+    } catch (err) {
+      setError("Unable to export analytics data.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const tabs = [
+    ["overview", "Overview"],
+    ["recruitment", "Recruitment"],
+    ["users", "Users & Verification"],
+    ["operations", "Operations"],
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-1 py-8">
-      <div className="space-y-5">
-        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+    <main className="mx-auto w-full max-w-[1600px] px-1 py-6">
+      <div className="space-y-4">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900">Admin Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-500">Overview of registered users, verification queues, edit requests, and monthly growth.</p>
+            <h1 className="text-xl font-extrabold text-slate-900">
+              Admin Dashboard
+            </h1>
+            <p className="text-xs text-slate-500">
+              Compact system-wide analysis of users, jobs, applications,
+              verification, engagement, and operations.
+            </p>
           </div>
-          <AdminTopActions />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-            {periodButtons.map((period) => (
-              <button
-                type="button"
-                key={period.value}
-                onClick={() => updatePeriod(period.value)}
-                className={`rounded-lg px-4 py-2 text-xs font-bold transition ${filters.date === period.value ? "bg-[#2e66a6] text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
-              >
-                {period.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2 pt-2 sm:justify-end">
+            <HeaderStatusCard
+              label="Pending Jobseeker"
+              value={kpis.pendingJobseekers}
+            />
+            <HeaderStatusCard
+              label="Pending Employers"
+              value={kpis.pendingEmployers}
+            />
+            <HeaderStatusCard
+              label="Edit Request"
+              value={kpis.pendingEditRequests}
+            />
+            <button
+              type="button"
+              onClick={exportAnalytics}
+              disabled={loading || exporting}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60"
+            >
+              <Download size={14} /> {exporting ? "Exporting..." : "Export"}
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setShowCustomDateModal(true)}
-            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-xs font-bold shadow-sm transition ${filters.date === "custom" ? "border-[#2e66a6] bg-[#2e66a6]/5 text-[#2e66a6]" : "border-slate-200 bg-white text-slate-600 hover:border-[#2e66a6]/30 hover:text-[#2e66a6]"}`}
-          >
-            <CalendarDays size={15} />
-            {filters.date === "custom" && filters.startDate && filters.endDate
-              ? `${formatDateLabel(filters.startDate)} – ${formatDateLabel(filters.endDate)}`
-              : "Select date range"}
-          </button>
-        </div>
+        </header>
 
         {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <DashboardMetricCard
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <StatCard
+            label="Jobseekers"
+            value={kpis.totalJobseekers}
+            imageSrc={statCardImages.users}
+          />
+          <StatCard
+            label="Employers"
+            value={kpis.totalEmployers}
+            imageSrc={statCardImages.verification}
+          />
+          <StatCard
             label="Registered Users"
-            value={stats.registeredUsers}
-            growth={growth.registeredUsers}
-            imageSrc={statCardImages.jobSeekers}
-            onClick={() => navigate("/admin/users")}
+            value={kpis.totalRegisteredUsers}
+            imageSrc={statCardImages.applications}
           />
-          <DashboardMetricCard
-            label="Pending Job Seekers"
-            value={stats.pendingSeekers}
-            growth={growth.pendingSeekers}
-            imageSrc={statCardImages.pendingSeekers}
-            onClick={() => navigate("/admin/jobseeker-verification")}
-          />
-          <DashboardMetricCard
-            label="Pending Employers"
-            value={stats.pendingEmployers}
-            growth={growth.pendingEmployers}
-            imageSrc={statCardImages.pendingEmployers}
-            onClick={() => navigate("/admin/employer-verification")}
-          />
-          <DashboardMetricCard
-            label="Pending Request Edit"
-            value={stats.pendingRequestEdits}
-            growth={growth.pendingRequestEdits}
+          <StatCard
+            label="Job Posts"
+            value={kpis.totalJobPosts}
             imageSrc={statCardImages.jobs}
-            onClick={() => navigate("/admin/employer-job-edit-requests")}
+          />
+          <StatCard
+            label="Applications"
+            value={kpis.applications}
+            imageSrc={statCardImages.applications}
+          />
+          <StatCard
+            label="Hire Rate"
+            value={kpis.hireRate}
+            suffix="%"
+            imageSrc={statCardImages.rate}
           />
         </div>
 
-        {loading ? (
-          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
-            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+            <DateFilterDropdown
+              value={filters.date}
+              startDate={filters.startDate}
+              endDate={filters.endDate}
+              onSelect={selectDateFilter}
+              disabled={loading}
+            />
+            <label className="block">
+              <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                Date Based On
+              </span>
+              <select
+                value={filters.dateField}
+                onChange={(event) =>
+                  updateFilter("dateField", event.target.value)
+                }
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              >
+                <option value="primary">Primary Event Date</option>
+                <option value="created">Record Created</option>
+                <option value="outcome">Outcome / Updated Date</option>
+              </select>
+            </label>
+            {filters.date === "specific" ? (
+              <DateInput
+                label="Specific Date"
+                value={filters.specificDate}
+                onChange={(value) => updateFilter("specificDate", value)}
+              />
+            ) : null}
+            <FilterSelect
+              label="Role"
+              value={filters.role}
+              onChange={(value) => updateFilter("role", value)}
+              values={options.roles}
+              allLabel="All Roles"
+            />
+            <FilterSelect
+              label="Campus"
+              value={filters.campus}
+              onChange={(value) => updateFilter("campus", value)}
+              values={options.campuses}
+              allLabel="All Campuses"
+            />
+            <FilterSelect
+              label="Application Status"
+              value={filters.applicationStatus}
+              onChange={(value) => updateFilter("applicationStatus", value)}
+              values={options.applicationStatuses}
+              allLabel="All Application Statuses"
+            />
+            <FilterSelect
+              label="Job Type"
+              value={filters.jobType}
+              onChange={(value) => updateFilter("jobType", value)}
+              values={options.jobTypes}
+              allLabel="All Job Types"
+            />
           </div>
-        ) : (
-          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Monthly Registration Traffic</h2>
-                <p className="mt-1 text-xs text-slate-400">Job seekers and employers · Last 6 months</p>
-              </div>
-              <RegistrationTrafficChart data={overview.registrationTraffic || []} />
-            </div>
 
-            <OperationsCalendar userGrowth={overview.userGrowth || {}} />
+          {showMoreFilters ? (
+            <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+              <FilterSelect
+                label="User Status"
+                value={filters.userStatus}
+                onChange={(value) => updateFilter("userStatus", value)}
+                values={options.userStatuses}
+                allLabel="All User Statuses"
+              />
+              <FilterSelect
+                label="Verification"
+                value={filters.verificationStatus}
+                onChange={(value) => updateFilter("verificationStatus", value)}
+                values={options.verificationStatuses}
+                allLabel="All Verification Statuses"
+              />
+              <FilterSelect
+                label="Job Status"
+                value={filters.jobStatus}
+                onChange={(value) => updateFilter("jobStatus", value)}
+                values={options.jobStatuses}
+                allLabel="All Job Statuses"
+              />
+              <FilterSelect
+                label="Category"
+                value={filters.category}
+                onChange={(value) => updateFilter("category", value)}
+                values={options.categories}
+                allLabel="All Categories"
+              />
+              <FilterSelect
+                label="Work Mode"
+                value={filters.workMode}
+                onChange={(value) => updateFilter("workMode", value)}
+                values={options.workModes}
+                allLabel="All Work Modes"
+              />
+              <FilterSelect
+                label="Company"
+                value={filters.company}
+                onChange={(value) => updateFilter("company", value)}
+                values={options.companies}
+                allLabel="All Companies"
+              />
+              <FilterSelect
+                label="Edit Request"
+                value={filters.editRequestStatus}
+                onChange={(value) => updateFilter("editRequestStatus", value)}
+                values={options.editRequestStatuses}
+                allLabel="All Edit Requests"
+              />
+              <FilterSelect
+                label="Message Type"
+                value={filters.messageType}
+                onChange={(value) => updateFilter("messageType", value)}
+                values={options.messageTypes}
+                allLabel="All Message Types"
+              />
+              <FilterSelect
+                label="Notification Type"
+                value={filters.notificationType}
+                onChange={(value) => updateFilter("notificationType", value)}
+                values={options.notificationTypes}
+                allLabel="All Notification Types"
+              />
+              <FilterSelect
+                label="Log Status"
+                value={filters.logStatus}
+                onChange={(value) => updateFilter("logStatus", value)}
+                values={options.logStatuses}
+                allLabel="All Log Statuses"
+              />
+              <FilterSelect
+                label="Log Module"
+                value={filters.logModule}
+                onChange={(value) => updateFilter("logModule", value)}
+                values={options.logModules}
+                allLabel="All Log Modules"
+              />
+            </div>
+          ) : null}
+
+          <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => setShowMoreFilters((value) => !value)}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10"
+            >
+              <Filter size={13} />
+              {showMoreFilters ? "Hide Filters" : "More Filters"}
+            </button>
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!hasFilters}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw size={13} />
+              Clear All
+            </button>
           </div>
-        )}
+        </section>
+
+        <nav
+          className="flex gap-6 overflow-x-auto border-b border-slate-200"
+          aria-label="Analytics sections"
+        >
+          {tabs.map(([key, label]) => (
+            <button
+              type="button"
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`shrink-0 border-b-2 px-1 pb-3 text-xs font-bold transition ${activeTab === key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        {loading ? <AnalyticsSkeleton /> : null}
+
+        {!loading && activeTab === "overview" ? (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <ChartCard
+              title="System Activity Trend"
+              subtitle="Registrations, jobs, applications, and hires by month"
+              className="xl:col-span-12"
+            >
+              <TrendChart data={analytics.trends} />
+            </ChartCard>
+            <ChartCard
+              title="Application Funnel"
+              subtitle="Current recruitment outcome distribution"
+              className="xl:col-span-7"
+            >
+              <FunnelChart data={sections.applications?.funnel} />
+            </ChartCard>
+            <ChartCard
+              title="Top Job Categories"
+              subtitle="Jobs grouped by category"
+              className="xl:col-span-5"
+            >
+              <HorizontalBars data={sections.jobs?.categories} />
+            </ChartCard>
+            <ChartCard
+              title="User Roles"
+              subtitle="Admin, employer, and jobseeker accounts"
+              className="xl:col-span-6"
+            >
+              <DonutChart data={sections.users?.roles} />
+            </ChartCard>
+            <ChartCard
+              title="Job Status"
+              subtitle="Lifecycle state of job postings"
+              className="xl:col-span-6"
+            >
+              <DonutChart data={sections.jobs?.statuses} />
+            </ChartCard>
+          </div>
+        ) : null}
+
+        {!loading && activeTab === "recruitment" ? (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <ChartCard
+              title="Application Funnel"
+              subtitle="Pending through final outcome"
+              className="xl:col-span-7"
+            >
+              <FunnelChart data={sections.applications?.funnel} />
+            </ChartCard>
+            <ChartCard
+              title="Employment Type"
+              subtitle="Job supply grouped by employment type"
+              className="xl:col-span-5"
+            >
+              <HorizontalBars data={sections.jobs?.employmentTypes} />
+            </ChartCard>
+            <ChartCard
+              title="Work Mode"
+              subtitle="On-site, remote, blended, and work from home"
+              className="xl:col-span-6"
+            >
+              <DonutChart data={sections.jobs?.workModes} />
+            </ChartCard>
+            <ChartCard
+              title="Employment Status"
+              subtitle="Status recorded for hired applicants"
+              className="xl:col-span-6"
+            >
+              <HorizontalBars data={sections.applications?.employmentStatus} />
+            </ChartCard>
+          </div>
+        ) : null}
+
+        {!loading && activeTab === "users" ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartCard
+              title="Verification Status"
+              subtitle="Employer and jobseeker verification state"
+            >
+              <HorizontalBars data={sections.users?.verification} />
+            </ChartCard>
+            <ChartCard
+              title="Jobseekers by Campus"
+              subtitle="Campus distribution from jobseeker profiles"
+            >
+              <HorizontalBars data={sections.users?.campuses} />
+            </ChartCard>
+          </div>
+        ) : null}
+
+        {!loading && activeTab === "operations" ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ChartCard
+              title="Job Edit Requests"
+              subtitle="Governance requests by status"
+            >
+              <HorizontalBars data={sections.operations?.editRequests} />
+            </ChartCard>
+            <ChartCard
+              title="Most Requested Job Sections"
+              subtitle="Sections employers request to edit"
+            >
+              <HorizontalBars data={sections.operations?.editRequestSections} />
+            </ChartCard>
+          </div>
+        ) : null}
+
+        {!loading ? (
+          <p className="text-right text-[10px] text-slate-400">
+            Timezone: Asia/Manila · Last updated:{" "}
+            {analytics.generatedAt
+              ? new Date(analytics.generatedAt).toLocaleString("en-PH")
+              : "—"}
+          </p>
+        ) : null}
 
         <CustomDateRangeModal
           open={showCustomDateModal}
@@ -2108,7 +1445,7 @@ const AdminDashboard = () => {
           onApply={applyCustomDateRange}
         />
       </div>
-    </div>
+    </main>
   );
 };
 
