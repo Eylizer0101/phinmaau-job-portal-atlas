@@ -726,20 +726,26 @@ const DonutChart = ({ data = [] }) => {
 
 const TrendChart = ({ data = [] }) => {
   const series = [
-    ["registrations", "Registrations", "#2e66a6"],
-    ["jobs", "Jobs", "#16a36f"],
-    ["applications", "Applications", "#dc9300"],
-    ["hires", "Hires", "#6366f1"],
+    ["registrations", "Registrations", "#dbeafe"],
+    ["jobs", "Jobs", "#6ee7b7"],
+    ["applications", "Applications", "#fcd34d"],
+    ["hires", "Hires", "#c4b5fd"],
   ];
 
-  if (!data.length) return <EmptyChart />;
+  if (!data.length) {
+    return (
+      <div className="flex h-32 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-xs font-medium text-white/65">
+        No data for the selected filters.
+      </div>
+    );
+  }
 
   const width = 920;
-  const height = 280;
+  const height = 235;
   const left = 48;
   const right = 18;
-  const top = 18;
-  const bottom = 48;
+  const top = 14;
+  const bottom = 42;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const max = Math.max(
@@ -748,7 +754,7 @@ const TrendChart = ({ data = [] }) => {
   );
 
   const groupWidth = plotWidth / data.length;
-  const groupPadding = Math.min(14, groupWidth * 0.16);
+  const groupPadding = Math.min(12, groupWidth * 0.13);
   const usableGroupWidth = Math.max(8, groupWidth - groupPadding * 2);
   const barGap = Math.min(4, usableGroupWidth * 0.04);
   const barWidth = Math.max(
@@ -765,7 +771,7 @@ const TrendChart = ({ data = [] }) => {
     <div>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-[240px] w-full"
+        className="h-[205px] w-full"
         role="img"
         aria-label="Monthly analytics grouped bar chart"
       >
@@ -778,18 +784,34 @@ const TrendChart = ({ data = [] }) => {
                 y1={y}
                 x2={width - right}
                 y2={y}
-                stroke="#e2e8f0"
+                stroke="rgba(255,255,255,0.18)"
+                strokeWidth="1"
               />
               <text
                 x={left - 8}
                 y={y + 4}
                 textAnchor="end"
                 fontSize="10"
-                fill="#64748b"
+                fill="rgba(255,255,255,0.72)"
               >
                 {Math.round(max * ratio)}
               </text>
             </g>
+          );
+        })}
+
+        {data.slice(0, -1).map((item, dataIndex) => {
+          const x = left + (dataIndex + 1) * groupWidth;
+          return (
+            <line
+              key={`divider-${item.key || item.label}-${dataIndex}`}
+              x1={x}
+              y1={top}
+              x2={x}
+              y2={top + plotHeight}
+              stroke="rgba(255,255,255,0.13)"
+              strokeWidth="1"
+            />
           );
         })}
 
@@ -801,8 +823,7 @@ const TrendChart = ({ data = [] }) => {
               {series.map(([key, label, color], seriesIndex) => {
                 const value = Number(item[key] || 0);
                 const barHeight = (value / max) * plotHeight;
-                const x =
-                  groupStart + seriesIndex * (barWidth + barGap);
+                const x = groupStart + seriesIndex * (barWidth + barGap);
                 const y = top + plotHeight - barHeight;
 
                 return (
@@ -814,6 +835,7 @@ const TrendChart = ({ data = [] }) => {
                     height={Math.max(0, barHeight)}
                     rx={Math.min(3, barWidth / 3)}
                     fill={color}
+                    opacity="0.96"
                   >
                     <title>{`${label}: ${numberFormat.format(value)}`}</title>
                   </rect>
@@ -823,10 +845,10 @@ const TrendChart = ({ data = [] }) => {
               {showLabel(dataIndex) ? (
                 <text
                   x={left + dataIndex * groupWidth + groupWidth / 2}
-                  y={height - 12}
+                  y={height - 11}
                   textAnchor="middle"
                   fontSize="10"
-                  fill="#64748b"
+                  fill="rgba(255,255,255,0.78)"
                 >
                   {item.label}
                 </text>
@@ -836,11 +858,11 @@ const TrendChart = ({ data = [] }) => {
         })}
       </svg>
 
-      <div className="flex flex-wrap justify-center gap-4">
+      <div className="mt-1 flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-white/15 pt-3">
         {series.map(([, label, color]) => (
           <span
             key={label}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600"
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-white/85"
           >
             <i
               className="h-2.5 w-2.5 rounded-sm"
@@ -1323,13 +1345,23 @@ const AdminDashboard = () => {
 
         {!loading && activeTab === "overview" ? (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            <ChartCard
-              title="System Activity Trend"
-              subtitle="Registrations, jobs, applications, and hires by month"
-              className="xl:col-span-12"
-            >
-              <TrendChart data={analytics.trends} />
-            </ChartCard>
+            <section className="relative overflow-hidden rounded-2xl border border-[#2e66a6]/30 bg-gradient-to-br from-[#072258] via-[#245b98] to-[#52b2db] p-4 text-white shadow-[0_12px_30px_rgba(46,102,166,0.20)] xl:col-span-12">
+              <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-52 w-52 rounded-full bg-cyan-200/10 blur-3xl" />
+
+              <div className="relative z-10 mb-3 border-b border-white/15 pb-3">
+                <h2 className="text-sm font-bold text-white">
+                  System Activity Trend
+                </h2>
+                <p className="mt-0.5 text-[11px] text-white/70">
+                  Registrations, jobs, applications, and hires by month
+                </p>
+              </div>
+
+              <div className="relative z-10">
+                <TrendChart data={analytics.trends} />
+              </div>
+            </section>
             <ChartCard
               title="Application Funnel"
               subtitle="Current recruitment outcome distribution"
