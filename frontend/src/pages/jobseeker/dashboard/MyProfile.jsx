@@ -180,7 +180,7 @@ const SALARY_PRIVACY_OPTIONS = [
 ];
 
 const normalizeSalaryDigits = (value = '') =>
-  String(value || '').replace(/[^\d]/g, '').slice(0, 7);
+  String(value || '').replace(/[^\d]/g, '').slice(0, 6);
 
 const formatSalaryInput = (value = '') => {
   const digits = normalizeSalaryDigits(value);
@@ -770,7 +770,13 @@ const AutoFitProfileName = ({ children, maxFontSize = 34, minFontSize = 18 }) =>
       let nextSize = maxFontSize;
       text.style.fontSize = `${nextSize}px`;
 
-      while (nextSize > minFontSize && text.scrollWidth > container.clientWidth) {
+      const fitsWithinTwoLines = () => {
+        const computed = window.getComputedStyle(text);
+        const lineHeight = Number.parseFloat(computed.lineHeight) || nextSize * 1.15;
+        return text.scrollHeight <= (lineHeight * 2) + 2;
+      };
+
+      while (nextSize > minFontSize && !fitsWithinTwoLines()) {
         nextSize -= 0.5;
         text.style.fontSize = `${nextSize}px`;
       }
@@ -788,11 +794,15 @@ const AutoFitProfileName = ({ children, maxFontSize = 34, minFontSize = 18 }) =>
   }, [children, maxFontSize, minFontSize]);
 
   return (
-    <div ref={containerRef} className="w-full min-w-0 overflow-hidden">
+    <div ref={containerRef} className="w-full min-w-0">
       <h1
         ref={textRef}
-        className="whitespace-nowrap font-serif leading-tight font-bold tracking-[0.22em] uppercase text-[#111827]"
-        style={{ fontSize: `${fontSize}px` }}
+        className="whitespace-normal break-words font-serif font-bold tracking-[0.22em] uppercase text-[#111827]"
+        style={{
+          fontSize: `${fontSize}px`,
+          lineHeight: 1.15,
+          overflowWrap: 'anywhere',
+        }}
       >
         {children}
       </h1>
@@ -2729,6 +2739,30 @@ const isValidWorkExperienceDate = (value) => {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
+const WORK_EXPERIENCE_MINIMUM_AGE = 16;
+
+const getMinimumWorkExperienceDate = (birthday = '') => {
+  const clean = String(birthday || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) return '';
+
+  const [year, month, day] = clean.split('-').map(Number);
+  const birthDate = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(birthDate.getTime()) ||
+    birthDate.getFullYear() !== year ||
+    birthDate.getMonth() !== month - 1 ||
+    birthDate.getDate() !== day
+  ) {
+    return '';
+  }
+
+  const minimumDate = new Date(year + WORK_EXPERIENCE_MINIMUM_AGE, month - 1, day);
+  const minYear = minimumDate.getFullYear();
+  const minMonth = String(minimumDate.getMonth() + 1).padStart(2, '0');
+  const minDay = String(minimumDate.getDate()).padStart(2, '0');
+  return `${minYear}-${minMonth}-${minDay}`;
+};
+
 const WorkExperienceModal = ({
   open,
   mode,
@@ -2738,6 +2772,7 @@ const WorkExperienceModal = ({
   onClose,
   onSave,
   saving,
+  minimumDate = '',
 }) => {
   const [today, setToday] = useState(getWorkExperienceToday);
   useEffect(() => {
@@ -2798,7 +2833,7 @@ const WorkExperienceModal = ({
               label="Start Date"
               type="date"
               value={form.startDate}
-              min="0001-01-01"
+              min={minimumDate || '0001-01-01'}
               max={today}
               onChange={(e) => onChange('startDate', e.target.value)}
             />
@@ -2807,7 +2842,7 @@ const WorkExperienceModal = ({
                 label="End Date"
                 type="date"
                 value={form.endDate}
-                min={isValidWorkExperienceDate(form.startDate) ? form.startDate : '0001-01-01'}
+                min={isValidWorkExperienceDate(form.startDate) ? form.startDate : (minimumDate || '0001-01-01')}
                 max={today}
                 onChange={(e) => onChange('endDate', e.target.value)}
               />
@@ -3691,8 +3726,8 @@ const ProfileEditModal = ({
             options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
           />
           <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" maxLength={50} />
-          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value).replace(/\D/g, '').slice(0, 6))} placeholder="Minimum Salary" inputMode="numeric" maxLength={6} />
-          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value).replace(/\D/g, '').slice(0, 6))} placeholder="Maximum Salary" inputMode="numeric" maxLength={6} />
+          <Input label="Minimum Salary" value={formatSalaryInput(drafts.minimumSalary)} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" inputMode="numeric" maxLength={7} />
+          <Input label="Maximum Salary" value={formatSalaryInput(drafts.maximumSalary)} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" inputMode="numeric" maxLength={7} />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
           <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Height" maxLength={3} inputMode="numeric" />
           <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Weight" maxLength={3} inputMode="numeric" />
@@ -3787,13 +3822,12 @@ const ProfileEditModal = ({
           {educationRows.map((entry, index) => (
             <div key={`education-entry-${index}`} className="space-y-4">
               <div className="space-y-4">
-                <InputWithDropdown
+                <Select
                   label="Educational Attainment *"
                   value={entry.level || entry.educationalAttainment}
                   onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)}
                   options={EDUCATION_LEVEL_OPTIONS}
-                  placeholder="Select or enter educational attainment"
-                  maxLength={100}
+                  placeholder="Select educational attainment"
                 />
 
                 <Input
@@ -5778,6 +5812,37 @@ const MyProfile = () => {
       return false;
     }
 
+    if (sectionKey === 'career' || sectionKey === 'personal' || sectionKey === 'salary') {
+      const minimumSalary = normalizeSalaryDigits(activeDrafts.minimumSalary);
+      const maximumSalary = normalizeSalaryDigits(activeDrafts.maximumSalary);
+
+      if (
+        minimumSalary &&
+        maximumSalary &&
+        Number(minimumSalary) > Number(maximumSalary)
+      ) {
+        setError('Minimum Salary cannot be greater than Maximum Salary.');
+        return false;
+      }
+    }
+
+    if (sectionKey === 'career' || sectionKey === 'personal') {
+      const textOnlyFields = [
+        ['Nationality', activeDrafts.nationality],
+        ['Preferred Language', activeDrafts.preferredLanguage],
+        ['Double Degree', activeDrafts.studyField],
+      ];
+
+      const invalidTextField = textOnlyFields.find(
+        ([, value]) => String(value || '').trim() && !/\p{L}/u.test(String(value))
+      );
+
+      if (invalidTextField) {
+        setError(`${invalidTextField[0]} must contain at least one letter.`);
+        return false;
+      }
+    }
+
     if (sectionKey === 'basic') {
       const nameFields = [
         ['First Name', activeDrafts.firstName],
@@ -6899,8 +6964,13 @@ const MyProfile = () => {
 
   const handleWorkExperienceFormChange = (field, value) => {
     if ((field === 'startDate' || field === 'endDate') && value) {
+      const minimumWorkDate = getMinimumWorkExperienceDate(formData.birthday);
       if (!isValidWorkExperienceDate(value) || value > getWorkExperienceToday()) {
         setWorkExperienceError('Enter a valid date on or before today.');
+        return;
+      }
+      if (minimumWorkDate && value < minimumWorkDate) {
+        setWorkExperienceError(`Work experience date must be on or after ${minimumWorkDate}.`);
         return;
       }
     }
@@ -6998,6 +7068,18 @@ const MyProfile = () => {
         ))
       ) {
         setWorkExperienceError('Enter valid work experience dates on or before today.');
+        return;
+      }
+
+      const minimumWorkDate = getMinimumWorkExperienceDate(formData.birthday);
+      if (
+        minimumWorkDate &&
+        (
+          workExperienceForm.startDate < minimumWorkDate ||
+          (!workExperienceForm.isPresent && workExperienceForm.endDate < minimumWorkDate)
+        )
+      ) {
+        setWorkExperienceError(`Work experience dates must be on or after ${minimumWorkDate}.`);
         return;
       }
 
@@ -7713,6 +7795,7 @@ const MyProfile = () => {
         onChange={handleWorkExperienceFormChange}
         onClose={closeWorkExperienceModal}
         onSave={handleSaveWorkExperience}
+        minimumDate={getMinimumWorkExperienceDate(formData.birthday)}
         onDelete={() => {
           const selectedWorkExperience = workExperiences.find((item) => (item?._id || item?.id) === editingWorkExperienceId);
           if (selectedWorkExperience) {

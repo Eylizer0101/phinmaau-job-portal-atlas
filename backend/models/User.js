@@ -53,6 +53,8 @@ const richTextLengthValidator = (maximum, message) => ({
   message,
 });
 
+const containsAlphabeticCharacter = (value) => !String(value || '').trim() || /\p{L}/u.test(String(value));
+
 // ---------------------------
 // Shared document schema
 // ---------------------------
@@ -616,16 +618,34 @@ const userSchema = new mongoose.Schema(
       address: { type: String, default: '', trim: true, maxlength: [250, 'Address must not exceed 250 characters.'] },
       birthday: { type: String, default: '', trim: true },
       gender: { type: String, default: '', trim: true },
-      nationality: { type: String, default: '', trim: true, maxlength: 50 },
+      nationality: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: 50,
+        validate: { validator: containsAlphabeticCharacter, message: 'Nationality must contain at least one letter.' },
+      },
       civilStatus: { type: String, default: '', trim: true },
       height: { type: String, default: '', trim: true, maxlength: 3, match: [/^\d{0,3}$/, 'Height must contain numbers only and must not exceed 3 digits.'] },
       weight: { type: String, default: '', trim: true, maxlength: 3, match: [/^\d{0,3}$/, 'Weight must contain numbers only and must not exceed 3 digits.'] },
-      preferredLanguage: { type: String, default: '', trim: true, maxlength: 50 },
+      preferredLanguage: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: 50,
+        validate: { validator: containsAlphabeticCharacter, message: 'Preferred Language must contain at least one letter.' },
+      },
 
       employmentType: { type: String, default: '', trim: true },
       educationalAttainment: { type: String, default: '', trim: true },
       willingToRelocate: { type: String, default: '', trim: true },
-      studyField: { type: String, default: '', trim: true },
+      studyField: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: 50,
+        validate: { validator: containsAlphabeticCharacter, message: 'Double Degree must contain at least one letter.' },
+      },
       experience: { type: String, default: '', trim: true },
 
       educationEntries: { type: [educationEntrySchema], default: [] },

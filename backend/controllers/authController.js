@@ -610,6 +610,15 @@ const isValidWorkExperienceDate = (value) => {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
+const EDUCATION_LEVEL_OPTIONS = new Set([
+  'High School',
+  'Vocational',
+  'Associate',
+  "Bachelor's Degree",
+  "Master's Degree",
+  'Doctorate',
+]);
+
 const getEducationTextValidationError = (entry = {}) => {
   const attainment = String(entry.level || entry.educationalAttainment || '').trim();
   const aliases = [attainment, entry.level, entry.educationalAttainment]
@@ -617,10 +626,58 @@ const getEducationTextValidationError = (entry = {}) => {
   if (!attainment || aliases.some((value) => !/\p{L}/u.test(String(value)))) {
     return 'Educational attainment must contain at least one letter.';
   }
+  if (!EDUCATION_LEVEL_OPTIONS.has(attainment)) {
+    return 'Please select a valid educational attainment option.';
+  }
   if (!/\p{L}/u.test(String(entry.school || ''))) {
     return 'School / University must contain at least one letter.';
   }
   return '';
+};
+
+const hasAlphabeticCharacter = (value = '') => /\p{L}/u.test(String(value || ''));
+
+const normalizeSalaryDigits = (value = '') =>
+  String(value ?? '').replace(/,/g, '').trim();
+
+const getSalaryValidationError = (minimumSalary, maximumSalary) => {
+  const minimum = normalizeSalaryDigits(minimumSalary);
+  const maximum = normalizeSalaryDigits(maximumSalary);
+
+  if (minimum && !/^\d{1,6}$/.test(minimum)) {
+    return 'Minimum Salary must contain numbers only and must not exceed 6 digits.';
+  }
+  if (maximum && !/^\d{1,6}$/.test(maximum)) {
+    return 'Maximum Salary must contain numbers only and must not exceed 6 digits.';
+  }
+  if (minimum && maximum && Number(minimum) > Number(maximum)) {
+    return 'Minimum Salary cannot be greater than Maximum Salary.';
+  }
+  return '';
+};
+
+const WORK_EXPERIENCE_MINIMUM_AGE = 16;
+
+const getMinimumWorkExperienceDate = (birthday = '') => {
+  const clean = String(birthday || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) return '';
+
+  const [year, month, day] = clean.split('-').map(Number);
+  const birthDate = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(birthDate.getTime()) ||
+    birthDate.getFullYear() !== year ||
+    birthDate.getMonth() !== month - 1 ||
+    birthDate.getDate() !== day
+  ) {
+    return '';
+  }
+
+  const minimumDate = new Date(year + WORK_EXPERIENCE_MINIMUM_AGE, month - 1, day);
+  const minYear = minimumDate.getFullYear();
+  const minMonth = String(minimumDate.getMonth() + 1).padStart(2, '0');
+  const minDay = String(minimumDate.getDate()).padStart(2, '0');
+  return `${minYear}-${minMonth}-${minDay}`;
 };
 
 const normalizeWorkExperienceOutput = (entry) => ({
@@ -2308,6 +2365,42 @@ exports.updateProfile = async (req, res) => {
         }
       }
 
+      const textProfileFields = [
+        ['nationality', 'Nationality'],
+        ['preferredLanguage', 'Preferred Language'],
+        ['studyField', 'Double Degree'],
+      ];
+      for (const [field, label] of textProfileFields) {
+        if (!requestedProfileKeys.includes(field)) continue;
+        const value = String(updateData.jobSeekerProfile[field] || '').trim();
+        if (value && !hasAlphabeticCharacter(value)) {
+          return res.status(400).json({
+            success: false,
+            message: `${label} must contain at least one letter.`,
+          });
+        }
+        updateData.jobSeekerProfile[field] = value;
+      }
+
+      if (requestedProfileKeys.includes('minimumSalary') || requestedProfileKeys.includes('maximumSalary')) {
+        const nextMinimumSalary = requestedProfileKeys.includes('minimumSalary')
+          ? updateData.jobSeekerProfile.minimumSalary
+          : existingProfile.minimumSalary;
+        const nextMaximumSalary = requestedProfileKeys.includes('maximumSalary')
+          ? updateData.jobSeekerProfile.maximumSalary
+          : existingProfile.maximumSalary;
+        const salaryError = getSalaryValidationError(nextMinimumSalary, nextMaximumSalary);
+        if (salaryError) {
+          return res.status(400).json({ success: false, message: salaryError });
+        }
+        if (requestedProfileKeys.includes('minimumSalary')) {
+          updateData.jobSeekerProfile.minimumSalary = normalizeSalaryDigits(updateData.jobSeekerProfile.minimumSalary);
+        }
+        if (requestedProfileKeys.includes('maximumSalary')) {
+          updateData.jobSeekerProfile.maximumSalary = normalizeSalaryDigits(updateData.jobSeekerProfile.maximumSalary);
+        }
+      }
+
       if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'aboutMe')) {
         const sanitizedObjective = sanitizeRichTextForStorage(updateData.jobSeekerProfile.aboutMe);
         const objectiveText = getRichTextPlainText(sanitizedObjective);
@@ -2509,6 +2602,10 @@ exports.updateSalaryExpectation = async (req, res) => {
     }
 
     const { minSalary, maxSalary, currency, privacy } = req.body;
+    const salaryError = getSalaryValidationError(minSalary, maxSalary);
+    if (salaryError) {
+      return res.status(400).json({ success: false, message: salaryError });
+    }
     const requestedPrivacy = String(privacy || '').trim();
     const normalizedPrivacy = requestedPrivacy === 'limited'
       ? 'public'
@@ -2517,8 +2614,8 @@ exports.updateSalaryExpectation = async (req, res) => {
         : 'only_me';
 
     const payload = {
-      'jobSeekerProfile.minimumSalary': minSalary !== undefined && minSalary !== null ? String(minSalary).trim() : '',
-      'jobSeekerProfile.maximumSalary': maxSalary !== undefined && maxSalary !== null ? String(maxSalary).trim() : '',
+      'jobSeekerProfile.minimumSalary': minSalary !== undefined && minSalary !== null ? normalizeSalaryDigits(minSalary) : '',
+      'jobSeekerProfile.maximumSalary': maxSalary !== undefined && maxSalary !== null ? normalizeSalaryDigits(maxSalary) : '',
       'jobSeekerProfile.salaryCurrency': currency ? String(currency).trim() : 'PHP',
       'jobSeekerProfile.salaryPrivacy': normalizedPrivacy,
     };
@@ -2593,9 +2690,20 @@ exports.createWorkExperience = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Start date is required.' });
     }
 
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const minimumWorkDate = getMinimumWorkExperienceDate(user?.jobSeekerProfile?.birthday);
+
     if (!isValidWorkExperienceDate(startDate) || startDate > getWorkExperienceToday()) {
       return res.status(400).json({ success: false, message: 'Start date must be a valid date on or before today.' });
     }
+    if (minimumWorkDate && startDate < minimumWorkDate) {
+      return res.status(400).json({
+        success: false,
+        message: `Work experience start date must be on or after ${minimumWorkDate}.`,
+      });
+    }
+
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) {
       return res.status(400).json({ success: false, message: 'Invalid start date.' });
@@ -2629,9 +2737,6 @@ exports.createWorkExperience = async (req, res) => {
         message: 'Description must not exceed 1,000 characters.',
       });
     }
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     if (!user.jobSeekerProfile) {
       user.jobSeekerProfile = {};
@@ -2688,8 +2793,18 @@ exports.updateWorkExperience = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Start date is required.' });
     }
 
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const minimumWorkDate = getMinimumWorkExperienceDate(user?.jobSeekerProfile?.birthday);
+
     if (!isValidWorkExperienceDate(startDate) || startDate > getWorkExperienceToday()) {
       return res.status(400).json({ success: false, message: 'Start date must be a valid date on or before today.' });
+    }
+    if (minimumWorkDate && startDate < minimumWorkDate) {
+      return res.status(400).json({
+        success: false,
+        message: `Work experience start date must be on or after ${minimumWorkDate}.`,
+      });
     }
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) {
@@ -2724,9 +2839,6 @@ exports.updateWorkExperience = async (req, res) => {
         message: 'Description must not exceed 1,000 characters.',
       });
     }
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     const items = user?.jobSeekerProfile?.workExperiences || [];
     const target = items.id(workExperienceId);
