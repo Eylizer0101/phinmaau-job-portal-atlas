@@ -816,6 +816,23 @@ const DonutChart = ({ data = [] }) => {
 };
 
 const TrendChart = ({ data = [] }) => {
+  const getMonthAxisLabel = (item) => {
+    const key = String(item?.key || "");
+    const monthFromKey = Number(key.slice(5, 7));
+
+    if (monthFromKey >= 1 && monthFromKey <= 12) {
+      return monthNames[monthFromKey - 1];
+    }
+
+    const rawLabel = String(item?.label || "").trim();
+    const shortMonth = rawLabel.split(/\s+/)[0].slice(0, 3).toLowerCase();
+    const monthIndex = monthNames.findIndex(
+      (month) => month.slice(0, 3).toLowerCase() === shortMonth,
+    );
+
+    return monthIndex >= 0 ? monthNames[monthIndex] : rawLabel;
+  };
+
   const series = [
     ["registrations", "Registrations", "#93c5fd"],
     ["jobs", "Jobs", "#34d399"],
@@ -954,7 +971,7 @@ const TrendChart = ({ data = [] }) => {
                     fontSize="10"
                     fill="rgba(255,255,255,0.82)"
                   >
-                    {item.label}
+                    {getMonthAxisLabel(item)}
                   </text>
                 ) : null}
               </g>
