@@ -2,14 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   CalendarDays,
-  CheckCircle2,
   ChevronDown,
   Download,
   Filter,
-  Mail,
   RefreshCw,
-  ShieldAlert,
-  UserRoundCheck,
   X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -1412,35 +1408,6 @@ const AdminAnalytics = () => {
             >
               <HorizontalBars data={sections.users?.campuses} />
             </ChartCard>
-            <ChartCard
-              title="Account Status"
-              subtitle="Active, inactive, suspended, and pending users"
-            >
-              <DonutChart data={sections.users?.statuses} />
-            </ChartCard>
-            <ChartCard
-              title="Email Registration Verification"
-              subtitle="Pending email records are subject to TTL cleanup"
-            >
-              <div className="grid gap-3 sm:grid-cols-3">
-                <MetricTile
-                  label="OTP Requests"
-                  value={sections.verification?.emailRequests}
-                  icon={Mail}
-                />
-                <MetricTile
-                  label="Verified"
-                  value={sections.verification?.emailVerified}
-                  icon={CheckCircle2}
-                />
-                <MetricTile
-                  label="Completion"
-                  value={sections.verification?.emailCompletionRate}
-                  suffix="%"
-                  icon={UserRoundCheck}
-                />
-              </div>
-            </ChartCard>
           </div>
         ) : null}
 
@@ -1457,59 +1424,6 @@ const AdminAnalytics = () => {
               subtitle="Sections employers request to edit"
             >
               <HorizontalBars data={sections.operations?.editRequestSections} />
-            </ChartCard>
-            <ChartCard
-              title="Message Types"
-              subtitle="Conversation activity without exposing message content"
-            >
-              <HorizontalBars data={sections.operations?.messages} />
-            </ChartCard>
-            <ChartCard
-              title="Message Read State"
-              subtitle="Read and unread messages"
-            >
-              <DonutChart data={sections.operations?.messageRead} />
-            </ChartCard>
-            <ChartCard
-              title="Notification Types"
-              subtitle="System notifications by workflow"
-            >
-              <HorizontalBars data={sections.operations?.notifications} />
-            </ChartCard>
-            <ChartCard
-              title="Notification State"
-              subtitle="Read, unread, and archived counts"
-            >
-              <DonutChart data={sections.operations?.notificationRead} />
-            </ChartCard>
-            <ChartCard
-              title="System Reliability"
-              subtitle="Log outcome and request performance"
-            >
-              <HorizontalBars data={sections.operations?.system?.statuses} />
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <MetricTile
-                  label="P95 Duration"
-                  value={sections.operations?.system?.p95DurationMs}
-                  suffix=" ms"
-                  icon={Activity}
-                />
-                <MetricTile
-                  label="Server Errors"
-                  value={sections.operations?.system?.serverErrors}
-                  icon={ShieldAlert}
-                />
-              </div>
-            </ChartCard>
-            <ChartCard
-              title="System Log Modules"
-              subtitle="Modules generating the most audit events"
-              className="lg:col-span-2"
-            >
-              <HorizontalBars
-                data={sections.operations?.system?.modules}
-                maxItems={10}
-              />
             </ChartCard>
           </div>
         ) : null}
