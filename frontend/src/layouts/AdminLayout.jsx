@@ -21,7 +21,6 @@ const AdminLayout = ({ children }) => {
   const sidebarProfileRef = useRef(null);
   const [openDropdowns, setOpenDropdowns] = useState(() => {
     const defaultState = {
-      Main: true,
       Records: true,
       Approvals: false,
       Settings: false,
@@ -174,21 +173,18 @@ const AdminLayout = ({ children }) => {
   }, [sidebarProfileOpen]);
 
 
+  const dashboardNavItem = useMemo(
+    () => ({
+      name: "Dashboard",
+      path: "/admin/dashboard",
+      icon: "M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z",
+    }),
+    []
+  );
+
   const navSections = useMemo(
     () => [
-      {
-        name: "Main",
-        icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
-        items: [
-         
-          {
-            name: "Dashboard",
-            path: "/admin/analytics",
-            icon: "M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z",
-          },
-        ],
-      },
-      {
+{
         name: "Records",
         icon: "M9 12h6m-6 4h6M9 8h6m2 13H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z",
         items: [
@@ -251,8 +247,8 @@ const AdminLayout = ({ children }) => {
   );
 
   const navItems = useMemo(
-    () => navSections.flatMap((section) => section.items),
-    [navSections]
+    () => [dashboardNavItem, ...navSections.flatMap((section) => section.items)],
+    [dashboardNavItem, navSections]
   );
 
   useEffect(() => {
@@ -591,6 +587,7 @@ const AdminLayout = ({ children }) => {
   const NavList = ({ onItemClick }) => (
     <nav className="p-3">
       <ul className="space-y-2">
+        <SideNavItem item={dashboardNavItem} onItemClick={onItemClick} />
         {navSections.map((section) => (
           <SidebarDropdown key={section.name} section={section} onItemClick={onItemClick} />
         ))}
