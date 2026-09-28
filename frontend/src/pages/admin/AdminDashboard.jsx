@@ -168,13 +168,13 @@ const StatCard = ({ label, value, suffix = "", imageSrc }) => (
       }}
     />
     <div className="relative z-10">
-      <h3 className="text-2xl font-semibold leading-none">
+      <h3 className="text-[26px] font-semibold leading-none">
         {numberFormat.format(Number(value || 0))}
         {suffix}
       </h3>
-      <p className="mt-2 flex items-center gap-1 whitespace-nowrap text-xs text-white/90">
+      <p className="mt-2 flex items-center gap-1 whitespace-nowrap text-[13px] text-white/90">
         <span>{label}</span>
-        <span className="ml-0.5 text-sm font-bold">&gt;</span>
+        <span className="ml-0.5 text-[15px] font-bold">&gt;</span>
       </p>
     </div>
     <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition group-hover:border-white/20" />
