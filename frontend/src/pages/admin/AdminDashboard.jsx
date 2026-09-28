@@ -262,6 +262,97 @@ const monthNames = [
   "December",
 ];
 
+const dummyMonthlyTrends = [
+  { key: "2026-01", label: "Jan 26", registrations: 18, jobs: 11, applications: 32, hires: 6 },
+  { key: "2026-02", label: "Feb 26", registrations: 22, jobs: 13, applications: 38, hires: 7 },
+  { key: "2026-03", label: "Mar 26", registrations: 27, jobs: 15, applications: 44, hires: 9 },
+  { key: "2026-04", label: "Apr 26", registrations: 24, jobs: 16, applications: 41, hires: 8 },
+  { key: "2026-05", label: "May 26", registrations: 31, jobs: 18, applications: 49, hires: 11 },
+  { key: "2026-06", label: "Jun 26", registrations: 36, jobs: 20, applications: 56, hires: 13 },
+  { key: "2026-07", label: "Jul 26", registrations: 33, jobs: 19, applications: 52, hires: 12 },
+  { key: "2026-08", label: "Aug 26", registrations: 40, jobs: 23, applications: 63, hires: 15 },
+  { key: "2026-09", label: "Sep 26", registrations: 46, jobs: 27, applications: 71, hires: 18 },
+  { key: "2026-10", label: "Oct 26", registrations: 42, jobs: 25, applications: 67, hires: 16 },
+  { key: "2026-11", label: "Nov 26", registrations: 49, jobs: 29, applications: 76, hires: 20 },
+  { key: "2026-12", label: "Dec 26", registrations: 54, jobs: 31, applications: 82, hires: 22 },
+];
+
+const getDummyFilterMultiplier = (filters = {}) => {
+  const filterWeights = {
+    role: 0.82,
+    campus: 0.72,
+    userStatus: 0.88,
+    verificationStatus: 0.8,
+    jobStatus: 0.84,
+    category: 0.74,
+    jobType: 0.78,
+    workMode: 0.8,
+    applicationStatus: 0.76,
+    company: 0.68,
+    editRequestStatus: 0.9,
+    messageType: 0.92,
+    notificationType: 0.92,
+    logStatus: 0.94,
+    logModule: 0.9,
+  };
+
+  return Object.entries(filterWeights).reduce((multiplier, [key, weight]) => {
+    const value = String(filters?.[key] || "all").toLowerCase();
+    return value && value !== "all" ? multiplier * weight : multiplier;
+  }, 1);
+};
+
+const getDummyTrendData = (filters = {}) => {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  const multiplier = getDummyFilterMultiplier(filters);
+
+  let rows = dummyMonthlyTrends.map((item) => ({ ...item }));
+
+  const pickMonth = (monthIndex) =>
+    rows.filter((item) => Number(item.key.slice(5, 7)) - 1 === monthIndex);
+
+  if (["today", "yesterday", "thisWeek", "lastWeek", "thisMonth"].includes(filters.date)) {
+    rows = pickMonth(currentMonth);
+  } else if (filters.date === "lastMonth") {
+    rows = pickMonth((currentMonth + 11) % 12);
+  } else if (filters.date === "specific" && filters.specificDate) {
+    const specific = new Date(`${filters.specificDate}T00:00:00`);
+    if (!Number.isNaN(specific.getTime()) && specific.getFullYear() === 2026) {
+      rows = pickMonth(specific.getMonth());
+    } else {
+      rows = [];
+    }
+  } else if (filters.date === "range" && filters.startDate && filters.endDate) {
+    const start = new Date(`${filters.startDate}T00:00:00`);
+    const end = new Date(`${filters.endDate}T23:59:59`);
+    rows = rows.filter((item) => {
+      const rowDate = new Date(`${item.key}-01T00:00:00`);
+      return rowDate >= start && rowDate <= end;
+    });
+  } else if (filters.date === "lastYear") {
+    rows = rows.map((item) => ({
+      ...item,
+      key: item.key.replace("2026", String(currentYear - 1)),
+      label: item.label.replace("26", String(currentYear - 1).slice(-2)),
+    }));
+  }
+
+  return rows.map((item, index) => {
+    const dateFieldFactor = filters.dateField === "created" ? 0.94 : filters.dateField === "outcome" ? 0.86 : 1;
+    const variation = 0.96 + (index % 4) * 0.025;
+    const factor = multiplier * dateFieldFactor * variation;
+
+    return {
+      ...item,
+      registrations: Math.max(1, Math.round(item.registrations * factor)),
+      jobs: Math.max(1, Math.round(item.jobs * factor)),
+      applications: Math.max(1, Math.round(item.applications * factor)),
+      hires: Math.max(1, Math.round(item.hires * factor)),
+    };
+  });
+};
+
 const getYearOptions = () => {
   const firstYear = 1950;
   const currentYear = new Date().getFullYear();
@@ -965,10 +1056,15 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [dummyMode, setDummyMode] = useState(false);
 
   const options = analytics?.filters?.options || {};
   const kpis = analytics?.kpis || emptyAnalytics.kpis;
   const sections = analytics?.sections || emptyAnalytics.sections;
+  const displayedTrends = useMemo(
+    () => (dummyMode ? getDummyTrendData(filters) : analytics.trends || []),
+    [dummyMode, filters, analytics.trends],
+  );
 
   const requestParams = useMemo(() => {
     const next = { ...filters };
@@ -1058,7 +1154,7 @@ const AdminDashboard = () => {
           Value: value,
         })),
       );
-      addSheet("Trends", analytics.trends || []);
+      addSheet("Trends", displayedTrends);
       addSheet("Application Funnel", sections.applications?.funnel || []);
       addSheet("Job Categories", sections.jobs?.categories || []);
       addSheet("User Verification", sections.users?.verification || []);
@@ -1304,7 +1400,24 @@ const AdminDashboard = () => {
             </div>
           ) : null}
 
-          <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-3">
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
+            <label className="mr-auto inline-flex h-9 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
+              <span className="whitespace-nowrap">Dummy Data</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={dummyMode}
+                onClick={() => setDummyMode((value) => !value)}
+                className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}
+              >
+                <span
+                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`}
+                />
+              </button>
+              <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
+                {dummyMode ? "ON" : "OFF"}
+              </span>
+            </label>
             <button
               type="button"
               onClick={() => setShowMoreFilters((value) => !value)}
@@ -1350,16 +1463,25 @@ const AdminDashboard = () => {
               <div className="pointer-events-none absolute -bottom-24 left-1/3 h-52 w-52 rounded-full bg-cyan-200/10 blur-3xl" />
 
               <div className="relative z-10 mb-3 border-b border-white/15 pb-3">
-                <h2 className="text-sm font-bold text-white">
-                  System Activity Trend
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm font-bold text-white">
+                    System Activity Trend
+                  </h2>
+                  {dummyMode ? (
+                    <span className="rounded-full border border-white/20 bg-white/15 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white">
+                      Dummy Data
+                    </span>
+                  ) : null}
+                </div>
                 <p className="mt-0.5 text-[11px] text-white/70">
-                  Registrations, jobs, applications, and hires by month
+                  {dummyMode
+                    ? "January to December preview data — filters update the sample chart"
+                    : "Registrations, jobs, applications, and hires by month"}
                 </p>
               </div>
 
               <div className="relative z-10">
-                <TrendChart data={analytics.trends} />
+                <TrendChart data={displayedTrends} />
               </div>
             </section>
             <ChartCard
