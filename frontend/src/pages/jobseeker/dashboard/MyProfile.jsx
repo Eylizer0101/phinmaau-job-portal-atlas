@@ -1026,7 +1026,7 @@ const ResumePasswordModal = ({
   );
 };
 
-const Input = ({ label, value, onChange, placeholder = '', disabled = false, type = 'text', maxLength, inputMode, min, max }) => {
+const Input = ({ label, value, onChange, placeholder = '', disabled = false, type = 'text', maxLength, inputMode, min, max, error = '' }) => {
   return (
     <div>
       <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
@@ -1040,8 +1040,14 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
         inputMode={inputMode}
         min={min}
         max={max}
-        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
+        aria-invalid={Boolean(error)}
+        className={`w-full h-12 px-4 rounded-xl border bg-white text-gray-900 outline-none focus:ring-2 disabled:bg-gray-50 disabled:text-gray-500 ${
+          error
+            ? 'border-red-500 focus:ring-red-200 focus:border-red-500'
+            : 'border-gray-200 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]'
+        }`}
       />
+      {error ? <p className="mt-1.5 text-xs font-medium text-red-600">{error}</p> : null}
     </div>
   );
 };
@@ -3656,6 +3662,7 @@ const ProfileEditModal = ({
   drafts,
   saving,
   error,
+  fieldErrors = {},
   yearOptions = [],
   onChange,
   onArrayTextChange,
@@ -3717,7 +3724,7 @@ const ProfileEditModal = ({
           <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
-          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" maxLength={50} />
+          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" maxLength={50} error={fieldErrors.preferredLanguage} />
           <Select
             label="Educational Attainment"
             value={drafts.educationalAttainment}
@@ -3725,13 +3732,13 @@ const ProfileEditModal = ({
             placeholder="Select educational attainment"
             options={PERSONAL_EDUCATIONAL_ATTAINMENT_OPTIONS}
           />
-          <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" maxLength={50} />
-          <Input label="Minimum Salary" value={formatSalaryInput(drafts.minimumSalary)} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" inputMode="numeric" maxLength={7} />
-          <Input label="Maximum Salary" value={formatSalaryInput(drafts.maximumSalary)} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" inputMode="numeric" maxLength={7} />
+          <Input label="Double Degree (optional)" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Enter double degree" maxLength={50} error={fieldErrors.studyField} />
+          <Input label="Minimum Salary" value={formatSalaryInput(drafts.minimumSalary)} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" inputMode="numeric" maxLength={7} error={fieldErrors.minimumSalary} />
+          <Input label="Maximum Salary" value={formatSalaryInput(drafts.maximumSalary)} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" inputMode="numeric" maxLength={7} error={fieldErrors.maximumSalary} />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
           <Input label="Height (optional)" value={drafts.height} onChange={(e) => onChange('height', e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Height" maxLength={3} inputMode="numeric" />
           <Input label="Weight (optional)" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Weight" maxLength={3} inputMode="numeric" />
-          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" maxLength={50} />
+          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" maxLength={50} error={fieldErrors.nationality} />
           <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
           <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
           <Input
@@ -3740,6 +3747,7 @@ const ProfileEditModal = ({
             value={drafts.birthday}
             max={getLatestEligibleBirthday()}
             onChange={(e) => onChange('birthday', e.target.value)}
+            error={fieldErrors.birthday}
           />
         </div>
       );
@@ -4631,6 +4639,7 @@ const MyProfile = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [profileFieldErrors, setProfileFieldErrors] = useState({});
   const [basicInformationNotice, setBasicInformationNotice] = useState({
     open: false,
     missingFields: [],
@@ -5495,6 +5504,43 @@ const MyProfile = () => {
 
   const handleLocalChange = (field, value) => {
     setDrafts((prev) => ({ ...prev, [field]: value }));
+
+    setProfileFieldErrors((prev) => {
+      if (!Object.keys(prev).length) return prev;
+
+      const next = { ...prev };
+
+      if (['nationality', 'preferredLanguage', 'studyField'].includes(field)) {
+        const cleanValue = String(value || '').trim();
+        if (!cleanValue || /\p{L}/u.test(cleanValue)) {
+          delete next[field];
+        }
+      }
+
+      if (field === 'birthday' && (!value || isAtLeast18YearsOld(value))) {
+        delete next.birthday;
+      }
+
+      if (field === 'minimumSalary' || field === 'maximumSalary') {
+        const minimumSalary = normalizeSalaryDigits(
+          field === 'minimumSalary' ? value : drafts.minimumSalary
+        );
+        const maximumSalary = normalizeSalaryDigits(
+          field === 'maximumSalary' ? value : drafts.maximumSalary
+        );
+
+        if (
+          !minimumSalary ||
+          !maximumSalary ||
+          Number(minimumSalary) <= Number(maximumSalary)
+        ) {
+          delete next.minimumSalary;
+          delete next.maximumSalary;
+        }
+      }
+
+      return next;
+    });
   };
 
   const handleBasicInfoChange = (field, value) => {
@@ -5794,6 +5840,7 @@ const MyProfile = () => {
     // Every modal validates only its own fields. Clear any message left by a
     // different profile modal before running the current section validation.
     setError('');
+    setProfileFieldErrors({});
 
     if (sectionKey === 'about') {
       const objectiveLength = getRichTextPlainText(activeDrafts.aboutMe).length;
@@ -5803,16 +5850,15 @@ const MyProfile = () => {
       }
     }
 
-    if (
-      (sectionKey === 'career' || sectionKey === 'personal') &&
-      activeDrafts.birthday &&
-      !isAtLeast18YearsOld(activeDrafts.birthday)
-    ) {
-      setError('You must be at least 18 years old.');
-      return false;
-    }
+    const useInlineCareerFieldErrors = sectionKey === 'career' && editModalSection === 'career';
 
-    if (sectionKey === 'career' || sectionKey === 'personal' || sectionKey === 'salary') {
+    if (useInlineCareerFieldErrors) {
+      const nextFieldErrors = {};
+
+      if (activeDrafts.birthday && !isAtLeast18YearsOld(activeDrafts.birthday)) {
+        nextFieldErrors.birthday = 'You must be at least 18 years old.';
+      }
+
       const minimumSalary = normalizeSalaryDigits(activeDrafts.minimumSalary);
       const maximumSalary = normalizeSalaryDigits(activeDrafts.maximumSalary);
 
@@ -5821,25 +5867,65 @@ const MyProfile = () => {
         maximumSalary &&
         Number(minimumSalary) > Number(maximumSalary)
       ) {
-        setError('Minimum Salary cannot be greater than Maximum Salary.');
-        return false;
+        nextFieldErrors.minimumSalary = 'Minimum Salary cannot be greater than Maximum Salary.';
+        nextFieldErrors.maximumSalary = 'Maximum Salary must be greater than or equal to Minimum Salary.';
       }
-    }
 
-    if (sectionKey === 'career' || sectionKey === 'personal') {
       const textOnlyFields = [
-        ['Nationality', activeDrafts.nationality],
-        ['Preferred Language', activeDrafts.preferredLanguage],
-        ['Double Degree', activeDrafts.studyField],
+        ['nationality', 'Nationality', activeDrafts.nationality],
+        ['preferredLanguage', 'Preferred Language', activeDrafts.preferredLanguage],
+        ['studyField', 'Double Degree', activeDrafts.studyField],
       ];
 
-      const invalidTextField = textOnlyFields.find(
-        ([, value]) => String(value || '').trim() && !/\p{L}/u.test(String(value))
-      );
+      textOnlyFields.forEach(([fieldKey, fieldLabel, value]) => {
+        if (String(value || '').trim() && !/\p{L}/u.test(String(value))) {
+          nextFieldErrors[fieldKey] = `${fieldLabel} must contain at least one letter.`;
+        }
+      });
 
-      if (invalidTextField) {
-        setError(`${invalidTextField[0]} must contain at least one letter.`);
+      if (Object.keys(nextFieldErrors).length) {
+        setProfileFieldErrors(nextFieldErrors);
         return false;
+      }
+    } else {
+      if (
+        (sectionKey === 'career' || sectionKey === 'personal') &&
+        activeDrafts.birthday &&
+        !isAtLeast18YearsOld(activeDrafts.birthday)
+      ) {
+        setError('You must be at least 18 years old.');
+        return false;
+      }
+
+      if (sectionKey === 'career' || sectionKey === 'personal' || sectionKey === 'salary') {
+        const minimumSalary = normalizeSalaryDigits(activeDrafts.minimumSalary);
+        const maximumSalary = normalizeSalaryDigits(activeDrafts.maximumSalary);
+
+        if (
+          minimumSalary &&
+          maximumSalary &&
+          Number(minimumSalary) > Number(maximumSalary)
+        ) {
+          setError('Minimum Salary cannot be greater than Maximum Salary.');
+          return false;
+        }
+      }
+
+      if (sectionKey === 'career' || sectionKey === 'personal') {
+        const textOnlyFields = [
+          ['Nationality', activeDrafts.nationality],
+          ['Preferred Language', activeDrafts.preferredLanguage],
+          ['Double Degree', activeDrafts.studyField],
+        ];
+
+        const invalidTextField = textOnlyFields.find(
+          ([, value]) => String(value || '').trim() && !/\p{L}/u.test(String(value))
+        );
+
+        if (invalidTextField) {
+          setError(`${invalidTextField[0]} must contain at least one letter.`);
+          return false;
+        }
       }
     }
 
@@ -6226,6 +6312,7 @@ const MyProfile = () => {
 
     // Do not carry a validation message from a previously opened section.
     setError('');
+    setProfileFieldErrors({});
     if (sectionKey === 'personal') {
       setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       setDrafts(formData);
@@ -6306,6 +6393,7 @@ const MyProfile = () => {
   const closeProfileEditModal = () => {
     setDrafts(formData);
     setError('');
+    setProfileFieldErrors({});
     setEditModalSection('');
     setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
   };
@@ -7872,6 +7960,7 @@ const MyProfile = () => {
         drafts={drafts}
         saving={savingSection === editModalSection || (editModalSection === 'skills' && savingSection === 'career')}
         error={error}
+        fieldErrors={profileFieldErrors}
         yearOptions={yearOptions}
         onChange={handleLocalChange}
         onArrayTextChange={handleArrayTextChange}
