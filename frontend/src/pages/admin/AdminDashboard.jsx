@@ -50,7 +50,7 @@ const emptyAnalytics = {
   trends: [],
   filters: { options: {} },
   sections: {
-    users: { roles: [], statuses: [], verification: [], campuses: [] },
+    users: { roles: [], statuses: [], verification: [], campuses: [], genders: [], availabilities: [], relocation: [], experiences: [], educationLevels: [] },
     jobs: {
       statuses: [],
       categories: [],
@@ -847,6 +847,36 @@ const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
   );
 };
 
+const VerticalBars = ({ data = [], maxItems = 6, percentage = false }) => {
+  const rows = data.slice(0, maxItems);
+  const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
+  if (!rows.length) return <EmptyChart />;
+  return (
+    <div className="grid min-h-48 items-end gap-3" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
+      {rows.map((item, index) => {
+        const value = Number(item.value || 0);
+        return (
+          <div key={`${item.name}-${index}`} className="flex min-w-0 flex-col items-center justify-end gap-2">
+            <span className="text-[11px] font-bold text-slate-700">{numberFormat.format(value)}{percentage ? "%" : ""}</span>
+            <div className="flex h-32 w-full items-end justify-center rounded-lg bg-slate-50 px-2 pt-2">
+              <div
+                className="w-full max-w-[54px] rounded-t-lg transition-all"
+                style={{
+                  height: `${Math.max(4, (value / max) * 100)}%`,
+                  backgroundColor: colors[index % colors.length],
+                }}
+              />
+            </div>
+            <span className="min-h-[32px] text-center text-[10px] font-semibold leading-4 text-slate-600" title={titleCase(item.name)}>
+              {titleCase(item.name)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const DonutChart = ({ data = [] }) => {
   const rows = data.filter((item) => Number(item.value || 0) > 0);
   const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
@@ -1529,18 +1559,18 @@ const AdminDashboard = () => {
               </div>
             </section>
             <ChartCard
-              title="Application Funnel"
-              subtitle="Current recruitment outcome distribution"
+              title="Top Hiring Companies"
+              subtitle="Companies with the most hires"
               className="xl:col-span-7"
             >
-              <FunnelChart data={sections.applications?.funnel} />
+              <HorizontalBars data={sections.applications?.topHiringCompanies || []} maxItems={5} />
             </ChartCard>
             <ChartCard
-              title="Top Job Categories"
-              subtitle="Jobs grouped by category"
+              title="Top Industries"
+              subtitle="Industries with the most job opportunities"
               className="xl:col-span-5"
             >
-              <HorizontalBars data={sections.jobs?.categories} />
+              <HorizontalBars data={sections.jobs?.industries || sections.jobs?.categories || []} maxItems={6} />
             </ChartCard>
             <ChartCard
               title="User Roles"
@@ -1587,24 +1617,65 @@ const AdminDashboard = () => {
               subtitle="Status recorded for hired applicants"
               className="xl:col-span-6"
             >
-              <HorizontalBars data={sections.applications?.employmentStatus} />
+              <VerticalBars data={sections.applications?.employmentStatus} maxItems={6} />
             </ChartCard>
           </div>
         ) : null}
 
         {!loading && activeTab === "users" ? (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <ChartCard
               title="Verification Status"
               subtitle="Employer and jobseeker verification state"
+              className="xl:col-span-6"
             >
               <HorizontalBars data={sections.users?.verification} />
             </ChartCard>
             <ChartCard
               title="Jobseekers by Campus"
               subtitle="Campus distribution from jobseeker profiles"
+              className="xl:col-span-6"
             >
               <HorizontalBars data={sections.users?.campuses} />
+            </ChartCard>
+            <ChartCard
+              title="Gender Distribution"
+              subtitle="Job seekers by gender"
+              className="xl:col-span-3"
+            >
+              <DonutChart data={sections.users?.genders} />
+            </ChartCard>
+            <ChartCard
+              title="How Soon Can They Start?"
+              subtitle="Applicant start availability"
+              className="xl:col-span-3"
+            >
+              <VerticalBars data={sections.users?.availabilities} maxItems={5} />
+            </ChartCard>
+            <ChartCard
+              title="Relocation Preference"
+              subtitle="Job seekers' willingness to relocate"
+              className="xl:col-span-3"
+            >
+              <HorizontalBars data={sections.users?.relocation} maxItems={5} />
+            </ChartCard>
+            <ChartCard
+              title="Experience Level"
+              subtitle="Job seekers by years of professional work experience"
+              className="xl:col-span-3"
+            >
+              <VerticalBars data={sections.users?.experiences} maxItems={6} />
+            </ChartCard>
+            <ChartCard
+              title="Educational Attainment"
+              subtitle="Job seekers by highest completed qualification"
+              className="xl:col-span-6"
+            >
+              <HorizontalBars data={sections.users?.educationLevels} maxItems={6} />
+              <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 text-xs font-medium text-slate-600">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">🎓</span>
+                <span>Most applicants are college graduates.</span>
+              </div>
             </ChartCard>
           </div>
         ) : null}

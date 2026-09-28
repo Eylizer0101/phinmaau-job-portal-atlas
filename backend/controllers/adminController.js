@@ -1517,7 +1517,7 @@ exports.getAdminAnalytics = async (req, res) => {
     const [usersAll, jobsAll, applicationsAll, editRequestsAll, messagesAll, conversationPreferencesAll,
       notificationsAll, verificationRequestsAll, systemLogsAll] = await Promise.all([
       User.find({ status: { $ne: 'deleted' } })
-        .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.howSoonCanYouStart jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.experience jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated jobSeekerProfile.educationEntries.educationalAttainment jobSeekerProfile.educationEntries.level jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
+        .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.howSoonCanYouStart jobSeekerProfile.willingToRelocate jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.experience jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated jobSeekerProfile.educationEntries.educationalAttainment jobSeekerProfile.educationEntries.level jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
       Job.find({}).select('employer companyName status statusBeforeArchive isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount applicationDeadline publishedAt filledAt closedAt archivedAt createdAt updatedAt').lean(),
       Application.find({}).select('job jobseeker employer status appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
@@ -1570,6 +1570,8 @@ exports.getAdminAnalytics = async (req, res) => {
         });
       } else if (field === 'availability') {
         values.push(profile.howSoonCanYouStart);
+      } else if (field === 'relocation') {
+        values.push(profile.willingToRelocate);
       } else if (field === 'experience') {
         values.push(profile.experience);
       } else if (field === 'gender') {
@@ -1614,7 +1616,8 @@ exports.getAdminAnalytics = async (req, res) => {
 
     const jobAttributeMatches = (job) => {
       if (!same(analyticsJobLifecycleStatus(job), filters.jobStatus)) return false;
-      if (!same(job.category, filters.industry)) return false;
+      const employerIndustry = userById.get(analyticsId(job.employer))?.employerProfile?.industry || job.category;
+      if (!same(employerIndustry, filters.industry)) return false;
       if (!same(job.jobType, filters.jobType)) return false;
       if (!same(job.workMode, filters.workMode)) return false;
       return true;
@@ -1667,6 +1670,32 @@ exports.getAdminAnalytics = async (req, res) => {
     const flattenProfileOptions = (field) => analyticsUnique(jobseekersAll.flatMap((user) => profileValues(user, field)));
     const yearsGraduated = flattenProfileOptions('yearGraduated').sort((a, b) => Number(b) - Number(a) || String(b).localeCompare(String(a)));
 
+    const filteredJobseekers = users.filter((item) => analyticsLower(item.role) === 'jobseeker');
+    const genderDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'gender')), (item) => item);
+    const availabilityDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'availability')), (item) => item);
+    const relocationDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'relocation')), (item) => item);
+    const experienceDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'experience')), (item) => item);
+    const educationDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'educationLevel')), (item) => item);
+
+    const industryRows = analyticsCountRows(
+      jobs,
+      (job) => userById.get(analyticsId(job.employer))?.employerProfile?.industry || job.category || 'Others',
+      10,
+    );
+
+    const companyHireCounts = new Map();
+    hiredApplications.forEach((application) => {
+      const job = jobById.get(analyticsId(application.job));
+      const employer = userById.get(analyticsId(application.employer || job?.employer));
+      const companyName = analyticsText(job?.companyName || employer?.employerProfile?.companyName || 'Unknown Company');
+      if (!companyName) return;
+      companyHireCounts.set(companyName, (companyHireCounts.get(companyName) || 0) + 1);
+    });
+    const topHiringCompanies = [...companyHireCounts.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
+      .slice(0, 5);
+
     return res.status(200).json({
       success: true,
       generatedAt: new Date().toISOString(),
@@ -1677,7 +1706,7 @@ exports.getAdminAnalytics = async (req, res) => {
           campuses: DASHBOARD_CAMPUSES,
           verificationStatuses: ['pending', 'verified', 'declined', 'on hold'],
           jobStatuses: ['open', 'closed', 'filled', 'expired'],
-          industries: analyticsUnique(jobsAll.map((item) => item.category)),
+          industries: analyticsUnique(jobsAll.map((item) => userById.get(analyticsId(item.employer))?.employerProfile?.industry || item.category)),
           jobTypes: analyticsUnique(jobsAll.map((item) => item.jobType)),
           workModes: analyticsUnique(jobsAll.map((item) => item.workMode)),
           applicationStatuses: applicationStatusesForFilter,
@@ -1719,6 +1748,11 @@ exports.getAdminAnalytics = async (req, res) => {
             { name: 'declined', value: users.filter((item) => item.role !== 'admin' && analyticsVerificationStatus(item) === 'rejected').length },
           ],
           campuses: analyticsCountRows(users.filter((item) => item.role === 'jobseeker'), getJobseekerCampus),
+          genders: genderDistribution,
+          availabilities: availabilityDistribution,
+          relocation: relocationDistribution,
+          experiences: experienceDistribution,
+          educationLevels: educationDistribution,
         },
         jobs: {
           statuses: ['open', 'closed', 'filled', 'expired'].map((name) => ({
@@ -1726,6 +1760,7 @@ exports.getAdminAnalytics = async (req, res) => {
             value: jobs.filter((item) => analyticsJobLifecycleStatus(item) === name).length,
           })),
           categories: analyticsCountRows(jobs, (item) => item.category, 10),
+          industries: industryRows,
           employmentTypes: analyticsCountRows(jobs.filter((item) => analyticsText(item.jobType)), (item) => item.jobType),
           workModes: analyticsCountRows(jobs, (item) => item.workMode),
           totalVacancies: jobs.reduce((sum, item) => sum + Number(item.vacancies || 0), 0),
@@ -1736,6 +1771,7 @@ exports.getAdminAnalytics = async (req, res) => {
           interviewRate: applications.length ? Number(((applications.filter((item) => ['for interview', 'hired'].includes(analyticsLower(item.status))).length / applications.length) * 100).toFixed(1)) : 0,
           hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
           employmentStatus: analyticsCountRows(hiredApplications, (item) => item.employmentStatus || 'not recorded'),
+          topHiringCompanies,
         },
         verification: {
           emailRequests: verificationRequests.length,
