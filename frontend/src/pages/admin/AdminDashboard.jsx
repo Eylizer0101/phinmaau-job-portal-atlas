@@ -2,12 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   RefreshCw,
   CalendarDays,
-  Briefcase,
   Users,
-  Building2,
-  UserCheck,
-  FileClock,
-  Download,
   Bell,
   ChevronDown,
   UserRound,
@@ -33,10 +28,12 @@ const dateOptions = [
   { value: "all", label: "All Time" },
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
+  { value: "thisWeek", label: "This Week" },
   { value: "7days", label: "Last 7 Days" },
-  { value: "30days", label: "Last 30 Days" },
   { value: "thisMonth", label: "This Month" },
   { value: "lastMonth", label: "Last Month" },
+  { value: "thisYear", label: "This Year" },
+  { value: "lastYear", label: "Last Year" },
   { value: "custom", label: "Custom Range" },
 ];
 
@@ -45,8 +42,25 @@ const defaultDashboard = {
     totalJobs: 0,
     totalJobSeekers: 0,
     totalEmployers: 0,
+    registeredUsers: 0,
     pendingSeekers: 0,
     pendingEmployers: 0,
+    pendingRequestEdits: 0,
+    growth: {
+      registeredUsers: 0,
+      pendingSeekers: 0,
+      pendingEmployers: 0,
+      pendingRequestEdits: 0,
+    },
+  },
+  overview: {
+    registrationTraffic: [],
+    userGrowth: {
+      percentChange: 0,
+      currentMonth: 0,
+      previousMonth: 0,
+      progress: 0,
+    },
   },
   filters: {
     options: {
@@ -71,6 +85,8 @@ const defaultDashboard = {
 
 const DUMMY_RECORD_COUNT = 6000;
 const DUMMY_START_YEAR = 1950;
+
+const ADMIN_DASHBOARD_CAMPUSES = ["AU Main", "AU South", "AU San Jose"];
 
 const dummyCampuses = ["AU Main", "AU South", "AU San Jose"];
 const dummyEmploymentTypes = ["Full-time", "Part-time", "Contractual", "Internship", "Project-based"];
@@ -129,15 +145,22 @@ const getDummyDateRange = (filters = {}) => {
   } else if (filters.date === "yesterday") {
     start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     end = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59);
+  } else if (filters.date === "thisWeek") {
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset);
   } else if (filters.date === "7days") {
     start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
-  } else if (filters.date === "30days") {
-    start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
   } else if (filters.date === "thisMonth") {
     start = new Date(today.getFullYear(), today.getMonth(), 1);
   } else if (filters.date === "lastMonth") {
     start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+  } else if (filters.date === "thisYear") {
+    start = new Date(today.getFullYear(), 0, 1);
+  } else if (filters.date === "lastYear") {
+    start = new Date(today.getFullYear() - 1, 0, 1);
+    end = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
   } else if (filters.date === "custom" && filters.startDate && filters.endDate) {
     start = new Date(`${filters.startDate}T00:00:00`);
     end = new Date(`${filters.endDate}T23:59:59`);
@@ -393,11 +416,20 @@ const buildChartsWorkbook = ({ dashboard, filters, campusKeys }) => {
 
 const normalizeCampusLabel = (value) => {
   const text = String(value || "").trim();
-  const lower = text.toLowerCase().replace(/\s+/g, " ");
+  if (!text) return "";
 
-  if (["au main", "aui main", "a.u. main", "arau llo main"].includes(lower)) return "AU Main";
-  if (["au south", "aui south", "a.u. south"].includes(lower)) return "AU South";
-  if (["au san jose", "aui san jose", "a.u. san jose", "au san_jose"].includes(lower)) return "AU San Jose";
+  const compact = text
+    .toLowerCase()
+    .replace(/phinma/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!compact) return "";
+
+  if (compact.includes("san jose") || compact.includes("sanjose")) return "AU San Jose";
+  if (compact.includes("south")) return "AU South";
+  if (compact.includes("main")) return "AU Main";
 
   return text;
 };
@@ -426,8 +458,9 @@ const mergeCampusSeries = (series = []) => {
 };
 
 const uniqueCampuses = (campuses = []) => {
-  const normalized = campuses.map(normalizeCampusLabel).filter(Boolean);
-  return [...new Set(normalized)];
+  const normalized = campuses.map(normalizeCampusLabel).filter((campus) => ADMIN_DASHBOARD_CAMPUSES.includes(campus));
+  const merged = [...new Set([...ADMIN_DASHBOARD_CAMPUSES, ...normalized])];
+  return ADMIN_DASHBOARD_CAMPUSES.filter((campus) => merged.includes(campus));
 };
 
 const campusColors = ["#063b69", "#0f9f6e", "#d89000", "#6366f1", "#ef4444", "#64748b"];
@@ -565,6 +598,7 @@ const sortMonthlySeries = (series = []) => {
 
 const normalizeMonthlyChartSeries = (series = [], keys = []) => {
   const mergedByMonth = new Map();
+  const normalizedKeys = uniqueCampuses(keys);
 
   (series || []).forEach((item) => {
     const monthLabel = String(item?.label || "").slice(0, 3);
@@ -577,8 +611,17 @@ const normalizeMonthlyChartSeries = (series = [], keys = []) => {
     }
 
     const row = mergedByMonth.get(label);
-    keys.forEach((key) => {
-      row[key] = Number(row[key] || 0) + Number(item?.[key] || 0);
+    normalizedKeys.forEach((key) => {
+      row[key] = Number(row[key] || 0);
+    });
+
+    Object.entries(item || {}).forEach(([key, value]) => {
+      if (key === "label") return;
+
+      const campus = normalizeCampusLabel(key);
+      if (!normalizedKeys.includes(campus)) return;
+
+      row[campus] = Number(row[campus] || 0) + Number(value || 0);
     });
   });
 
@@ -1289,9 +1332,80 @@ const formatNotificationTime = (value) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
+const getNotificationGroupLabel = (dateString) => {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "Last Week";
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfNotificationDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor((startOfToday - startOfNotificationDay) / 86400000);
+
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return "Last Week";
+};
+
+const getNotificationId = (value) => {
+  const resolvedValue = value?._id || value;
+  return resolvedValue ? String(resolvedValue) : "";
+};
+
+const getAdminNotificationLink = (notification) => {
+  const metadata = notification?.metadata || {};
+  const type = String(notification?.type || "").toLowerCase();
+  const title = String(notification?.title || "").toLowerCase();
+  const storedLink = String(notification?.link || "").trim();
+  const relatedId = getNotificationId(notification?.relatedId);
+  const relatedModel = String(notification?.relatedModel || "").toLowerCase();
+  const accountType = String(metadata.accountType || metadata.userRole || "").toLowerCase();
+
+  const requestId = getNotificationId(metadata.requestId);
+  if (type === "job_edit_request" || title.includes("job edit request")) {
+    return requestId
+      ? `/admin/employer-job-edit-requests/${requestId}`
+      : storedLink || "/admin/employer-job-edit-requests";
+  }
+
+  const isVerificationNotification =
+    type.includes("verification") ||
+    title.includes("verification") ||
+    metadata.adminCategory === "new_registration";
+
+  if (isVerificationNotification) {
+    const employerId = getNotificationId(
+      metadata.employerId ||
+        (accountType === "employer" ? metadata.subjectUserId || metadata.userId || relatedId : "")
+    );
+    const jobseekerId = getNotificationId(
+      metadata.jobseekerId ||
+        (accountType === "jobseeker" ? metadata.subjectUserId || metadata.userId || relatedId : "")
+    );
+
+    if (employerId || storedLink.includes("/admin/employer-verification/")) {
+      return employerId ? `/admin/employer-verification/${employerId}` : storedLink;
+    }
+    if (jobseekerId || storedLink.includes("/admin/jobseeker-verification/")) {
+      return jobseekerId ? `/admin/jobseeker-verification/${jobseekerId}` : storedLink;
+    }
+  }
+
+  const applicationId = getNotificationId(metadata.applicationId);
+  if (applicationId || relatedModel === "application") {
+    return `/admin/applications/${applicationId || relatedId}`;
+  }
+
+  const jobId = getNotificationId(metadata.jobId);
+  if (metadata.adminCategory === "new_job_posted" || (relatedModel === "job" && type !== "job_edit_request")) {
+    return jobId || relatedId ? `/admin/jobs/${jobId || relatedId}` : storedLink;
+  }
+
+  return storedLink;
+};
+
 const AdminTopActions = () => {
   const navigate = useNavigate();
-  const [admin] = useState(getStoredAdmin);
+  const [admin, setAdmin] = useState(getStoredAdmin);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -1300,8 +1414,24 @@ const AdminTopActions = () => {
   const [isSignOutModalVisible, setIsSignOutModalVisible] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  const groupedDropdownNotifications = useMemo(() => {
+    const groups = {
+      Today: [],
+      Yesterday: [],
+      "Last Week": [],
+    };
+
+    notifications.slice(0, 10).forEach((notification) => {
+      groups[getNotificationGroupLabel(notification.createdAt)].push(notification);
+    });
+
+    return ["Today", "Yesterday", "Last Week"]
+      .map((label) => ({ label, items: groups[label] }))
+      .filter((group) => group.items.length > 0);
+  }, [notifications]);
+
   const adminName = getAdminName(admin);
-  const adminImage = admin?.profileImage || admin?.avatar || admin?.image || "";
+  const adminImage = admin?.organizationLogo || admin?.profileImage || admin?.avatar || admin?.image || "/images/phinma-logo.png";
 
   const openSignOutModal = () => {
     if (isSigningOut) return;
@@ -1351,6 +1481,30 @@ const AdminTopActions = () => {
   }, []);
 
   useEffect(() => {
+    const syncAdminProfile = async () => {
+      try {
+        const response = await api.get("/admin/profile");
+        const profile = response.data?.profile || {};
+        const storedAdmin = getStoredAdmin() || {};
+        const nextAdmin = {
+          ...storedAdmin,
+          ...profile,
+          profileImage: profile.organizationLogo || storedAdmin.profileImage || "/images/phinma-logo.png",
+        };
+
+        setAdmin(nextAdmin);
+        localStorage.setItem("user", JSON.stringify(nextAdmin));
+      } catch (error) {
+        setAdmin(getStoredAdmin());
+      }
+    };
+
+    syncAdminProfile();
+    window.addEventListener("admin-profile-updated", syncAdminProfile);
+    return () => window.removeEventListener("admin-profile-updated", syncAdminProfile);
+  }, []);
+
+  useEffect(() => {
     const closeDropdowns = () => {
       setIsNotificationOpen(false);
       setIsProfileOpen(false);
@@ -1380,9 +1534,9 @@ const AdminTopActions = () => {
         setUnreadCount((prev) => Math.max(prev - 1, 0));
       }
 
-      if (notification?.link) {
-        navigate(notification.link);
-      }
+      const link = getAdminNotificationLink(notification);
+      setIsNotificationOpen(false);
+      if (link) navigate(link);
     } catch (error) {
       console.error("Open notification error:", error);
     }
@@ -1395,128 +1549,124 @@ const AdminTopActions = () => {
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            setIsNotificationOpen((prev) => !prev);
+            const next = !isNotificationOpen;
+            setIsNotificationOpen(next);
             setIsProfileOpen(false);
+            if (next) fetchNotifications();
           }}
           className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
           aria-label="Open notifications"
         >
           <Bell size={18} />
           {unreadCount > 0 ? (
-            <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#2e66a6] ring-2 ring-white" />
+            <span
+              className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[10px] font-bold leading-none text-white shadow-sm"
+              aria-label={`${unreadCount} unread notifications`}
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
           ) : null}
         </button>
 
         {isNotificationOpen ? (
           <div
             onClick={(event) => event.stopPropagation()}
-            className="absolute right-0 top-12 z-50 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+            className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <h3 className="text-base font-bold text-slate-900">Notifications</h3>
-              <button
-                type="button"
-                onClick={markAllAsRead}
-                className="text-xs font-semibold text-[#2e66a6] transition hover:text-[#255487] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 rounded-md px-1 py-0.5"
-              >
-                Mark all as read
-              </button>
-            </div>
-
-            <div className="max-h-[420px] overflow-y-auto">
-              {notifications.length ? (
-                notifications.slice(0, 8).map((notification) => (
+            <div className="border-b border-gray-100 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-[#2e66a6]/10 p-2 text-[#2e66a6]">
+                    <Bell size={16} />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                </div>
+                {unreadCount > 0 ? (
                   <button
                     type="button"
-                    key={notification._id}
-                    onClick={() => openNotification(notification)}
-                    className={`flex w-full items-start gap-3 px-5 py-4 text-left transition hover:bg-slate-50 ${
-                      !notification.isRead ? "bg-slate-100" : "bg-white"
-                    }`}
+                    onClick={markAllAsRead}
+                    className="rounded-md px-2 py-1 text-sm font-medium text-[#2e66a6] transition hover:bg-[#2e66a6]/5 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-[#2e66a6]">
-                      <UserRound size={22} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm leading-5 text-slate-700">
-                        <span className="font-semibold">{notification.title}</span>{" "}
-                        {notification.message}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-slate-500">
-                        {formatNotificationTime(notification.createdAt)}
-                      </p>
-                    </div>
-                    {!notification.isRead ? <span className="mt-4 h-2.5 w-2.5 shrink-0 rounded-full bg-[#2e66a6]" /> : null}
+                    Mark all as read
                   </button>
-                ))
+                ) : null}
+              </div>
+            </div>
+
+            <div className="max-h-[430px] overflow-y-auto px-1 py-2">
+              {notifications.length ? (
+                <div className="space-y-3">
+                  {groupedDropdownNotifications.map((group) => (
+                    <div key={group.label}>
+                      <div className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">
+                        {group.label}
+                      </div>
+
+                      <div className="space-y-1">
+                        {group.items.map((notification) => (
+                          <button
+                            type="button"
+                            key={notification._id}
+                            onClick={() => openNotification(notification)}
+                            className={`flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left outline-none transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#2e66a6]/20 ${
+                              !notification.isRead ? "bg-blue-50" : "bg-white"
+                            }`}
+                          >
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                              !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
+                            }`}>
+                              <UserRound size={20} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <h5 className="min-w-0 flex-1 break-words text-sm font-semibold leading-5 text-gray-900">
+                                  {notification.title}
+                                </h5>
+                                <span className="shrink-0 text-xs text-gray-500">
+                                  {formatNotificationTime(notification.createdAt)}
+                                </span>
+                              </div>
+                              <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-gray-700">
+                                {notification.message}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <div className="px-5 py-10 text-center">
-                  <p className="text-sm font-semibold text-slate-800">No notifications yet.</p>
-                  <p className="mt-1 text-xs font-normal text-slate-500">New updates and activity will appear here.</p>
+                <div className="px-4 py-8 text-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                    <Bell size={22} />
+                  </div>
+                  <p className="text-sm text-gray-600">No new notifications</p>
+                  <p className="mt-1 text-xs text-gray-400">You're all caught up!</p>
                 </div>
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setIsNotificationOpen(false);
-                navigate("/admin/notifications");
-              }}
-              className="block w-full border-t border-slate-100 px-5 py-4 text-center text-sm font-semibold text-[#2e66a6] transition hover:bg-slate-50 hover:text-[#255487] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:ring-inset"
-            >
-              View all notifications
-            </button>
+            {notifications.length > 0 ? (
+              <div className="border-t border-gray-100 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setIsNotificationOpen(false);
+                    navigate("/admin/notifications");
+                  }}
+                  className="flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-[#2e66a6] transition hover:bg-[#2e66a6]/5 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                >
+                  View all notifications
+                  <ChevronDown size={14} className="ml-2 -rotate-90" />
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            setIsProfileOpen((prev) => !prev);
-            setIsNotificationOpen(false);
-          }}
-          className="inline-flex items-center gap-2 rounded-full px-1.5 py-1 transition hover:bg-slate-100"
-          aria-label="Open admin profile"
-        >
-          {adminImage ? (
-            <img src={adminImage} alt={adminName} className="h-9 w-9 rounded-full object-cover" />
-          ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700">
-              {getInitials(adminName)}
-            </span>
-          )}
-          <span className="hidden max-w-[120px] truncate text-xs font-bold text-slate-800 sm:block">{adminName}</span>
-          <ChevronDown size={14} className="text-slate-500" />
-        </button>
-
-        {isProfileOpen ? (
-          <div
-            onClick={(event) => event.stopPropagation()}
-            className="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
-          >
-            <div className="px-4 py-4">
-              <p className="truncate text-sm font-semibold text-slate-900">{adminName}</p>
-              <p className="mt-0.5 truncate text-xs text-slate-500">{admin?.email || "Admin account"}</p>
-            </div>
-
-            <div className="border-t border-slate-100 p-2">
-              <button
-                type="button"
-                onClick={openSignOutModal}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-              >
-                <LogOut size={16} />
-                Sign Out
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
       {showSignOutModal ? (
         <div
           className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/10 px-4 transition-opacity duration-200 ${
@@ -1552,19 +1702,11 @@ const AdminTopActions = () => {
               </h2>
 
               <p id="admin-signout-description" className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
-                You will be signed out of your admin account. You can sign in again anytime.
+                <span className="block">Are you sure you want to sign out of your account?</span>
+                <span className="block">You can sign in again anytime.</span>
               </p>
 
               <div className="mt-6 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  disabled={isSigningOut}
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-6 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {isSigningOut ? "Signing out..." : "Sign Out"}
-                </button>
-
                 <button
                   type="button"
                   onClick={closeSignOutModal}
@@ -1572,6 +1714,15 @@ const AdminTopActions = () => {
                   className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-6 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isSigningOut ? "Signing out..." : "Sign Out"}
                 </button>
               </div>
             </div>
@@ -1582,16 +1733,216 @@ const AdminTopActions = () => {
   );
 };
 
+const DashboardGrowthText = ({ value = 0, inverse = false }) => {
+  const numeric = Number(value || 0);
+  const positive = inverse ? numeric <= 0 : numeric >= 0;
+  const arrow = numeric > 0 ? "↗" : numeric < 0 ? "↘" : "→";
+
+  return (
+    <div className="mt-3 flex items-center gap-1.5 text-[11px]">
+      <span className={positive ? "font-bold text-emerald-600" : "font-bold text-rose-500"}>
+        {arrow} {numeric > 0 ? "+" : ""}{numeric.toFixed(1)}%
+      </span>
+      <span className="text-slate-400">from last month</span>
+    </div>
+  );
+};
+
+const DashboardMetricCard = ({ label, value, growth, imageSrc = "/images/case.png", onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-[#2e66a6] bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] p-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.16)] transition-all duration-500 ease-out hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(0,0,0,0.22)] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 focus:ring-offset-2"
+  >
+    <div
+      className="pointer-events-none absolute right-8 top-1/2 h-[76px] w-[76px] -translate-y-1/2 rounded-full blur-[36px] transition-all duration-700 ease-out group-hover:scale-110 group-hover:blur-[44px]"
+      style={{
+        background:
+          "radial-gradient(circle, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.14) 48%, transparent 76%)",
+      }}
+    />
+
+    <img
+      src={imageSrc}
+      alt=""
+      aria-hidden="true"
+      className="pointer-events-none absolute right-[-16px] top-1/2 h-24 w-24 -translate-y-1/2 object-contain opacity-45 mix-blend-soft-light saturate-150 transition-all duration-700 ease-out group-hover:right-[-12px] group-hover:scale-105 group-hover:opacity-55"
+      style={{
+        WebkitMaskImage:
+          "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.65) 58%, rgba(0,0,0,0) 82%)",
+        maskImage:
+          "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.65) 58%, rgba(0,0,0,0) 82%)",
+      }}
+    />
+
+    <div className="relative z-10">
+      <span className="text-sm font-medium text-white/85">{label}</span>
+      <div className="mt-7 text-3xl font-extrabold tracking-tight">{numberFormat.format(Number(value || 0))}</div>
+      <div className="[&_*]:!text-white/80">
+        <DashboardGrowthText value={growth} />
+      </div>
+    </div>
+
+    <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition-all duration-500 ease-out group-hover:border-white/20" />
+  </button>
+);
+
+const RegistrationTrafficChart = ({ data = [] }) => {
+  const rows = Array.isArray(data) ? data.slice(-6) : [];
+  const maxValue = Math.max(1, ...rows.map((item) => Number(item.total || 0)));
+
+  const rawStep = maxValue / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(Math.max(rawStep, 1)));
+  const normalizedStep = rawStep / magnitude;
+  const niceStep =
+    normalizedStep <= 1
+      ? magnitude
+      : normalizedStep <= 2
+        ? 2 * magnitude
+        : normalizedStep <= 5
+          ? 5 * magnitude
+          : 10 * magnitude;
+  const axisMax = niceStep * 4;
+
+  const formatAxisValue = (value) => {
+    if (value >= 1000000) {
+      const millions = value / 1000000;
+      return `${Number.isInteger(millions) ? millions : millions.toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      const thousands = value / 1000;
+      return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)}K`;
+    }
+    return numberFormat.format(value);
+  };
+
+  return (
+    <div className="mt-7">
+      <div className="relative h-[258px] border-b border-slate-200">
+        {[0, 1, 2, 3, 4].map((line) => {
+          const value = axisMax - line * niceStep;
+          return (
+            <React.Fragment key={line}>
+              <span
+                className="absolute left-0 w-10 -translate-y-1/2 text-right text-[11px] font-medium text-slate-400"
+                style={{ top: `${line * 25}%` }}
+              >
+                {formatAxisValue(value)}
+              </span>
+              <div
+                className="absolute left-12 right-0 border-t border-dashed border-slate-200"
+                style={{ top: `${line * 25}%` }}
+              />
+            </React.Fragment>
+          );
+        })}
+
+        <div className="absolute bottom-0 left-12 right-0 top-0 flex items-end justify-around gap-4 px-4 pb-0">
+          {rows.length ? rows.map((item) => {
+            const total = Number(item.total || 0);
+            const height = total > 0 ? Math.max(12, (total / axisMax) * 100) : 4;
+            return (
+              <div key={item.month || item.label} className="group relative flex h-full flex-1 items-end justify-center">
+                <div
+                  className="w-full max-w-[52px] rounded-t-xl bg-[#2e66a6] shadow-sm transition-all duration-300 group-hover:bg-[#255487]"
+                  style={{ height: `${height}%` }}
+                  title={`${item.label}: ${numberFormat.format(total)} registrations`}
+                />
+                <div className="absolute -bottom-5 text-xs font-medium text-slate-500">{item.label}</div>
+              </div>
+            );
+          }) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">No registration data available</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const OperationsCalendar = ({ userGrowth = {} }) => {
+  const [offset, setOffset] = useState(0);
+  const today = new Date();
+  const anchor = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+  const days = Array.from({ length: 5 }, (_, index) => {
+    const date = new Date(anchor);
+    date.setDate(anchor.getDate() + index - 2);
+    return date;
+  });
+  const isToday = (date) => date.toDateString() === today.toDateString();
+  const progress = Math.max(0, Math.min(100, Number(userGrowth.progress || 0)));
+  const growth = Number(userGrowth.percentChange || 0);
+
+  return (
+    <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Operations Calendar</p>
+          <h3 className="mt-1 text-lg font-bold text-slate-900">
+            {anchor.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          </h3>
+        </div>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => setOffset((value) => value - 5)} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#2e66a6]" aria-label="Previous dates">‹</button>
+          <button type="button" onClick={() => setOffset((value) => value + 5)} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#2e66a6]" aria-label="Next dates">›</button>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-5 gap-2">
+        {days.map((date) => (
+          <button
+            type="button"
+            key={date.toISOString()}
+            onClick={() => setOffset(Math.round((date - today) / 86400000))}
+            className={`rounded-2xl border px-2 py-4 text-center transition ${
+              isToday(date)
+                ? "border-[#2e66a6] bg-[#2e66a6] text-white shadow-md"
+                : "border-slate-200 bg-white text-slate-700 hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5"
+            }`}
+          >
+            <span className={`block text-[10px] font-bold uppercase ${isToday(date) ? "text-white/70" : "text-slate-400"}`}>
+              {date.toLocaleDateString("en-US", { weekday: "short" })}
+            </span>
+            <span className="mt-1 block text-lg font-extrabold">{date.getDate()}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 border-t border-slate-100 pt-6">
+        <div className="grid items-center gap-6 sm:grid-cols-[150px_1fr]">
+          <div className="relative mx-auto h-32 w-32 rounded-full" style={{ background: `conic-gradient(${BRAND_BLUE} ${progress * 3.6}deg, #e2e8f0 0deg)` }}>
+            <div className="absolute inset-[12px] flex flex-col items-center justify-center rounded-full bg-white">
+              <span className="text-2xl font-extrabold text-slate-900">{progress}%</span>
+              <span className="text-[10px] text-slate-400">recent share</span>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-slate-900">User Growth</h4>
+            <DashboardGrowthText value={growth} />
+            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-xl bg-slate-50 p-3">
+                <span className="block text-slate-400">This month</span>
+                <strong className="mt-1 block text-base text-slate-800">{numberFormat.format(Number(userGrowth.currentMonth || 0))}</strong>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <span className="block text-slate-400">Last month</span>
+                <strong className="mt-1 block text-base text-slate-800">{numberFormat.format(Number(userGrowth.previousMonth || 0))}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
   const [dashboard, setDashboard] = useState(defaultDashboard);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [exportingCharts, setExportingCharts] = useState(false);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
-    date: "all",
+    date: "thisMonth",
     startDate: "",
     endDate: "",
     campus: "all",
@@ -1600,25 +1951,29 @@ const AdminDashboard = () => {
     workMode: "all",
   });
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [useSampleData, setUseSampleData] = useState(false);
-
-  const sampleDashboard = useMemo(() => buildDummyDashboardData(filters), [filters]);
-  const activeDashboard = useSampleData ? sampleDashboard : dashboard;
 
   const fetchDashboard = async () => {
     try {
       setLoading(true);
       setError("");
       const response = await api.get("/admin/dashboard", { params: filters });
-      const payload = response.data || defaultDashboard;
-      const campuses = uniqueCampuses(payload?.filters?.options?.campuses || []);
       setDashboard({
-        ...payload,
-        filters: {
-          ...(payload.filters || {}),
-          options: {
-            ...(payload?.filters?.options || {}),
-            campuses,
+        ...defaultDashboard,
+        ...(response.data || {}),
+        stats: {
+          ...defaultDashboard.stats,
+          ...(response.data?.stats || {}),
+          growth: {
+            ...defaultDashboard.stats.growth,
+            ...(response.data?.stats?.growth || {}),
+          },
+        },
+        overview: {
+          ...defaultDashboard.overview,
+          ...(response.data?.overview || {}),
+          userGrowth: {
+            ...defaultDashboard.overview.userGrowth,
+            ...(response.data?.overview?.userGrowth || {}),
           },
         },
       });
@@ -1630,223 +1985,118 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleExport = () => {
-    try {
-      setExporting(true);
-      const workbook = buildDashboardWorkbook({ dashboard: activeDashboard, filters, campusKeys });
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(workbook, `admin-dashboard-export-${dateStamp}.xlsx`);
-    } catch (err) {
-      console.error("Admin dashboard export error:", err);
-      setError("Unable to export dashboard data.");
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleExportCharts = () => {
-    try {
-      setExportingCharts(true);
-      const workbook = buildChartsWorkbook({ dashboard: activeDashboard, filters, campusKeys });
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(workbook, `admin-dashboard-charts-export-${dateStamp}.xlsx`);
-    } catch (err) {
-      console.error("Admin dashboard charts export error:", err);
-      setError("Unable to export chart data.");
-    } finally {
-      setExportingCharts(false);
-    }
-  };
-
   useEffect(() => {
     fetchDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.date, filters.startDate, filters.endDate, filters.campus, filters.applicationStatus, filters.employmentType, filters.workMode]);
+  }, [filters.date, filters.startDate, filters.endDate]);
 
-  const filterOptions = activeDashboard?.filters?.options || defaultDashboard.filters.options;
-
-  const campusKeys = useMemo(() => {
-    const campuses = filterOptions.campuses || [];
-    if (filters.campus !== "all") return campuses.filter((campus) => campus === filters.campus);
-    return campuses.slice(0, 4);
-  }, [filterOptions.campuses, filters.campus]);
-
-  const updateFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
-  const updateDateFilter = (value) => {
-    if (value === "custom") {
-      setShowCustomDateModal(true);
-      return;
-    }
-
-    setFilters((prev) => ({ ...prev, date: value, startDate: "", endDate: "" }));
+  const updatePeriod = (value) => {
+    setFilters((previous) => ({ ...previous, date: value, startDate: "", endDate: "" }));
   };
+
   const applyCustomDateRange = (startDate, endDate) => {
-    setFilters((prev) => ({ ...prev, date: "custom", startDate, endDate }));
+    setFilters((previous) => ({ ...previous, date: "custom", startDate, endDate }));
     setShowCustomDateModal(false);
   };
-  const clearFilters = () => setFilters({ date: "all", startDate: "", endDate: "", campus: "all", applicationStatus: "all", employmentType: "all", workMode: "all" });
 
-  const hasFilter = filters.date !== "all" || filters.campus !== "all" || filters.applicationStatus !== "all" || filters.employmentType !== "all" || filters.workMode !== "all";
-  const stats = activeDashboard?.stats || defaultDashboard.stats;
-  const charts = activeDashboard?.charts || defaultDashboard.charts;
+  const stats = dashboard.stats || defaultDashboard.stats;
+  const overview = dashboard.overview || defaultDashboard.overview;
+  const growth = stats.growth || defaultDashboard.stats.growth;
+  const periodButtons = [
+    { label: "Day", value: "today" },
+    { label: "Week", value: "thisWeek" },
+    { label: "Month", value: "thisMonth" },
+    { label: "Year", value: "thisYear" },
+  ];
 
   return (
     <div className="mx-auto max-w-7xl px-1 py-8">
       <div className="space-y-5">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900">Admin Dashboard</h1>
-            <p className="text-xs text-slate-500">Overview of jobs, users, applications, and hiring activity.</p>
+            <h1 className="text-2xl font-extrabold text-slate-900">Admin Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Overview of registered users, verification queues, edit requests, and monthly growth.</p>
           </div>
-
           <AdminTopActions />
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <SampleDataToggle enabled={useSampleData} onChange={setUseSampleData} />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+            {periodButtons.map((period) => (
+              <button
+                type="button"
+                key={period.value}
+                onClick={() => updatePeriod(period.value)}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition ${filters.date === period.value ? "bg-[#2e66a6] text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
 
           <button
             type="button"
-            onClick={handleExportCharts}
-            disabled={(loading && !useSampleData) || exportingCharts}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-white px-4 text-xs font-bold text-[#2e66a6] shadow-sm transition hover:bg-[#2e66a6]/10 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+            onClick={() => setShowCustomDateModal(true)}
+            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-xs font-bold shadow-sm transition ${filters.date === "custom" ? "border-[#2e66a6] bg-[#2e66a6]/5 text-[#2e66a6]" : "border-slate-200 bg-white text-slate-600 hover:border-[#2e66a6]/30 hover:text-[#2e66a6]"}`}
           >
-            {exportingCharts ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
-            {exportingCharts ? "Exporting Charts..." : "Export Charts"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={(loading && !useSampleData) || exporting}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#255487] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {exporting ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
-            {exporting ? "Exporting..." : "Export"}
+            <CalendarDays size={15} />
+            {filters.date === "custom" && filters.startDate && filters.endDate
+              ? `${formatDateLabel(filters.startDate)} – ${formatDateLabel(filters.endDate)}`
+              : "Select date range"}
           </button>
         </div>
 
-        {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div> : null}
-
-        {useSampleData ? (
-          <div className="rounded-xl border border-[#2e66a6]/20 bg-[#2e66a6]/10 px-4 py-3 text-xs font-semibold text-[#2e66a6]">
-            Sample Data Mode is ON. Charts and cards are using 6,000 generated demo records from 1950 to the current year.
-          </div>
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
         ) : null}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
-          <StatCard
-            label="Jobs"
-            value={stats.totalJobs}
-            imageSrc={statCardImages.jobs}
-            icon={Briefcase}
-            onClick={() => navigate("/admin/dashboard/jobs")}
-            ariaLabel="Open all jobs"
-          />
-          <StatCard
-            label="Job Seekers"
-            value={stats.totalJobSeekers}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <DashboardMetricCard
+            label="Registered Users"
+            value={stats.registeredUsers}
+            growth={growth.registeredUsers}
             imageSrc={statCardImages.jobSeekers}
-            icon={Users}
-            onClick={() => navigate("/admin/dashboard/job-seekers")}
-            ariaLabel="Open all job seekers"
+            onClick={() => navigate("/admin/users")}
           />
-          <StatCard
-            label="Employers"
-            value={stats.totalEmployers}
-            imageSrc={statCardImages.employers}
-            icon={Building2}
-            onClick={() => navigate("/admin/dashboard/employers")}
-            ariaLabel="Open all employers"
-          />
-          <StatCard
-            label="Pending Seekers"
+          <DashboardMetricCard
+            label="Pending Job Seekers"
             value={stats.pendingSeekers}
+            growth={growth.pendingSeekers}
             imageSrc={statCardImages.pendingSeekers}
-            icon={UserCheck}
-            onClick={() => navigate("/admin/dashboard/pending-seekers")}
-            ariaLabel="Open pending job seekers"
+            onClick={() => navigate("/admin/jobseeker-verification")}
           />
-          <StatCard
+          <DashboardMetricCard
             label="Pending Employers"
             value={stats.pendingEmployers}
+            growth={growth.pendingEmployers}
             imageSrc={statCardImages.pendingEmployers}
-            icon={FileClock}
-            onClick={() => navigate("/admin/dashboard/pending-employers")}
-            ariaLabel="Open pending employers"
+            onClick={() => navigate("/admin/employer-verification")}
+          />
+          <DashboardMetricCard
+            label="Pending Request Edit"
+            value={stats.pendingRequestEdits}
+            growth={growth.pendingRequestEdits}
+            imageSrc={statCardImages.jobs}
+            onClick={() => navigate("/admin/employer-job-edit-requests")}
           />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
-            <DateFilterDropdown value={filters.date} startDate={filters.startDate} endDate={filters.endDate} disabled={loading} onSelect={updateDateFilter} />
-            <FilterSelect label="Campus" value={filters.campus} disabled={loading} onChange={(value) => updateFilter("campus", value)} options={[{ value: "all", label: "All Campus" }, ...(filterOptions.campuses || []).map((campus) => ({ value: campus, label: campus }))]} />
-            <FilterSelect label="Application Status" value={filters.applicationStatus} disabled={loading} onChange={(value) => updateFilter("applicationStatus", value)} options={[{ value: "all", label: "All Status" }, ...(filterOptions.applicationStatuses || []).map((status) => ({ value: status, label: status.charAt(0).toUpperCase() + status.slice(1) }))]} />
-            <FilterSelect label="Employment Type" value={filters.employmentType} disabled={loading} onChange={(value) => updateFilter("employmentType", value)} options={[{ value: "all", label: "All Types" }, ...(filterOptions.employmentTypes || []).map((type) => ({ value: type, label: type }))]} />
-            <FilterSelect label="Work Mode" value={filters.workMode} disabled={loading} onChange={(value) => updateFilter("workMode", value)} options={[{ value: "all", label: "All Modes" }, ...(filterOptions.workModes || []).map((mode) => ({ value: mode, label: mode }))]} />
-            <button
-              type="button"
-              onClick={clearFilters}
-              disabled={loading || !hasFilter}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RefreshCw size={13} /> Clear All
-            </button>
-          </div>
-        </div>
-
-        <div className="border-b border-slate-200">
-          {[
-            { key: "overview", label: "Overview" },
-            { key: "trends", label: "Trends" },
-          ].map((tab) => (
-            <button
-              type="button"
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`mr-6 border-b-2 px-1 pb-3 text-xs font-bold transition ${activeTab === tab.key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {loading && !useSampleData ? (
-          <div className="flex h-80 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-500">
-            <RefreshCw size={18} className="mr-2 animate-spin" /> Loading dashboard data...
-          </div>
-        ) : activeTab === "overview" ? (
-          <div className="grid gap-5 lg:grid-cols-2">
-            <ChartCard title="Applications Trend" subtitle="Last records by campus">
-              <LineChart data={charts.applicationTrends || []} keys={campusKeys} />
-            </ChartCard>
-            <ChartCard title="Top Job Categories" subtitle="Active jobs grouped by category">
-              <VerticalBarChart data={charts.topJobCategories || []} />
-            </ChartCard>
-            <ChartCard title="Application Status" subtitle="Breakdown by current status">
-              <DonutChart data={(charts.applicationStatus || []).filter((item) => item.value > 0)} />
-            </ChartCard>
-            <ChartCard title="Work Mode Distribution" subtitle="Across all active jobs">
-              <DonutChart data={(charts.workModeDistribution || []).filter((item) => item.value > 0)} colors={["#6366f1", "#063b69", "#c48a00", "#198754"]} />
-            </ChartCard>
-            <ChartCard title="Top 5 Companies Hiring" subtitle="By number of active job postings" className="lg:col-span-2">
-              <BarChart data={charts.topHiringCompanies || []} horizontal />
-            </ChartCard>
+        {loading ? (
+          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
+            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
           </div>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-2">
-            <ChartCard title="Applications by Campus" subtitle="Monthly trend overview">
-              <LineChart data={charts.applicationTrends || []} keys={campusKeys} />
-            </ChartCard>
-            <ChartCard title="Active Jobs by Employment Type" subtitle="Current active jobs grouped by type">
-              <SimpleBarList data={charts.employmentTypeDistribution || []} />
-            </ChartCard>
-            <ChartCard title="Job Seeker Registrations" subtitle="Monthly new registrations by campus">
-              <BarChart data={charts.registrationTrends || []} keys={campusKeys} />
-            </ChartCard>
-            <ChartCard title="Hire Rate by Campus" subtitle="Hired jobseekers by campus over time">
-              <LineChart data={charts.hireRateByCampus || []} keys={campusKeys} />
-            </ChartCard>
+          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Monthly Registration Traffic</h2>
+                <p className="mt-1 text-xs text-slate-400">Job seekers and employers · Last 6 months</p>
+              </div>
+              <RegistrationTrafficChart data={overview.registrationTraffic || []} />
+            </div>
+
+            <OperationsCalendar userGrowth={overview.userGrowth || {}} />
           </div>
         )}
 
@@ -1857,8 +2107,6 @@ const AdminDashboard = () => {
           onCancel={() => setShowCustomDateModal(false)}
           onApply={applyCustomDateRange}
         />
-
-       
       </div>
     </div>
   );
