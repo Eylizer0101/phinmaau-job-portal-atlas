@@ -263,18 +263,18 @@ const monthNames = [
 ];
 
 const dummyMonthlyTrends = [
-  { key: "2026-01", label: "Jan 26", registrations: 18, jobs: 11, applications: 32, hires: 6 },
-  { key: "2026-02", label: "Feb 26", registrations: 22, jobs: 13, applications: 38, hires: 7 },
-  { key: "2026-03", label: "Mar 26", registrations: 27, jobs: 15, applications: 44, hires: 9 },
-  { key: "2026-04", label: "Apr 26", registrations: 24, jobs: 16, applications: 41, hires: 8 },
-  { key: "2026-05", label: "May 26", registrations: 31, jobs: 18, applications: 49, hires: 11 },
-  { key: "2026-06", label: "Jun 26", registrations: 36, jobs: 20, applications: 56, hires: 13 },
-  { key: "2026-07", label: "Jul 26", registrations: 33, jobs: 19, applications: 52, hires: 12 },
-  { key: "2026-08", label: "Aug 26", registrations: 40, jobs: 23, applications: 63, hires: 15 },
-  { key: "2026-09", label: "Sep 26", registrations: 46, jobs: 27, applications: 71, hires: 18 },
-  { key: "2026-10", label: "Oct 26", registrations: 42, jobs: 25, applications: 67, hires: 16 },
-  { key: "2026-11", label: "Nov 26", registrations: 49, jobs: 29, applications: 76, hires: 20 },
-  { key: "2026-12", label: "Dec 26", registrations: 54, jobs: 31, applications: 82, hires: 22 },
+  { key: "2026-01", label: "January", registrations: 18, jobs: 11, applications: 32, hires: 6 },
+  { key: "2026-02", label: "February", registrations: 22, jobs: 13, applications: 38, hires: 7 },
+  { key: "2026-03", label: "March", registrations: 27, jobs: 15, applications: 44, hires: 9 },
+  { key: "2026-04", label: "April", registrations: 24, jobs: 16, applications: 41, hires: 8 },
+  { key: "2026-05", label: "May", registrations: 31, jobs: 18, applications: 49, hires: 11 },
+  { key: "2026-06", label: "June", registrations: 36, jobs: 20, applications: 56, hires: 13 },
+  { key: "2026-07", label: "July", registrations: 33, jobs: 19, applications: 52, hires: 12 },
+  { key: "2026-08", label: "August", registrations: 40, jobs: 23, applications: 63, hires: 15 },
+  { key: "2026-09", label: "September", registrations: 46, jobs: 27, applications: 71, hires: 18 },
+  { key: "2026-10", label: "October", registrations: 42, jobs: 25, applications: 67, hires: 16 },
+  { key: "2026-11", label: "November", registrations: 49, jobs: 29, applications: 76, hires: 20 },
+  { key: "2026-12", label: "December", registrations: 54, jobs: 31, applications: 82, hires: 22 },
 ];
 
 const getDummyFilterMultiplier = (filters = {}) => {
@@ -334,7 +334,7 @@ const getDummyTrendData = (filters = {}) => {
     rows = rows.map((item) => ({
       ...item,
       key: item.key.replace("2026", String(currentYear - 1)),
-      label: item.label.replace("26", String(currentYear - 1).slice(-2)),
+      label: item.label,
     }));
   }
 
@@ -871,7 +871,7 @@ const TrendChart = ({ data = [] }) => {
     index === data.length - 1;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-stretch">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_270px] xl:items-stretch">
       <div className="min-w-0 xl:-ml-1">
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -963,7 +963,7 @@ const TrendChart = ({ data = [] }) => {
         </svg>
       </div>
 
-      <aside className="flex min-h-[300px] flex-col rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+      <aside className="flex min-h-[270px] flex-col rounded-2xl border border-slate-200 bg-white p-3.5 text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
         <div className="border-b border-slate-200 pb-3">
           <h3 className="text-sm font-extrabold text-slate-900">
             Activity Breakdown
@@ -983,7 +983,7 @@ const TrendChart = ({ data = [] }) => {
             return (
               <div
                 key={item.key}
-                className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-4"
+                className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-3.5"
               >
                 <span className="flex min-w-0 items-center gap-3 text-sm font-semibold text-slate-700">
                   <i
