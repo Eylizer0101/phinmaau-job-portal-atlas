@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
-  BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -736,39 +735,55 @@ const TrendChart = ({ data = [] }) => {
     ["applications", "Applications", "#dc9300"],
     ["hires", "Hires", "#6366f1"],
   ];
+
   if (!data.length) return <EmptyChart />;
-  const width = 760;
-  const height = 250;
-  const left = 42;
+
+  const width = 920;
+  const height = 280;
+  const left = 48;
+  const right = 18;
   const top = 18;
-  const plotWidth = width - left - 18;
-  const plotHeight = height - top - 45;
+  const bottom = 48;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
   const max = Math.max(
     1,
     ...data.flatMap((item) => series.map(([key]) => Number(item[key] || 0))),
   );
-  const point = (item, index, key) => {
-    const x =
-      left +
-      (data.length === 1
-        ? plotWidth / 2
-        : (index / (data.length - 1)) * plotWidth);
-    const y = top + plotHeight - (Number(item[key] || 0) / max) * plotHeight;
-    return `${x},${y}`;
-  };
+
+  const groupWidth = plotWidth / data.length;
+  const groupPadding = Math.min(14, groupWidth * 0.16);
+  const usableGroupWidth = Math.max(8, groupWidth - groupPadding * 2);
+  const barGap = Math.min(4, usableGroupWidth * 0.04);
+  const barWidth = Math.max(
+    2,
+    (usableGroupWidth - barGap * (series.length - 1)) / series.length,
+  );
+
+  const showLabel = (index) =>
+    data.length <= 10 ||
+    index % Math.ceil(data.length / 8) === 0 ||
+    index === data.length - 1;
+
   return (
     <div>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-[220px] w-full"
+        className="h-[240px] w-full"
         role="img"
-        aria-label="Monthly analytics trend chart"
+        aria-label="Monthly analytics grouped bar chart"
       >
         {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
           const y = top + plotHeight - ratio * plotHeight;
           return (
             <g key={ratio}>
-              <line x1={left} y1={y} x2={width - 18} y2={y} stroke="#e2e8f0" />
+              <line
+                x1={left}
+                y1={y}
+                x2={width - right}
+                y2={y}
+                stroke="#e2e8f0"
+              />
               <text
                 x={left - 8}
                 y={y + 4}
@@ -781,45 +796,50 @@ const TrendChart = ({ data = [] }) => {
             </g>
           );
         })}
-        {series.map(([key, , color]) => (
-          <polyline
-            key={key}
-            fill="none"
-            stroke={color}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            points={data
-              .map((item, index) => point(item, index, key))
-              .join(" ")}
-          />
-        ))}
-        {data.map((item, index) => {
-          if (
-            data.length > 10 &&
-            index % Math.ceil(data.length / 8) !== 0 &&
-            index !== data.length - 1
-          )
-            return null;
-          const x =
-            left +
-            (data.length === 1
-              ? plotWidth / 2
-              : (index / (data.length - 1)) * plotWidth);
+
+        {data.map((item, dataIndex) => {
+          const groupStart = left + dataIndex * groupWidth + groupPadding;
+
           return (
-            <text
-              key={`${item.label}-${index}`}
-              x={x}
-              y={height - 10}
-              textAnchor="middle"
-              fontSize="10"
-              fill="#64748b"
-            >
-              {item.label}
-            </text>
+            <g key={`${item.key || item.label}-${dataIndex}`}>
+              {series.map(([key, label, color], seriesIndex) => {
+                const value = Number(item[key] || 0);
+                const barHeight = (value / max) * plotHeight;
+                const x =
+                  groupStart + seriesIndex * (barWidth + barGap);
+                const y = top + plotHeight - barHeight;
+
+                return (
+                  <rect
+                    key={`${key}-${dataIndex}`}
+                    x={x}
+                    y={y}
+                    width={barWidth}
+                    height={Math.max(0, barHeight)}
+                    rx={Math.min(3, barWidth / 3)}
+                    fill={color}
+                  >
+                    <title>{`${label}: ${numberFormat.format(value)}`}</title>
+                  </rect>
+                );
+              })}
+
+              {showLabel(dataIndex) ? (
+                <text
+                  x={left + dataIndex * groupWidth + groupWidth / 2}
+                  y={height - 12}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#64748b"
+                >
+                  {item.label}
+                </text>
+              ) : null}
+            </g>
           );
         })}
       </svg>
+
       <div className="flex flex-wrap justify-center gap-4">
         {series.map(([, label, color]) => (
           <span
@@ -827,7 +847,7 @@ const TrendChart = ({ data = [] }) => {
             className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600"
           >
             <i
-              className="h-2.5 w-2.5 rounded-full"
+              className="h-2.5 w-2.5 rounded-sm"
               style={{ backgroundColor: color }}
             />
             {label}
@@ -1374,36 +1394,6 @@ const AdminAnalytics = () => {
               className="xl:col-span-6"
             >
               <HorizontalBars data={sections.applications?.employmentStatus} />
-            </ChartCard>
-            <ChartCard
-              title="Recruitment KPIs"
-              subtitle="Capacity, attention, and conversion"
-              className="xl:col-span-12"
-            >
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <MetricTile
-                  label="Total Vacancies"
-                  value={sections.jobs?.totalVacancies}
-                  icon={BriefcaseBusiness}
-                />
-                <MetricTile
-                  label="Job Views"
-                  value={sections.jobs?.totalViews}
-                  icon={Activity}
-                />
-                <MetricTile
-                  label="Interview Rate"
-                  value={sections.applications?.interviewRate}
-                  suffix="%"
-                  icon={UserRoundCheck}
-                />
-                <MetricTile
-                  label="Hire Rate"
-                  value={sections.applications?.hireRate}
-                  suffix="%"
-                  icon={CheckCircle2}
-                />
-              </div>
             </ChartCard>
           </div>
         ) : null}

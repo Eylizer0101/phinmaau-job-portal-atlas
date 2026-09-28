@@ -1414,6 +1414,41 @@ const analyticsVerificationStatus = (user) => {
   return user?.isVerified ? 'verified' : 'unverified';
 };
 
+const analyticsJobLifecycleStatus = (job = {}) => {
+  const rawStatus = analyticsLower(job.status);
+  const archivedStatus = analyticsLower(job.statusBeforeArchive);
+
+  if (rawStatus === 'filled' || archivedStatus === 'filled') return 'filled';
+  if (rawStatus === 'closed' || archivedStatus === 'closed') return 'closed';
+  if (archivedStatus === 'expired') return 'expired';
+
+  const deadline = job.applicationDeadline ? new Date(job.applicationDeadline) : null;
+  const deadlineExpired =
+    deadline &&
+    !Number.isNaN(deadline.getTime()) &&
+    deadline.getTime() < Date.now();
+
+  if (
+    deadlineExpired &&
+    ['published', 'open'].includes(rawStatus) &&
+    !job.filledAt &&
+    !job.closedAt
+  ) {
+    return 'expired';
+  }
+
+  if (
+    ['published', 'open'].includes(rawStatus) &&
+    job.isActive !== false &&
+    job.isPublished !== false &&
+    !job.isArchived
+  ) {
+    return 'open';
+  }
+
+  return '';
+};
+
 const analyticsPercentile = (values, percentile) => {
   const sorted = values.map(Number).filter(Number.isFinite).sort((a, b) => a - b);
   if (!sorted.length) return 0;
@@ -1486,7 +1521,7 @@ exports.getAdminAnalytics = async (req, res) => {
       User.find({ status: { $ne: 'deleted' } })
         .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.educationEntries jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
-      Job.find({}).select('employer companyName status isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount publishedAt filledAt archivedAt createdAt updatedAt').lean(),
+      Job.find({}).select('employer companyName status statusBeforeArchive isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount applicationDeadline publishedAt filledAt closedAt archivedAt createdAt updatedAt').lean(),
       Application.find({}).select('job jobseeker employer status appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
       JobEditRequest.find({}).select('job employer requestedSections status reviewedAt unlockUntil createdAt updatedAt').lean(),
       Message.find({}).select('conversationId sender receiver messageType isRead readAt job application createdAt updatedAt').lean(),
@@ -1511,7 +1546,7 @@ exports.getAdminAnalytics = async (req, res) => {
     });
 
     const jobAttributeMatches = (job) => {
-      if (!same(job.status, filters.jobStatus)) return false;
+      if (!same(analyticsJobLifecycleStatus(job), filters.jobStatus)) return false;
       if (!same(job.category, filters.category)) return false;
       if (!same(job.jobType, filters.jobType)) return false;
       if (!same(job.workMode, filters.workMode)) return false;
@@ -1573,7 +1608,7 @@ exports.getAdminAnalytics = async (req, res) => {
           campuses: analyticsUnique(usersAll.map(getJobseekerCampus).filter((value) => value !== 'Unspecified')),
           userStatuses: analyticsUnique(usersAll.map((item) => item.status)),
           verificationStatuses: analyticsUnique(usersAll.map(analyticsVerificationStatus)),
-          jobStatuses: analyticsUnique(jobsAll.map((item) => item.status)),
+          jobStatuses: ['open', 'closed', 'filled', 'expired'],
           categories: analyticsUnique(jobsAll.map((item) => item.category)),
           jobTypes: analyticsUnique(jobsAll.map((item) => item.jobType)),
           workModes: analyticsUnique(jobsAll.map((item) => item.workMode)),
@@ -1612,9 +1647,15 @@ exports.getAdminAnalytics = async (req, res) => {
           campuses: analyticsCountRows(users.filter((item) => item.role === 'jobseeker'), getJobseekerCampus),
         },
         jobs: {
-          statuses: analyticsCountRows(jobs, (item) => item.status),
+          statuses: ['open', 'closed', 'filled', 'expired'].map((name) => ({
+            name,
+            value: jobs.filter((item) => analyticsJobLifecycleStatus(item) === name).length,
+          })),
           categories: analyticsCountRows(jobs, (item) => item.category, 10),
-          employmentTypes: analyticsCountRows(jobs, (item) => item.jobType),
+          employmentTypes: analyticsCountRows(
+            jobs.filter((item) => analyticsText(item.jobType)),
+            (item) => item.jobType
+          ),
           workModes: analyticsCountRows(jobs, (item) => item.workMode),
           totalVacancies: jobs.reduce((sum, item) => sum + Number(item.vacancies || 0), 0),
           totalViews: jobs.reduce((sum, item) => sum + Number(item.views || 0), 0),
