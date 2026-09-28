@@ -147,9 +147,9 @@ const HeaderStatusCard = ({ label, value }) => (
 );
 
 const StatCard = ({ label, value, suffix = "", imageSrc }) => (
-  <div className="group relative min-h-[132px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-6 py-5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
+  <div className="group relative min-h-[104px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-4 py-3.5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
     <div
-      className="pointer-events-none absolute right-8 top-1/2 h-[70px] w-[70px] -translate-y-1/2 rounded-full blur-[35px]"
+      className="pointer-events-none absolute right-7 top-1/2 h-[56px] w-[56px] -translate-y-1/2 rounded-full blur-[30px]"
       style={{
         background:
           "radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,.14) 45%, transparent 75%)",
@@ -159,7 +159,7 @@ const StatCard = ({ label, value, suffix = "", imageSrc }) => (
       src={imageSrc}
       alt=""
       aria-hidden="true"
-      className="pointer-events-none absolute right-[-18px] top-1/2 h-20 w-20 -translate-y-1/2 object-contain opacity-50 mix-blend-soft-light saturate-150 transition-all duration-700 group-hover:right-[-15px] group-hover:scale-105"
+      className="pointer-events-none absolute right-[-14px] top-1/2 h-16 w-16 -translate-y-1/2 object-contain opacity-50 mix-blend-soft-light saturate-150 transition-all duration-700 group-hover:right-[-12px] group-hover:scale-105"
       style={{
         WebkitMaskImage:
           "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
@@ -168,13 +168,13 @@ const StatCard = ({ label, value, suffix = "", imageSrc }) => (
       }}
     />
     <div className="relative z-10">
-      <h3 className="text-3xl font-semibold leading-none">
+      <h3 className="text-2xl font-semibold leading-none">
         {numberFormat.format(Number(value || 0))}
         {suffix}
       </h3>
-      <p className="mt-3 flex items-center gap-1 whitespace-nowrap text-sm text-white/90">
+      <p className="mt-2 flex items-center gap-1 whitespace-nowrap text-xs text-white/90">
         <span>{label}</span>
-        <span className="ml-1 text-base font-bold">&gt;</span>
+        <span className="ml-0.5 text-sm font-bold">&gt;</span>
       </p>
     </div>
     <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition group-hover:border-white/20" />
