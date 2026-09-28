@@ -71,8 +71,6 @@ const initialFilters = {
   educationLevel: "all",
   experienceLevel: "all",
   verificationStatus: "all",
-  editRequestStatus: "all",
-  role: "all",
 };
 
 const emptyAnalytics = {
@@ -531,7 +529,7 @@ const ExportModal = ({ open, onClose, selected, setSelected, format, setFormat, 
   );
 };
 
-const AdminAnalytics = () => {
+const AdminAnalytics = ({ embedded = false }) => {
   const [analytics, setAnalytics] = useState(emptyAnalytics);
   const [filters, setFilters] = useState(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState(initialFilters);
@@ -647,8 +645,6 @@ const AdminAnalytics = () => {
       educationLevel: "Education Required",
       experienceLevel: "Experience Level",
       verificationStatus: "Verification Status",
-      editRequestStatus: "Request Edit Status",
-      role: "Role",
     };
     const chips = [];
     if (appliedFilters.date !== "overall") {
@@ -776,15 +772,24 @@ const AdminAnalytics = () => {
   };
 
   return (
-    <main className="min-h-screen">
-      <div className="mx-auto max-w-[1480px] px-1 py-8">
+    <main className={embedded ? "w-full" : "min-h-screen"}>
+      <div className={embedded ? "w-full pt-5" : "mx-auto max-w-[1480px] px-1 py-8"}>
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2e66a6]">Reports & Analytics</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Analytics & Reporting</h1>
-            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
-              Descriptive analytics for registration, job supply, applications, hiring outcomes, and verification activity.
-            </p>
+            {!embedded ? (
+              <>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2e66a6]">Reports & Analytics</p>
+                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Analytics & Reporting</h1>
+                <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
+                  Descriptive analytics for registration, job supply, applications, hiring outcomes, and verification activity.
+                </p>
+              </>
+            ) : (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#2e66a6]">Reports & Analytics</p>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Analytics & Reporting</h2>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
@@ -842,8 +847,6 @@ const AdminAnalytics = () => {
             <SelectFilter label="Education Required" value={filters.educationLevel} onChange={(value) => setFilter("educationLevel", value)} options={options.educationLevels || []} allLabel="All Education" />
             <SelectFilter label="Experience Level" value={filters.experienceLevel} onChange={(value) => setFilter("experienceLevel", value)} options={options.experienceLevels || []} allLabel="All Experience" />
             <SelectFilter label="Verification Status" value={filters.verificationStatus} onChange={(value) => setFilter("verificationStatus", value)} options={options.verificationStatuses || []} allLabel="All Statuses" />
-            <SelectFilter label="Request Edit Status" value={filters.editRequestStatus} onChange={(value) => setFilter("editRequestStatus", value)} options={options.editRequestStatuses || []} allLabel="All Statuses" />
-            <SelectFilter label="Role" value={filters.role} onChange={(value) => setFilter("role", value)} options={options.roles || []} allLabel="All Roles" />
           </div>
 
           {filters.date === "range" ? (

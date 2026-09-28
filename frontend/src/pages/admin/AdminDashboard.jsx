@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import * as XLSX from "xlsx";
+import AdminAnalytics from "./AdminAnalytics";
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
@@ -2081,24 +2082,9 @@ const AdminDashboard = () => {
           />
         </div>
 
-        {loading ? (
-          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
-            <div className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
-          </div>
-        ) : (
-          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Monthly Registration Traffic</h2>
-                <p className="mt-1 text-xs text-slate-400">Job seekers and employers · Last 6 months</p>
-              </div>
-              <RegistrationTrafficChart data={overview.registrationTraffic || []} />
-            </div>
-
-            <OperationsCalendar userGrowth={overview.userGrowth || {}} />
-          </div>
-        )}
+        <div className="border-t border-slate-200 pt-2">
+          <AdminAnalytics embedded />
+        </div>
 
         <CustomDateRangeModal
           open={showCustomDateModal}
