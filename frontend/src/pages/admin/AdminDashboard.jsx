@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Activity,
   CalendarDays,
@@ -90,25 +91,23 @@ const emptyAnalytics = {
 
 const initialFilters = {
   date: "overall",
-  dateField: "primary",
   specificDate: "",
   startDate: "",
   endDate: "",
-  role: "all",
-  campus: "all",
-  userStatus: "all",
-  verificationStatus: "all",
-  jobStatus: "all",
-  category: "all",
-  jobType: "all",
-  workMode: "all",
-  applicationStatus: "all",
-  company: "all",
-  editRequestStatus: "all",
-  messageType: "all",
-  notificationType: "all",
-  logStatus: "all",
-  logModule: "all",
+  campus: "",
+  verificationStatus: "",
+  jobStatus: "",
+  industry: "",
+  jobType: "",
+  workMode: "",
+  applicationStatus: "",
+  requestEditStatus: "",
+  yearGraduated: "",
+  course: "",
+  availability: "",
+  experience: "",
+  gender: "",
+  educationLevel: "",
 };
 
 const statCardImages = {
@@ -137,49 +136,65 @@ const titleCase = (value) =>
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const HeaderStatusCard = ({ label, value }) => (
-  <div className="relative inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 shadow-sm">
+const HeaderStatusCard = ({ label, value, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="relative inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#2e66a6]/5 hover:text-[#2e66a6]"
+  >
     <span className="absolute -top-2 right-2 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#2e66a6] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm">
       {numberFormat.format(Number(value || 0))}
     </span>
     <span className="whitespace-nowrap">{label}</span>
-  </div>
+  </button>
 );
 
-const StatCard = ({ label, value, suffix = "", imageSrc }) => (
-  <div className="group relative min-h-[104px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-4 py-3.5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
-    <div
-      className="pointer-events-none absolute right-7 top-1/2 h-[56px] w-[56px] -translate-y-1/2 rounded-full blur-[30px]"
-      style={{
-        background:
-          "radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,.14) 45%, transparent 75%)",
-      }}
-    />
-    <img
-      src={imageSrc}
-      alt=""
-      aria-hidden="true"
-      className="pointer-events-none absolute right-[-14px] top-1/2 h-16 w-16 -translate-y-1/2 object-contain opacity-50 mix-blend-soft-light saturate-150 transition-all duration-700 group-hover:right-[-12px] group-hover:scale-105"
-      style={{
-        WebkitMaskImage:
-          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
-        maskImage:
-          "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
-      }}
-    />
-    <div className="relative z-10 flex min-h-[76px] flex-col justify-center text-left">
-      <h3 className="text-[26px] font-semibold leading-none">
-        {numberFormat.format(Number(value || 0))}
-        {suffix}
-      </h3>
-      <p className="mt-2 flex items-center gap-1 whitespace-nowrap text-[13px] text-white/90">
-        <span>{label}</span>
-        <span className="ml-0.5 text-[15px] font-bold">&gt;</span>
-      </p>
-    </div>
-    <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition group-hover:border-white/20" />
-  </div>
-);
+const StatCard = ({ label, value, suffix = "", imageSrc, onClick }) => {
+  const content = (
+    <>
+      <div
+        className="pointer-events-none absolute right-7 top-1/2 h-[56px] w-[56px] -translate-y-1/2 rounded-full blur-[30px]"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,.14) 45%, transparent 75%)",
+        }}
+      />
+      <img
+        src={imageSrc}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute right-[-14px] top-1/2 h-16 w-16 -translate-y-1/2 object-contain opacity-50 mix-blend-soft-light saturate-150 transition-all duration-700 group-hover:right-[-12px] group-hover:scale-105"
+        style={{
+          WebkitMaskImage:
+            "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+          maskImage:
+            "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
+        }}
+      />
+      <div className="relative z-10 flex min-h-[76px] flex-col justify-center text-left">
+        <h3 className="text-[26px] font-semibold leading-none">
+          {numberFormat.format(Number(value || 0))}
+          {suffix}
+        </h3>
+        <p className="mt-2 flex items-center gap-1 whitespace-nowrap text-[13px] text-white/90">
+          <span>{label}</span>
+          {onClick ? <span className="ml-0.5 text-[15px] font-bold">&gt;</span> : null}
+        </p>
+      </div>
+      <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition group-hover:border-white/20" />
+    </>
+  );
+
+  const className = "group relative min-h-[104px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-4 py-3.5 text-left text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-500 ease-out hover:brightness-105 hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]";
+
+  if (!onClick) return <div className={className}>{content}</div>;
+
+  return (
+    <button type="button" onClick={onClick} className={`${className} hover:scale-[1.02]`}>
+      {content}
+    </button>
+  );
+};
 
 const FilterSelect = ({
   label,
@@ -187,7 +202,9 @@ const FilterSelect = ({
   onChange,
   values = [],
   allLabel = "All",
+  placeholderLabel = "Select",
   disabled = false,
+  preserveCase = false,
 }) => (
   <label className="block min-w-0">
     <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
@@ -199,10 +216,11 @@ const FilterSelect = ({
       onChange={(event) => onChange(event.target.value)}
       className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-slate-50"
     >
+      <option value="" disabled>{placeholderLabel}</option>
       <option value="all">{allLabel}</option>
       {values.map((item) => (
         <option key={item} value={item}>
-          {titleCase(item)}
+          {preserveCase ? item : titleCase(item)}
         </option>
       ))}
     </select>
@@ -279,21 +297,20 @@ const dummyMonthlyTrends = [
 
 const getDummyFilterMultiplier = (filters = {}) => {
   const filterWeights = {
-    role: 0.82,
     campus: 0.72,
-    userStatus: 0.88,
     verificationStatus: 0.8,
     jobStatus: 0.84,
-    category: 0.74,
+    industry: 0.74,
     jobType: 0.78,
     workMode: 0.8,
     applicationStatus: 0.76,
-    company: 0.68,
-    editRequestStatus: 0.9,
-    messageType: 0.92,
-    notificationType: 0.92,
-    logStatus: 0.94,
-    logModule: 0.9,
+    requestEditStatus: 0.9,
+    yearGraduated: 0.84,
+    course: 0.78,
+    availability: 0.88,
+    experience: 0.84,
+    gender: 0.9,
+    educationLevel: 0.82,
   };
 
   return Object.entries(filterWeights).reduce((multiplier, [key, weight]) => {
@@ -339,9 +356,8 @@ const getDummyTrendData = (filters = {}) => {
   }
 
   return rows.map((item, index) => {
-    const dateFieldFactor = filters.dateField === "created" ? 0.94 : filters.dateField === "outcome" ? 0.86 : 1;
     const variation = 0.96 + (index % 4) * 0.025;
-    const factor = multiplier * dateFieldFactor * variation;
+    const factor = multiplier * variation;
 
     return {
       ...item,
@@ -641,8 +657,67 @@ const CustomDateRangeModal = ({
   );
 };
 
+const SpecificDateModal = ({ open, value, onCancel, onApply }) => {
+  const today = formatDateInput(new Date());
+  const [draftDate, setDraftDate] = useState(value || today);
+  const [monthDate, setMonthDate] = useState(new Date(`${value || today}T00:00:00`));
+
+  useEffect(() => {
+    if (!open) return;
+    const next = value || today;
+    setDraftDate(next);
+    setMonthDate(new Date(`${next}T00:00:00`));
+  }, [open, value, today]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/65 px-3 py-5 backdrop-blur-[2px]"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
+      <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Select Specific Date</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Choose one date for the analytics report.</p>
+          </div>
+          <button type="button" onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Close specific date modal">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="bg-slate-50/80 px-5 py-4">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">Selected Date</span>
+            <span className="mt-1 flex items-center gap-2 text-sm font-bold text-[#2e66a6]">
+              <CalendarDays size={16} />
+              {formatDateLabel(draftDate)}
+            </span>
+          </div>
+        </div>
+        <div className="px-5 py-5">
+          <CalendarMonth
+            monthDate={monthDate}
+            startDate={draftDate}
+            endDate={draftDate}
+            onPickDate={setDraftDate}
+            onChangeMonth={setMonthDate}
+          />
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-5 py-4">
+          <button type="button" onClick={onCancel} className="h-10 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+          <button type="button" onClick={() => draftDate && onApply(draftDate)} className="h-10 rounded-xl bg-[#2e66a6] px-6 text-sm font-bold text-white shadow-md shadow-[#2e66a6]/20 hover:bg-[#255487]">Apply Date</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DateFilterDropdown = ({
   value,
+  specificDate,
   startDate,
   endDate,
   onSelect,
@@ -651,10 +726,12 @@ const DateFilterDropdown = ({
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
   const selectedLabel =
-    value === "range" && startDate && endDate
-      ? `${formatDateLabel(startDate)} – ${formatDateLabel(endDate)}`
-      : dateOptions.find(([optionValue]) => optionValue === value)?.[1] ||
-        "Overall";
+    value === "specific" && specificDate
+      ? formatDateLabel(specificDate)
+      : value === "range" && startDate && endDate
+        ? `${formatDateLabel(startDate)} – ${formatDateLabel(endDate)}`
+        : dateOptions.find(([optionValue]) => optionValue === value)?.[1] ||
+          "Overall";
 
   useEffect(() => {
     if (!open) return undefined;
@@ -1105,14 +1182,17 @@ const AnalyticsSkeleton = () => (
 );
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(emptyAnalytics);
   const [filters, setFilters] = useState(initialFilters);
   const [activeTab, setActiveTab] = useState("overview");
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+  const [showSpecificDateModal, setShowSpecificDateModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [dummyMode, setDummyMode] = useState(false);
 
   const options = analytics?.filters?.options || {};
@@ -1167,6 +1247,10 @@ const AdminDashboard = () => {
   const updateFilter = (name, value) =>
     setFilters((previous) => ({ ...previous, [name]: value }));
   const selectDateFilter = (value) => {
+    if (value === "specific") {
+      setShowSpecificDateModal(true);
+      return;
+    }
     if (value === "range") {
       setShowCustomDateModal(true);
       return;
@@ -1174,10 +1258,20 @@ const AdminDashboard = () => {
     setFilters((previous) => ({
       ...previous,
       date: value,
-      specificDate: value === "specific" ? previous.specificDate : "",
+      specificDate: "",
       startDate: "",
       endDate: "",
     }));
+  };
+  const applySpecificDate = (specificDate) => {
+    setFilters((previous) => ({
+      ...previous,
+      date: "specific",
+      specificDate,
+      startDate: "",
+      endDate: "",
+    }));
+    setShowSpecificDateModal(false);
   };
   const applyCustomDateRange = (startDate, endDate) => {
     setFilters((previous) => ({
@@ -1192,7 +1286,7 @@ const AdminDashboard = () => {
   const resetFilters = () => setFilters(initialFilters);
   const hasFilters = JSON.stringify(filters) !== JSON.stringify(initialFilters);
 
-  const exportAnalytics = () => {
+  const exportAnalyticsExcel = () => {
     try {
       setExporting(true);
       const workbook = XLSX.utils.book_new();
@@ -1229,6 +1323,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const exportAnalyticsPdf = () => {
+    const reportWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!reportWindow) {
+      setError("Please allow pop-ups to export the PDF report.");
+      return;
+    }
+
+    try {
+      setExportingPdf(true);
+      reportWindow.opener = null;
+      const filterRows = Object.entries(filters)
+        .filter(([, value]) => value && value !== "all")
+        .map(([key, value]) => `<tr><td>${titleCase(key)}</td><td>${String(value)}</td></tr>`)
+        .join("");
+      const kpiRows = Object.entries(kpis)
+        .map(([key, value]) => `<tr><td>${titleCase(key)}</td><td>${value}</td></tr>`)
+        .join("");
+      const trendRows = displayedTrends
+        .map((row) => `<tr><td>${row.label || row.key || ""}</td><td>${row.registrations || 0}</td><td>${row.jobs || 0}</td><td>${row.applications || 0}</td><td>${row.hires || 0}</td></tr>`)
+        .join("");
+
+      reportWindow.document.write(`<!doctype html><html><head><title>Admin Dashboard Report</title><style>body{font-family:Arial,sans-serif;padding:28px;color:#0f172a}h1{margin:0 0 4px}p{color:#64748b}table{width:100%;border-collapse:collapse;margin:16px 0 28px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:12px}th{background:#2e66a6;color:white}h2{margin-top:24px;font-size:16px}@media print{button{display:none}}</style></head><body><h1>Admin Dashboard Report</h1><p>Generated ${new Date().toLocaleString()}</p><h2>Applied Filters</h2><table><thead><tr><th>Filter</th><th>Value</th></tr></thead><tbody>${filterRows || '<tr><td colspan="2">Overall</td></tr>'}</tbody></table><h2>KPIs</h2><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${kpiRows}</tbody></table><h2>System Activity Trend</h2><table><thead><tr><th>Month</th><th>Registrations</th><th>Jobs</th><th>Applications</th><th>Hires</th></tr></thead><tbody>${trendRows || '<tr><td colspan="5">No data</td></tr>'}</tbody></table><script>window.onload=()=>{window.print();}</script></body></html>`);
+      reportWindow.document.close();
+    } catch (err) {
+      reportWindow.close();
+      setError("Unable to prepare the PDF report.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const tabs = [
     ["overview", "Overview"],
     ["recruitment", "Recruitment"],
@@ -1239,36 +1364,24 @@ const AdminDashboard = () => {
   return (
     <main className="mx-auto w-full max-w-[1600px] px-1 py-6">
       <div className="space-y-4">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-xl font-extrabold text-slate-900">
-              Admin Dashboard
-            </h1>
-            <p className="text-xs text-slate-500">
-              Compact system-wide analysis of users, jobs, applications,
-              verification, engagement, and operations.
-            </p>
+        <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-900">Admin Dashboard</h1>
+              <p className="mt-1 text-xs text-slate-500">Compact system-wide analysis of users, jobs, applications, verification, engagement, and operations.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <HeaderStatusCard label="Pending Jobseeker" value={kpis.pendingJobseekers} onClick={() => navigate("/admin/dashboard/pending-seekers")} />
+              <HeaderStatusCard label="Pending Employers" value={kpis.pendingEmployers} onClick={() => navigate("/admin/dashboard/pending-employers")} />
+              <HeaderStatusCard label="Request Edit" value={kpis.pendingEditRequests} onClick={() => navigate("/admin/employer-job-edit-requests")} />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 pt-2 sm:justify-end">
-            <HeaderStatusCard
-              label="Pending Jobseeker"
-              value={kpis.pendingJobseekers}
-            />
-            <HeaderStatusCard
-              label="Pending Employers"
-              value={kpis.pendingEmployers}
-            />
-            <HeaderStatusCard
-              label="Edit Request"
-              value={kpis.pendingEditRequests}
-            />
-            <button
-              type="button"
-              onClick={exportAnalytics}
-              disabled={loading || exporting}
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60"
-            >
-              <Download size={14} /> {exporting ? "Exporting..." : "Export"}
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+            <button type="button" onClick={exportAnalyticsExcel} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-60">
+              <Download size={14} /> {exporting ? "Exporting..." : "Export Excel"}
+            </button>
+            <button type="button" onClick={exportAnalyticsPdf} disabled={loading || exportingPdf} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60">
+              <Download size={14} /> {exportingPdf ? "Preparing..." : "Export PDF"}
             </button>
           </div>
         </header>
@@ -1284,26 +1397,31 @@ const AdminDashboard = () => {
             label="Jobseekers"
             value={kpis.totalJobseekers}
             imageSrc={statCardImages.users}
+            onClick={() => navigate("/admin/dashboard/job-seekers")}
           />
           <StatCard
             label="Employers"
             value={kpis.totalEmployers}
             imageSrc={statCardImages.verification}
+            onClick={() => navigate("/admin/dashboard/employers")}
           />
           <StatCard
             label="Registered Users"
             value={kpis.totalRegisteredUsers}
             imageSrc={statCardImages.applications}
+            onClick={() => navigate("/admin/users")}
           />
           <StatCard
             label="Job Posts"
             value={kpis.totalJobPosts}
             imageSrc={statCardImages.jobs}
+            onClick={() => navigate("/admin/job-offers")}
           />
           <StatCard
             label="Applications"
             value={kpis.applications}
             imageSrc={statCardImages.applications}
+            onClick={() => navigate("/admin/applications")}
           />
           <StatCard
             label="Hire Rate"
@@ -1314,183 +1432,49 @@ const AdminDashboard = () => {
         </div>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <DateFilterDropdown
               value={filters.date}
+              specificDate={filters.specificDate}
               startDate={filters.startDate}
               endDate={filters.endDate}
               onSelect={selectDateFilter}
               disabled={loading}
             />
-            <label className="block">
-              <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Date Based On
-              </span>
-              <select
-                value={filters.dateField}
-                onChange={(event) =>
-                  updateFilter("dateField", event.target.value)
-                }
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
-              >
-                <option value="primary">Primary Event Date</option>
-                <option value="created">Record Created</option>
-                <option value="outcome">Outcome / Updated Date</option>
-              </select>
-            </label>
-            {filters.date === "specific" ? (
-              <DateInput
-                label="Specific Date"
-                value={filters.specificDate}
-                onChange={(value) => updateFilter("specificDate", value)}
-              />
-            ) : null}
-            <FilterSelect
-              label="Role"
-              value={filters.role}
-              onChange={(value) => updateFilter("role", value)}
-              values={options.roles}
-              allLabel="All Roles"
-            />
-            <FilterSelect
-              label="Campus"
-              value={filters.campus}
-              onChange={(value) => updateFilter("campus", value)}
-              values={options.campuses}
-              allLabel="All Campuses"
-            />
-            <FilterSelect
-              label="Application Status"
-              value={filters.applicationStatus}
-              onChange={(value) => updateFilter("applicationStatus", value)}
-              values={options.applicationStatuses}
-              allLabel="All Application Statuses"
-            />
-            <FilterSelect
-              label="Job Type"
-              value={filters.jobType}
-              onChange={(value) => updateFilter("jobType", value)}
-              values={options.jobTypes}
-              allLabel="All Job Types"
-            />
+            <FilterSelect label="Campus" value={filters.campus} onChange={(value) => updateFilter("campus", value)} values={options.campuses || []} placeholderLabel="Select Campus" allLabel="All Campuses" preserveCase />
+            <FilterSelect label="Application Status" value={filters.applicationStatus} onChange={(value) => updateFilter("applicationStatus", value)} values={options.applicationStatuses || []} placeholderLabel="Select Status" allLabel="All Application Status" />
+            <FilterSelect label="Job Type" value={filters.jobType} onChange={(value) => updateFilter("jobType", value)} values={options.jobTypes || []} placeholderLabel="Select Job Type" allLabel="All Job Types" preserveCase />
+            <FilterSelect label="Work Mode" value={filters.workMode} onChange={(value) => updateFilter("workMode", value)} values={options.workModes || []} placeholderLabel="Select Work Mode" allLabel="All Work Modes" preserveCase />
+            <FilterSelect label="Industry" value={filters.industry} onChange={(value) => updateFilter("industry", value)} values={options.industries || []} placeholderLabel="Select Industry" allLabel="All Industries" preserveCase />
           </div>
 
           {showMoreFilters ? (
-            <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-              <FilterSelect
-                label="User Status"
-                value={filters.userStatus}
-                onChange={(value) => updateFilter("userStatus", value)}
-                values={options.userStatuses}
-                allLabel="All User Statuses"
-              />
-              <FilterSelect
-                label="Verification"
-                value={filters.verificationStatus}
-                onChange={(value) => updateFilter("verificationStatus", value)}
-                values={options.verificationStatuses}
-                allLabel="All Verification Statuses"
-              />
-              <FilterSelect
-                label="Job Status"
-                value={filters.jobStatus}
-                onChange={(value) => updateFilter("jobStatus", value)}
-                values={options.jobStatuses}
-                allLabel="All Job Statuses"
-              />
-              <FilterSelect
-                label="Category"
-                value={filters.category}
-                onChange={(value) => updateFilter("category", value)}
-                values={options.categories}
-                allLabel="All Categories"
-              />
-              <FilterSelect
-                label="Work Mode"
-                value={filters.workMode}
-                onChange={(value) => updateFilter("workMode", value)}
-                values={options.workModes}
-                allLabel="All Work Modes"
-              />
-              <FilterSelect
-                label="Company"
-                value={filters.company}
-                onChange={(value) => updateFilter("company", value)}
-                values={options.companies}
-                allLabel="All Companies"
-              />
-              <FilterSelect
-                label="Edit Request"
-                value={filters.editRequestStatus}
-                onChange={(value) => updateFilter("editRequestStatus", value)}
-                values={options.editRequestStatuses}
-                allLabel="All Edit Requests"
-              />
-              <FilterSelect
-                label="Message Type"
-                value={filters.messageType}
-                onChange={(value) => updateFilter("messageType", value)}
-                values={options.messageTypes}
-                allLabel="All Message Types"
-              />
-              <FilterSelect
-                label="Notification Type"
-                value={filters.notificationType}
-                onChange={(value) => updateFilter("notificationType", value)}
-                values={options.notificationTypes}
-                allLabel="All Notification Types"
-              />
-              <FilterSelect
-                label="Log Status"
-                value={filters.logStatus}
-                onChange={(value) => updateFilter("logStatus", value)}
-                values={options.logStatuses}
-                allLabel="All Log Statuses"
-              />
-              <FilterSelect
-                label="Log Module"
-                value={filters.logModule}
-                onChange={(value) => updateFilter("logModule", value)}
-                values={options.logModules}
-                allLabel="All Log Modules"
-              />
+            <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <FilterSelect label="Job Status" value={filters.jobStatus} onChange={(value) => updateFilter("jobStatus", value)} values={options.jobStatuses || []} placeholderLabel="Select Job Status" allLabel="All Job Statuses" />
+              <FilterSelect label="Verification Status" value={filters.verificationStatus} onChange={(value) => updateFilter("verificationStatus", value)} values={options.verificationStatuses || []} placeholderLabel="Select Verification Status" allLabel="All Verification Statuses" />
+              <FilterSelect label="Request Edit" value={filters.requestEditStatus} onChange={(value) => updateFilter("requestEditStatus", value)} values={options.requestEditStatuses || []} placeholderLabel="Select Request Edit" allLabel="All Request Edit" />
+              <FilterSelect label="Year Graduated" value={filters.yearGraduated} onChange={(value) => updateFilter("yearGraduated", value)} values={options.yearsGraduated || []} placeholderLabel="Select Year" allLabel="All Year Graduated" preserveCase />
+              <FilterSelect label="Course" value={filters.course} onChange={(value) => updateFilter("course", value)} values={options.courses || []} placeholderLabel="Select Course" allLabel="All Course" preserveCase />
+              <FilterSelect label="How Soon Can Start" value={filters.availability} onChange={(value) => updateFilter("availability", value)} values={options.availabilities || []} placeholderLabel="Select Availability" allLabel="All Availability" preserveCase />
+              <FilterSelect label="Experience" value={filters.experience} onChange={(value) => updateFilter("experience", value)} values={options.experiences || []} placeholderLabel="Select Experience" allLabel="All Experience" preserveCase />
+              <FilterSelect label="Gender" value={filters.gender} onChange={(value) => updateFilter("gender", value)} values={options.genders || []} placeholderLabel="Select Gender" allLabel="All Gender" preserveCase />
+              <FilterSelect label="Education Level" value={filters.educationLevel} onChange={(value) => updateFilter("educationLevel", value)} values={options.educationLevels || []} placeholderLabel="Select Education" allLabel="All Education Level" preserveCase />
             </div>
           ) : null}
 
           <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
             <label className="mr-auto inline-flex h-9 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
               <span className="whitespace-nowrap">Dummy Data</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={dummyMode}
-                onClick={() => setDummyMode((value) => !value)}
-                className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}
-              >
-                <span
-                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`}
-                />
+              <button type="button" role="switch" aria-checked={dummyMode} onClick={() => setDummyMode((value) => !value)} className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
               </button>
-              <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
-                {dummyMode ? "ON" : "OFF"}
-              </span>
+              <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>{dummyMode ? "ON" : "OFF"}</span>
             </label>
-            <button
-              type="button"
-              onClick={() => setShowMoreFilters((value) => !value)}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10"
-            >
-              <Filter size={13} />
-              {showMoreFilters ? "Hide Filters" : "More Filters"}
+            <button type="button" onClick={() => setShowMoreFilters((value) => !value)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10">
+              <Filter size={13} /> {showMoreFilters ? "Hide Filters" : "More Filters"}
             </button>
-            <button
-              type="button"
-              onClick={resetFilters}
-              disabled={!hasFilters}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RefreshCw size={13} />
-              Clear All
+            <button type="button" onClick={resetFilters} disabled={!hasFilters} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+              <RefreshCw size={13} /> Clear All
             </button>
           </div>
         </section>
@@ -1647,6 +1631,13 @@ const AdminDashboard = () => {
               : "—"}
           </p>
         ) : null}
+
+        <SpecificDateModal
+          open={showSpecificDateModal}
+          value={filters.specificDate}
+          onCancel={() => setShowSpecificDateModal(false)}
+          onApply={applySpecificDate}
+        />
 
         <CustomDateRangeModal
           open={showCustomDateModal}
