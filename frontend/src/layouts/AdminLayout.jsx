@@ -182,7 +182,7 @@ const AdminLayout = ({ children }) => {
         items: [
          
           {
-            name: "Dashboard",
+            name: "analytics",
             path: "/admin/analytics",
             icon: "M3 3v18h18M7 16l4-5 4 3 5-7",
           },
