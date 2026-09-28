@@ -167,7 +167,7 @@ const StatCard = ({ label, value, suffix = "", imageSrc }) => (
           "radial-gradient(circle at 35% 50%, #000 0%, rgba(0,0,0,.6) 55%, transparent 80%)",
       }}
     />
-    <div className="relative z-10">
+    <div className="relative z-10 flex min-h-[76px] flex-col justify-center text-left">
       <h3 className="text-[26px] font-semibold leading-none">
         {numberFormat.format(Number(value || 0))}
         {suffix}
