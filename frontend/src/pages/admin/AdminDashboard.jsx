@@ -1478,8 +1478,8 @@ const HireRateByCampusCard = ({ data = [] }) => {
     <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
         icon={Building2}
-        title="What's the Hire Rate for Each Campus?"
-        subtitle="Percentage of applicants who got hired"
+        title="Hire Rate by Campus"
+        subtitle="Percentage of applicants hired from each campus."
       />
       <div className="grid min-h-48 items-end gap-5" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
         {rows.map((item, index) => {
