@@ -354,7 +354,6 @@ const resumeStyles = `
     line-height: 1.18;
     box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
     box-sizing: border-box;
-    overflow: hidden;
   }
 
   .resume-inner {
@@ -366,7 +365,6 @@ const resumeStyles = `
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
   }
 
   .resume-header {
@@ -380,7 +378,6 @@ const resumeStyles = `
     min-height: 62px;
     padding-right: 0;
     text-align: center;
-    overflow: hidden;
   }
 
   .resume-header-main {
@@ -388,7 +385,6 @@ const resumeStyles = `
     width: auto;
     min-width: 0;
     max-width: calc(100% - 73px);
-    overflow: hidden;
   }
 
   .resume-name {
@@ -1028,7 +1024,6 @@ export const openResumePrintWindow = async (resumeData = {}) => {
     paper.style.maxWidth = '210mm';
     paper.style.minHeight = 'auto';
     paper.style.boxSizing = 'border-box';
-    paper.style.overflow = 'hidden';
 
     if (document.fonts?.ready) {
       await document.fonts.ready;
@@ -1046,8 +1041,6 @@ export const openResumePrintWindow = async (resumeData = {}) => {
 
     alignDeclarationToLastPageBottom(paper);
 
-    const paperWidth = Math.max(1, Math.ceil(paper.getBoundingClientRect().width));
-
     const pdfWorker = html2pdf()
       .set({
         margin: 0,
@@ -1058,8 +1051,6 @@ export const openResumePrintWindow = async (resumeData = {}) => {
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
-          width: paperWidth,
-          windowWidth: paperWidth,
           scrollX: 0,
           scrollY: 0,
         },
