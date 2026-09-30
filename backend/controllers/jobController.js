@@ -1310,7 +1310,7 @@ exports.getEmployerJobs = async (req, res) => {
         .select(
           'title location jobType workMode category isActive isPublished status createdAt updatedAt publishedAt editUnlockedUntil companyLogo companyName applicationCount applicationDeadline originalApplicationDeadline deadlineExtendedAt salaryMin salaryMax vacancies openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage educationLevel experienceLevel isUrgent isArchived statusBeforeArchive archivedAt'
         )
-        .sort({ updatedAt: -1, createdAt: -1 }),
+        .sort({ createdAt: -1 }),
       Job.countDocuments({
         ...baseQuery,
         $and: [

@@ -1235,7 +1235,7 @@ exports.getJobseekerApplications = async (req, res) => {
         path: 'interviewSchedule.interviewer',
         select: 'fullName firstName middleName lastName email'
       })
-      .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 });
+      .sort({ appliedAt: -1 });
 
     applications.forEach((app) => {
       const loc = String(app?.job?.location || '').trim();
@@ -1295,7 +1295,7 @@ exports.getMyApplications = async (req, res) => {
         path: 'interviewSchedule.interviewer',
         select: 'fullName firstName middleName lastName email'
       })
-      .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 });
+      .sort({ appliedAt: -1 });
 
     applications.forEach((app) => {
       const loc = String(app?.job?.location || '').trim();
@@ -1923,7 +1923,7 @@ exports.getEmployerApplications = async (req, res) => {
         path: 'interviewSchedule.interviewer',
         select: 'fullName firstName middleName lastName email'
       })
-      .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 });
+      .sort({ appliedAt: -1 });
 
     const stats = {
       total: applications.length,
@@ -1999,7 +1999,7 @@ exports.getEmployerHiredApplications = async (req, res) => {
         path: 'interviewSchedule.interviewer',
         select: 'fullName firstName middleName lastName email'
       })
-      .sort({ updatedAt: -1, hiredAt: -1, reviewedAt: -1, appliedAt: -1 });
+      .sort({ appliedAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -2045,7 +2045,7 @@ exports.getEmployerForInterviewApplications = async (req, res) => {
         path: 'jobseeker',
         select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
       })
-      .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 });
+      .sort({ appliedAt: -1 });
 
     const applicationsWithEmploymentStatus = await attachEmploymentStatus(applications);
 
@@ -2091,7 +2091,7 @@ exports.getEmployerDeclinedApplications = async (req, res) => {
           path: 'interviewSchedule.interviewer',
           select: 'fullName firstName middleName lastName email'
         })
-        .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 }),
+        .sort({ appliedAt: -1 }),
       getDeclinedCounts(req.user._id, jobId)
     ]);
 

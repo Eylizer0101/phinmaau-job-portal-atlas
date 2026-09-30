@@ -359,7 +359,7 @@ exports.declineRequest = async (req, res) => {
       message: `Your request to edit “${request.job.title || 'Untitled Job'}” was declined.`,
       relatedId: request.job._id,
       relatedModel: 'Job',
-      link: `/employer/manage-jobs?job=${request.job._id}`,
+      link: `/employer/manage-jobs`,
       metadata: {
         requestId: request._id,
         jobId: request.job._id,

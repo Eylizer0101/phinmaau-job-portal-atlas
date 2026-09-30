@@ -23,26 +23,6 @@ import api from '../services/api.js';
 import ChatbotWidget from '../components/shared/ChatbotWidget';
 
 /** Helpers */
-const buildJobseekerNotificationTarget = (notification = {}) => {
-  const metadata = notification?.metadata || {};
-  const applicationId = metadata.applicationId || (
-    String(notification?.relatedModel || '') === 'Application' ? notification?.relatedId : ''
-  );
-
-  if (applicationId) {
-    const params = new URLSearchParams();
-    params.set('application', String(applicationId));
-
-    const status = String(metadata.newStatus || '').trim().toLowerCase();
-    if (status) params.set('status', status);
-
-    return `/jobseeker/my-applications?${params.toString()}`;
-  }
-
-  return notification?.link || '';
-};
-
-
 function useOnClickOutside(refs, handler, enabled = true) {
   useEffect(() => {
     if (!enabled) return;
@@ -1062,9 +1042,8 @@ const JobSeekerLayout = ({ children }) => {
                                     } ${focusRing}`}
                                     onClick={async () => {
                                       if (!n.isRead) await handleMarkAsRead(n._id);
-                                      const target = buildJobseekerNotificationTarget(n);
-                                      if (target) {
-                                        navigate(target);
+                                      if (n.link) {
+                                        navigate(n.link);
                                         setIsNotificationOpen(false);
                                       }
                                     }}
@@ -1072,9 +1051,8 @@ const JobSeekerLayout = ({ children }) => {
                                       if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
                                         if (!n.isRead) await handleMarkAsRead(n._id);
-                                        const target = buildJobseekerNotificationTarget(n);
-                                        if (target) {
-                                          navigate(target);
+                                        if (n.link) {
+                                          navigate(n.link);
                                           setIsNotificationOpen(false);
                                         }
                                       }
@@ -1436,9 +1414,8 @@ const JobSeekerLayout = ({ children }) => {
                         className={`px-3 py-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${!n.isRead ? 'bg-blue-50' : ''}`}
                         onClick={async () => {
                           if (!n.isRead) await handleMarkAsRead(n._id);
-                          const target = buildJobseekerNotificationTarget(n);
-                          if (target) {
-                            navigate(target);
+                          if (n.link) {
+                            navigate(n.link);
                             setIsNotificationOpen(false);
                           }
                         }}

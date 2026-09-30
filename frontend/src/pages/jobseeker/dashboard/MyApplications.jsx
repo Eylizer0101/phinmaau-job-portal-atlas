@@ -833,57 +833,36 @@ const MyApplications = () => {
   }, [applications, mainTab, statusFilter]);
 
   const searchedApplications = useMemo(() => {
-    const getLatestActivityTime = (application) => {
-      const activityTimes = (Array.isArray(application?.activityHistory) ? application.activityHistory : [])
-        .map((activity) => new Date(activity?.occurredAt || 0).getTime())
-        .filter((time) => Number.isFinite(time));
-
-      const candidates = [
-        ...activityTimes,
-        new Date(application?.interviewSchedule?.setAt || 0).getTime(),
-        new Date(application?.hiredAt || 0).getTime(),
-        new Date(application?.reviewedAt || 0).getTime(),
-        new Date(application?.updatedAt || 0).getTime(),
-        new Date(application?.appliedAt || 0).getTime(),
-      ].filter((time) => Number.isFinite(time));
-
-      return candidates.length ? Math.max(...candidates) : 0;
-    };
-
     const query = searchQuery.trim().toLowerCase();
-    const source = query
-      ? applications.filter((application) => {
-          const statusText = getStatusText(application);
-          const salaryText = getSalaryDisplayText(application.job || {});
-          const appliedDateText = formatAppliedDateTime(application.appliedAt);
-          const searchableValues = [
-            application.job?.title,
-            application.job?.companyName,
-            application.job?.location,
-            application.job?.workOfficeAddress,
-            application.job?.officeAddress,
-            application.job?.jobType,
-            application.job?.workMode,
-            application.job?.industry,
-            application.job?.companyIndustry,
-            application.employer?.employerProfile?.industry,
-            application.employer?.employerProfile?.companyAddress,
-            application.status,
-            application.hiringStage,
-            salaryText,
-            statusText,
-            appliedDateText,
-          ];
+    if (!query) return filteredApplications;
 
-          return searchableValues.some((value) =>
-            String(value || '').toLowerCase().includes(query)
-          );
-        })
-      : filteredApplications;
+    return applications.filter((application) => {
+      const statusText = getStatusText(application);
+      const salaryText = getSalaryDisplayText(application.job || {});
+      const appliedDateText = formatAppliedDateTime(application.appliedAt);
+      const searchableValues = [
+        application.job?.title,
+        application.job?.companyName,
+        application.job?.location,
+        application.job?.workOfficeAddress,
+        application.job?.officeAddress,
+        application.job?.jobType,
+        application.job?.workMode,
+        application.job?.industry,
+        application.job?.companyIndustry,
+        application.employer?.employerProfile?.industry,
+        application.employer?.employerProfile?.companyAddress,
+        application.status,
+        application.hiringStage,
+        salaryText,
+        statusText,
+        appliedDateText,
+      ];
 
-    return [...source].sort(
-      (a, b) => getLatestActivityTime(b) - getLatestActivityTime(a)
-    );
+      return searchableValues.some((value) =>
+        String(value || '').toLowerCase().includes(query)
+      );
+    });
   }, [applications, filteredApplications, searchQuery]);
 
   const numericPageSize = pageSize === 'all' ? Math.max(searchedApplications.length, 1) : Number(pageSize);
@@ -912,22 +891,10 @@ const MyApplications = () => {
     );
     if (targetIndex < 0) return;
     if (pageSize !== 'all') setCurrentPage(Math.floor(targetIndex / numericPageSize) + 1);
-    const scrollTimer = window.setTimeout(() => {
+    window.setTimeout(() => {
       document.getElementById(`jobseeker-application-${highlightedApplicationId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
-
-    const clearTimer = window.setTimeout(() => {
-      const params = new URLSearchParams(location.search);
-      params.delete('application');
-      const nextQuery = params.toString();
-      navigate(`/jobseeker/my-applications${nextQuery ? `?${nextQuery}` : ''}`, { replace: true });
-    }, 3000);
-
-    return () => {
-      window.clearTimeout(scrollTimer);
-      window.clearTimeout(clearTimer);
-    };
-  }, [highlightedApplicationId, searchedApplications, pageSize, numericPageSize, location.search, navigate]);
+  }, [highlightedApplicationId, searchedApplications, pageSize, numericPageSize]);
 
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
