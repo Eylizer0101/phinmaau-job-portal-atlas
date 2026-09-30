@@ -1076,12 +1076,12 @@ const EmptyChart = () => (
   </div>
 );
 
-const HorizontalBars = ({ data = [], maxItems = 8, percentage = false }) => {
+const HorizontalBars = ({ data = [], maxItems = 8, percentage = false, centered = false }) => {
   const rows = data.slice(0, maxItems);
   const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
   if (!rows.length) return <EmptyChart />;
   return (
-    <div className="space-y-2.5">
+    <div className={`${centered ? "flex min-h-40 flex-col justify-center" : ""} space-y-2.5`}>
       {rows.map((item, index) => (
         <div
           key={`${item.name}-${index}`}
@@ -2143,7 +2143,7 @@ const AdminDashboard = () => {
               subtitle="Job supply grouped by employment type"
               className="xl:col-span-6"
             >
-              <HorizontalBars data={sections.jobs?.employmentTypes} />
+              <HorizontalBars data={sections.jobs?.employmentTypes} centered />
             </ChartCard>
 
             <ChartCard
@@ -2183,7 +2183,7 @@ const AdminDashboard = () => {
               subtitle="Campus distribution from jobseeker profiles"
               className="xl:col-span-6"
             >
-              <HorizontalBars data={sections.users?.campuses} />
+              <HorizontalBars data={sections.users?.campuses} centered />
             </ChartCard>
             <ChartCard
               title="Gender Distribution"
@@ -2204,7 +2204,7 @@ const AdminDashboard = () => {
               subtitle="Job seekers' willingness to relocate"
               className="xl:col-span-6"
             >
-              <HorizontalBars data={sections.users?.relocation} maxItems={5} />
+              <HorizontalBars data={sections.users?.relocation} maxItems={5} centered />
             </ChartCard>
             <ChartCard
               title="Experience Level"
@@ -2233,7 +2233,7 @@ const AdminDashboard = () => {
               title="Job Edit Requests"
               subtitle="Governance requests by status"
             >
-              <HorizontalBars data={sections.operations?.editRequests} />
+              <HorizontalBars data={sections.operations?.editRequests} centered />
             </ChartCard>
             <ChartCard
               title="Most Requested Job Sections"
