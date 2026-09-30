@@ -15,6 +15,24 @@ import {
   X,
 } from "lucide-react";
 import api from "../../services/api";
+import {
+  FaAward,
+  FaBookOpen,
+  FaBriefcase,
+  FaCheckCircle,
+  FaFileAlt,
+  FaFolderOpen,
+  FaGraduationCap,
+  FaListOl,
+  FaListUl,
+  FaPen,
+  FaUniversity,
+  FaUser,
+  FaUserCheck,
+  FaUsers,
+  FaWaveSquare,
+} from "../../components/shared/JobseekerIcons";
+
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
@@ -1508,7 +1526,7 @@ const ApplicationProcessDurationCard = ({ data = {} }) => {
   return (
     <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
-        icon={Clock3}
+        icon={FaWaveSquare}
         title="Application Processing Time"
         subtitle="Average time from application to hire"
       />
@@ -1540,7 +1558,7 @@ const WithdrawalStageCard = ({ data = [] }) => {
   return (
     <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
-        icon={UserRoundMinus}
+        icon={FaUser}
         title="Withdrawal by Application Stage"
         subtitle="Withdrawn applications by stage"
       />
@@ -1557,7 +1575,7 @@ const WithdrawalStageCard = ({ data = [] }) => {
 const ApplicationsBeforeHireCard = ({ data = [] }) => (
   <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
     <RecruitmentCardTitle
-      icon={Repeat2}
+      icon={FaListOl}
       title="Applications Before Hire"
       subtitle="Average number of applications submitted before being hired."
     />
@@ -1571,7 +1589,7 @@ const HireRateByCampusCard = ({ data = [] }) => {
     return (
       <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
         <RecruitmentCardTitle
-          icon={Building2}
+          icon={FaUniversity}
           title="Hire Rate by Campus"
           subtitle="Percentage of applicants hired from each campus."
         />
@@ -2113,7 +2131,7 @@ const AdminDashboard = () => {
               title="Top Hiring Companies"
               subtitle="Companies with the most hires"
               className="xl:col-span-6"
-              icon={Building2}
+              icon={FaBriefcase}
             >
               <HorizontalBars data={sections.applications?.topHiringCompanies || []} maxItems={5} />
             </ChartCard>
@@ -2121,7 +2139,7 @@ const AdminDashboard = () => {
               title="Top Industries"
               subtitle="Industries with the most job opportunities"
               className="xl:col-span-6"
-              icon={Activity}
+              icon={FaWaveSquare}
             >
               <HorizontalBars data={sections.jobs?.industries || sections.jobs?.categories || []} maxItems={6} />
             </ChartCard>
@@ -2129,7 +2147,7 @@ const AdminDashboard = () => {
               title="User Roles"
               subtitle="Admin, employer, and jobseeker accounts"
               className="xl:col-span-6"
-              icon={UserRoundMinus}
+              icon={FaUsers}
             >
               <DonutChart data={sections.users?.roles} showPercentage />
             </ChartCard>
@@ -2137,7 +2155,7 @@ const AdminDashboard = () => {
               title="Job Status"
               subtitle="Lifecycle state of job postings"
               className="xl:col-span-6"
-              icon={Building2}
+              icon={FaFileAlt}
             >
               <DonutChart data={sections.jobs?.statuses} showPercentage />
             </ChartCard>
@@ -2157,7 +2175,7 @@ const AdminDashboard = () => {
               title="Employment Type"
               subtitle="Job supply grouped by employment type"
               className="xl:col-span-6"
-              icon={Building2}
+              icon={FaBriefcase}
             >
               <HorizontalBars data={sections.jobs?.employmentTypes} centered />
             </ChartCard>
@@ -2178,7 +2196,7 @@ const AdminDashboard = () => {
               title="Employment Status"
               subtitle="Status recorded for hired applicants"
               className="xl:col-span-6"
-              icon={UserRoundMinus}
+              icon={FaUserCheck}
             >
               <VerticalBars data={sections.applications?.employmentStatus} maxItems={6} />
             </ChartCard>
@@ -2192,7 +2210,7 @@ const AdminDashboard = () => {
               title="Verification Status"
               subtitle="Employer and jobseeker verification state"
               className="xl:col-span-6"
-              icon={Activity}
+              icon={FaCheckCircle}
             >
               <HorizontalBars data={sections.users?.verification} />
             </ChartCard>
@@ -2200,7 +2218,7 @@ const AdminDashboard = () => {
               title="Jobseekers by Campus"
               subtitle="Campus distribution from jobseeker profiles"
               className="xl:col-span-6"
-              icon={Building2}
+              icon={FaUniversity}
             >
               <HorizontalBars data={sections.users?.campuses} centered />
             </ChartCard>
@@ -2208,7 +2226,7 @@ const AdminDashboard = () => {
               title="Gender Distribution"
               subtitle="Job seekers by gender"
               className="xl:col-span-6"
-              icon={UserRoundMinus}
+              icon={FaUser}
             >
               <DonutChart data={sections.users?.genders} showPercentage />
             </ChartCard>
@@ -2216,7 +2234,7 @@ const AdminDashboard = () => {
               title="How Soon Can They Start?"
               subtitle="Applicant start availability"
               className="xl:col-span-6"
-              icon={Clock3}
+              icon={FaAward}
             >
               <VerticalBars data={sections.users?.availabilities} maxItems={5} />
             </ChartCard>
@@ -2238,7 +2256,7 @@ const AdminDashboard = () => {
               title="Educational Attainment"
               subtitle="Job seekers by highest completed qualification"
               className="xl:col-span-12"
-              icon={Building2}
+              icon={FaGraduationCap}
             >
               <HorizontalBars data={sections.users?.educationLevels} maxItems={6} />
               <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 text-xs font-medium text-slate-600">
@@ -2254,7 +2272,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Job Edit Requests"
               subtitle="Governance requests by status"
-              icon={Repeat2}
+              icon={FaPen}
             >
               <HorizontalBars data={sections.operations?.editRequests} centered />
             </ChartCard>
@@ -2268,7 +2286,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Employment Status Request Types"
               subtitle="Distribution of requests by ending reason"
-              icon={UserRoundMinus}
+              icon={FaListOl}
             >
               <EmploymentRequestDonut
                 data={sections.operations?.employmentStatusRequestTypes || []}
@@ -2282,7 +2300,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Employment Status Updates"
               subtitle="Distribution of requests to update employment records"
-              icon={Repeat2}
+              icon={FaCheckCircle}
             >
               <EmploymentRequestDonut
                 data={sections.operations?.employmentStatusUpdates || []}
