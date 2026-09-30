@@ -200,15 +200,15 @@ const HeaderStatusCard = ({ label, value, onClick, icon: Icon }) => (
   <button
     type="button"
     onClick={onClick}
-    className="group relative flex h-[66px] min-w-[150px] items-center gap-3 rounded-2xl border border-slate-200/90 bg-white px-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2e66a6]/30 hover:shadow-[0_12px_28px_rgba(46,102,166,0.14)]"
+    className="group relative flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2e66a6]/35 hover:bg-[#2e66a6]/[0.025] hover:text-[#2e66a6] hover:shadow-[0_8px_20px_rgba(46,102,166,0.12)]"
   >
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/8 text-[#2e66a6] transition group-hover:bg-[#2e66a6]/12">
-      {Icon ? <Icon size={19} /> : null}
-    </span>
-    <span className="min-w-0 pr-7">
-      <span className="block whitespace-nowrap text-[10px] font-bold text-slate-700">{label}</span>
-    </span>
-    <span className="absolute right-3 top-2.5 flex h-6 min-w-9 items-center justify-center rounded-lg bg-[#2e66a6] px-2 text-[11px] font-extrabold leading-none text-white shadow-sm">
+    {Icon ? (
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center text-[#2e66a6]">
+        <Icon size={16} />
+      </span>
+    ) : null}
+    <span className="whitespace-nowrap text-[10px] font-bold">{label}</span>
+    <span className="absolute -right-1.5 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#2e66a6] px-1 text-[9px] font-extrabold leading-none text-white shadow-sm">
       {numberFormat.format(Number(value || 0))}
     </span>
   </button>
@@ -2082,7 +2082,7 @@ const AdminDashboard = () => {
           </div>
 
           <div className="relative px-5 pb-4 pt-5 lg:px-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(0,1fr)_480px] xl:items-center xl:gap-6">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-2xl bg-white shadow-[0_10px_28px_rgba(46,102,166,0.14)] ring-1 ring-[#2e66a6]/10">
                   <img
@@ -2101,7 +2101,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 xl:justify-end">
+              <div className="grid grid-cols-3 items-center gap-2.5 pt-2 xl:pt-0">
                 <HeaderStatusCard
                   label="Pending Jobseeker"
                   value={kpis.pendingJobseekers}
