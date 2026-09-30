@@ -1520,7 +1520,7 @@ exports.getAdminAnalytics = async (req, res) => {
         .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.howSoonCanYouStart jobSeekerProfile.willingToRelocate jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.experience jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated jobSeekerProfile.educationEntries.educationalAttainment jobSeekerProfile.educationEntries.level jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
       Job.find({}).select('employer companyName status statusBeforeArchive isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount applicationDeadline publishedAt filledAt closedAt archivedAt createdAt updatedAt').lean(),
-      Application.find({}).select('job jobseeker employer status lastActiveStatus withdrawalCount withdrawnAt appliedAt reviewedAt viewedAt hiredAt employmentStatus interviewSchedule activityHistory createdAt updatedAt').lean(),
+      Application.find({}).select('job jobseeker employer status lastActiveStatus withdrawalCount withdrawnAt appliedAt reviewedAt viewedAt hiredAt employmentStatus employmentStatusRequest.reason employmentStatusRequest.status employmentStatusRequest.requestedAt interviewSchedule activityHistory createdAt updatedAt').lean(),
       JobEditRequest.find({}).select('job employer requestedSections status reviewedAt unlockUntil createdAt updatedAt').lean(),
       Message.find({}).select('conversationId sender receiver messageType isRead readAt job application createdAt updatedAt').lean(),
       ConversationPreference.find({}).select('user conversationId otherUser archived hiddenCompany deleted createdAt updatedAt').lean(),
@@ -1636,6 +1636,81 @@ exports.getAdminAnalytics = async (req, res) => {
       if (!analyticsIsAll(filters.verificationStatus) && verificationDisplayStatus(seeker) !== analyticsLower(filters.verificationStatus)) return false;
       return true;
     });
+
+    const employmentStatusRequests = applicationsAll.filter((application) => {
+      const request = application?.employmentStatusRequest || {};
+      const requestStatus = analyticsLower(request.status);
+      if (!requestStatus || requestStatus === 'none') return false;
+
+      if (range.start) {
+        const requestDate = request.requestedAt || application.updatedAt || application.createdAt;
+        if (!analyticsInRange(requestDate, range)) return false;
+      }
+
+      const job = jobById.get(analyticsId(application.job));
+      if (
+        (!analyticsIsAll(filters.jobStatus) ||
+          !analyticsIsAll(filters.industry) ||
+          !analyticsIsAll(filters.jobType) ||
+          !analyticsIsAll(filters.workMode)) &&
+        !allowedJobIds.has(analyticsId(job?._id))
+      ) {
+        return false;
+      }
+
+      const seeker = userById.get(analyticsId(application.jobseeker));
+      if (!matchesJobseekerProfile(seeker)) return false;
+      if (
+        !analyticsIsAll(filters.verificationStatus) &&
+        verificationDisplayStatus(seeker) !== analyticsLower(filters.verificationStatus)
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const employmentStatusRequestTypes = [
+      {
+        name: 'Contract Ended',
+        value: employmentStatusRequests.filter(
+          (item) => analyticsLower(item?.employmentStatusRequest?.reason) === 'contract_ended'
+        ).length,
+      },
+      {
+        name: 'Employment Ended',
+        value: employmentStatusRequests.filter(
+          (item) => analyticsLower(item?.employmentStatusRequest?.reason) === 'employment_ended'
+        ).length,
+      },
+    ];
+
+    const employmentStatusUpdates = [
+      {
+        name: 'Pending',
+        value: employmentStatusRequests.filter((item) =>
+          ['pending', 'reviewed'].includes(analyticsLower(item?.employmentStatusRequest?.status))
+        ).length,
+      },
+      {
+        name: 'Approved',
+        value: employmentStatusRequests.filter(
+          (item) => analyticsLower(item?.employmentStatusRequest?.status) === 'approved'
+        ).length,
+      },
+      {
+        name: 'Declined',
+        value: employmentStatusRequests.filter(
+          (item) => analyticsLower(item?.employmentStatusRequest?.status) === 'declined'
+        ).length,
+      },
+      {
+        name: 'No Response',
+        value: employmentStatusRequests.filter(
+          (item) => analyticsLower(item?.employmentStatusRequest?.status) === 'no_response'
+        ).length,
+      },
+    ];
 
     const editRequests = editRequestsAll.filter((item) => {
       if (!dateMatches('editRequest', item)) return false;
@@ -1870,6 +1945,8 @@ exports.getAdminAnalytics = async (req, res) => {
         operations: {
           editRequests: analyticsCountRows(editRequests, (item) => requestEditDisplayStatus(item.status)),
           editRequestSections: analyticsCountRows(editRequests.flatMap((item) => item.requestedSections || []), (item) => item, 10),
+          employmentStatusRequestTypes,
+          employmentStatusUpdates,
           messages: analyticsCountRows(messages, (item) => item.messageType),
           messageRead: [
             { name: 'Read', value: messages.filter((item) => item.isRead).length },

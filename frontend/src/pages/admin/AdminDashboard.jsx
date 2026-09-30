@@ -82,6 +82,8 @@ const emptyAnalytics = {
     operations: {
       editRequests: [],
       editRequestSections: [],
+      employmentStatusRequestTypes: [],
+      employmentStatusUpdates: [],
       messages: [],
       messageRead: [],
       conversationPreferences: [],
@@ -550,6 +552,18 @@ const getDummyAnalytics = (filters = {}) => {
     { name: "Work Locations", value: 7 },
   ], multiplier);
 
+  const employmentStatusRequestTypes = [
+    { name: "Contract Ended", value: scale(12) },
+    { name: "Employment Ended", value: scale(8) },
+  ];
+
+  const employmentStatusUpdates = [
+    { name: "Pending", value: scale(5) },
+    { name: "Approved", value: scale(5) },
+    { name: "Declined", value: scale(1) },
+    { name: "No Response", value: scale(0, 0) },
+  ];
+
   const messages = scaleDummyRows([
     { name: "Text", value: 196 },
     { name: "Image", value: 44 },
@@ -611,7 +625,7 @@ const getDummyAnalytics = (filters = {}) => {
       },
       verification: { emailRequests: scale(73), emailVerified: scale(61), emailCompletionRate: 83.6, byRole: verification },
       operations: {
-        editRequests, editRequestSections, messages,
+        editRequests, editRequestSections, employmentStatusRequestTypes, employmentStatusUpdates, messages,
         messageRead: scaleDummyRows([{ name: "Read", value: 195 }, { name: "Unread", value: 63 }], multiplier),
         conversationPreferences: scaleDummyRows([{ name: "Enabled", value: 74 }, { name: "Muted", value: 16 }], multiplier),
         notifications, notificationRead: scaleDummyRows([{ name: "Read", value: 271 }, { name: "Unread", value: 46 }], multiplier),
@@ -1171,6 +1185,76 @@ const DonutChart = ({ data = [] }) => {
             </strong>
           </div>
         ))}
+      </div>
+    </div>
+  );
+};
+
+
+const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
+  const rows = Array.isArray(data) ? data : [];
+  const total = rows.reduce((sum, item) => sum + Number(item?.value || 0), 0);
+  const positiveRows = rows.filter((item) => Number(item?.value || 0) > 0);
+
+  if (!rows.length) return <EmptyChart />;
+
+  let cursor = 0;
+  const stops = positiveRows.map((item, index) => {
+    const start = cursor;
+    const value = Number(item.value || 0);
+    cursor += total ? (value / total) * 100 : 0;
+    const color = colorMap[item.name] || colors[index % colors.length];
+    return `${color} ${start}% ${cursor}%`;
+  });
+
+  const donutBackground = total && stops.length
+    ? `conic-gradient(${stops.join(",")})`
+    : "#e2e8f0";
+
+  return (
+    <div className="grid min-h-52 items-center gap-5 sm:grid-cols-[180px_1fr]">
+      <div
+        className="relative mx-auto h-40 w-40 rounded-full"
+        style={{ background: donutBackground }}
+      >
+        <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
+          <span className="text-[11px] font-semibold text-slate-500">Total</span>
+          <span className="text-3xl font-extrabold leading-none text-slate-800">
+            {numberFormat.format(total)}
+          </span>
+          <span className="mt-1 text-[11px] font-semibold text-slate-500">
+            Requests
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {rows.map((item, index) => {
+          const value = Number(item?.value || 0);
+          const percentage = total ? Math.round((value / total) * 100) : 0;
+          const color = colorMap[item.name] || colors[index % colors.length];
+
+          return (
+            <div
+              key={`${item.name}-${index}`}
+              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-4 text-xs"
+            >
+              <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
+                <i
+                  className="h-3 w-3 shrink-0 rounded-sm"
+                  style={{ backgroundColor: color }}
+                />
+                <span className="truncate">{titleCase(item.name)}</span>
+              </span>
+              <strong className="min-w-7 text-right text-slate-800">
+                {numberFormat.format(value)}
+              </strong>
+              <span className="min-w-10 text-right font-semibold text-slate-500">
+                ({percentage}%)
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -2142,6 +2226,34 @@ const AdminDashboard = () => {
               subtitle="Sections employers request to edit"
             >
               <HorizontalBars data={sections.operations?.editRequestSections} />
+            </ChartCard>
+
+            <ChartCard
+              title="Employment Status Request Types"
+              subtitle="Distribution of requests by ending reason"
+            >
+              <EmploymentRequestDonut
+                data={sections.operations?.employmentStatusRequestTypes || []}
+                colorMap={{
+                  "Contract Ended": "#0b3b66",
+                  "Employment Ended": "#f5aa22",
+                }}
+              />
+            </ChartCard>
+
+            <ChartCard
+              title="Employment Status Updates"
+              subtitle="Distribution of requests to update employment records"
+            >
+              <EmploymentRequestDonut
+                data={sections.operations?.employmentStatusUpdates || []}
+                colorMap={{
+                  Pending: "#f5aa22",
+                  Approved: "#43a047",
+                  Declined: "#dc2626",
+                  "No Response": "#94a3b8",
+                }}
+              />
             </ChartCard>
           </div>
         ) : null}
