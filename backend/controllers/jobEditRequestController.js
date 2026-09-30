@@ -223,6 +223,7 @@ exports.getJobStatus = async (req, res) => {
       publishedAt: getPublishedAt(job),
       pendingRequest: pendingRequest ? serializeRequest(pendingRequest) : null,
       approvedRequest: activeApprovedRequest ? serializeRequest(activeApprovedRequest) : null,
+      approvedEditSections: activeApprovedRequest?.requestedSections || [],
     });
   } catch (error) {
     console.error('Get job edit status error:', error);

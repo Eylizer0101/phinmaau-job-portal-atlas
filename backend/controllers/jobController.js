@@ -1241,6 +1241,31 @@ exports.getJobById = async (req, res) => {
     const jobResponse = job.toObject();
     jobResponse.postingStatus = getStatusBeforeArchive(job);
 
+    if (isOwner && job.editUnlockedUntil && new Date(job.editUnlockedUntil).getTime() > Date.now()) {
+      const approvedEditRequest = await JobEditRequest.findOne({
+        job: job._id,
+        employer: req.user._id,
+        status: 'approved',
+        unlockUntil: { $gt: new Date() },
+      })
+        .sort({ reviewedAt: -1, createdAt: -1 })
+        .lean();
+
+      if (approvedEditRequest) {
+        jobResponse.approvedEditRequest = {
+          _id: approvedEditRequest._id,
+          requestedSections: approvedEditRequest.requestedSections || [],
+          status: approvedEditRequest.status,
+          reviewedAt: approvedEditRequest.reviewedAt || null,
+          unlockUntil: approvedEditRequest.unlockUntil || null,
+        };
+        jobResponse.approvedEditSections = approvedEditRequest.requestedSections || [];
+      } else {
+        jobResponse.approvedEditRequest = null;
+        jobResponse.approvedEditSections = [];
+      }
+    }
+
     if (employerDetails) {
       if (!jobResponse.companyLogo && employerDetails.companyLogo) {
         jobResponse.companyLogo = employerDetails.companyLogo;

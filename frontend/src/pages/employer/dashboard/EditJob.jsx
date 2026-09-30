@@ -513,6 +513,7 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const debounceRef = useRef(null);
+  const disabledRef = useRef(Boolean(disabled));
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -691,7 +692,7 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
     primaryTileLayer.addTo(mapRef.current);
 
     mapRef.current.on('click', async (e) => {
-      if (disabled) return;
+      if (disabledRef.current) return;
       await reverseLookup(e.latlng.lat, e.latlng.lng);
     });
 
@@ -725,6 +726,36 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       markerRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    disabledRef.current = Boolean(disabled);
+
+    if (markerRef.current?.dragging) {
+      if (disabled) {
+        markerRef.current.dragging.disable();
+      } else {
+        markerRef.current.dragging.enable();
+      }
+    }
+
+    if (mapRef.current) {
+      if (disabled) {
+        mapRef.current.dragging.disable();
+        mapRef.current.doubleClickZoom.disable();
+        mapRef.current.scrollWheelZoom.disable();
+        mapRef.current.boxZoom.disable();
+        mapRef.current.keyboard.disable();
+        if (mapRef.current.tap) mapRef.current.tap.disable();
+      } else {
+        mapRef.current.dragging.enable();
+        mapRef.current.doubleClickZoom.enable();
+        mapRef.current.scrollWheelZoom.enable();
+        mapRef.current.boxZoom.enable();
+        mapRef.current.keyboard.enable();
+        if (mapRef.current.tap) mapRef.current.tap.enable();
+      }
+    }
+  }, [disabled]);
 
   useEffect(() => {
     if (hasCoordinates) {
@@ -1305,7 +1336,7 @@ const EditJob = () => {
   };
 
   const addRequiredSkill = useCallback((rawSkill) => {
-    if (isBusy) return;
+    if (isBusy || !canEditSection('Skills & Benefits')) return;
     const cleanSkill = String(rawSkill || '').trim().replace(/^,+|,+$/g, '');
     if (!cleanSkill) return;
     if (cleanSkill.length > 100) { markTouched('skillsRequired'); return; }
@@ -1339,24 +1370,24 @@ const EditJob = () => {
     markTouched('skillsRequired');
     setError('');
     setSuccess('');
-  }, [formData.skillsRequired, markTouched, isBusy]);
+  }, [formData.skillsRequired, markTouched, isBusy, canEditSection]);
 
   const customBenefits = useMemo(() => String(formData.otherBenefits || '').split(',').map((item) => item.trim()).filter(Boolean), [formData.otherBenefits]);
   const addCustomBenefit = useCallback((rawBenefit) => {
-    if (isBusy) return;
+    if (isBusy || !canEditSection('Skills & Benefits')) return;
     const benefit = normalizeSingleLine(rawBenefit).replace(/^,+|,+$/g, '');
     if (!benefit || benefit.length > 50) return;
     if (customBenefits.some((item) => item.toLowerCase() === benefit.toLowerCase())) { setCustomBenefitInput(''); return; }
     setFormData((prev) => ({ ...prev, otherBenefits: [...customBenefits, benefit].join(', ') }));
     setCustomBenefitInput('');
-  }, [customBenefits, isBusy]);
+  }, [customBenefits, isBusy, canEditSection]);
   const removeCustomBenefit = useCallback((indexToRemove) => {
-    if (isBusy) return;
+    if (isBusy || !canEditSection('Skills & Benefits')) return;
     setFormData((prev) => ({ ...prev, otherBenefits: customBenefits.filter((_, index) => index !== indexToRemove).join(', ') }));
-  }, [customBenefits, isBusy]);
+  }, [customBenefits, isBusy, canEditSection]);
 
   const removeRequiredSkill = useCallback((skillIndex) => {
-    if (isBusy) return;
+    if (isBusy || !canEditSection('Skills & Benefits')) return;
     const currentSkills = (formData.skillsRequired || '')
       .split(',')
       .map((skill) => skill.trim())
@@ -1371,9 +1402,10 @@ const EditJob = () => {
     markTouched('skillsRequired');
     setError('');
     setSuccess('');
-  }, [formData.skillsRequired, markTouched, isBusy]);
+  }, [formData.skillsRequired, markTouched, isBusy, canEditSection]);
 
   const handleSkillInputChange = (event) => {
+    if (!canEditSection('Skills & Benefits')) return;
     const nextValue = event.target.value;
 
     if (nextValue.includes(',')) {
@@ -1390,6 +1422,7 @@ const EditJob = () => {
   };
 
   const handleSkillInputKeyDown = (event) => {
+    if (!canEditSection('Skills & Benefits')) return;
     if (event.key === 'Enter') {
       event.preventDefault();
       addRequiredSkill(skillInput);
@@ -1403,6 +1436,7 @@ const EditJob = () => {
   };
 
   const handlePerkToggle = (perk) => {
+    if (!canEditSection('Skills & Benefits')) return;
     setFormData((prev) => {
       const exists = prev.perksAndBenefits.includes(perk);
       return {
@@ -1416,6 +1450,7 @@ const EditJob = () => {
   };
 
   const handleLocationImageChange = (e) => {
+    if (!canEditSection('Work Locations')) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -1989,6 +2024,20 @@ const EditJob = () => {
 
         const jobData = res.data.job;
 
+        const publishedAtValue = jobData.publishedAt || jobData.createdAt;
+        const publishedAt = publishedAtValue ? new Date(publishedAtValue) : null;
+        const editUnlockedUntil = jobData.editUnlockedUntil ? new Date(jobData.editUnlockedUntil) : null;
+        const hasTemporaryEditAccess =
+          editUnlockedUntil &&
+          !Number.isNaN(editUnlockedUntil.getTime()) &&
+          editUnlockedUntil.getTime() > Date.now();
+
+        const fallbackApprovedSections = Array.isArray(jobData.approvedEditRequest?.requestedSections)
+          ? jobData.approvedEditRequest.requestedSections.filter(Boolean)
+          : Array.isArray(jobData.approvedEditSections)
+            ? jobData.approvedEditSections.filter(Boolean)
+            : [];
+
         try {
           const editStatusResponse = await axios.get(
             `https://phinmaau-job-portal-atlas.onrender.com/api/job-edit-requests/job/${id}/status`,
@@ -1997,20 +2046,23 @@ const EditJob = () => {
           const approvedRequest = editStatusResponse.data?.approvedRequest;
           const requestedSections = Array.isArray(approvedRequest?.requestedSections)
             ? approvedRequest.requestedSections.filter(Boolean)
-            : null;
-          setApprovedEditSections(requestedSections?.length ? requestedSections : null);
+            : Array.isArray(editStatusResponse.data?.approvedEditSections)
+              ? editStatusResponse.data.approvedEditSections.filter(Boolean)
+              : fallbackApprovedSections;
+
+          setApprovedEditSections(
+            hasTemporaryEditAccess
+              ? requestedSections
+              : null
+          );
         } catch (editStatusError) {
           console.error('Unable to load approved edit sections:', editStatusError);
-          setApprovedEditSections(null);
+          setApprovedEditSections(
+            hasTemporaryEditAccess
+              ? fallbackApprovedSections
+              : null
+          );
         }
-
-        const publishedAtValue = jobData.publishedAt || jobData.createdAt;
-        const publishedAt = publishedAtValue ? new Date(publishedAtValue) : null;
-        const editUnlockedUntil = jobData.editUnlockedUntil ? new Date(jobData.editUnlockedUntil) : null;
-        const hasTemporaryEditAccess =
-          editUnlockedUntil &&
-          !Number.isNaN(editUnlockedUntil.getTime()) &&
-          editUnlockedUntil.getTime() > Date.now();
         const isPublishedJob =
           jobData.isPublished === true ||
           String(jobData.status || '').toLowerCase() === 'published';
