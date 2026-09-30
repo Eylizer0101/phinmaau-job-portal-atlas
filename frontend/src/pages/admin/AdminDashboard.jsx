@@ -2066,6 +2066,22 @@ const AdminDashboard = () => {
             <button type="button" onClick={() => openExportPassword("report", "AGAPAY Reports")} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60">
               <Download size={14} /> AGAPAY Reports
             </button>
+
+            <label className="ml-auto inline-flex h-9 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
+              <span className="whitespace-nowrap">Dummy Data</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={dummyMode}
+                onClick={() => setDummyMode((value) => !value)}
+                className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}
+              >
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
+              </button>
+              <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
+                {dummyMode ? "ON" : "OFF"}
+              </span>
+            </label>
           </div>
         </header>
 
@@ -2115,7 +2131,7 @@ const AdminDashboard = () => {
         </div>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ${hasFilters ? "xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]" : "xl:grid-cols-5"}`}>
             <DateFilterDropdown
               value={filters.date}
               specificDate={filters.specificDate}
@@ -2128,19 +2144,16 @@ const AdminDashboard = () => {
             <FilterSelect label="Year Graduated" value={filters.yearGraduated} onChange={(value) => updateFilter("yearGraduated", value)} values={options.yearsGraduated || []} placeholderLabel="Select Year" allLabel="All Year Graduated" preserveCase />
             <FilterSelect label="Course" value={filters.course} onChange={(value) => updateFilter("course", value)} values={options.courses || []} placeholderLabel="Select Course" allLabel="All Course" preserveCase />
             <FilterSelect label="Gender" value={filters.gender} onChange={(value) => updateFilter("gender", value)} values={options.genders || []} placeholderLabel="Select Gender" allLabel="All Gender" preserveCase />
-          </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
-            <label className="mr-auto inline-flex h-9 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
-              <span className="whitespace-nowrap">Dummy Data</span>
-              <button type="button" role="switch" aria-checked={dummyMode} onClick={() => setDummyMode((value) => !value)} className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}>
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
+            {hasFilters ? (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-[13px] inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                <RefreshCw size={13} /> Clear All
               </button>
-              <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>{dummyMode ? "ON" : "OFF"}</span>
-            </label>
-            <button type="button" onClick={resetFilters} disabled={!hasFilters} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
-              <RefreshCw size={13} /> Clear All
-            </button>
+            ) : null}
           </div>
         </section>
 
