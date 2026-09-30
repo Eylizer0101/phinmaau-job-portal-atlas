@@ -1142,7 +1142,7 @@ const VerticalBars = ({ data = [], maxItems = 6, percentage = false }) => {
   );
 };
 
-const DonutChart = ({ data = [] }) => {
+const DonutChart = ({ data = [], showPercentage = false }) => {
   const rows = data.filter((item) => Number(item.value || 0) > 0);
   const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
   if (!rows.length || !total) return <EmptyChart />;
@@ -1180,8 +1180,11 @@ const DonutChart = ({ data = [] }) => {
               />
               <span className="truncate">{titleCase(item.name)}</span>
             </span>
-            <strong className="text-slate-800">
+            <strong className="whitespace-nowrap text-slate-800">
               {numberFormat.format(item.value)}
+              {showPercentage
+                ? ` (${Math.round((Number(item.value || 0) / total) * 100)}%)`
+                : ""}
             </strong>
           </div>
         ))}
@@ -1212,7 +1215,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
     : "#e2e8f0";
 
   return (
-    <div className="grid min-h-52 items-center gap-5 sm:grid-cols-[180px_1fr]">
+    <div className="flex min-h-52 flex-col items-center justify-center gap-5 sm:flex-row sm:gap-8">
       <div
         className="relative mx-auto h-40 w-40 rounded-full"
         style={{ background: donutBackground }}
@@ -1228,7 +1231,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="w-full max-w-[300px] space-y-3">
         {rows.map((item, index) => {
           const value = Number(item?.value || 0);
           const percentage = total ? Math.round((value / total) * 100) : 0;
@@ -2106,14 +2109,14 @@ const AdminDashboard = () => {
               subtitle="Admin, employer, and jobseeker accounts"
               className="xl:col-span-6"
             >
-              <DonutChart data={sections.users?.roles} />
+              <DonutChart data={sections.users?.roles} showPercentage />
             </ChartCard>
             <ChartCard
               title="Job Status"
               subtitle="Lifecycle state of job postings"
               className="xl:col-span-6"
             >
-              <DonutChart data={sections.jobs?.statuses} />
+              <DonutChart data={sections.jobs?.statuses} showPercentage />
             </ChartCard>
           </div>
         ) : null}
@@ -2139,7 +2142,7 @@ const AdminDashboard = () => {
               subtitle="On-site, remote, blended, and work from home"
               className="xl:col-span-6"
             >
-              <DonutChart data={sections.jobs?.workModes} />
+              <DonutChart data={sections.jobs?.workModes} showPercentage />
             </ChartCard>
             <ChartCard
               title="Employment Status"
