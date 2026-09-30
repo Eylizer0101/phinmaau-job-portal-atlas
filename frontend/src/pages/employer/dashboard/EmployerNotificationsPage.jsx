@@ -17,6 +17,50 @@ import axios from 'axios';
 import Pagination from '../../../components/shared/Pagination';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 
+const buildEmployerNotificationTarget = (notification = {}) => {
+  const metadata = notification?.metadata || {};
+  const applicationId = metadata.applicationId || (
+    String(notification?.relatedModel || '') === 'Application' ? notification?.relatedId : ''
+  );
+  const jobId = metadata.jobId || (
+    String(notification?.relatedModel || '') === 'Job' ? notification?.relatedId : ''
+  );
+
+  if (notification?.type === 'new_application' && applicationId) {
+    return `/employer/applicants?application=${encodeURIComponent(applicationId)}`;
+  }
+
+  if (notification?.type === 'job_expiring' && jobId) {
+    return `/employer/manage-jobs?job=${encodeURIComponent(jobId)}`;
+  }
+
+  if (metadata.requestId && jobId) {
+    return `/employer/manage-jobs?job=${encodeURIComponent(jobId)}`;
+  }
+
+  if (notification?.link) {
+    if (
+      String(notification.link).startsWith('/employer/manage-jobs') &&
+      jobId &&
+      !String(notification.link).includes('job=')
+    ) {
+      const separator = String(notification.link).includes('?') ? '&' : '?';
+      return `${notification.link}${separator}job=${encodeURIComponent(jobId)}`;
+    }
+    return notification.link;
+  }
+
+  if (applicationId) {
+    return `/employer/applicants?application=${encodeURIComponent(applicationId)}`;
+  }
+
+  if (jobId) {
+    return `/employer/manage-jobs?job=${encodeURIComponent(jobId)}`;
+  }
+
+  return '';
+};
+
 const UI = {
   pageBg: 'bg-gray-50',
   container: 'mx-auto max-w-7xl px-1 py-8',
@@ -131,18 +175,17 @@ const EmployerNotificationsPage = () => {
     if (!notification.isRead) {
       await handleMarkAsRead(notification._id);
     }
-    if (notification.link) {
+    const notificationTarget = buildEmployerNotificationTarget(notification);
+    if (notificationTarget) {
       const isStatusRequest = notification.type === 'employment_status_request';
-      const target = isStatusRequest
-        ? `${notification.link}${notification.link.includes('?') ? '&' : '?'}employmentStatus=active`
-        : notification.link;
+      const target = isStatusRequest && !notificationTarget.includes('employmentStatus=')
+        ? `${notificationTarget}${notificationTarget.includes('?') ? '&' : '?'}employmentStatus=active`
+        : notificationTarget;
       navigate(target);
       return;
     }
 
-    if (notification.type === 'new_application') navigate('/employer/applicants');
-    else if (notification.type === 'new_message') navigate('/employer/messages');
-    else if (notification.type === 'job_expiring') navigate('/employer/manage-jobs');
+    if (notification.type === 'new_message') navigate('/employer/messages');
   };
 
   const handleMarkAllAsRead = async () => {
@@ -533,9 +576,9 @@ const EmployerNotificationsPage = () => {
 
                       {/* Actions */}
                       <div className="mt-4 flex items-center gap-3 flex-wrap">
-                        {notification.link && (
+                        {buildEmployerNotificationTarget(notification) && (
                           <Link
-                            to={notification.link}
+                            to={buildEmployerNotificationTarget(notification)}
                             className="text-[#2e66a6] hover:text-[#1f4a7a] font-semibold text-sm"
                             onClick={(e) => e.stopPropagation()}
                           >

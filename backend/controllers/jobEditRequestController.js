@@ -311,7 +311,7 @@ exports.approveRequest = async (req, res) => {
       message: `Your request to edit “${request.job.title || 'Untitled Job'}” was approved. You have one hour to make changes.`,
       relatedId: request.job._id,
       relatedModel: 'Job',
-      link: `/employer/edit-job/${request.job._id}`,
+      link: `/employer/manage-jobs?job=${request.job._id}`,
       metadata: {
         requestId: request._id,
         jobId: request.job._id,
@@ -359,7 +359,7 @@ exports.declineRequest = async (req, res) => {
       message: `Your request to edit “${request.job.title || 'Untitled Job'}” was declined.`,
       relatedId: request.job._id,
       relatedModel: 'Job',
-      link: `/employer/manage-jobs`,
+      link: `/employer/manage-jobs?job=${request.job._id}`,
       metadata: {
         requestId: request._id,
         jobId: request.job._id,

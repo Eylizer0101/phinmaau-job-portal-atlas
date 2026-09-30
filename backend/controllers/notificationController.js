@@ -149,7 +149,7 @@ exports.getNotifications = async (req, res) => {
                         message: `"${job.title}" is expiring in ${safeDaysLeft} day${safeDaysLeft === 1 ? '' : 's'}.`,
                         relatedId: job._id,
                         relatedModel: 'Job',
-                        link: `/employer/manage-jobs`,
+                        link: `/employer/manage-jobs?job=${job._id}`,
                         metadata: {
                             jobId: job._id,
                             jobTitle: job.title,
@@ -417,7 +417,7 @@ exports.createEmployerNewApplicationNotification = async (employerId, applicatio
       message: `${jobseekerName} applied for ${job.title}.`,
       relatedId: application._id,
       relatedModel: 'Application',
-      link: `/employer/application/${application._id}`,
+      link: `/employer/applicants?application=${application._id}`,
       metadata: {
         applicationId: application._id,
         jobId: job._id,
@@ -511,7 +511,7 @@ exports.createApplicationStatusNotification = async (application, oldStatus, new
             message: `${message} for "${application.job?.title || 'the job'}" at ${application.job?.companyName || 'the company'}.`,
             relatedId: application._id,
             relatedModel: 'Application',
-            link: `/jobseeker/my-applications`,
+            link: `/jobseeker/my-applications?application=${application._id}&status=${encodeURIComponent(newStatus)}`,
             metadata: {
                 applicationId: application._id,
                 jobId: application.job,
@@ -546,7 +546,7 @@ exports.createHiringStageNotification = async (application, previousStage, newSt
             message: `Your interview stage for "${jobTitle}" at ${companyName} has been updated to ${newStage}.`,
             relatedId: application._id,
             relatedModel: 'Application',
-            link: '/jobseeker/my-applications',
+            link: `/jobseeker/my-applications?application=${application._id}&status=for%20interview`,
             metadata: {
                 applicationId: application._id,
                 jobId,
@@ -576,7 +576,7 @@ exports.createVacancyFullNotification = async (application, job) => {
             message: `The vacancy is already full for "${job?.title || application.job?.title || 'the job'}" at ${job?.companyName || application.job?.companyName || 'the company'}.`,
             relatedId: application._id,
             relatedModel: 'Application',
-            link: `/jobseeker/my-applications`,
+            link: `/jobseeker/my-applications?application=${application._id}&status=vacancy%20full`,
             metadata: {
                 applicationId: application._id,
                 jobId: job?._id || application.job,

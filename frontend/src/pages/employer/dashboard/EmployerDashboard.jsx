@@ -18,6 +18,51 @@ import EmployerLayout from '../../../layouts/EmployerLayout';
 
 const PROFILE_REMINDER_ICON = '/images/clock.png';
 
+
+const buildEmployerNotificationTarget = (notification = {}) => {
+  const metadata = notification?.metadata || {};
+  const applicationId = metadata.applicationId || (
+    String(notification?.relatedModel || '') === 'Application' ? notification?.relatedId : ''
+  );
+  const jobId = metadata.jobId || (
+    String(notification?.relatedModel || '') === 'Job' ? notification?.relatedId : ''
+  );
+
+  if (notification?.type === 'new_application' && applicationId) {
+    return `/employer/applicants?application=${encodeURIComponent(applicationId)}`;
+  }
+
+  if (notification?.type === 'job_expiring' && jobId) {
+    return `/employer/manage-jobs?job=${encodeURIComponent(jobId)}`;
+  }
+
+  if (metadata.requestId && jobId) {
+    return `/employer/manage-jobs?job=${encodeURIComponent(jobId)}`;
+  }
+
+  if (notification?.link) {
+    if (
+      String(notification.link).startsWith('/employer/manage-jobs') &&
+      jobId &&
+      !String(notification.link).includes('job=')
+    ) {
+      const separator = String(notification.link).includes('?') ? '&' : '?';
+      return `${notification.link}${separator}job=${encodeURIComponent(jobId)}`;
+    }
+    return notification.link;
+  }
+
+  if (applicationId) {
+    return `/employer/applicants?application=${encodeURIComponent(applicationId)}`;
+  }
+
+  if (jobId) {
+    return `/employer/manage-jobs?job=${encodeURIComponent(jobId)}`;
+  }
+
+  return '';
+};
+
 const EmployerDashboard = () => {
   const navigate = useNavigate();
 
@@ -528,7 +573,6 @@ const EmployerDashboard = () => {
   };
 
   const handleNotifItemClick = async (notif) => {
-    const link = String(notif?.link || '').trim();
     const id = notif?._id;
 
     if (id && notif?.isRead === false) {
@@ -538,14 +582,13 @@ const EmployerDashboard = () => {
     setNotifOpen(false);
     fetchNotifications({ silent: true });
 
-    if (link) {
-      navigate(link);
+    const target = buildEmployerNotificationTarget(notif);
+    if (target) {
+      navigate(target);
       return;
     }
 
-    if (notif?.type === 'new_application') navigate('/employer/applicants');
-    else if (notif?.type === 'new_message') navigate('/employer/messages');
-    else if (notif?.type === 'job_expiring') navigate('/employer/manage-jobs');
+    if (notif?.type === 'new_message') navigate('/employer/messages');
   };
 
   const fetchDashboardData = async (opts = { silent: false }) => {

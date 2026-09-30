@@ -1575,6 +1575,7 @@ const Applicants = () => {
   const sortMenuRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [highlightedApplicationId, setHighlightedApplicationId] = useState('');
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1929,6 +1930,68 @@ const Applicants = () => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
+  useEffect(() => {
+    const targetApplicationId = new URLSearchParams(location.search).get('application');
+    if (!targetApplicationId || !allApplications.length) return;
+
+    const target = allApplications.find(
+      (application) => String(application?._id) === String(targetApplicationId)
+    );
+    if (!target) return;
+
+    setQuery('');
+    setSelectedJob('all');
+    setSelectedLevel('all');
+    setStatusFilter(String(target.status || 'pending').toLowerCase());
+    setFilterBy('all');
+    setCustomDateStart('');
+    setCustomDateEnd('');
+    setSortBy('most_recent');
+    setHighlightedApplicationId(String(targetApplicationId));
+  }, [location.search, allApplications]);
+
+  useEffect(() => {
+    const targetApplicationId = new URLSearchParams(location.search).get('application');
+    if (!targetApplicationId || !filteredApplications.length) return;
+
+    const targetIndex = filteredApplications.findIndex(
+      (application) => String(application?._id) === String(targetApplicationId)
+    );
+    if (targetIndex < 0) return;
+
+    if (pageSize !== 'all') {
+      setCurrentPage(Math.floor(targetIndex / numericPageSize) + 1);
+    }
+
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById(`employer-applicant-${targetApplicationId}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 150);
+
+    const clearTimer = window.setTimeout(() => {
+      setHighlightedApplicationId('');
+      const params = new URLSearchParams(location.search);
+      params.delete('application');
+      navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, {
+        replace: true,
+      });
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [
+    filteredApplications,
+    location.pathname,
+    location.search,
+    navigate,
+    numericPageSize,
+    pageSize,
+  ]);
+
   const hasActiveFilters = useMemo(() => {
     return (
       query.trim() !== '' ||
@@ -2276,8 +2339,14 @@ const Applicants = () => {
 
                 return (
                   <article
+                    id={`employer-applicant-${app._id}`}
                     key={app._id}
-                    className="rounded-3xl border border-[#e3e5ef] bg-white p-6 shadow-sm"
+                    className={cn(
+                      'rounded-3xl border bg-white p-6 shadow-sm transition-colors',
+                      String(app._id) === highlightedApplicationId
+                        ? 'border-[#2e66a6] bg-[#2e66a6]/[0.02] ring-2 ring-[#2e66a6]'
+                        : 'border-[#e3e5ef]'
+                    )}
                   >
                     <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                       <div className="flex min-w-0 items-center gap-5">
