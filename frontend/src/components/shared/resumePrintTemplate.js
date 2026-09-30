@@ -368,9 +368,10 @@ const resumeStyles = `
   }
 
   .resume-header {
-    width: 100%;
+    width: fit-content;
     max-width: 100%;
     min-width: 0;
+    margin: 0 auto;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -381,8 +382,8 @@ const resumeStyles = `
   }
 
   .resume-header-main {
-    flex: 1 1 0;
-    width: auto;
+    flex: 0 1 auto;
+    width: fit-content;
     min-width: 0;
     max-width: calc(100% - 73px);
   }
