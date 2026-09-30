@@ -372,7 +372,7 @@ const getDummyTrendData = (filters = {}) => {
 const dummyFilterOptions = {
   campuses: ["AU Main", "AU San Jose", "AU South"],
   applicationStatuses: ["pending", "screening", "for interview", "hired", "declined", "withdrawn"],
-  jobTypes: ["Full Time", "Part Time", "Contract", "Internship"],
+  jobTypes: ["Part Time", "Full Time", "Contractual", "Permanent"],
   workModes: ["Onsite", "Remote", "Hybrid / Blended"],
   industries: ["Information Technology", "Banking / Financial Services", "Education", "Retail", "Manufacturing", "Healthcare", "Hospitality", "Oil / Gas / Petroleum"],
   jobStatuses: ["published", "draft", "filled", "closed"],
@@ -472,10 +472,10 @@ const getDummyAnalytics = (filters = {}) => {
   ], multiplier, filters.industry);
 
   const employmentTypes = scaleDummyRows([
-    { name: "Full Time", value: 72 },
     { name: "Part Time", value: 18 },
-    { name: "Contract", value: 11 },
-    { name: "Internship", value: 9 },
+    { name: "Full Time", value: 72 },
+    { name: "Contractual", value: 11 },
+    { name: "Permanent", value: 9 },
   ], multiplier, filters.jobType);
 
   const workModes = scaleDummyRows([
@@ -502,10 +502,8 @@ const getDummyAnalytics = (filters = {}) => {
   ], multiplier);
 
   const employmentStatus = scaleDummyRows([
-    { name: "Regular", value: 20 },
-    { name: "Probationary", value: 8 },
-    { name: "Contractual", value: 4 },
-    { name: "Project Based", value: 2 },
+    { name: "Inactive", value: 20 },
+    { name: "Active", value: 8 },
   ], multiplier);
 
   const durationBuckets = scaleDummyRows([
@@ -1405,7 +1403,7 @@ const ApplicationProcessDurationCard = ({ data = {} }) => {
     <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
         icon={Clock3}
-        title="How Long Does the Application Process Take?"
+        title="Application Processing Time"
         subtitle="Average time from application to hire"
       />
       <div className="grid gap-4 lg:grid-cols-[180px_1fr]">
@@ -1438,7 +1436,7 @@ const WithdrawalStageCard = ({ data = [] }) => {
       <RecruitmentCardTitle
         icon={UserRoundMinus}
         title="Withdrawal by Application Stage"
-        subtitle="From which stage do withdrawn applicants come from?"
+        subtitle="Withdrawn applications by stage"
       />
       <DonutChart data={data} />
       {total > 0 ? (
@@ -1454,8 +1452,8 @@ const ApplicationsBeforeHireCard = ({ data = [] }) => (
   <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
     <RecruitmentCardTitle
       icon={Repeat2}
-      title="How Many Times Do People Usually Apply Before They Get Hired?"
-      subtitle="Number of applications submitted before being hired"
+      title="Applications Before Hire"
+      subtitle="Average number of applications submitted before being hired."
     />
     <VerticalBars data={data} maxItems={4} />
   </section>
@@ -1468,8 +1466,8 @@ const HireRateByCampusCard = ({ data = [] }) => {
       <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
         <RecruitmentCardTitle
           icon={Building2}
-          title="What's the Hire Rate for Each Campus?"
-          subtitle="Percentage of applicants who got hired"
+          title="Hire Rate by Campus"
+          subtitle="Percentage of applicants hired from each campus."
         />
         <EmptyChart />
       </section>
@@ -2039,11 +2037,11 @@ const AdminDashboard = () => {
         {!loading && activeTab === "recruitment" ? (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <ChartCard
-              title="Application Funnel"
-              subtitle="Pending through final outcome"
+              title="Application Status"
+              subtitle="Application status breakdown"
               className="xl:col-span-7"
             >
-              <FunnelChart data={sections.applications?.funnel} />
+              <HorizontalBars data={sections.applications?.funnel} maxItems={6} />
             </ChartCard>
             <ChartCard
               title="Employment Type"
