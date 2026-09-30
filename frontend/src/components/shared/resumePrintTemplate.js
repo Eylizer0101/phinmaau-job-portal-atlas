@@ -344,7 +344,6 @@ const resumeStyles = `
 
   .resume-paper {
     width: 210mm;
-    max-width: 210mm;
     min-height: 297mm;
     margin: 0 auto;
     background: #ffffff;
@@ -353,12 +352,9 @@ const resumeStyles = `
     font-size: 9.2px;
     line-height: 1.18;
     box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
-    box-sizing: border-box;
   }
 
   .resume-inner {
-    width: 100%;
-    max-width: 100%;
     padding: 16mm 16mm 12mm;
     position: relative;
     min-height: 297mm;
@@ -368,9 +364,6 @@ const resumeStyles = `
   }
 
   .resume-header {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -381,25 +374,20 @@ const resumeStyles = `
   }
 
   .resume-header-main {
-    flex: 1 1 0;
-    width: auto;
+    flex: 0 1 auto;
+    width: fit-content;
     min-width: 0;
     max-width: calc(100% - 73px);
   }
 
   .resume-name {
     margin: 0;
-    max-width: 100%;
     padding-top: 5px;
     font-size: 18px;
-    line-height: 1.08;
+    line-height: 1;
     font-weight: 700;
     letter-spacing: 0.55px;
     text-transform: uppercase;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-wrap: break-word;
-    word-break: break-word;
   }
 
   .resume-contact {
@@ -666,26 +654,16 @@ const resumeStyles = `
   }
 
   .declaration-name {
-    max-width: 100%;
     font-weight: 700;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-wrap: break-word;
-    word-break: break-word;
   }
 
   .declaration-signature {
     display: block;
-    width: 42%;
+    width: max-content;
     min-width: 160px;
-    max-width: 42%;
     margin-left: auto;
-    padding-left: 0;
-    box-sizing: border-box;
     text-align: center;
-    overflow-wrap: anywhere;
-    word-wrap: break-word;
-    word-break: break-word;
+    transform: translateX(4mm);
   }
 
   .declaration-role {
@@ -1020,10 +998,7 @@ export const openResumePrintWindow = async (resumeData = {}) => {
   try {
     const html2pdf = await loadHtml2Pdf();
     const paper = wrapper.querySelector('.resume-paper') || wrapper;
-    paper.style.width = '210mm';
-    paper.style.maxWidth = '210mm';
     paper.style.minHeight = 'auto';
-    paper.style.boxSizing = 'border-box';
 
     if (document.fonts?.ready) {
       await document.fonts.ready;
