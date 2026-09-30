@@ -1326,11 +1326,11 @@ const TrendChart = ({ data = [] }) => {
   );
 
   const width = 940;
-  const height = 330;
+  const height = 280;
   const left = 42;
   const right = 10;
   const top = 18;
-  const bottom = 44;
+  const bottom = 38;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const max = Math.max(
@@ -1357,7 +1357,7 @@ const TrendChart = ({ data = [] }) => {
       <div className="min-w-0 xl:-ml-1">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="h-[300px] w-full"
+          className="h-[245px] w-full"
           role="img"
           aria-label="Monthly analytics grouped bar chart"
         >
@@ -1445,7 +1445,7 @@ const TrendChart = ({ data = [] }) => {
         </svg>
       </div>
 
-      <aside className="flex min-h-[270px] flex-col rounded-2xl border border-slate-200 bg-white p-3.5 text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+      <aside className="flex min-h-[220px] flex-col rounded-2xl border border-slate-200 bg-white p-3.5 text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
         <div className="flex flex-1 flex-col justify-center divide-y divide-slate-200">
           {summary.map((item) => {
             const percentage = (
@@ -1456,7 +1456,7 @@ const TrendChart = ({ data = [] }) => {
             return (
               <div
                 key={item.key}
-                className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-3.5"
+                className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-2.5"
               >
                 <span className="flex min-w-0 items-center gap-3 text-sm font-semibold text-slate-700">
                   <i
@@ -2134,17 +2134,18 @@ const AdminDashboard = () => {
             <ChartCard
               title="Application Status"
               subtitle="Application status breakdown"
-              className="xl:col-span-7"
+              className="xl:col-span-6"
             >
               <HorizontalBars data={sections.applications?.funnel} maxItems={6} />
             </ChartCard>
             <ChartCard
               title="Employment Type"
               subtitle="Job supply grouped by employment type"
-              className="xl:col-span-5"
+              className="xl:col-span-6"
             >
               <HorizontalBars data={sections.jobs?.employmentTypes} />
             </ChartCard>
+
             <ChartCard
               title="Work Mode"
               subtitle="On-site, remote, blended, and work from home"
@@ -2152,6 +2153,11 @@ const AdminDashboard = () => {
             >
               <DonutChart data={sections.jobs?.workModes} showPercentage />
             </ChartCard>
+            <WithdrawalStageCard data={sections.applications?.withdrawalByStage || []} />
+
+            <ApplicationsBeforeHireCard data={sections.applications?.applicationsBeforeHire || []} />
+            <HireRateByCampusCard data={sections.applications?.hireRateByCampus || []} />
+
             <ChartCard
               title="Employment Status"
               subtitle="Status recorded for hired applicants"
@@ -2160,9 +2166,6 @@ const AdminDashboard = () => {
               <VerticalBars data={sections.applications?.employmentStatus} maxItems={6} />
             </ChartCard>
             <ApplicationProcessDurationCard data={sections.applications?.applicationProcessDuration} />
-            <WithdrawalStageCard data={sections.applications?.withdrawalByStage || []} />
-            <ApplicationsBeforeHireCard data={sections.applications?.applicationsBeforeHire || []} />
-            <HireRateByCampusCard data={sections.applications?.hireRateByCampus || []} />
           </div>
         ) : null}
 
