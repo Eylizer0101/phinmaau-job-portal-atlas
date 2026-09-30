@@ -2101,14 +2101,14 @@ const AdminDashboard = () => {
             <ChartCard
               title="Top Hiring Companies"
               subtitle="Companies with the most hires"
-              className="xl:col-span-7"
+              className="xl:col-span-12"
             >
               <HorizontalBars data={sections.applications?.topHiringCompanies || []} maxItems={5} />
             </ChartCard>
             <ChartCard
               title="Top Industries"
               subtitle="Industries with the most job opportunities"
-              className="xl:col-span-5"
+              className="xl:col-span-12"
             >
               <HorizontalBars data={sections.jobs?.industries || sections.jobs?.categories || []} maxItems={6} />
             </ChartCard>
