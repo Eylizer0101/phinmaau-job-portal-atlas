@@ -2075,7 +2075,13 @@ const AdminDashboard = () => {
   return (
     <main className="mx-auto w-full max-w-[1600px] px-1 py-6">
       <div className="space-y-4">
-        <header className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+        <header
+          className="relative overflow-hidden rounded-[22px] border border-slate-200 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+          style={{
+            background:
+              "linear-gradient(135deg, #eaf4ff 0%, #ffffff 48%, #dff3fb 100%)",
+          }}
+        >
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -right-12 -top-20 h-56 w-[520px] rounded-[50%] bg-[#2e66a6]/[0.045] blur-2xl" />
             <div className="absolute right-24 top-16 h-24 w-[440px] rotate-[-8deg] rounded-[50%] border-t border-[#2e66a6]/10" />
@@ -2096,7 +2102,7 @@ const AdminDashboard = () => {
                     Admin Dashboard
                   </h1>
                   <p className="mt-1 max-w-[620px] text-xs leading-5 text-slate-500">
-                    Compact system-wide analysis of users, jobs, applications, verification, engagement, and operations.
+                    Compact system-wide analysis of users, jobs, applications, verification, and operations.
                   </p>
                 </div>
               </div>
@@ -2199,7 +2205,13 @@ const AdminDashboard = () => {
           />
         </div>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section
+          className="rounded-xl border border-slate-200 p-4 shadow-sm"
+          style={{
+            background:
+              "linear-gradient(135deg, #eaf4ff 0%, #ffffff 48%, #dff3fb 100%)",
+          }}
+        >
           <div className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ${hasFilters ? "xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]" : "xl:grid-cols-5"}`}>
             <DateFilterDropdown
               value={filters.date}
