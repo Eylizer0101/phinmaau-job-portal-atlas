@@ -6259,42 +6259,42 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     workbook.company = 'PHINMA Araullo University';
     workbook.created = new Date();
 
-    const jobSeekerHeaders = ['No.', 'Date Registered', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Region', 'Province', 'City / Municipality', 'Street Address'];
-    const employerHeaders = ['No.', 'Date Registered', 'Full Name', 'Email', 'Contact Number', 'Company Name', 'Industry', 'Region', 'Province', 'City / Municipality', 'Street Address'];
-    const jobOfferHeaders = ['No.', 'Date Posted', 'Company Name', 'Industry', 'Job Title', 'Work Mode', 'Employment Type', 'Vacancy', 'Applicant', 'Status', 'Valid Until'];
-    const applicationHeaders = ['No.', 'Date Applied', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Job Title', 'Work Mode', 'Employment Type', 'Company Name', 'Industry', 'Application Status', 'Processing Time', 'Times Applied', 'Hired Date'];
+    const jobSeekerHeaders = ['Date Registered', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Region', 'Province', 'City / Municipality', 'Street Address'];
+    const employerHeaders = ['Date Registered', 'Full Name', 'Email', 'Contact Number', 'Company Name', 'Industry', 'Region', 'Province', 'City / Municipality', 'Street Address'];
+    const jobOfferHeaders = ['Date Posted', 'Company Name', 'Industry', 'Job Title', 'Work Mode', 'Employment Type', 'Vacancy', 'Applicant', 'Status', 'Valid Until'];
+    const applicationHeaders = ['Date Applied', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Job Title', 'Work Mode', 'Employment Type', 'Company Name', 'Industry', 'Application Status', 'Processing Time', 'Times Applied', 'Hired Date'];
 
     const jobSeekerSheet = workbook.addWorksheet('Job Seeker');
-    styleExportWorksheet(jobSeekerSheet, 'Phinma Araullo University - Job Seeker List', jobSeekerHeaders, [7, 16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24, 36]);
-    addExportDataRows(jobSeekerSheet, 5, jobseekers.map((user, index) => {
+    styleExportWorksheet(jobSeekerSheet, 'Phinma Araullo University - Job Seeker List', jobSeekerHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24, 36]);
+    addExportDataRows(jobSeekerSheet, 5, jobseekers.map((user) => {
       const profile = user.jobSeekerProfile || {};
       const address = exportAddressParts(profile, false);
-      return [index + 1, exportDate(user.createdAt), exportFullName(user), user.email || '', profile.phoneNumber || user.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(user) === 'Unspecified' ? '' : getJobseekerCampus(user), exportProfileValues(user, 'course')[0] || '', exportProfileValues(user, 'yearGraduated')[0] || '', address.region, address.province, address.city, address.street];
+      return [exportDate(user.createdAt), exportFullName(user), user.email || '', profile.phoneNumber || user.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(user) === 'Unspecified' ? '' : getJobseekerCampus(user), exportProfileValues(user, 'course')[0] || '', exportProfileValues(user, 'yearGraduated')[0] || '', address.region, address.province, address.city, address.street];
     }));
 
     const employerSheet = workbook.addWorksheet('Employer');
-    styleExportWorksheet(employerSheet, 'Phinma Araullo University - Employer List', employerHeaders, [7, 16, 28, 30, 17, 32, 24, 20, 20, 24, 38]);
-    addExportDataRows(employerSheet, 5, employers.map((user, index) => {
+    styleExportWorksheet(employerSheet, 'Phinma Araullo University - Employer List', employerHeaders, [16, 28, 30, 17, 32, 24, 20, 20, 24, 38]);
+    addExportDataRows(employerSheet, 5, employers.map((user) => {
       const profile = user.employerProfile || {};
       const address = exportAddressParts(profile, true);
-      return [index + 1, exportDate(user.createdAt), exportFullName(user), user.email || profile.businessEmail || '', profile.mobileNumber || user.registrationContactNumber || '', profile.companyName || '', profile.industry || '', address.region, address.province, address.city, address.street];
+      return [exportDate(user.createdAt), exportFullName(user), user.email || profile.businessEmail || '', profile.mobileNumber || user.registrationContactNumber || '', profile.companyName || '', profile.industry || '', address.region, address.province, address.city, address.street];
     }));
 
     const jobOfferSheet = workbook.addWorksheet('Job Offers');
-    styleExportWorksheet(jobOfferSheet, 'Phinma Araullo University - Job Offers List', jobOfferHeaders, [7, 16, 30, 24, 32, 18, 22, 12, 12, 14, 16]);
-    addExportDataRows(jobOfferSheet, 5, filteredJobs.map((job, index) => {
+    styleExportWorksheet(jobOfferSheet, 'Phinma Araullo University - Job Offers List', jobOfferHeaders, [16, 30, 24, 32, 18, 22, 12, 12, 14, 16]);
+    addExportDataRows(jobOfferSheet, 5, filteredJobs.map((job) => {
       const employer = userById.get(String(job.employer || ''));
-      return [index + 1, exportDate(job.publishedAt || job.createdAt), job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', job.title || '', job.workMode || '', job.jobType || '', Number(job.vacancies || 0), applicationsByJob.get(String(job._id)) || Number(job.applicationCount || 0), getAdminJobOfferStatus(job), exportDate(job.applicationDeadline)];
+      return [exportDate(job.publishedAt || job.createdAt), job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', job.title || '', job.workMode || '', job.jobType || '', Number(job.vacancies || 0), applicationsByJob.get(String(job._id)) || Number(job.applicationCount || 0), getAdminJobOfferStatus(job), exportDate(job.applicationDeadline)];
     }));
 
     const applicationSheet = workbook.addWorksheet('Applications');
-    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [7, 16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 32, 18, 22, 30, 24, 20, 18, 15, 16]);
-    addExportDataRows(applicationSheet, 5, filteredApplications.map((application, index) => {
+    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 32, 18, 22, 30, 24, 20, 18, 15, 16]);
+    addExportDataRows(applicationSheet, 5, filteredApplications.map((application) => {
       const seeker = userById.get(String(application.jobseeker || '')) || {};
       const profile = seeker.jobSeekerProfile || {};
       const job = jobById.get(String(application.job || '')) || {};
       const employer = userById.get(String(application.employer || job.employer || '')) || {};
-      return [index + 1, exportDate(application.appliedAt || application.createdAt), exportFullName(seeker), seeker.email || '', profile.phoneNumber || seeker.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(seeker) === 'Unspecified' ? '' : getJobseekerCampus(seeker), exportProfileValues(seeker, 'course')[0] || '', exportProfileValues(seeker, 'yearGraduated')[0] || '', job.title || '', job.workMode || '', job.jobType || '', job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', application.status || '', exportProcessingTime(application), applicationsByJobseeker.get(String(application.jobseeker || '')) || 0, exportDate(application.hiredAt)];
+      return [exportDate(application.appliedAt || application.createdAt), exportFullName(seeker), seeker.email || '', profile.phoneNumber || seeker.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(seeker) === 'Unspecified' ? '' : getJobseekerCampus(seeker), exportProfileValues(seeker, 'course')[0] || '', exportProfileValues(seeker, 'yearGraduated')[0] || '', job.title || '', job.workMode || '', job.jobType || '', job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', application.status || '', exportProcessingTime(application), applicationsByJobseeker.get(String(application.jobseeker || '')) || 0, exportDate(application.hiredAt)];
     }));
 
     const modeLabel = mode === 'all' ? 'all-records' : mode === 'filtered' ? 'filtered-records' : 'agapay-reports';
