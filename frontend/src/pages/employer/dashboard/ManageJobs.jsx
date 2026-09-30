@@ -1264,6 +1264,8 @@ const ManageJobs = () => {
     list.sort((a, b) => {
       const createdA = safeDate(a?.createdAt);
       const createdB = safeDate(b?.createdAt);
+      const updatedA = safeDate(a?.updatedAt || a?.createdAt);
+      const updatedB = safeDate(b?.updatedAt || b?.createdAt);
       const applicantsA = Number(getApplicantValue(a)) || 0;
       const applicantsB = Number(getApplicantValue(b)) || 0;
       const expiryA = safeDate(a?.applicationDeadline);
@@ -1275,12 +1277,26 @@ const ManageJobs = () => {
       if (sortBy === 'expiring_soon') return expiryA - expiryB || createdB - createdA;
       if (sortBy === 'latest_expiration') return expiryB - expiryA || createdB - createdA;
 
-      return createdB - createdA;
+      return updatedB - updatedA || createdB - createdA;
     });
 
     return list;
   }, [jobs, jobFilter, statusFilter, dateFilter, customDateFrom, customDateTo, q, sortBy]);
 
+
+  useEffect(() => {
+    const targetJobId = new URLSearchParams(location.search).get('job');
+    if (!targetJobId || !jobs.length) return;
+
+    setQ('');
+    setJobFilter('all');
+    setStatusFilter('all');
+    setDateFilter('all');
+    setCustomDateFrom('');
+    setCustomDateTo('');
+    setSortBy('');
+    setRecentlyHighlightedJobId(String(targetJobId));
+  }, [location.search, jobs.length]);
 
   const totalItems = filteredJobs.length;
   const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
@@ -1294,6 +1310,47 @@ const ManageJobs = () => {
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const targetJobId = new URLSearchParams(location.search).get('job');
+    if (!targetJobId || !filteredJobs.length) return;
+
+    const targetIndex = filteredJobs.findIndex((job) => String(job?._id) === String(targetJobId));
+    if (targetIndex < 0) return;
+
+    if (pageSize !== 'all') {
+      setCurrentPage(Math.floor(targetIndex / numericPageSize) + 1);
+    }
+
+    const scrollTimer = window.setTimeout(() => {
+      const prefix = window.innerWidth < 768 ? 'manage-job-mobile' : 'manage-job';
+      document.getElementById(`${prefix}-${targetJobId}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 150);
+
+    const params = new URLSearchParams(location.search);
+    params.delete('job');
+    const clearTimer = window.setTimeout(() => {
+      navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, {
+        replace: true,
+        state: {},
+      });
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [
+    filteredJobs,
+    location.pathname,
+    location.search,
+    navigate,
+    numericPageSize,
+    pageSize,
+  ]);
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -1538,6 +1595,7 @@ const ManageJobs = () => {
 
                     return (
                       <div
+                        id={`manage-job-mobile-${job._id}`}
                         key={job._id}
                         className={cn(
                           'rounded-2xl border bg-white p-4 shadow-sm transition',
@@ -1771,6 +1829,7 @@ const ManageJobs = () => {
 
                         return (
                           <tr
+                            id={`manage-job-${job._id}`}
                             key={job._id}
                             role="link"
                             className={cn(

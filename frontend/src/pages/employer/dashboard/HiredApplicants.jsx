@@ -678,7 +678,8 @@ const HiredApplicants = () => {
   }, [reviewResult]);
 
   useEffect(() => {
-    const applicationId = new URLSearchParams(location.search).get('statusRequest');
+    const searchParams = new URLSearchParams(location.search);
+    const applicationId = searchParams.get('statusRequest') || searchParams.get('application');
     if (!applicationId || loading) return;
 
     setQuery('');
@@ -703,7 +704,10 @@ const HiredApplicants = () => {
       document.getElementById(`${prefix}-${applicationId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
 
-    navigate(location.pathname, { replace: true });
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete('statusRequest');
+    nextParams.delete('application');
+    navigate(`${location.pathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`, { replace: true });
   }, [location.pathname, location.search, loading, applications, pageSize, navigate]);
 
   useEffect(() => {
@@ -844,7 +848,7 @@ const HiredApplicants = () => {
       if (sortBy === 'recently_declined') return getDeclinedTime(b) - getDeclinedTime(a);
       if (sortBy === 'least_recently_declined') return getDeclinedTime(a) - getDeclinedTime(b);
 
-      return getAppliedTime(b) - getAppliedTime(a);
+      return getHiredTime(b) - getHiredTime(a);
     });
 
     return sorted;

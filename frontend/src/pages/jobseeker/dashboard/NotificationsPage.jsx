@@ -16,6 +16,25 @@ import {
 import axios from 'axios';
 import Pagination from '../../../components/shared/Pagination';
 
+const buildJobseekerNotificationTarget = (notification = {}) => {
+  const metadata = notification?.metadata || {};
+  const applicationId = metadata.applicationId || (
+    String(notification?.relatedModel || '') === 'Application' ? notification?.relatedId : ''
+  );
+
+  if (applicationId) {
+    const params = new URLSearchParams();
+    params.set('application', String(applicationId));
+
+    const status = String(metadata.newStatus || '').trim().toLowerCase();
+    if (status) params.set('status', status);
+
+    return `/jobseeker/my-applications?${params.toString()}`;
+  }
+
+  return notification?.link || '';
+};
+
 const UI = {
   pageBg: 'bg-gray-50',
   container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8',
@@ -126,7 +145,8 @@ const NotificationsPage = () => {
     if (!notification.isRead) {
       await handleMarkAsRead(notification._id);
     }
-    if (notification.link) navigate(notification.link);
+    const target = buildJobseekerNotificationTarget(notification);
+    if (target) navigate(target);
   };
 
   const handleMarkAllAsRead = async () => {

@@ -1,6 +1,6 @@
 // src/pages/employer/dashboard/DeclinedApplicants.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
@@ -585,6 +585,7 @@ const useDebouncedValue = (value, delay = 250) => {
 
 const DeclinedApplicants = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
@@ -607,6 +608,7 @@ const DeclinedApplicants = () => {
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [highlightedApplicationId, setHighlightedApplicationId] = useState('');
 
   useEffect(() => {
     setCurrentPage(1);
@@ -876,7 +878,7 @@ const DeclinedApplicants = () => {
       if (sortBy === 'recently_declined') return getDeclinedTime(b) - getDeclinedTime(a);
       if (sortBy === 'least_recently_declined') return getDeclinedTime(a) - getDeclinedTime(b);
 
-      return getAppliedTime(b) - getAppliedTime(a);
+      return getDeclinedTime(b) - getDeclinedTime(a);
     });
   }, [applications, buildApplicantName, debouncedQuery, filterBy, customDateFrom, customDateTo, selectedJob, sortBy, getDeclinedStageLabel]);
 
@@ -893,6 +895,62 @@ const DeclinedApplicants = () => {
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const targetApplicationId = new URLSearchParams(location.search).get('application');
+    if (!targetApplicationId || !applications.length) return;
+
+    setQuery('');
+    setSelectedJob('all');
+    setFilterBy('all');
+    setCustomDateFrom('');
+    setCustomDateTo('');
+    setSortBy('recently_declined');
+    setHighlightedApplicationId(String(targetApplicationId));
+  }, [location.search, applications.length]);
+
+  useEffect(() => {
+    const targetApplicationId = new URLSearchParams(location.search).get('application');
+    if (!targetApplicationId || !filteredApplications.length) return;
+
+    const targetIndex = filteredApplications.findIndex(
+      (application) => String(application?._id) === String(targetApplicationId)
+    );
+    if (targetIndex < 0) return;
+
+    if (pageSize !== 'all') {
+      setCurrentPage(Math.floor(targetIndex / numericPageSize) + 1);
+    }
+
+    const scrollTimer = window.setTimeout(() => {
+      const prefix = window.innerWidth < 768 ? 'declined-application-mobile' : 'declined-application';
+      document.getElementById(`${prefix}-${targetApplicationId}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 150);
+
+    const clearTimer = window.setTimeout(() => {
+      setHighlightedApplicationId('');
+      const params = new URLSearchParams(location.search);
+      params.delete('application');
+      navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, {
+        replace: true,
+      });
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [
+    filteredApplications,
+    location.pathname,
+    location.search,
+    navigate,
+    numericPageSize,
+    pageSize,
+  ]);
 
   const hasActiveFilters = useMemo(() => {
     return query.trim() !== '' || filterBy !== 'all' || sortBy !== '' || selectedJob !== 'all';
@@ -1140,6 +1198,7 @@ const DeclinedApplicants = () => {
 
                         return (
                           <tr
+                            id={`declined-application-${app._id}`}
                             key={app._id}
                             role="link"
                             tabIndex={0}
@@ -1154,7 +1213,12 @@ const DeclinedApplicants = () => {
                               event.preventDefault();
                               navigate(`/employer/application/${app._id}?from=declined`);
                             }}
-                            className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                            className={cn(
+                              'group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
+                              String(app._id) === highlightedApplicationId
+                                ? 'bg-[#2e66a6]/10 ring-2 ring-inset ring-[#2e66a6]'
+                                : ''
+                            )}
                           >
                             <td className="px-6 py-4">
                               <div className="text-sm text-gray-900">{formatDate(app.appliedAt)}</div>
@@ -1239,7 +1303,16 @@ const DeclinedApplicants = () => {
                     const declinedStageLabel = getDeclinedStageLabel(app.declinedFrom);
 
                     return (
-                      <div key={app._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div
+                        id={`declined-application-mobile-${app._id}`}
+                        key={app._id}
+                        className={cn(
+                          'rounded-2xl border bg-white p-4 shadow-sm transition-colors',
+                          String(app._id) === highlightedApplicationId
+                            ? 'border-[#2e66a6] bg-[#2e66a6]/10 ring-2 ring-[#2e66a6]/30'
+                            : 'border-gray-200'
+                        )}
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex min-w-0 items-center gap-3">
                             <Avatar

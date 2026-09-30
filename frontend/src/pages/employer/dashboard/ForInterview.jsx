@@ -1748,12 +1748,25 @@ const ForInterview = () => {
     } else if (sortBy === 'least_recently_updated') {
       list.sort((a, b) => getUpdatedTime(a) - getUpdatedTime(b));
     } else {
-      list.sort((a, b) => getAppliedTime(b) - getAppliedTime(a));
+      list.sort((a, b) => getUpdatedTime(b) - getUpdatedTime(a));
     }
 
     return list;
   }, [applications, query, filterBy, customDateFrom, customDateTo, selectedJob, sortBy]);
 
+
+  useEffect(() => {
+    const targetApplicationId = new URLSearchParams(location.search).get('application');
+    if (!targetApplicationId || !applications.length) return;
+
+    setQuery('');
+    setSelectedJob('all');
+    setFilterBy('all');
+    setCustomDateFrom('');
+    setCustomDateTo('');
+    setSortBy('recently_updated');
+    setRecentlyHighlightedApplicationId(String(targetApplicationId));
+  }, [location.search, applications.length]);
 
   const totalItems = filteredApplications.length;
   const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
@@ -1767,6 +1780,50 @@ const ForInterview = () => {
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const targetApplicationId = new URLSearchParams(location.search).get('application');
+    if (!targetApplicationId || !filteredApplications.length) return;
+
+    const targetIndex = filteredApplications.findIndex(
+      (application) => String(application?._id) === String(targetApplicationId)
+    );
+    if (targetIndex < 0) return;
+
+    if (pageSize !== 'all') {
+      setCurrentPage(Math.floor(targetIndex / numericPageSize) + 1);
+    }
+
+    const scrollTimer = window.setTimeout(() => {
+      const prefix = window.innerWidth < 768 ? 'for-interview-application-mobile' : 'for-interview-application';
+      document.getElementById(`${prefix}-${targetApplicationId}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 150);
+
+    const clearTimer = window.setTimeout(() => {
+      setRecentlyHighlightedApplicationId('');
+      const params = new URLSearchParams(location.search);
+      params.delete('application');
+      navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, {
+        replace: true,
+        state: {},
+      });
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [
+    filteredApplications,
+    location.pathname,
+    location.search,
+    navigate,
+    numericPageSize,
+    pageSize,
+  ]);
 
   const jobOptions = useMemo(() => {
     return [
@@ -2295,6 +2352,7 @@ const selectBase =
 
                         return (
                           <tr
+                            id={`for-interview-application-${app._id}`}
                             key={app._id}
                             role="link"
                             tabIndex={0}
@@ -2403,6 +2461,7 @@ const selectBase =
 
                     return (
                       <div
+                        id={`for-interview-application-mobile-${app._id}`}
                         key={app._id}
                         className={cn(
                           'rounded-2xl border bg-white p-4 shadow-sm transition',
