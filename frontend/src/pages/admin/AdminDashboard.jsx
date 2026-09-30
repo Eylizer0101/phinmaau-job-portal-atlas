@@ -150,6 +150,48 @@ const colors = [
   "#0891b2",
 ];
 
+const chartColorPalettes = [
+  ["#6fb6ff", "#2e66a6", "#174d86"],
+  ["#55d9a7", "#16a36f", "#0c7b50"],
+  ["#ffc85c", "#dc9300", "#a96800"],
+  ["#a99cff", "#6366f1", "#4338ca"],
+  ["#ff7a7a", "#dc2626", "#a91b1b"],
+  ["#9aa7b8", "#64748b", "#475569"],
+  ["#5cd7ed", "#0891b2", "#0e7490"],
+];
+
+const getChartGradient = (index = 0, angle = 180) => {
+  const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
+  return `linear-gradient(${angle}deg, ${light} 0%, ${base} 48%, ${dark} 100%)`;
+};
+
+const getChartShadow = (index = 0) => {
+  const [, base] = chartColorPalettes[index % chartColorPalettes.length];
+  return `0 8px 16px ${base}33, inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 4px rgba(15,23,42,.16)`;
+};
+
+const getDonutStops = (rows = [], total = 0, colorMap = {}) => {
+  let cursor = 0;
+  const stops = [];
+  rows.forEach((item, index) => {
+    const value = Number(item?.value || 0);
+    if (!value || !total) return;
+    const start = cursor;
+    cursor += (value / total) * 100;
+    const mapped = colorMap[item.name];
+    const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
+    const core = mapped || base;
+    const lightStop = Math.min(cursor, start + (cursor - start) * 0.32);
+    const darkStop = Math.max(start, cursor - (cursor - start) * 0.22);
+    stops.push(
+      `${mapped || light} ${start}% ${lightStop}%`,
+      `${core} ${lightStop}% ${darkStop}%`,
+      `${mapped || dark} ${darkStop}% ${cursor}%`,
+    );
+  });
+  return stops;
+};
+
 const titleCase = (value) =>
   String(value || "")
     .replace(/[_-]+/g, " ")
@@ -1127,7 +1169,9 @@ const HorizontalBars = ({ data = [], maxItems = 8, percentage = false, centered 
               className="h-full min-w-[3px] rounded-lg transition-all"
               style={{
                 width: `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`,
-                backgroundColor: colors[index % colors.length],
+                backgroundImage: getChartGradient(index, 180),
+                boxShadow: getChartShadow(index),
+                border: "1px solid rgba(255,255,255,.22)",
               }}
             />
           </div>
@@ -1157,7 +1201,9 @@ const VerticalBars = ({ data = [], maxItems = 6, percentage = false }) => {
                 className="w-full max-w-[54px] rounded-t-lg transition-all"
                 style={{
                   height: `${Math.max(4, (value / max) * 100)}%`,
-                  backgroundColor: colors[index % colors.length],
+                  backgroundImage: getChartGradient(index, 180),
+                  boxShadow: getChartShadow(index),
+                  border: "1px solid rgba(255,255,255,.22)",
                 }}
               />
             </div>
@@ -1175,17 +1221,16 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
   const rows = data.filter((item) => Number(item.value || 0) > 0);
   const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
   if (!rows.length || !total) return <EmptyChart />;
-  let cursor = 0;
-  const stops = rows.map((item, index) => {
-    const start = cursor;
-    cursor += (Number(item.value || 0) / total) * 100;
-    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
-  });
+  const stops = getDonutStops(rows, total);
   return (
     <div className="flex min-h-40 flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
       <div
         className="relative mx-auto h-32 w-32 rounded-full"
-        style={{ background: `conic-gradient(${stops.join(",")})` }}
+        style={{
+          background: `conic-gradient(${stops.join(",")})`,
+          boxShadow:
+            "0 14px 26px rgba(15,23,42,.18), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -8px 14px rgba(15,23,42,.14)",
+        }}
       >
         <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
           <span className="text-2xl font-extrabold text-slate-800">
@@ -1243,14 +1288,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
 
   if (!rows.length) return <EmptyChart />;
 
-  let cursor = 0;
-  const stops = positiveRows.map((item, index) => {
-    const start = cursor;
-    const value = Number(item.value || 0);
-    cursor += total ? (value / total) * 100 : 0;
-    const color = colorMap[item.name] || colors[index % colors.length];
-    return `${color} ${start}% ${cursor}%`;
-  });
+  const stops = getDonutStops(positiveRows, total, colorMap);
 
   const donutBackground = total && stops.length
     ? `conic-gradient(${stops.join(",")})`
@@ -1261,7 +1299,11 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
       <div className="flex w-fit max-w-full flex-col items-center justify-center gap-5 sm:flex-row sm:gap-6">
         <div
           className="relative h-40 w-40 shrink-0 rounded-full"
-          style={{ background: donutBackground }}
+          style={{
+            background: donutBackground,
+            boxShadow:
+              "0 14px 28px rgba(15,23,42,.18), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -8px 16px rgba(15,23,42,.14)",
+          }}
         >
           <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
             <span className="text-[11px] font-semibold text-slate-500">Total</span>
@@ -1642,7 +1684,9 @@ const FunnelChart = ({ data = [] }) => {
               className="mx-auto flex h-8 items-center justify-center rounded-lg px-3 text-xs font-bold text-white shadow-sm"
               style={{
                 width: `${width}%`,
-                backgroundColor: colors[index % colors.length],
+                backgroundImage: getChartGradient(index, 180),
+                    boxShadow: getChartShadow(index),
+                    border: "1px solid rgba(255,255,255,.22)",
               }}
             >
               <span className="truncate">
