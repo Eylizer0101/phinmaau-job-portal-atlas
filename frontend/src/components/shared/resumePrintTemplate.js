@@ -985,7 +985,7 @@ const alignDeclarationToLastPageBottom = (paper) => {
   declaration.style.marginTop = `${11 + extraSpace}px`;
 };
 
-export const openResumePrintWindow = async (resumeData = {}, existingPreviewWindow = null) => {
+export const openResumePrintWindow = async (resumeData = {}) => {
   const existingWrapper = document.getElementById('agapay-resume-pdf-wrapper');
   if (existingWrapper) {
     existingWrapper.remove();
@@ -1096,24 +1096,19 @@ export const openResumePrintWindow = async (resumeData = {}, existingPreviewWind
     }
 
     const previewUrlWithZoom = `${uploadResult.previewUrl}#zoom=125`;
-    const previewWindow = existingPreviewWindow || window.open('', '_blank');
+    const previewWindow = window.open(previewUrlWithZoom, '_blank');
 
-    if (!previewWindow) {
-      throw new Error('The PDF preview was blocked by your browser. Please allow pop-ups and try again.');
+    if (previewWindow) {
+      previewWindow.opener = null;
+    } else {
+      window.location.assign(previewUrlWithZoom);
     }
-
-    previewWindow.opener = null;
-    previewWindow.location.href = previewUrlWithZoom;
 
     wrapper.remove();
     return true;
   } catch (error) {
     console.error('Resume PDF preview failed:', error);
     wrapper.remove();
-
-    if (existingPreviewWindow && !existingPreviewWindow.closed) {
-      existingPreviewWindow.close();
-    }
 
     return false;
   }

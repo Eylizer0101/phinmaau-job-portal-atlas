@@ -5326,7 +5326,7 @@ const MyProfile = () => {
     setDownloadPasswordModalOpen(true);
   };
 
-  const downloadResumePdf = async (previewWindow = null) => {
+  const downloadResumePdf = async () => {
     const resumeData = {
       userData,
       formData: { ...formData, addedResumeSections: addedMoreSections },
@@ -5334,7 +5334,7 @@ const MyProfile = () => {
       verificationDocs,
     };
 
-    const downloaded = await openResumePrintWindow(resumeData, previewWindow);
+    const downloaded = await openResumePrintWindow(resumeData);
 
     if (!downloaded) {
       setError('Failed to generate CV PDF. Please try again.');
@@ -5379,22 +5379,6 @@ const MyProfile = () => {
       return;
     }
 
-    let resumePreviewWindow = null;
-
-    if (resumePasswordAction === 'download') {
-      resumePreviewWindow = window.open('', '_blank');
-
-      if (!resumePreviewWindow) {
-        setError('The CV preview was blocked by your browser. Please allow pop-ups and try again.');
-        setDownloadPasswordError('The CV preview was blocked by your browser. Please allow pop-ups and try again.');
-        return;
-      }
-
-      resumePreviewWindow.document.title = 'Preparing CV...';
-      resumePreviewWindow.document.body.innerHTML =
-        '<div style="font-family:Arial,sans-serif;padding:24px;color:#374151;">Preparing your CV preview...</div>';
-    }
-
     try {
       setDownloadPasswordVerifying(true);
       setDownloadPasswordError('');
@@ -5434,7 +5418,7 @@ const MyProfile = () => {
           return;
         }
 
-        const previewOpened = await downloadResumePdf(resumePreviewWindow);
+        const previewOpened = await downloadResumePdf();
 
         if (previewOpened) {
           setDownloadPasswordModalOpen(false);
@@ -5443,10 +5427,6 @@ const MyProfile = () => {
       }
     } catch (err) {
       console.error(err);
-
-      if (resumePreviewWindow && !resumePreviewWindow.closed) {
-        resumePreviewWindow.close();
-      }
 
       if (err.response?.data instanceof Blob) {
         const errorText = await err.response.data.text();
