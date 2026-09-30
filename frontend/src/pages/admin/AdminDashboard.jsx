@@ -1153,7 +1153,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
     return `${colors[index % colors.length]} ${start}% ${cursor}%`;
   });
   return (
-    <div className="grid min-h-40 items-center gap-4 sm:grid-cols-[150px_1fr]">
+    <div className="flex min-h-40 flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
       <div
         className="relative mx-auto h-32 w-32 rounded-full"
         style={{ background: `conic-gradient(${stops.join(",")})` }}
@@ -1167,7 +1167,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
           </span>
         </div>
       </div>
-      <div className="space-y-2">
+      <div className="w-full max-w-[240px] space-y-2">
         {rows.slice(0, 8).map((item, index) => (
           <div
             key={item.name}
@@ -1215,7 +1215,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
     : "#e2e8f0";
 
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center gap-5 sm:flex-row sm:gap-8">
+    <div className="flex min-h-52 flex-col items-center justify-center gap-5 sm:flex-row sm:gap-6">
       <div
         className="relative mx-auto h-40 w-40 rounded-full"
         style={{ background: donutBackground }}
@@ -1231,7 +1231,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
         </div>
       </div>
 
-      <div className="w-full max-w-[300px] space-y-3">
+      <div className="w-full max-w-[240px] space-y-3">
         {rows.map((item, index) => {
           const value = Number(item?.value || 0);
           const percentage = total ? Math.round((value / total) * 100) : 0;
@@ -1240,7 +1240,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
           return (
             <div
               key={`${item.name}-${index}`}
-              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-4 text-xs"
+              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2.5 text-xs"
             >
               <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
                 <i
@@ -1249,10 +1249,10 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
                 />
                 <span className="truncate">{titleCase(item.name)}</span>
               </span>
-              <strong className="min-w-7 text-right text-slate-800">
+              <strong className="min-w-6 text-right text-slate-800">
                 {numberFormat.format(value)}
               </strong>
-              <span className="min-w-10 text-right font-semibold text-slate-500">
+              <span className="min-w-9 text-right font-semibold text-slate-500">
                 ({percentage}%)
               </span>
             </div>
