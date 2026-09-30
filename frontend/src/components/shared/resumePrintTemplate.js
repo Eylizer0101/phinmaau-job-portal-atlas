@@ -684,7 +684,6 @@ const resumeStyles = `
     padding-left: 0;
     box-sizing: border-box;
     text-align: center;
-    transform: translateX(4mm);
     overflow-wrap: anywhere;
     word-wrap: break-word;
     word-break: break-word;
