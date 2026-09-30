@@ -1056,15 +1056,26 @@ const DateFilterDropdown = ({
   );
 };
 
-const ChartCard = ({ title, subtitle, children, className = "" }) => (
+const ChartCard = ({
+  title,
+  subtitle,
+  children,
+  className = "",
+  icon: Icon = Activity,
+}) => (
   <section
     className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}
   >
-    <div className="mb-3 border-b border-slate-100 pb-3">
-      <h2 className="text-sm font-bold text-slate-800">{title}</h2>
-      {subtitle ? (
-        <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
-      ) : null}
+    <div className="mb-3 flex items-start gap-2 border-b border-slate-100 pb-3">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-white shadow-sm">
+        <Icon size={17} />
+      </span>
+      <div className="min-w-0">
+        <h2 className="text-sm font-bold text-slate-800">{title}</h2>
+        {subtitle ? (
+          <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
+        ) : null}
+      </div>
     </div>
     {children}
   </section>
@@ -1482,7 +1493,7 @@ const TrendChart = ({ data = [] }) => {
 
 const RecruitmentCardTitle = ({ icon: Icon, title, subtitle }) => (
   <div className="mb-3 flex items-start gap-2 border-b border-slate-100 pb-3">
-    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
+    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-white shadow-sm">
       <Icon size={17} />
     </span>
     <div className="min-w-0">
@@ -2101,14 +2112,16 @@ const AdminDashboard = () => {
             <ChartCard
               title="Top Hiring Companies"
               subtitle="Companies with the most hires"
-              className="xl:col-span-12"
+              className="xl:col-span-6"
+              icon={Building2}
             >
               <HorizontalBars data={sections.applications?.topHiringCompanies || []} maxItems={5} />
             </ChartCard>
             <ChartCard
               title="Top Industries"
               subtitle="Industries with the most job opportunities"
-              className="xl:col-span-12"
+              className="xl:col-span-6"
+              icon={Activity}
             >
               <HorizontalBars data={sections.jobs?.industries || sections.jobs?.categories || []} maxItems={6} />
             </ChartCard>
@@ -2116,6 +2129,7 @@ const AdminDashboard = () => {
               title="User Roles"
               subtitle="Admin, employer, and jobseeker accounts"
               className="xl:col-span-6"
+              icon={UserRoundMinus}
             >
               <DonutChart data={sections.users?.roles} showPercentage />
             </ChartCard>
@@ -2123,6 +2137,7 @@ const AdminDashboard = () => {
               title="Job Status"
               subtitle="Lifecycle state of job postings"
               className="xl:col-span-6"
+              icon={Building2}
             >
               <DonutChart data={sections.jobs?.statuses} showPercentage />
             </ChartCard>
@@ -2142,6 +2157,7 @@ const AdminDashboard = () => {
               title="Employment Type"
               subtitle="Job supply grouped by employment type"
               className="xl:col-span-6"
+              icon={Building2}
             >
               <HorizontalBars data={sections.jobs?.employmentTypes} centered />
             </ChartCard>
@@ -2162,6 +2178,7 @@ const AdminDashboard = () => {
               title="Employment Status"
               subtitle="Status recorded for hired applicants"
               className="xl:col-span-6"
+              icon={UserRoundMinus}
             >
               <VerticalBars data={sections.applications?.employmentStatus} maxItems={6} />
             </ChartCard>
@@ -2175,6 +2192,7 @@ const AdminDashboard = () => {
               title="Verification Status"
               subtitle="Employer and jobseeker verification state"
               className="xl:col-span-6"
+              icon={Activity}
             >
               <HorizontalBars data={sections.users?.verification} />
             </ChartCard>
@@ -2182,6 +2200,7 @@ const AdminDashboard = () => {
               title="Jobseekers by Campus"
               subtitle="Campus distribution from jobseeker profiles"
               className="xl:col-span-6"
+              icon={Building2}
             >
               <HorizontalBars data={sections.users?.campuses} centered />
             </ChartCard>
@@ -2189,6 +2208,7 @@ const AdminDashboard = () => {
               title="Gender Distribution"
               subtitle="Job seekers by gender"
               className="xl:col-span-6"
+              icon={UserRoundMinus}
             >
               <DonutChart data={sections.users?.genders} showPercentage />
             </ChartCard>
@@ -2196,6 +2216,7 @@ const AdminDashboard = () => {
               title="How Soon Can They Start?"
               subtitle="Applicant start availability"
               className="xl:col-span-6"
+              icon={Clock3}
             >
               <VerticalBars data={sections.users?.availabilities} maxItems={5} />
             </ChartCard>
@@ -2216,7 +2237,8 @@ const AdminDashboard = () => {
             <ChartCard
               title="Educational Attainment"
               subtitle="Job seekers by highest completed qualification"
-              className="xl:col-span-6"
+              className="xl:col-span-12"
+              icon={Building2}
             >
               <HorizontalBars data={sections.users?.educationLevels} maxItems={6} />
               <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 text-xs font-medium text-slate-600">
@@ -2232,6 +2254,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Job Edit Requests"
               subtitle="Governance requests by status"
+              icon={Repeat2}
             >
               <HorizontalBars data={sections.operations?.editRequests} centered />
             </ChartCard>
@@ -2245,6 +2268,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Employment Status Request Types"
               subtitle="Distribution of requests by ending reason"
+              icon={UserRoundMinus}
             >
               <EmploymentRequestDonut
                 data={sections.operations?.employmentStatusRequestTypes || []}
@@ -2258,6 +2282,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Employment Status Updates"
               subtitle="Distribution of requests to update employment records"
+              icon={Repeat2}
             >
               <EmploymentRequestDonut
                 data={sections.operations?.employmentStatusUpdates || []}
