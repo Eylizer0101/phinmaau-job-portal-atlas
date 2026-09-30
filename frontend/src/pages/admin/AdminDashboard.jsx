@@ -1167,27 +1167,40 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
           </span>
         </div>
       </div>
-      <div className="w-full max-w-[240px] space-y-2">
-        {rows.slice(0, 8).map((item, index) => (
-          <div
-            key={item.name}
-            className="flex items-center justify-between gap-3 text-xs"
-          >
-            <span className="flex min-w-0 items-center gap-2 text-slate-600">
-              <i
-                className="h-2.5 w-2.5 shrink-0 rounded-sm"
-                style={{ backgroundColor: colors[index % colors.length] }}
-              />
-              <span className="truncate">{titleCase(item.name)}</span>
-            </span>
-            <strong className="whitespace-nowrap text-slate-800">
-              {numberFormat.format(item.value)}
-              {showPercentage
-                ? ` (${Math.round((Number(item.value || 0) / total) * 100)}%)`
-                : ""}
-            </strong>
-          </div>
-        ))}
+      <div className="w-full max-w-[285px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/60">
+        <div className="space-y-2">
+          {rows.slice(0, 8).map((item, index) => {
+            const value = Number(item.value || 0);
+            const percentage = total ? Math.round((value / total) * 100) : 0;
+
+            return (
+              <div
+                key={item.name}
+                className="grid grid-cols-[minmax(0,1fr)_44px_54px] items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs"
+              >
+                <span className="flex min-w-0 items-center gap-2 text-slate-600">
+                  <i
+                    className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                    style={{ backgroundColor: colors[index % colors.length] }}
+                  />
+                  <span className="truncate">{titleCase(item.name)}</span>
+                </span>
+
+                <strong className="text-center text-slate-800">
+                  {numberFormat.format(value)}
+                </strong>
+
+                {showPercentage ? (
+                  <span className="text-center font-normal text-slate-500">
+                    ({percentage}%)
+                  </span>
+                ) : (
+                  <span />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -1254,7 +1267,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
                   <strong className="text-center text-slate-800">
                     {numberFormat.format(value)}
                   </strong>
-                  <span className="text-center font-semibold text-slate-500">
+                  <span className="text-center font-normal text-slate-500">
                     ({percentage}%)
                   </span>
                 </div>
