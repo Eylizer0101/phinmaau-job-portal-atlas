@@ -344,6 +344,7 @@ const resumeStyles = `
 
   .resume-paper {
     width: 210mm;
+    max-width: 210mm;
     min-height: 297mm;
     margin: 0 auto;
     background: #ffffff;
@@ -352,18 +353,26 @@ const resumeStyles = `
     font-size: 9.2px;
     line-height: 1.18;
     box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .resume-inner {
+    width: 100%;
+    max-width: 100%;
     padding: 16mm 16mm 12mm;
     position: relative;
     min-height: 297mm;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .resume-header {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -371,23 +380,30 @@ const resumeStyles = `
     min-height: 62px;
     padding-right: 0;
     text-align: center;
+    overflow: hidden;
   }
 
   .resume-header-main {
-    flex: 0 1 auto;
-    width: fit-content;
+    flex: 1 1 0;
+    width: auto;
     min-width: 0;
     max-width: calc(100% - 73px);
+    overflow: hidden;
   }
 
   .resume-name {
     margin: 0;
+    max-width: 100%;
     padding-top: 5px;
     font-size: 18px;
-    line-height: 1;
+    line-height: 1.08;
     font-weight: 700;
     letter-spacing: 0.55px;
     text-transform: uppercase;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   .resume-contact {
@@ -654,16 +670,26 @@ const resumeStyles = `
   }
 
   .declaration-name {
+    max-width: 100%;
     font-weight: 700;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   .declaration-signature {
     display: block;
-    width: max-content;
+    width: auto;
     min-width: 160px;
+    max-width: 100%;
     margin-left: auto;
+    padding-left: 4mm;
+    box-sizing: border-box;
     text-align: center;
-    transform: translateX(4mm);
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   .declaration-role {
@@ -998,7 +1024,11 @@ export const openResumePrintWindow = async (resumeData = {}) => {
   try {
     const html2pdf = await loadHtml2Pdf();
     const paper = wrapper.querySelector('.resume-paper') || wrapper;
+    paper.style.width = '210mm';
+    paper.style.maxWidth = '210mm';
     paper.style.minHeight = 'auto';
+    paper.style.boxSizing = 'border-box';
+    paper.style.overflow = 'hidden';
 
     if (document.fonts?.ready) {
       await document.fonts.ready;
@@ -1016,6 +1046,8 @@ export const openResumePrintWindow = async (resumeData = {}) => {
 
     alignDeclarationToLastPageBottom(paper);
 
+    const paperWidth = Math.max(1, Math.ceil(paper.getBoundingClientRect().width));
+
     const pdfWorker = html2pdf()
       .set({
         margin: 0,
@@ -1026,6 +1058,8 @@ export const openResumePrintWindow = async (resumeData = {}) => {
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
+          width: paperWidth,
+          windowWidth: paperWidth,
           scrollX: 0,
           scrollY: 0,
         },
