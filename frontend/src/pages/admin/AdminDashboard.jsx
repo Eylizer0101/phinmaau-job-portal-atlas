@@ -196,16 +196,21 @@ const titleCase = (value) =>
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const HeaderStatusCard = ({ label, value, onClick }) => (
+const HeaderStatusCard = ({ label, value, onClick, icon: Icon }) => (
   <button
     type="button"
     onClick={onClick}
-    className="relative inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#2e66a6]/5 hover:text-[#2e66a6]"
+    className="group relative flex h-[66px] min-w-[150px] items-center gap-3 rounded-2xl border border-slate-200/90 bg-white px-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2e66a6]/30 hover:shadow-[0_12px_28px_rgba(46,102,166,0.14)]"
   >
-    <span className="absolute -top-2 right-2 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#2e66a6] px-1 text-[10px] font-extrabold leading-none text-white shadow-sm">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/8 text-[#2e66a6] transition group-hover:bg-[#2e66a6]/12">
+      {Icon ? <Icon size={19} /> : null}
+    </span>
+    <span className="min-w-0 pr-7">
+      <span className="block whitespace-nowrap text-[10px] font-bold text-slate-700">{label}</span>
+    </span>
+    <span className="absolute right-3 top-2.5 flex h-6 min-w-9 items-center justify-center rounded-lg bg-[#2e66a6] px-2 text-[11px] font-extrabold leading-none text-white shadow-sm">
       {numberFormat.format(Number(value || 0))}
     </span>
-    <span className="whitespace-nowrap">{label}</span>
   </button>
 );
 
@@ -2070,44 +2075,82 @@ const AdminDashboard = () => {
   return (
     <main className="mx-auto w-full max-w-[1600px] px-1 py-6">
       <div className="space-y-4">
-        <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h1 className="text-xl font-extrabold text-slate-900">Admin Dashboard</h1>
-              <p className="mt-1 text-xs text-slate-500">Compact system-wide analysis of users, jobs, applications, verification, engagement, and operations.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              <HeaderStatusCard label="Pending Jobseeker" value={kpis.pendingJobseekers} onClick={() => navigate("/admin/dashboard/pending-seekers")} />
-              <HeaderStatusCard label="Pending Employers" value={kpis.pendingEmployers} onClick={() => navigate("/admin/dashboard/pending-employers")} />
-              <HeaderStatusCard label="Request Edit" value={kpis.pendingEditRequests} onClick={() => navigate("/admin/employer-job-edit-requests")} />
-            </div>
+        <header className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -right-12 -top-20 h-56 w-[520px] rounded-[50%] bg-[#2e66a6]/[0.045] blur-2xl" />
+            <div className="absolute right-24 top-16 h-24 w-[440px] rotate-[-8deg] rounded-[50%] border-t border-[#2e66a6]/10" />
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-            <button type="button" onClick={() => openExportPassword("all", "Export All Records")} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-60">
-              <Download size={14} /> Export All Records
-            </button>
-            <button type="button" onClick={() => openExportPassword("filtered", "Filter Records")} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-60">
-              <Filter size={14} /> Filter Records
-            </button>
-            <button type="button" onClick={() => openExportPassword("report", "AGAPAY Reports")} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60">
-              <Download size={14} /> AGAPAY Reports
-            </button>
 
-            <label className="ml-auto inline-flex h-9 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
-              <span className="whitespace-nowrap">Dummy Data</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={dummyMode}
-                onClick={() => setDummyMode((value) => !value)}
-                className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}
-              >
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
+          <div className="relative px-5 pb-4 pt-5 lg:px-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-2xl bg-white shadow-[0_10px_28px_rgba(46,102,166,0.14)] ring-1 ring-[#2e66a6]/10">
+                  <img
+                    src="/images/dashboardtile.png"
+                    alt="Dashboard analytics"
+                    className="h-[66px] w-[66px] object-contain"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 sm:text-[30px]">
+                    Admin Dashboard
+                  </h1>
+                  <p className="mt-1 max-w-[620px] text-xs leading-5 text-slate-500">
+                    Compact system-wide analysis of users, jobs, applications, verification, engagement, and operations.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 xl:justify-end">
+                <HeaderStatusCard
+                  label="Pending Jobseeker"
+                  value={kpis.pendingJobseekers}
+                  icon={UserRoundMinus}
+                  onClick={() => navigate("/admin/dashboard/pending-seekers")}
+                />
+                <HeaderStatusCard
+                  label="Pending Employers"
+                  value={kpis.pendingEmployers}
+                  icon={Building2}
+                  onClick={() => navigate("/admin/dashboard/pending-employers")}
+                />
+                <HeaderStatusCard
+                  label="Request Edit"
+                  value={kpis.pendingEditRequests}
+                  icon={FaFileAlt}
+                  onClick={() => navigate("/admin/employer-job-edit-requests")}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3.5">
+              <button type="button" onClick={() => openExportPassword("all", "Export All Records")} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-xs font-bold text-[#2e66a6] shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 disabled:opacity-60">
+                <Download size={15} /> Export All Records
               </button>
-              <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
-                {dummyMode ? "ON" : "OFF"}
-              </span>
-            </label>
+              <button type="button" onClick={() => openExportPassword("filtered", "Filter Records")} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-xs font-bold text-[#2e66a6] shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 disabled:opacity-60">
+                <Filter size={15} /> Filter Records
+              </button>
+              <button type="button" onClick={() => openExportPassword("report", "AGAPAY Reports")} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-xs font-bold text-white shadow-[0_7px_18px_rgba(46,102,166,0.24)] transition hover:bg-[#255487] disabled:opacity-60">
+                <Activity size={15} /> AGAPAY Reports
+              </button>
+
+              <div className="ml-auto hidden h-9 w-px bg-slate-200 lg:block" />
+              <label className="inline-flex h-10 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 shadow-sm">
+                <span className="whitespace-nowrap">Dummy Data</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={dummyMode}
+                  onClick={() => setDummyMode((value) => !value)}
+                  className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}
+                >
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
+                </button>
+                <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
+                  {dummyMode ? "ON" : "OFF"}
+                </span>
+              </label>
+            </div>
           </div>
         </header>
 
