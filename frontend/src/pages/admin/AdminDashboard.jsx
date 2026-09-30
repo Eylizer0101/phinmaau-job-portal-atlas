@@ -173,24 +173,21 @@ const getChartShadow = (index = 0) => {
 const getDonutStops = (rows = [], total = 0, colorMap = {}) => {
   let cursor = 0;
   const stops = [];
+
   rows.forEach((item, index) => {
     const value = Number(item?.value || 0);
     if (!value || !total) return;
+
     const start = cursor;
     cursor += (value / total) * 100;
-    const mapped = colorMap[item.name];
-    const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
-    const core = mapped || base;
-    const lightStop = Math.min(cursor, start + (cursor - start) * 0.16);
-    const midStop = Math.min(cursor, start + (cursor - start) * 0.62);
-    const darkStop = Math.max(start, cursor - (cursor - start) * 0.10);
-    stops.push(
-      `${mapped || light} ${start}% ${lightStop}%`,
-      `${core} ${lightStop}% ${midStop}%`,
-      `${core} ${midStop}% ${darkStop}%`,
-      `${mapped || dark} ${darkStop}% ${cursor}%`,
-    );
+
+    const color =
+      colorMap[item.name] ||
+      colors[index % colors.length];
+
+    stops.push(`${color} ${start}% ${cursor}%`);
   });
+
   return stops;
 };
 
@@ -1227,14 +1224,26 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
   return (
     <div className="flex min-h-40 flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
       <div
-        className="relative mx-auto h-32 w-32 rounded-full"
+        className="relative mx-auto h-32 w-32 overflow-hidden rounded-full"
         style={{
           background: `conic-gradient(${stops.join(",")})`,
           boxShadow:
-            "0 3px 9px rgba(15,23,42,.08)",
+            "inset 0 1px 0 rgba(255,255,255,.32), 0 5px 12px rgba(15,23,42,.10)",
+          filter: "saturate(1.04)",
         }}
       >
-        <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
+        <div
+          className="pointer-events-none absolute inset-0 rounded-full"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.04) 46%, rgba(15,23,42,.08) 100%)",
+            WebkitMaskImage:
+              "radial-gradient(circle, transparent 0 46%, #000 47% 100%)",
+            maskImage:
+              "radial-gradient(circle, transparent 0 46%, #000 47% 100%)",
+          }}
+        />
+        <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white shadow-[inset_0_1px_2px_rgba(15,23,42,.05)]">
           <span className="text-2xl font-extrabold text-slate-800">
             {numberFormat.format(total)}
           </span>
@@ -1300,14 +1309,26 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
     <div className="flex min-h-52 items-center justify-center">
       <div className="flex w-fit max-w-full flex-col items-center justify-center gap-5 sm:flex-row sm:gap-6">
         <div
-          className="relative h-40 w-40 shrink-0 rounded-full"
+          className="relative h-40 w-40 shrink-0 overflow-hidden rounded-full"
           style={{
             background: donutBackground,
             boxShadow:
-              "0 3px 10px rgba(15,23,42,.08)",
+              "inset 0 1px 0 rgba(255,255,255,.34), 0 6px 14px rgba(15,23,42,.11)",
+            filter: "saturate(1.04)",
           }}
         >
-          <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
+          <div
+            className="pointer-events-none absolute inset-0 rounded-full"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.04) 46%, rgba(15,23,42,.08) 100%)",
+              WebkitMaskImage:
+                "radial-gradient(circle, transparent 0 50%, #000 51% 100%)",
+              maskImage:
+                "radial-gradient(circle, transparent 0 50%, #000 51% 100%)",
+            }}
+          />
+          <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center shadow-[inset_0_1px_2px_rgba(15,23,42,.05)]">
             <span className="text-[11px] font-semibold text-slate-500">Total</span>
             <span className="text-3xl font-extrabold leading-none text-slate-800">
               {numberFormat.format(total)}
@@ -1675,7 +1696,12 @@ const HireRateByCampusCard = ({ data = [] }) => {
               <div className="flex h-32 w-full items-end justify-center rounded-lg bg-slate-50 px-3 pt-2">
                 <div
                   className="w-full max-w-[68px] rounded-t-lg transition-all"
-                  style={{ height: `${Math.max(4, (value / max) * 100)}%`, backgroundColor: colors[index % colors.length] }}
+                  style={{
+                    height: `${Math.max(4, (value / max) * 100)}%`,
+                    backgroundImage: getChartGradient(index, 180),
+                    boxShadow: getChartShadow(index),
+                    border: "1px solid rgba(15,23,42,.035)",
+                  }}
                 />
               </div>
               <span className="text-center text-[10px] font-bold leading-4 text-slate-700">{item.name}</span>
