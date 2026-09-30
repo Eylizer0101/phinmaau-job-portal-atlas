@@ -151,26 +151,26 @@ const colors = [
 ];
 
 const chartColorPalettes = [
-  ["#58b8f4", "#1976b9", "#0c4f8a"],
-  ["#43d6a0", "#12a873", "#087553"],
-  ["#ffc652", "#ee9d00", "#bf7000"],
-  ["#b074f6", "#7c3fd1", "#561694"],
-  ["#ff6b78", "#e52b3a", "#b31321"],
-  ["#b0bac8", "#738096", "#4d596c"],
-  ["#5dd9ef", "#11a9c7", "#08738c"],
+  ["#62aee4", "#2e76ad", "#235f91"],
+  ["#48c99b", "#20a878", "#17845f"],
+  ["#f7bf55", "#e5a126", "#bd7e18"],
+  ["#9a8bea", "#7668d7", "#5e52ba"],
+  ["#ef7379", "#d94a52", "#b73740"],
+  ["#a8b2bf", "#7b8798", "#657183"],
+  ["#63c7d9", "#2ca9bf", "#23869a"],
 ];
 
 const getChartGradient = (index = 0, angle = 180) => {
   const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
   return [
-    "linear-gradient(180deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.08) 28%, rgba(255,255,255,0) 54%)",
-    `linear-gradient(${angle}deg, ${light} 0%, ${base} 50%, ${dark} 100%)`,
+    "linear-gradient(180deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.035) 30%, rgba(255,255,255,0) 56%)",
+    `linear-gradient(${angle}deg, ${light} 0%, ${base} 56%, ${dark} 100%)`,
   ].join(", ");
 };
 
 const getChartShadow = (index = 0) => {
   const [, base] = chartColorPalettes[index % chartColorPalettes.length];
-  return `0 6px 12px ${base}35, inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 3px rgba(15,23,42,.18)`;
+  return `0 3px 7px ${base}24, inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 2px rgba(15,23,42,.10)`;
 };
 
 const getDonutStops = (rows = [], total = 0, colorMap = {}) => {
@@ -184,9 +184,9 @@ const getDonutStops = (rows = [], total = 0, colorMap = {}) => {
     const mapped = colorMap[item.name];
     const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
     const core = mapped || base;
-    const lightStop = Math.min(cursor, start + (cursor - start) * 0.22);
-    const midStop = Math.min(cursor, start + (cursor - start) * 0.58);
-    const darkStop = Math.max(start, cursor - (cursor - start) * 0.16);
+    const lightStop = Math.min(cursor, start + (cursor - start) * 0.16);
+    const midStop = Math.min(cursor, start + (cursor - start) * 0.62);
+    const darkStop = Math.max(start, cursor - (cursor - start) * 0.10);
     stops.push(
       `${mapped || light} ${start}% ${lightStop}%`,
       `${core} ${lightStop}% ${midStop}%`,
@@ -1234,7 +1234,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
         style={{
           background: `conic-gradient(${stops.join(",")})`,
           boxShadow:
-            "0 10px 22px rgba(15,23,42,.14), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -6px 12px rgba(15,23,42,.12)",
+            "0 5px 14px rgba(15,23,42,.10), inset 0 1px 1px rgba(255,255,255,.32), inset 0 -3px 7px rgba(15,23,42,.08)",
         }}
       >
         <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
@@ -1307,7 +1307,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
           style={{
             background: donutBackground,
             boxShadow:
-              "0 10px 24px rgba(15,23,42,.14), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -6px 14px rgba(15,23,42,.12)",
+              "0 5px 15px rgba(15,23,42,.10), inset 0 1px 1px rgba(255,255,255,.32), inset 0 -3px 8px rgba(15,23,42,.08)",
           }}
         >
           <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
@@ -1375,10 +1375,10 @@ const TrendChart = ({ data = [] }) => {
   };
 
   const series = [
-    ["registrations", "Registrations", "#93c5fd"],
-    ["jobs", "Jobs", "#34d399"],
-    ["applications", "Applications", "#fbbf24"],
-    ["hires", "Hires", "#a78bfa"],
+    ["registrations", "Registrations", "#78afe0", "#4f8fc7"],
+    ["jobs", "Jobs", "#45c99b", "#24a879"],
+    ["applications", "Applications", "#f2bd4b", "#df9d25"],
+    ["hires", "Hires", "#9b8ae8", "#7668d7"],
   ];
 
   if (!data.length) {
@@ -1437,6 +1437,22 @@ const TrendChart = ({ data = [] }) => {
           role="img"
           aria-label="Monthly analytics grouped bar chart"
         >
+          <defs>
+            {series.map(([key, , color, endColor]) => (
+              <linearGradient
+                key={`trend-gradient-${key}`}
+                id={`trend-gradient-${key}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor={color} />
+                <stop offset="58%" stopColor={color} />
+                <stop offset="100%" stopColor={endColor} />
+              </linearGradient>
+            ))}
+          </defs>
           {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
             const y = top + plotHeight - ratio * plotHeight;
             return (
@@ -1482,7 +1498,7 @@ const TrendChart = ({ data = [] }) => {
 
             return (
               <g key={`${item.key || item.label}-${dataIndex}`}>
-                {series.map(([key, label, color], seriesIndex) => {
+                {series.map(([key, label, color, endColor], seriesIndex) => {
                   const value = Number(item[key] || 0);
                   const barHeight = (value / max) * plotHeight;
                   const x = groupStart + seriesIndex * (barWidth + barGap);
@@ -1496,8 +1512,10 @@ const TrendChart = ({ data = [] }) => {
                       width={barWidth}
                       height={Math.max(0, barHeight)}
                       rx={Math.min(4, barWidth / 3)}
-                      fill={color}
-                      opacity="0.98"
+                      fill={`url(#trend-gradient-${key})`}
+                      opacity="0.96"
+                      stroke="rgba(255,255,255,0.14)"
+                      strokeWidth="0.7"
                     >
                       <title>{`${label}: ${numberFormat.format(value)}`}</title>
                     </rect>
