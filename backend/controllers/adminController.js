@@ -6091,18 +6091,56 @@ const exportProcessingTime = (application = {}) => {
 
 const exportAddressParts = (profile = {}, employer = false) => {
   if (employer) {
+    const locationParts = exportText(profile.regionCity)
+      .split(' - ')
+      .map((part) => exportText(part))
+      .filter(Boolean);
+
+    const storedRegion = exportText(profile.region);
+    const storedProvince = exportText(profile.province);
+    const storedCity = exportText(profile.cityMunicipality || profile.city || profile.municipality);
+
     return {
-      region: exportText(profile.region),
-      province: exportText(profile.province),
-      city: exportText(profile.cityMunicipality || profile.city || profile.municipality || profile.regionCity),
+      region: storedRegion || locationParts[0] || '',
+      province: storedProvince || locationParts[1] || '',
+      city: storedCity || locationParts.slice(2).join(' - ') || '',
       street: exportText(profile.streetAddress || profile.companyAddress),
     };
   }
+
+  const storedRegion = exportText(profile.region);
+  const storedProvince = exportText(profile.province);
+  const storedCity = exportText(profile.cityMunicipality || profile.cityProvince || profile.city || profile.municipality);
+  const storedStreet = exportText(profile.streetAddress);
+
+  if (storedRegion || storedProvince || storedCity || storedStreet) {
+    return {
+      region: storedRegion,
+      province: storedProvince,
+      city: storedCity,
+      street: storedStreet || exportText(profile.address),
+    };
+  }
+
+  const addressParts = exportText(profile.address)
+    .split(',')
+    .map((part) => exportText(part))
+    .filter(Boolean);
+
+  if (addressParts.length >= 4) {
+    return {
+      region: addressParts[addressParts.length - 1] || '',
+      province: addressParts[addressParts.length - 2] || '',
+      city: addressParts[addressParts.length - 3] || '',
+      street: addressParts.slice(0, addressParts.length - 3).join(', '),
+    };
+  }
+
   return {
-    region: exportText(profile.region),
-    province: exportText(profile.province),
-    city: exportText(profile.cityMunicipality || profile.cityProvince || profile.city || profile.municipality),
-    street: exportText(profile.streetAddress || profile.address),
+    region: '',
+    province: '',
+    city: '',
+    street: exportText(profile.address),
   };
 };
 
@@ -6152,7 +6190,7 @@ const addExportDataRows = (worksheet, startRow, rows) => {
       const cell = row.getCell(columnIndex + 1);
       cell.value = value === undefined || value === null ? '' : value;
       cell.font = { name: 'Arial', size: 9 };
-      cell.alignment = { vertical: 'top', wrapText: false };
+      cell.alignment = { vertical: 'top', wrapText: true };
       cell.border = {
         top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
         left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
@@ -6160,6 +6198,7 @@ const addExportDataRows = (worksheet, startRow, rows) => {
         right: { style: 'thin', color: { argb: 'FFD0D0D0' } },
       };
     });
+    row.height = 30;
   });
 };
 
@@ -6249,35 +6288,8 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     }));
 
     const applicationSheet = workbook.addWorksheet('Applications');
-    applicationSheet.getCell('A1').value = 'Campus';
-    applicationSheet.getCell('B1').value = 'AU MAIN';
-    applicationSheet.getCell('C1').value = 'AU SOUTH';
-    applicationSheet.getCell('D1').value = 'AU SAN JOSE';
-    applicationSheet.getCell('A2').value = 'Hired Rate Percentage';
-
-    const campusOrder = ['AU Main', 'AU South', 'AU San Jose'];
-    campusOrder.forEach((campus, index) => {
-      const campusApplications = filteredApplications.filter((application) => {
-        const seeker = userById.get(String(application.jobseeker || ''));
-        return getJobseekerCampus(seeker) === campus;
-      });
-      const hired = campusApplications.filter((application) => String(application.status || '').toLowerCase() === 'hired').length;
-      applicationSheet.getCell(2, index + 2).value = campusApplications.length ? `${((hired / campusApplications.length) * 100).toFixed(1)}%` : '0%';
-    });
-
-    for (let rowNumber = 1; rowNumber <= 2; rowNumber += 1) {
-      const row = applicationSheet.getRow(rowNumber);
-      for (let column = 1; column <= 4; column += 1) {
-        const cell = row.getCell(column);
-        cell.font = { name: 'Arial', size: 9, bold: true };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowNumber === 1 ? 'FFD9D9D9' : 'FFF2F2F2' } };
-        cell.alignment = { horizontal: column === 1 ? 'left' : 'center', vertical: 'middle' };
-        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-      }
-    }
-
-    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [7, 16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 32, 18, 22, 30, 24, 20, 18, 15, 16], { titleRow: 4, headerRow: 7 });
-    addExportDataRows(applicationSheet, 8, filteredApplications.map((application, index) => {
+    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [7, 16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 32, 18, 22, 30, 24, 20, 18, 15, 16]);
+    addExportDataRows(applicationSheet, 5, filteredApplications.map((application, index) => {
       const seeker = userById.get(String(application.jobseeker || '')) || {};
       const profile = seeker.jobSeekerProfile || {};
       const job = jobById.get(String(application.job || '')) || {};
