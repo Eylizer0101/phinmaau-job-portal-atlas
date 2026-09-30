@@ -1115,6 +1115,7 @@ const EditJob = () => {
   const [success, setSuccess] = useState('');
 
   const [job, setJob] = useState(null);
+  const [approvedEditSections, setApprovedEditSections] = useState(null);
 
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState({});
@@ -1245,6 +1246,16 @@ const EditJob = () => {
   }, [job?.category, storedUser]);
 
   const isBusy = savingDraft || publishing || savingChanges || deleting || togglingStatus;
+
+  const canEditSection = useCallback(
+    (sectionName) => !Array.isArray(approvedEditSections) || approvedEditSections.includes(sectionName),
+    [approvedEditSections]
+  );
+
+  const isSectionFieldDisabled = useCallback(
+    (sectionName) => isBusy || !canEditSection(sectionName),
+    [isBusy, canEditSection]
+  );
 
   const inputBase =
     'w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-60 disabled:bg-gray-50 disabled:cursor-not-allowed';
@@ -1699,46 +1710,63 @@ const EditJob = () => {
   ]);
 
   const validateStrict = () => {
-    const titleError = getJobTitleError(formData.title);
-    if (titleError) return titleError;
-    if (!String(formData.jobType || '').trim()) return 'Employment type is required';
-    if (!String(formData.workMode || '').trim()) return 'Work mode is required';
-    if (!String(formData.location || '').trim()) return 'Complete work address is required';
-    if (String(formData.location || '').trim().length > 150) return 'Complete work address must not exceed 150 characters';
-    if (!String(formData.educationLevel || '').trim()) return 'Education level is required';
-    const descriptionText = getRichTextPlainText(formData.description);
-    const requirementsText = getRichTextPlainText(formData.requirements);
-    if (!descriptionText) return 'Job description is required';
-    if (descriptionText.length < JOB_DESCRIPTION_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 500 to 2,000 characters';
-    if (!requirementsText) return 'Job requirements are required';
-    if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 500 to 2,000 characters';
-    if (!vacanciesValid) return 'Vacancies must be a whole number from 1 to 50';
-    if (!formData.applicationDeadline) return 'Application deadline is required';
-    if (!isDeadlineValid) return 'Application deadline must be from today through 6 months from today';
-    if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
-      return 'Minimum and maximum salary are required unless salary is hidden';
+    if (canEditSection('Job Details')) {
+      const titleError = getJobTitleError(formData.title);
+      if (titleError) return titleError;
+      if (!String(formData.jobType || '').trim()) return 'Employment type is required';
+      if (!String(formData.workMode || '').trim()) return 'Work mode is required';
+      if (!vacanciesValid) return 'Vacancies must be a whole number from 1 to 50';
+      const descriptionText = getRichTextPlainText(formData.description);
+      if (!descriptionText) return 'Job description is required';
+      if (descriptionText.length < JOB_DESCRIPTION_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 500 to 2,000 characters';
     }
-    if (!formData.hideSalary && !salaryValid) {
-      return 'Salary must be ₱1–₱999,999, and maximum must be at least the minimum';
+
+    if (canEditSection('Requirements & Qualifications')) {
+      if (!String(formData.educationLevel || '').trim()) return 'Education level is required';
+      const requirementsText = getRichTextPlainText(formData.requirements);
+      if (!requirementsText) return 'Job requirements are required';
+      if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 500 to 2,000 characters';
+
+      const exp = normalizeExperienceLevel(formData.experienceLevel);
+      if (!EXPERIENCE_LEVELS.includes(exp)) return 'Invalid experience level';
+
+      const edu = String(formData.educationLevel || '').trim();
+      if (!edu) return 'Education level is required';
+      if (!EDUCATION_LEVELS.includes(edu)) return 'Invalid education level';
     }
-    if (!skillsCountValid) return 'Skills must be 10 or fewer';
-    if (skillsAll.some((skill) => skill.length > 50)) return 'Each skill must not exceed 50 characters';
-    if (customBenefits.some((benefit) => benefit.length > 50)) return 'Each custom benefit must not exceed 50 characters';
 
-    const exp = normalizeExperienceLevel(formData.experienceLevel);
-    if (!EXPERIENCE_LEVELS.includes(exp)) return 'Invalid experience level';
+    if (canEditSection('Skills & Benefits')) {
+      if (!skillsCountValid) return 'Skills must be 10 or fewer';
+      if (skillsAll.some((skill) => skill.length > 50)) return 'Each skill must not exceed 50 characters';
+      if (customBenefits.some((benefit) => benefit.length > 50)) return 'Each custom benefit must not exceed 50 characters';
+    }
 
-    const edu = String(formData.educationLevel || '').trim();
-    if (!edu) return 'Education level is required';
-    if (!EDUCATION_LEVELS.includes(edu)) return 'Invalid education level';
+    if (canEditSection('Work Locations')) {
+      if (!String(formData.location || '').trim()) return 'Complete work address is required';
+      if (String(formData.location || '').trim().length > 150) return 'Complete work address must not exceed 150 characters';
 
-    const relocate = String(formData.willingToRelocate || '').trim();
-    if (!relocate) return 'Willing to relocate option is required';
-    if (!WILLING_TO_RELOCATE_OPTIONS.includes(relocate)) return 'Invalid relocate option';
+      const relocate = String(formData.willingToRelocate || '').trim();
+      if (!relocate) return 'Willing to relocate option is required';
+      if (!WILLING_TO_RELOCATE_OPTIONS.includes(relocate)) return 'Invalid relocate option';
 
-    if (locationImageFile) {
-      const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
-      if (!allowed.includes(locationImageFile.type)) return 'Location image must be JPG, JPEG, or PNG only';
+      if (locationImageFile) {
+        const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowed.includes(locationImageFile.type)) return 'Location image must be JPG, JPEG, or PNG only';
+      }
+    }
+
+    if (canEditSection('Deadline')) {
+      if (!formData.applicationDeadline) return 'Application deadline is required';
+      if (!isDeadlineValid) return 'Application deadline must be from today through 6 months from today';
+    }
+
+    if (canEditSection('Salary')) {
+      if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
+        return 'Minimum and maximum salary are required unless salary is hidden';
+      }
+      if (!formData.hideSalary && !salaryValid) {
+        return 'Salary must be ₱1–₱999,999, and maximum must be at least the minimum';
+      }
     }
 
     return '';
@@ -1791,35 +1819,41 @@ const EditJob = () => {
 
   const buildPayload = ({ mode }) => {
     const payload = new FormData();
+    const appendSectionField = (sectionName, key, value) => {
+      if (canEditSection(sectionName)) payload.append(key, value);
+    };
 
-    payload.append('title', normalizeSingleLine(formData.title));
-    payload.append('location', String(formData.location || '').trim());
-    payload.append('locationProvince', '');
-    payload.append('locationCity', '');
-    payload.append('description', String(formData.description || '').trim());
-    payload.append('requirements', String(formData.requirements || '').trim());
-    payload.append('jobType', formData.jobType);
-    payload.append('salaryMin', formData.salaryMin === '' ? '' : String(Number(formData.salaryMin)));
-    payload.append('salaryMax', formData.salaryMax === '' ? '' : String(Number(formData.salaryMax)));
-    payload.append('hideSalary', String(Boolean(formData.hideSalary)));
-    payload.append('isUrgent', String(Boolean(formData.isUrgent)));
-    payload.append('workMode', formData.workMode);
-    payload.append('applicationDeadline', formData.applicationDeadline || '');
-    payload.append('vacancies', formData.vacancies ? String(Number(formData.vacancies)) : '');
-    payload.append('experienceLevel', normalizeExperienceLevel(formData.experienceLevel));
-    payload.append('skillsRequired', skills.join(', '));
-    payload.append('educationLevel', String(formData.educationLevel || '').trim());
-    payload.append('category', companyCategoryDefault || normalizeCategory(storedUser?.employerProfile?.industry));
+    appendSectionField('Job Details', 'title', normalizeSingleLine(formData.title));
+    appendSectionField('Job Details', 'jobType', formData.jobType);
+    appendSectionField('Job Details', 'isUrgent', String(Boolean(formData.isUrgent)));
+    appendSectionField('Job Details', 'workMode', formData.workMode);
+    appendSectionField('Job Details', 'vacancies', formData.vacancies ? String(Number(formData.vacancies)) : '');
+    appendSectionField('Job Details', 'category', companyCategoryDefault || normalizeCategory(storedUser?.employerProfile?.industry));
 
-    payload.append('openToFreshGraduates', String(formData.openToFreshGraduates));
-    payload.append('otherBenefits', String(formData.otherBenefits || '').trim());
-    payload.append('willingToRelocate', String(formData.willingToRelocate || '').trim());
-    payload.append('perksAndBenefits', JSON.stringify(formData.perksAndBenefits || []));
+    appendSectionField('Job Details', 'description', String(formData.description || '').trim());
+    appendSectionField('Requirements & Qualifications', 'requirements', String(formData.requirements || '').trim());
+    appendSectionField('Requirements & Qualifications', 'experienceLevel', normalizeExperienceLevel(formData.experienceLevel));
+    appendSectionField('Requirements & Qualifications', 'educationLevel', String(formData.educationLevel || '').trim());
+    appendSectionField('Requirements & Qualifications', 'openToFreshGraduates', String(formData.openToFreshGraduates));
 
-    payload.append('locationLatitude', String(formData.locationLatitude || ''));
-    payload.append('locationLongitude', String(formData.locationLongitude || ''));
+    appendSectionField('Skills & Benefits', 'skillsRequired', skills.join(', '));
+    appendSectionField('Skills & Benefits', 'otherBenefits', String(formData.otherBenefits || '').trim());
+    appendSectionField('Skills & Benefits', 'perksAndBenefits', JSON.stringify(formData.perksAndBenefits || []));
 
-    if (locationImageFile) {
+    appendSectionField('Work Locations', 'location', String(formData.location || '').trim());
+    appendSectionField('Work Locations', 'locationProvince', '');
+    appendSectionField('Work Locations', 'locationCity', '');
+    appendSectionField('Work Locations', 'willingToRelocate', String(formData.willingToRelocate || '').trim());
+    appendSectionField('Work Locations', 'locationLatitude', String(formData.locationLatitude || ''));
+    appendSectionField('Work Locations', 'locationLongitude', String(formData.locationLongitude || ''));
+
+    appendSectionField('Salary', 'salaryMin', formData.salaryMin === '' ? '' : String(Number(formData.salaryMin)));
+    appendSectionField('Salary', 'salaryMax', formData.salaryMax === '' ? '' : String(Number(formData.salaryMax)));
+    appendSectionField('Salary', 'hideSalary', String(Boolean(formData.hideSalary)));
+
+    appendSectionField('Deadline', 'applicationDeadline', formData.applicationDeadline || '');
+
+    if (locationImageFile && canEditSection('Work Locations')) {
       payload.append('locationImage', locationImageFile);
     }
 
@@ -1954,6 +1988,22 @@ const EditJob = () => {
         }
 
         const jobData = res.data.job;
+
+        try {
+          const editStatusResponse = await axios.get(
+            `https://phinmaau-job-portal-atlas.onrender.com/api/job-edit-requests/job/${id}/status`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const approvedRequest = editStatusResponse.data?.approvedRequest;
+          const requestedSections = Array.isArray(approvedRequest?.requestedSections)
+            ? approvedRequest.requestedSections.filter(Boolean)
+            : null;
+          setApprovedEditSections(requestedSections?.length ? requestedSections : null);
+        } catch (editStatusError) {
+          console.error('Unable to load approved edit sections:', editStatusError);
+          setApprovedEditSections(null);
+        }
+
         const publishedAtValue = jobData.publishedAt || jobData.createdAt;
         const publishedAt = publishedAtValue ? new Date(publishedAtValue) : null;
         const editUnlockedUntil = jobData.editUnlockedUntil ? new Date(jobData.editUnlockedUntil) : null;
@@ -2550,7 +2600,7 @@ const EditJob = () => {
                               className={inputClass(!!fieldErrors.title)}
                               placeholder="e.g., Junior Web Developer"
                               maxLength={100}
-                              disabled={isBusy}
+                              disabled={isSectionFieldDisabled('Job Details')}
                             />
                           </Field>
                           <label className="mt-4 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 cursor-pointer">
@@ -2559,6 +2609,7 @@ const EditJob = () => {
                               checked={Boolean(formData.isUrgent)}
                               onChange={(e) => setFormData((prev) => ({ ...prev, isUrgent: e.target.checked }))}
                               className="mt-1 h-4 w-4 accent-orange-500"
+                              disabled={isSectionFieldDisabled('Job Details')}
                             />
                             <span>
                               <span className="block text-sm font-semibold text-gray-900">Urgently Needed</span>
@@ -2577,7 +2628,7 @@ const EditJob = () => {
                             onChange={handleChange}
                             onBlur={() => markTouched('jobType')}
                             className={`${selectClass} ${fieldErrors.jobType ? 'border-red-300' : ''}`}
-                            disabled={isBusy}
+                            disabled={isSectionFieldDisabled('Job Details')}
                           >
                             <option value="" disabled>Choose employment type</option>
                             {jobTypes.map((type) => (
@@ -2593,7 +2644,7 @@ const EditJob = () => {
                             onChange={handleChange}
                             onBlur={() => markTouched('workMode')}
                             className={`${selectClass} ${fieldErrors.workMode ? 'border-red-300' : ''}`}
-                            disabled={isBusy}
+                            disabled={isSectionFieldDisabled('Job Details')}
                           >
                             <option value="" disabled>Choose work mode</option>
                             {workModes.map((m) => (
@@ -2623,7 +2674,7 @@ const EditJob = () => {
                                 step="1"
                                 placeholder="Enter number of vacancies"
                                 className={inputClass(!!fieldErrors.vacancies)}
-                                disabled={isBusy}
+                                disabled={isSectionFieldDisabled('Job Details')}
                               />
                             </Field>
 
@@ -2642,7 +2693,7 @@ const EditJob = () => {
                                 max={maxDeadlineISO}
                                 placeholder="Select application deadline"
                                 className={inputClass(!!fieldErrors.applicationDeadline)}
-                                disabled={isBusy}
+                                disabled={isSectionFieldDisabled('Deadline')}
                               />
                             </Field>
                           </div>
@@ -2678,7 +2729,7 @@ const EditJob = () => {
                               placeholder={formData.hideSalary ? 'Salary hidden' : 'Min'}
                               maxLength={7}
                               required={!formData.hideSalary}
-                              disabled={isBusy || formData.hideSalary}
+                              disabled={isSectionFieldDisabled('Salary') || formData.hideSalary}
                             />
                           </div>
                         </Field>
@@ -2701,7 +2752,7 @@ const EditJob = () => {
                               placeholder={formData.hideSalary ? 'Salary hidden' : 'Max'}
                               maxLength={7}
                               required={!formData.hideSalary}
-                              disabled={isBusy || formData.hideSalary}
+                              disabled={isSectionFieldDisabled('Salary') || formData.hideSalary}
                             />
                           </div>
                         </Field>
@@ -2718,7 +2769,8 @@ const EditJob = () => {
                           checked={Boolean(formData.hideSalary)}
                           onChange={(e) => setFormData((prev) => ({ ...prev, hideSalary: e.target.checked }))}
                           className="mt-1 h-4 w-4 accent-[#2e66a6]"
-                        />
+                        disabled={isSectionFieldDisabled('Salary')}
+                          />
                         <span>
                           <span className="block text-sm font-semibold text-gray-900">Hide salary from jobseekers</span>
                           <span className="block text-xs leading-5 text-gray-500">
@@ -2751,7 +2803,7 @@ const EditJob = () => {
                               onChange={handleChange}
                               onBlur={() => markTouched('openToFreshGraduates')}
                               className="peer sr-only"
-                              disabled={isBusy}
+                              disabled={isSectionFieldDisabled('Requirements & Qualifications')}
                             />
                             <div className="h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-[#2e66a6] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-5"></div>
                           </label>
@@ -2767,7 +2819,7 @@ const EditJob = () => {
                             onChange={handleChange}
                             onBlur={() => markTouched('experienceLevel')}
                             className={`${selectClass} ${fieldErrors.experienceLevel ? 'border-red-300' : ''}`}
-                            disabled={isBusy}
+                            disabled={isSectionFieldDisabled('Requirements & Qualifications')}
                           >
                             <option value="" disabled>Choose required experience</option>
                             {experienceLevels.map((level) => (
@@ -2783,7 +2835,7 @@ const EditJob = () => {
                             onChange={handleChange}
                             onBlur={() => markTouched('educationLevel')}
                             className={`${selectClass} ${fieldErrors.educationLevel ? 'border-red-300' : ''}`}
-                            disabled={isBusy}
+                            disabled={isSectionFieldDisabled('Requirements & Qualifications')}
                           >
                             <option value="" disabled>Choose educational requirement</option>
                             {educationLevels.map((lvl) => (
@@ -2805,7 +2857,7 @@ const EditJob = () => {
                       
                         error={fieldErrors.description}
                       >
-                        <div><RichTextEditor id="description" name="description" value={formData.description} onChange={handleChange} onBlur={() => markTouched('description')} rows={7} error={Boolean(fieldErrors.description)} placeholder="Write the role overview and day-to-day responsibilities..." disabled={isBusy} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.description).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
+                        <div><RichTextEditor id="description" name="description" value={formData.description} onChange={handleChange} onBlur={() => markTouched('description')} rows={7} error={Boolean(fieldErrors.description)} placeholder="Write the role overview and day-to-day responsibilities..." disabled={isSectionFieldDisabled('Job Details')} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.description).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
                       </Field>
 
                       <Field
@@ -2814,7 +2866,7 @@ const EditJob = () => {
                     
                         error={fieldErrors.requirements}
                       >
-                        <div><RichTextEditor id="requirements" name="requirements" value={formData.requirements} onChange={handleChange} onBlur={() => markTouched('requirements')} rows={6} error={Boolean(fieldErrors.requirements)} placeholder="Must-have: ...  | Nice-to-have: ..." disabled={isBusy} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.requirements).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
+                        <div><RichTextEditor id="requirements" name="requirements" value={formData.requirements} onChange={handleChange} onBlur={() => markTouched('requirements')} rows={6} error={Boolean(fieldErrors.requirements)} placeholder="Must-have: ...  | Nice-to-have: ..." disabled={isSectionFieldDisabled('Requirements & Qualifications')} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.requirements).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
                       </Field>
                     </section>
 
@@ -2843,7 +2895,7 @@ const EditJob = () => {
                             onBlur={() => markTouched('skillsRequired')}
                             className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none disabled:cursor-not-allowed"
                             placeholder={skills.length >= 10 ? 'Maximum of 10 skills reached' : 'Type a skill'}
-                            disabled={isBusy || skills.length >= 10}
+                            disabled={isSectionFieldDisabled('Skills & Benefits') || skills.length >= 10}
                             autoComplete="off"
                             maxLength={100}
                           />
@@ -2851,7 +2903,7 @@ const EditJob = () => {
                           <button
                             type="button"
                             onClick={() => addRequiredSkill(skillInput)}
-                            disabled={isBusy || !skillInput.trim() || skills.length >= 10}
+                            disabled={isSectionFieldDisabled('Skills & Benefits') || !skillInput.trim() || skills.length >= 10}
                             className="mr-2 h-9 shrink-0 rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#24558d] disabled:cursor-not-allowed disabled:opacity-45"
                           >
                             Add
@@ -2872,7 +2924,7 @@ const EditJob = () => {
                               <button
                                 type="button"
                                 onClick={() => removeRequiredSkill(index)}
-                                disabled={isBusy}
+                                disabled={isSectionFieldDisabled('Skills & Benefits')}
                                 aria-label={`Remove ${skill}`}
                                 title={`Remove ${skill}`}
                                 className="inline-flex h-5 w-5 items-center justify-center rounded-full text-sm leading-none text-[#24558d] opacity-100 transition hover:bg-[#d9e9f8] hover:text-red-600 disabled:cursor-not-allowed"
@@ -2898,7 +2950,7 @@ const EditJob = () => {
                               key={perk}
                               type="button"
                               onClick={() => handlePerkToggle(perk)}
-                              disabled={isBusy}
+                              disabled={isSectionFieldDisabled('Skills & Benefits')}
                               className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                                 active
                                   ? 'border-[#2e66a6] bg-blue-50 text-[#2e66a6] font-semibold'
@@ -2912,9 +2964,9 @@ const EditJob = () => {
                       </div>
 
                       <Field id="otherBenefits" label="More Perks & Benefits (Optional)">
-                        <div className="flex min-h-[50px] items-center rounded-xl border border-gray-300 bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]"><input id="otherBenefits" value={customBenefitInput} onChange={(event) => setCustomBenefitInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addCustomBenefit(customBenefitInput); } }} maxLength={50} disabled={isBusy} className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none" placeholder="e.g., Paid Bereavement Leave" /><button type="button" onClick={() => addCustomBenefit(customBenefitInput)} disabled={isBusy || !customBenefitInput.trim()} className="mr-2 h-9 rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">Add</button></div>
+                        <div className="flex min-h-[50px] items-center rounded-xl border border-gray-300 bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]"><input id="otherBenefits" value={customBenefitInput} onChange={(event) => setCustomBenefitInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addCustomBenefit(customBenefitInput); } }} maxLength={50} disabled={isSectionFieldDisabled('Skills & Benefits')} className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none" placeholder="e.g., Paid Bereavement Leave" /><button type="button" onClick={() => addCustomBenefit(customBenefitInput)} disabled={isSectionFieldDisabled('Skills & Benefits') || !customBenefitInput.trim()} className="mr-2 h-9 rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">Add</button></div>
                       </Field>
-                      {customBenefits.length > 0 && <div className="flex flex-wrap gap-2">{customBenefits.map((benefit, index) => <span key={`${benefit}-${index}`} className="inline-flex items-center gap-2 rounded-xl border border-[#cdddf0] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#24558d]">{benefit}<button type="button" onClick={() => removeCustomBenefit(index)} disabled={isBusy} aria-label={`Remove ${benefit}`} className="text-base hover:text-red-600">×</button></span>)}</div>}
+                      {customBenefits.length > 0 && <div className="flex flex-wrap gap-2">{customBenefits.map((benefit, index) => <span key={`${benefit}-${index}`} className="inline-flex items-center gap-2 rounded-xl border border-[#cdddf0] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#24558d]">{benefit}<button type="button" onClick={() => removeCustomBenefit(index)} disabled={isSectionFieldDisabled('Skills & Benefits')} aria-label={`Remove ${benefit}`} className="text-base hover:text-red-600">×</button></span>)}</div>}
                     </section>
 
                     <div className="hidden border-t border-gray-100" />
@@ -2930,7 +2982,7 @@ const EditJob = () => {
                             onChange={handleChange}
                             onBlur={() => markTouched('willingToRelocate')}
                             className={`${selectClass} ${fieldErrors.willingToRelocate ? 'border-red-300' : ''}`}
-                            disabled={isBusy}
+                            disabled={isSectionFieldDisabled('Work Locations')}
                           >
                             <option value="" disabled>Choose an option</option>
                             {willingToRelocateOptions.map((option) => (
@@ -2963,7 +3015,7 @@ const EditJob = () => {
                             value={formData.location}
                             latitude={formData.locationLatitude}
                             longitude={formData.locationLongitude}
-                            disabled={isBusy}
+                            disabled={isSectionFieldDisabled('Work Locations')}
                             error={fieldErrors.location}
                             placeholder="e.g., Unit 201, ABC Building, 123 Rizal St., Brgy. San Roque, Cabanatuan City, Nueva Ecija."
                             onChange={({ address, lat, lng }) => {

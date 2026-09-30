@@ -354,14 +354,7 @@ const isAtLeast18YearsOld = (birthday = '') => {
     return false;
   }
 
-  const today = new Date();
-  const latestEligibleBirthday = new Date(
-    today.getFullYear() - 18,
-    today.getMonth(),
-    today.getDate()
-  );
-
-  return birthDate <= latestEligibleBirthday;
+  return clean <= getWorkExperienceToday();
 };
 
 const getRichTextPlainText = (value) =>
@@ -656,29 +649,6 @@ const getSalaryValidationError = (minimumSalary, maximumSalary) => {
   return '';
 };
 
-const WORK_EXPERIENCE_MINIMUM_AGE = 16;
-
-const getMinimumWorkExperienceDate = (birthday = '') => {
-  const clean = String(birthday || '').trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) return '';
-
-  const [year, month, day] = clean.split('-').map(Number);
-  const birthDate = new Date(year, month - 1, day);
-  if (
-    Number.isNaN(birthDate.getTime()) ||
-    birthDate.getFullYear() !== year ||
-    birthDate.getMonth() !== month - 1 ||
-    birthDate.getDate() !== day
-  ) {
-    return '';
-  }
-
-  const minimumDate = new Date(year + WORK_EXPERIENCE_MINIMUM_AGE, month - 1, day);
-  const minYear = minimumDate.getFullYear();
-  const minMonth = String(minimumDate.getMonth() + 1).padStart(2, '0');
-  const minDay = String(minimumDate.getDate()).padStart(2, '0');
-  return `${minYear}-${minMonth}-${minDay}`;
-};
 
 const normalizeWorkExperienceOutput = (entry) => ({
   _id: entry?._id,
@@ -2344,7 +2314,7 @@ exports.updateProfile = async (req, res) => {
         if (birthday && !isAtLeast18YearsOld(birthday)) {
           return res.status(400).json({
             success: false,
-            message: 'You must be at least 18 years old.',
+            message: 'Birthday must be a valid date on or before today.',
           });
         }
         updateData.jobSeekerProfile.birthday = birthday;
@@ -2373,10 +2343,10 @@ exports.updateProfile = async (req, res) => {
       for (const [field, label] of textProfileFields) {
         if (!requestedProfileKeys.includes(field)) continue;
         const value = String(updateData.jobSeekerProfile[field] || '').trim();
-        if (value && !hasAlphabeticCharacter(value)) {
+        if (value && !/^[\p{L}\s]+$/u.test(value)) {
           return res.status(400).json({
             success: false,
-            message: `${label} must contain at least one letter.`,
+            message: `${label} must contain letters and spaces only.`,
           });
         }
         updateData.jobSeekerProfile[field] = value;
@@ -2692,16 +2662,8 @@ exports.createWorkExperience = async (req, res) => {
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    const minimumWorkDate = getMinimumWorkExperienceDate(user?.jobSeekerProfile?.birthday);
-
     if (!isValidWorkExperienceDate(startDate) || startDate > getWorkExperienceToday()) {
       return res.status(400).json({ success: false, message: 'Start date must be a valid date on or before today.' });
-    }
-    if (minimumWorkDate && startDate < minimumWorkDate) {
-      return res.status(400).json({
-        success: false,
-        message: `Work experience start date must be on or after ${minimumWorkDate}.`,
-      });
     }
 
     const start = new Date(startDate);
@@ -2795,16 +2757,8 @@ exports.updateWorkExperience = async (req, res) => {
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    const minimumWorkDate = getMinimumWorkExperienceDate(user?.jobSeekerProfile?.birthday);
-
     if (!isValidWorkExperienceDate(startDate) || startDate > getWorkExperienceToday()) {
       return res.status(400).json({ success: false, message: 'Start date must be a valid date on or before today.' });
-    }
-    if (minimumWorkDate && startDate < minimumWorkDate) {
-      return res.status(400).json({
-        success: false,
-        message: `Work experience start date must be on or after ${minimumWorkDate}.`,
-      });
     }
     const start = new Date(startDate);
     if (Number.isNaN(start.getTime())) {
@@ -4350,13 +4304,6 @@ exports.validateResubmitDocumentToken = async (req, res) => {
       });
     }
 
-    if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
-      });
-    }
-
     return res.status(200).json({
       success: true,
       accountType,
@@ -4427,13 +4374,6 @@ exports.resubmitDocument = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'This resubmit link has already been used.',
-      });
-    }
-
-    if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
       });
     }
 

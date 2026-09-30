@@ -210,11 +210,19 @@ exports.getJobStatus = async (req, res) => {
       status: 'pending',
     }).sort({ createdAt: -1 });
 
+    const activeApprovedRequest = await JobEditRequest.findOne({
+      job: job._id,
+      employer: job.employer,
+      status: 'approved',
+      unlockUntil: { $gt: new Date() },
+    }).sort({ reviewedAt: -1, createdAt: -1 });
+
     return res.json({
       success: true,
       ...getLockState(job),
       publishedAt: getPublishedAt(job),
       pendingRequest: pendingRequest ? serializeRequest(pendingRequest) : null,
+      approvedRequest: activeApprovedRequest ? serializeRequest(activeApprovedRequest) : null,
     });
   } catch (error) {
     console.error('Get job edit status error:', error);

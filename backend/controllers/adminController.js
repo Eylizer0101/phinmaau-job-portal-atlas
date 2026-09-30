@@ -405,7 +405,6 @@ const EMPLOYER_DOC_LABELS = {
 const RESUBMIT_DAY_MS = 24 * 60 * 60 * 1000;
 const RESUBMIT_REMINDER_DAY_7 = 7 * RESUBMIT_DAY_MS;
 const RESUBMIT_REMINDER_DAY_14 = 14 * RESUBMIT_DAY_MS;
-const RESUBMIT_AUTO_DECLINE_DAY_30 = 30 * RESUBMIT_DAY_MS;
 
 const createVerificationResubmitToken = ({ userId, requestedAt, docTypes = [] }) => {
   const secret = process.env.RESUBMIT_TOKEN_SECRET || process.env.JWT_SECRET;
@@ -3118,7 +3117,7 @@ exports.holdEmployerVerification = async (req, res) => {
       docTypes: requestedDocTypes,
     });
     const tokenHash = User.hashToken(rawToken);
-    const expiresAt = new Date(now.getTime() + RESUBMIT_AUTO_DECLINE_DAY_30);
+    const expiresAt = null;
 
     verificationDocs.overallStatus = 'hold';
     verificationDocs.remarks = String(reasonMessage).trim();
@@ -3956,7 +3955,7 @@ exports.holdJobseekerVerification = async (req, res) => {
       docTypes: requestedDocTypes,
     });
     const tokenHash = User.hashToken(rawToken);
-    const expiresAt = new Date(now.getTime() + RESUBMIT_AUTO_DECLINE_DAY_30);
+    const expiresAt = null;
 
     verificationDocs.overallStatus = 'hold';
     verificationDocs.adminRemarks = String(reasonMessage).trim();
@@ -5863,7 +5862,7 @@ exports.permanentlyDeleteAdminArchiveItem = async (req, res) => {
 
 // ==========================
 // Verification resubmission lifecycle:
-// Day 7 reminder, Day 14 reminder, and Day 30 automatic decline.
+// Day 7 and Day 14 reminders. Verification remains on hold until the user resubmits or an admin takes action.
 // ==========================
 const getVerificationResubmitContext = (user) => {
   if (user?.role === 'jobseeker') {
@@ -5934,22 +5933,11 @@ exports.processVerificationResubmissionLifecycle = async () => {
         'employerProfile.verificationDocs.resubmitRequest.requestedAt': { $ne: null },
         'employerProfile.verificationDocs.resubmitRequest.usedAt': null,
       },
-      {
-        role: 'jobseeker',
-        'jobSeekerProfile.verificationDocs.resubmitRequest.autoDeclinedAt': { $ne: null },
-        'jobSeekerProfile.verificationDocs.resubmitRequest.autoDeclineEmailSentAt': null,
-      },
-      {
-        role: 'employer',
-        'employerProfile.verificationDocs.resubmitRequest.autoDeclinedAt': { $ne: null },
-        'employerProfile.verificationDocs.resubmitRequest.autoDeclineEmailSentAt': null,
-      },
     ],
   });
 
   const now = new Date();
   let reminderCount = 0;
-  let declineCount = 0;
 
   for (const user of candidates) {
     try {
@@ -5965,72 +5953,12 @@ exports.processVerificationResubmissionLifecycle = async () => {
       const requestedDocTypes = getVerificationResubmitDocTypes(request, context.labels);
       if (!requestedDocTypes.length) continue;
 
-      const deadline = new Date(requestedAt.getTime() + RESUBMIT_AUTO_DECLINE_DAY_30);
-      const currentExpiresAt = request.expiresAt ? new Date(request.expiresAt) : null;
-      if (!currentExpiresAt || Number.isNaN(currentExpiresAt.getTime()) || currentExpiresAt.getTime() < deadline.getTime()) {
-        request.expiresAt = deadline;
-        await user.save();
-      }
-
       const elapsedMs = now.getTime() - requestedAt.getTime();
       const rawToken = createVerificationResubmitToken({
         userId: user._id,
         requestedAt,
         docTypes: requestedDocTypes,
       });
-
-      if (elapsedMs >= RESUBMIT_AUTO_DECLINE_DAY_30 || request.autoDeclinedAt) {
-        if (!request.autoDeclinedAt) {
-          const rejectionMessage =
-            'We were unable to verify your documents because you Failed to Resubmit Required Document within the required 30-day timeframe. As a result, your verification request has been declined.\n\nThank you for your understanding.';
-
-          requestedDocTypes.forEach((docType) => {
-            const document = docs?.[docType];
-            if (!document) return;
-            if (String(document.status || '').toLowerCase() === 'hold') {
-              document.status = 'rejected';
-              document.checked = false;
-              document.checkedAt = null;
-              document.checkedBy = null;
-            }
-          });
-
-          docs.overallStatus = 'rejected';
-          docs.rejectionReasons = ['Failed to Resubmit Required Document'];
-          docs.rejectionMessage = rejectionMessage;
-          docs.rejectedAt = now;
-          request.expiresAt = deadline;
-          request.tokenHash = '';
-          request.autoDeclinedAt = now;
-
-          if (context.accountType === 'jobseeker') {
-            docs.adminRemarks = 'Automatically declined after 30 days without the requested document resubmission.';
-            if (user.jobSeekerProfile) {
-              user.jobSeekerProfile.verificationStatus = 'rejected';
-            }
-          } else {
-            docs.remarks = 'Automatically declined after 30 days without the requested document resubmission.';
-          }
-
-          await user.save();
-          declineCount += 1;
-        }
-
-        if (!request.autoDeclineEmailSentAt) {
-          await sendVerificationRejectedEmail({
-            to: user.email,
-            fullName: context.fullName,
-            reasons: ['Failed to Resubmit Required Document'],
-            message:
-              'We were unable to verify your documents because you Failed to Resubmit Required Document within the required 30-day timeframe. As a result, your verification request has been declined.\n\nThank you for your understanding.',
-          });
-
-          request.autoDeclineEmailSentAt = new Date();
-          await user.save();
-        }
-
-        continue;
-      }
 
       const reminderDay =
         elapsedMs >= RESUBMIT_REMINDER_DAY_14 && !request.reminder14SentAt
@@ -6039,11 +5967,18 @@ exports.processVerificationResubmissionLifecycle = async () => {
             ? 7
             : 0;
 
-      if (!reminderDay) continue;
+      if (!reminderDay) {
+        // Resubmission access no longer expires after 30 days. Clear any legacy
+        // expiry value so older on-hold requests remain usable.
+        if (request.expiresAt) {
+          request.expiresAt = null;
+          await user.save();
+        }
+        continue;
+      }
 
-      // Keep the same deterministic token valid through the original 30-day deadline.
       request.tokenHash = User.hashToken(rawToken);
-      request.expiresAt = deadline;
+      request.expiresAt = null;
       await user.save();
 
       await sendVerificationResubmissionReminderEmail({
@@ -6072,7 +6007,7 @@ exports.processVerificationResubmissionLifecycle = async () => {
   return {
     checked: candidates.length,
     remindersSent: reminderCount,
-    automaticallyDeclined: declineCount,
+    automaticallyDeclined: 0,
   };
 };
 

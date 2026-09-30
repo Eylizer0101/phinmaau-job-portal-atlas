@@ -2,6 +2,7 @@ const Job = require('../models/Job');
 const User = require('../models/User');
 const Application = require('../models/Application');
 const notificationController = require('./notificationController');
+const JobEditRequest = require('../models/JobEditRequest');
 
 const syncFilledJobAfterVacancyUpdate = async (job) => {
   if (!job?._id) return null;
@@ -1327,6 +1328,25 @@ exports.getEmployerJobs = async (req, res) => {
   }
 };
 
+const EDIT_SECTION_FIELDS = {
+  'Job Details': new Set(['title', 'description', 'jobType', 'workMode', 'vacancies', 'isUrgent', 'category']),
+  'Requirements & Qualifications': new Set(['requirements', 'experienceLevel', 'educationLevel', 'openToFreshGraduates']),
+  'Skills & Benefits': new Set(['skillsRequired', 'perksAndBenefits', 'otherBenefits']),
+  'Work Locations': new Set(['location', 'locationProvince', 'locationCity', 'willingToRelocate', 'locationLatitude', 'locationLongitude', 'locationImage']),
+  'Salary': new Set(['salaryMin', 'salaryMax', 'hideSalary']),
+  'Deadline': new Set(['applicationDeadline']),
+};
+
+const getAllowedEditFields = (requestedSections = []) => {
+  const allowedFields = new Set();
+  requestedSections.forEach((section) => {
+    const fields = EDIT_SECTION_FIELDS[String(section || '').trim()];
+    if (!fields) return;
+    fields.forEach((field) => allowedFields.add(field));
+  });
+  return allowedFields;
+};
+
 exports.updateJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
@@ -1369,6 +1389,48 @@ exports.updateJob = async (req, res) => {
         code: 'JOB_EDIT_WINDOW_EXPIRED',
         message: 'This published job can no longer be edited because the one-hour editing period has expired. Please contact the platform administrator for further changes.',
       });
+    }
+
+    let allowedEditFields = null;
+    if (isPublishedJob && hasTemporaryEditAccess) {
+      const approvedRequest = await JobEditRequest.findOne({
+        job: job._id,
+        employer: req.user._id,
+        status: 'approved',
+        unlockUntil: { $gt: new Date() },
+      }).sort({ reviewedAt: -1, createdAt: -1 });
+
+      if (!approvedRequest) {
+        return res.status(403).json({
+          success: false,
+          code: 'JOB_EDIT_REQUEST_NOT_FOUND',
+          message: 'No active approved edit request was found for this job.',
+        });
+      }
+
+      allowedEditFields = getAllowedEditFields(approvedRequest.requestedSections || []);
+      const submittedFields = Object.keys(req.body || {}).filter((field) => ![
+        'companyLogo',
+        'status',
+        'isPublished',
+        'isActive',
+        'draftProgress',
+      ].includes(field));
+      const blockedFields = submittedFields.filter((field) => !allowedEditFields.has(field));
+
+      if (req.file && !allowedEditFields.has('locationImage')) {
+        blockedFields.push('locationImage');
+      }
+
+      if (blockedFields.length) {
+        return res.status(403).json({
+          success: false,
+          code: 'JOB_EDIT_SECTION_NOT_APPROVED',
+          message: 'You can only edit the section(s) approved by the administrator.',
+          blockedFields: [...new Set(blockedFields)],
+          requestedSections: approvedRequest.requestedSections || [],
+        });
+      }
     }
 
     const employer = await User.findById(req.user._id);
@@ -1423,13 +1485,22 @@ exports.updateJob = async (req, res) => {
       req.body.status === 'published' ||
       req.body.isPublished === true;
 
-    const mergedValidationData = {
-      ...job.toObject(),
-      ...req.body,
-      skillsRequired: req.body.skillsRequired !== undefined ? req.body.skillsRequired : job.skillsRequired,
-      hideSalary: req.body.hideSalary !== undefined ? req.body.hideSalary : job.hideSalary,
-    };
-    const validationMessage = validateJobRules(mergedValidationData, wantsToPublish || isPublishedJob);
+    const mergedValidationData = allowedEditFields
+      ? {
+          ...req.body,
+          skillsRequired: req.body.skillsRequired,
+          hideSalary: req.body.hideSalary,
+        }
+      : {
+          ...job.toObject(),
+          ...req.body,
+          skillsRequired: req.body.skillsRequired !== undefined ? req.body.skillsRequired : job.skillsRequired,
+          hideSalary: req.body.hideSalary !== undefined ? req.body.hideSalary : job.hideSalary,
+        };
+    const validationMessage = validateJobRules(
+      mergedValidationData,
+      allowedEditFields ? false : (wantsToPublish || isPublishedJob)
+    );
     if (validationMessage) return res.status(400).json({ success: false, message: validationMessage });
 
     const missingCompanyProfileFields = getMissingCompanyProfileFields(employer);
