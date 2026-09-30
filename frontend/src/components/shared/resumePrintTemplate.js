@@ -676,11 +676,11 @@ const resumeStyles = `
 
   .declaration-signature {
     display: block;
-    width: auto;
+    width: 42%;
     min-width: 160px;
-    max-width: 100%;
+    max-width: 42%;
     margin-left: auto;
-    padding-left: 4mm;
+    padding-left: 0;
     box-sizing: border-box;
     text-align: center;
     overflow-wrap: anywhere;
