@@ -151,23 +151,26 @@ const colors = [
 ];
 
 const chartColorPalettes = [
-  ["#6fb6ff", "#2e66a6", "#174d86"],
-  ["#55d9a7", "#16a36f", "#0c7b50"],
-  ["#ffc85c", "#dc9300", "#a96800"],
-  ["#a99cff", "#6366f1", "#4338ca"],
-  ["#ff7a7a", "#dc2626", "#a91b1b"],
-  ["#9aa7b8", "#64748b", "#475569"],
-  ["#5cd7ed", "#0891b2", "#0e7490"],
+  ["#58b8f4", "#1976b9", "#0c4f8a"],
+  ["#43d6a0", "#12a873", "#087553"],
+  ["#ffc652", "#ee9d00", "#bf7000"],
+  ["#b074f6", "#7c3fd1", "#561694"],
+  ["#ff6b78", "#e52b3a", "#b31321"],
+  ["#b0bac8", "#738096", "#4d596c"],
+  ["#5dd9ef", "#11a9c7", "#08738c"],
 ];
 
 const getChartGradient = (index = 0, angle = 180) => {
   const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
-  return `linear-gradient(${angle}deg, ${light} 0%, ${base} 48%, ${dark} 100%)`;
+  return [
+    "linear-gradient(180deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.08) 28%, rgba(255,255,255,0) 54%)",
+    `linear-gradient(${angle}deg, ${light} 0%, ${base} 50%, ${dark} 100%)`,
+  ].join(", ");
 };
 
 const getChartShadow = (index = 0) => {
   const [, base] = chartColorPalettes[index % chartColorPalettes.length];
-  return `0 8px 16px ${base}33, inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 4px rgba(15,23,42,.16)`;
+  return `0 6px 12px ${base}35, inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 3px rgba(15,23,42,.18)`;
 };
 
 const getDonutStops = (rows = [], total = 0, colorMap = {}) => {
@@ -181,11 +184,13 @@ const getDonutStops = (rows = [], total = 0, colorMap = {}) => {
     const mapped = colorMap[item.name];
     const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
     const core = mapped || base;
-    const lightStop = Math.min(cursor, start + (cursor - start) * 0.32);
-    const darkStop = Math.max(start, cursor - (cursor - start) * 0.22);
+    const lightStop = Math.min(cursor, start + (cursor - start) * 0.22);
+    const midStop = Math.min(cursor, start + (cursor - start) * 0.58);
+    const darkStop = Math.max(start, cursor - (cursor - start) * 0.16);
     stops.push(
       `${mapped || light} ${start}% ${lightStop}%`,
-      `${core} ${lightStop}% ${darkStop}%`,
+      `${core} ${lightStop}% ${midStop}%`,
+      `${core} ${midStop}% ${darkStop}%`,
       `${mapped || dark} ${darkStop}% ${cursor}%`,
     );
   });
@@ -1171,7 +1176,7 @@ const HorizontalBars = ({ data = [], maxItems = 8, percentage = false, centered 
                 width: `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`,
                 backgroundImage: getChartGradient(index, 180),
                 boxShadow: getChartShadow(index),
-                border: "1px solid rgba(255,255,255,.22)",
+                border: "1px solid rgba(255,255,255,.16)",
               }}
             />
           </div>
@@ -1203,7 +1208,7 @@ const VerticalBars = ({ data = [], maxItems = 6, percentage = false }) => {
                   height: `${Math.max(4, (value / max) * 100)}%`,
                   backgroundImage: getChartGradient(index, 180),
                   boxShadow: getChartShadow(index),
-                  border: "1px solid rgba(255,255,255,.22)",
+                  border: "1px solid rgba(255,255,255,.16)",
                 }}
               />
             </div>
@@ -1229,7 +1234,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
         style={{
           background: `conic-gradient(${stops.join(",")})`,
           boxShadow:
-            "0 14px 26px rgba(15,23,42,.18), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -8px 14px rgba(15,23,42,.14)",
+            "0 10px 22px rgba(15,23,42,.14), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -6px 12px rgba(15,23,42,.12)",
         }}
       >
         <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
@@ -1302,7 +1307,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
           style={{
             background: donutBackground,
             boxShadow:
-              "0 14px 28px rgba(15,23,42,.18), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -8px 16px rgba(15,23,42,.14)",
+              "0 10px 24px rgba(15,23,42,.14), inset 0 2px 2px rgba(255,255,255,.55), inset 0 -6px 14px rgba(15,23,42,.12)",
           }}
         >
           <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
@@ -1686,7 +1691,7 @@ const FunnelChart = ({ data = [] }) => {
                 width: `${width}%`,
                 backgroundImage: getChartGradient(index, 180),
                     boxShadow: getChartShadow(index),
-                    border: "1px solid rgba(255,255,255,.22)",
+                    border: "1px solid rgba(255,255,255,.16)",
               }}
             >
               <span className="truncate">
