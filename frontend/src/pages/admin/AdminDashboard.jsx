@@ -151,26 +151,23 @@ const colors = [
 ];
 
 const chartColorPalettes = [
-  ["#62aee4", "#2e76ad", "#235f91"],
-  ["#48c99b", "#20a878", "#17845f"],
-  ["#f7bf55", "#e5a126", "#bd7e18"],
-  ["#9a8bea", "#7668d7", "#5e52ba"],
-  ["#ef7379", "#d94a52", "#b73740"],
-  ["#a8b2bf", "#7b8798", "#657183"],
-  ["#63c7d9", "#2ca9bf", "#23869a"],
+  ["#2f6eaa", "#3f86bd", "#58a8cf"],
+  ["#15966c", "#21ad7d", "#45c79a"],
+  ["#cf870b", "#e29a19", "#f0b340"],
+  ["#5f59cf", "#766fdc", "#9389e8"],
+  ["#c93b43", "#dc4d55", "#ec6f76"],
+  ["#64748b", "#7c8b9e", "#9aa8b8"],
+  ["#1788a1", "#2ca5ba", "#58bfd0"],
 ];
 
 const getChartGradient = (index = 0, angle = 180) => {
-  const [light, base, dark] = chartColorPalettes[index % chartColorPalettes.length];
-  return [
-    "linear-gradient(180deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.035) 30%, rgba(255,255,255,0) 56%)",
-    `linear-gradient(${angle}deg, ${light} 0%, ${base} 56%, ${dark} 100%)`,
-  ].join(", ");
+  const [start, middle, end] = chartColorPalettes[index % chartColorPalettes.length];
+  return `linear-gradient(${angle}deg, ${start} 0%, ${middle} 55%, ${end} 100%)`;
 };
 
 const getChartShadow = (index = 0) => {
   const [, base] = chartColorPalettes[index % chartColorPalettes.length];
-  return `0 3px 7px ${base}24, inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 2px rgba(15,23,42,.10)`;
+  return `0 2px 5px ${base}20`;
 };
 
 const getDonutStops = (rows = [], total = 0, colorMap = {}) => {
@@ -1176,7 +1173,7 @@ const HorizontalBars = ({ data = [], maxItems = 8, percentage = false, centered 
                 width: `${Math.max(2, (Number(item.value || 0) / max) * 100)}%`,
                 backgroundImage: getChartGradient(index, 180),
                 boxShadow: getChartShadow(index),
-                border: "1px solid rgba(255,255,255,.16)",
+                border: "1px solid rgba(15,23,42,.035)",
               }}
             />
           </div>
@@ -1208,7 +1205,7 @@ const VerticalBars = ({ data = [], maxItems = 6, percentage = false }) => {
                   height: `${Math.max(4, (value / max) * 100)}%`,
                   backgroundImage: getChartGradient(index, 180),
                   boxShadow: getChartShadow(index),
-                  border: "1px solid rgba(255,255,255,.16)",
+                  border: "1px solid rgba(15,23,42,.035)",
                 }}
               />
             </div>
@@ -1234,7 +1231,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
         style={{
           background: `conic-gradient(${stops.join(",")})`,
           boxShadow:
-            "0 5px 14px rgba(15,23,42,.10), inset 0 1px 1px rgba(255,255,255,.32), inset 0 -3px 7px rgba(15,23,42,.08)",
+            "0 3px 9px rgba(15,23,42,.08)",
         }}
       >
         <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white">
@@ -1307,7 +1304,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
           style={{
             background: donutBackground,
             boxShadow:
-              "0 5px 15px rgba(15,23,42,.10), inset 0 1px 1px rgba(255,255,255,.32), inset 0 -3px 8px rgba(15,23,42,.08)",
+              "0 3px 10px rgba(15,23,42,.08)",
           }}
         >
           <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
@@ -1375,10 +1372,10 @@ const TrendChart = ({ data = [] }) => {
   };
 
   const series = [
-    ["registrations", "Registrations", "#78afe0", "#4f8fc7"],
-    ["jobs", "Jobs", "#45c99b", "#24a879"],
-    ["applications", "Applications", "#f2bd4b", "#df9d25"],
-    ["hires", "Hires", "#9b8ae8", "#7668d7"],
+    ["registrations", "Registrations", "#79aee0", "#4f89bd"],
+    ["jobs", "Jobs", "#45c79a", "#209f74"],
+    ["applications", "Applications", "#efb43b", "#d68f16"],
+    ["hires", "Hires", "#9488e8", "#7168d4"],
   ];
 
   if (!data.length) {
@@ -1444,11 +1441,10 @@ const TrendChart = ({ data = [] }) => {
                 id={`trend-gradient-${key}`}
                 x1="0"
                 y1="0"
-                x2="0"
+                x2="1"
                 y2="1"
               >
                 <stop offset="0%" stopColor={color} />
-                <stop offset="58%" stopColor={color} />
                 <stop offset="100%" stopColor={endColor} />
               </linearGradient>
             ))}
@@ -1513,9 +1509,9 @@ const TrendChart = ({ data = [] }) => {
                       height={Math.max(0, barHeight)}
                       rx={Math.min(4, barWidth / 3)}
                       fill={`url(#trend-gradient-${key})`}
-                      opacity="0.96"
-                      stroke="rgba(255,255,255,0.14)"
-                      strokeWidth="0.7"
+                      opacity="0.98"
+                      stroke="rgba(15,23,42,0.035)"
+                      strokeWidth="0.6"
                     >
                       <title>{`${label}: ${numberFormat.format(value)}`}</title>
                     </rect>
@@ -1709,7 +1705,7 @@ const FunnelChart = ({ data = [] }) => {
                 width: `${width}%`,
                 backgroundImage: getChartGradient(index, 180),
                     boxShadow: getChartShadow(index),
-                    border: "1px solid rgba(255,255,255,.16)",
+                    border: "1px solid rgba(15,23,42,.035)",
               }}
             >
               <span className="truncate">
