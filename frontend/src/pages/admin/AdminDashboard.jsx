@@ -1167,27 +1167,40 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
           </span>
         </div>
       </div>
-      <div className="w-full max-w-[240px] space-y-2">
-        {rows.slice(0, 8).map((item, index) => (
-          <div
-            key={item.name}
-            className="flex items-center justify-between gap-3 text-xs"
-          >
-            <span className="flex min-w-0 items-center gap-2 text-slate-600">
-              <i
-                className="h-2.5 w-2.5 shrink-0 rounded-sm"
-                style={{ backgroundColor: colors[index % colors.length] }}
-              />
-              <span className="truncate">{titleCase(item.name)}</span>
-            </span>
-            <strong className="whitespace-nowrap text-slate-800">
-              {numberFormat.format(item.value)}
-              {showPercentage
-                ? ` (${Math.round((Number(item.value || 0) / total) * 100)}%)`
-                : ""}
-            </strong>
-          </div>
-        ))}
+      <div className="w-full max-w-[285px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/60">
+        <div className="space-y-2">
+          {rows.slice(0, 8).map((item, index) => {
+            const value = Number(item.value || 0);
+            const percentage = total ? Math.round((value / total) * 100) : 0;
+
+            return (
+              <div
+                key={item.name}
+                className="grid grid-cols-[minmax(0,1fr)_44px_54px] items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs"
+              >
+                <span className="flex min-w-0 items-center gap-2 text-slate-600">
+                  <i
+                    className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                    style={{ backgroundColor: colors[index % colors.length] }}
+                  />
+                  <span className="truncate">{titleCase(item.name)}</span>
+                </span>
+
+                <strong className="text-center text-slate-800">
+                  {numberFormat.format(value)}
+                </strong>
+
+                {showPercentage ? (
+                  <span className="text-center font-normal text-slate-500">
+                    ({percentage}%)
+                  </span>
+                ) : (
+                  <span />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -1254,7 +1267,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
                   <strong className="text-center text-slate-800">
                     {numberFormat.format(value)}
                   </strong>
-                  <span className="text-center font-semibold text-slate-500">
+                  <span className="text-center font-normal text-slate-500">
                     ({percentage}%)
                   </span>
                 </div>
@@ -1433,15 +1446,6 @@ const TrendChart = ({ data = [] }) => {
       </div>
 
       <aside className="flex min-h-[270px] flex-col rounded-2xl border border-slate-200 bg-white p-3.5 text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
-        <div className="border-b border-slate-200 pb-3">
-          <h3 className="text-sm font-extrabold text-slate-900">
-            Activity Breakdown
-          </h3>
-          <p className="mt-0.5 text-[11px] text-slate-500">
-            Total count and percentage share
-          </p>
-        </div>
-
         <div className="flex flex-1 flex-col justify-center divide-y divide-slate-200">
           {summary.map((item) => {
             const percentage = (
@@ -1456,7 +1460,7 @@ const TrendChart = ({ data = [] }) => {
               >
                 <span className="flex min-w-0 items-center gap-3 text-sm font-semibold text-slate-700">
                   <i
-                    className="h-3.5 w-3.5 shrink-0 rounded-full"
+                    className="h-3.5 w-3.5 shrink-0 rounded-sm"
                     style={{ backgroundColor: item.color }}
                   />
                   <span className="truncate">{item.label}</span>
@@ -2181,28 +2185,28 @@ const AdminDashboard = () => {
             <ChartCard
               title="Gender Distribution"
               subtitle="Job seekers by gender"
-              className="xl:col-span-3"
+              className="xl:col-span-6"
             >
               <DonutChart data={sections.users?.genders} showPercentage />
             </ChartCard>
             <ChartCard
               title="How Soon Can They Start?"
               subtitle="Applicant start availability"
-              className="xl:col-span-3"
+              className="xl:col-span-6"
             >
               <VerticalBars data={sections.users?.availabilities} maxItems={5} />
             </ChartCard>
             <ChartCard
               title="Relocation Preference"
               subtitle="Job seekers' willingness to relocate"
-              className="xl:col-span-3"
+              className="xl:col-span-6"
             >
               <HorizontalBars data={sections.users?.relocation} maxItems={5} />
             </ChartCard>
             <ChartCard
               title="Experience Level"
               subtitle="Job seekers by years of professional work experience"
-              className="xl:col-span-3"
+              className="xl:col-span-6"
             >
               <VerticalBars data={sections.users?.experiences} maxItems={6} />
             </ChartCard>
