@@ -2078,8 +2078,7 @@ const AdminDashboard = () => {
         <header
           className="relative overflow-hidden rounded-[22px] border border-slate-200 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
           style={{
-            background:
-              "linear-gradient(135deg, #eaf4ff 0%, #ffffff 48%, #dff3fb 100%)",
+            background: "#eaf4ff",
           }}
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -2208,8 +2207,7 @@ const AdminDashboard = () => {
         <section
           className="rounded-xl border border-slate-200 p-4 shadow-sm"
           style={{
-            background:
-              "linear-gradient(135deg, #eaf4ff 0%, #ffffff 48%, #dff3fb 100%)",
+            background: "#eaf4ff",
           }}
         >
           <div className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ${hasFilters ? "xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]" : "xl:grid-cols-5"}`}>
