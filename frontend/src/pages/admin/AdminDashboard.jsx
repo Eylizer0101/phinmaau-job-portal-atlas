@@ -1215,49 +1215,53 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
     : "#e2e8f0";
 
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center gap-5 sm:flex-row sm:gap-6">
-      <div
-        className="relative mx-auto h-40 w-40 rounded-full"
-        style={{ background: donutBackground }}
-      >
-        <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
-          <span className="text-[11px] font-semibold text-slate-500">Total</span>
-          <span className="text-3xl font-extrabold leading-none text-slate-800">
-            {numberFormat.format(total)}
-          </span>
-          <span className="mt-1 text-[11px] font-semibold text-slate-500">
-            Requests
-          </span>
+    <div className="flex min-h-52 items-center justify-center">
+      <div className="flex w-fit max-w-full flex-col items-center justify-center gap-5 sm:flex-row sm:gap-6">
+        <div
+          className="relative h-40 w-40 shrink-0 rounded-full"
+          style={{ background: donutBackground }}
+        >
+          <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
+            <span className="text-[11px] font-semibold text-slate-500">Total</span>
+            <span className="text-3xl font-extrabold leading-none text-slate-800">
+              {numberFormat.format(total)}
+            </span>
+            <span className="mt-1 text-[11px] font-semibold text-slate-500">
+              Requests
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="w-full max-w-[240px] space-y-3">
-        {rows.map((item, index) => {
-          const value = Number(item?.value || 0);
-          const percentage = total ? Math.round((value / total) * 100) : 0;
-          const color = colorMap[item.name] || colors[index % colors.length];
+        <div className="w-full max-w-[285px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/60">
+          <div className="space-y-2">
+            {rows.map((item, index) => {
+              const value = Number(item?.value || 0);
+              const percentage = total ? Math.round((value / total) * 100) : 0;
+              const color = colorMap[item.name] || colors[index % colors.length];
 
-          return (
-            <div
-              key={`${item.name}-${index}`}
-              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2.5 text-xs"
-            >
-              <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
-                <i
-                  className="h-3 w-3 shrink-0 rounded-sm"
-                  style={{ backgroundColor: color }}
-                />
-                <span className="truncate">{titleCase(item.name)}</span>
-              </span>
-              <strong className="min-w-6 text-right text-slate-800">
-                {numberFormat.format(value)}
-              </strong>
-              <span className="min-w-9 text-right font-semibold text-slate-500">
-                ({percentage}%)
-              </span>
-            </div>
-          );
-        })}
+              return (
+                <div
+                  key={`${item.name}-${index}`}
+                  className="grid grid-cols-[minmax(0,1fr)_44px_54px] items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs"
+                >
+                  <span className="flex min-w-0 items-center gap-2 font-medium text-slate-700">
+                    <i
+                      className="h-3 w-3 shrink-0 rounded-sm"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="truncate">{titleCase(item.name)}</span>
+                  </span>
+                  <strong className="text-center text-slate-800">
+                    {numberFormat.format(value)}
+                  </strong>
+                  <span className="text-center font-semibold text-slate-500">
+                    ({percentage}%)
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
