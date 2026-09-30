@@ -370,12 +370,19 @@ const MyApplications = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const highlightedApplicationId = new URLSearchParams(location.search).get('application') || '';
+  const [highlightedApplicationId, setHighlightedApplicationId] = useState(
+    () => new URLSearchParams(location.search).get('application') || ''
+  );
 
   const inFlightRef = useRef(false);
   const employmentReminderShownRef = useRef(false);
   const tabRefs = useRef({});
   const subTabRefs = useRef({});
+
+  useEffect(() => {
+    const applicationId = new URLSearchParams(location.search).get('application') || '';
+    setHighlightedApplicationId(applicationId);
+  }, [location.search]);
 
   useEffect(() => {
     if (!actionMessage) return undefined;
@@ -917,17 +924,14 @@ const MyApplications = () => {
     }, 100);
 
     const clearTimer = window.setTimeout(() => {
-      const params = new URLSearchParams(location.search);
-      params.delete('application');
-      const nextQuery = params.toString();
-      navigate(`/jobseeker/my-applications${nextQuery ? `?${nextQuery}` : ''}`, { replace: true });
+      setHighlightedApplicationId('');
     }, 3000);
 
     return () => {
       window.clearTimeout(scrollTimer);
       window.clearTimeout(clearTimer);
     };
-  }, [highlightedApplicationId, searchedApplications, pageSize, numericPageSize, location.search, navigate]);
+  }, [highlightedApplicationId, searchedApplications, pageSize, numericPageSize]);
 
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
