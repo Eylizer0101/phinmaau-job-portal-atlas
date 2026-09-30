@@ -18,6 +18,9 @@ router.put('/profile/password', adminController.updateAdminPassword);
 // Dashboard analytics route
 router.get('/dashboard', adminController.getAdminDashboardAnalytics);
 
+// Password-protected Excel record exports
+router.post('/exports/excel', adminController.requireAdminPasswordForCredential, adminController.exportAdminRecordsExcel);
+
 // Dedicated Admin Analytics page data
 router.get('/analytics', adminController.getAdminAnalytics);
 

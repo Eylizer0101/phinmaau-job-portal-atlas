@@ -10,6 +10,7 @@ const Message = require('../models/Message');
 const ConversationPreference = require('../models/ConversationPreference');
 const PendingEmailVerification = require('../models/PendingEmailVerification');
 const bcrypt = require('bcryptjs');
+const ExcelJS = require('exceljs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
 const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationResubmissionReminderEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
@@ -6009,5 +6010,292 @@ exports.processVerificationResubmissionLifecycle = async () => {
     remindersSent: reminderCount,
     automaticallyDeclined: 0,
   };
+};
+
+// ==========================
+// ✅ ADMIN EXCEL RECORD EXPORTS
+// ==========================
+const exportText = (value) => String(value ?? '').trim();
+
+const exportDate = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-PH', {
+    timeZone: 'Asia/Manila',
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+  });
+};
+
+const exportFullName = (user = {}) =>
+  [user.firstName, user.middleName, user.lastName, user.extensionName]
+    .map(exportText)
+    .filter(Boolean)
+    .join(' ');
+
+const exportAge = (birthday) => {
+  if (!birthday) return '';
+  const birthDate = new Date(birthday);
+  if (Number.isNaN(birthDate.getTime())) return '';
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDelta = today.getMonth() - birthDate.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birthDate.getDate())) age -= 1;
+  return age >= 0 && age <= 120 ? age : '';
+};
+
+const exportProfileValues = (user, field) => {
+  const profile = user?.jobSeekerProfile || {};
+  const entries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+  const values = [];
+  if (field === 'campus') {
+    values.push(getJobseekerCampus(user));
+    entries.forEach((entry) => values.push(entry?.campus));
+  } else if (field === 'yearGraduated') {
+    values.push(profile.yearGraduated);
+    entries.forEach((entry) => values.push(entry?.yearGraduated));
+  } else if (field === 'course') {
+    values.push(profile.course);
+    entries.forEach((entry) => values.push(entry?.course));
+  } else if (field === 'gender') {
+    values.push(profile.gender);
+  }
+  return [...new Set(values.map(exportText).filter(Boolean))];
+};
+
+const exportMatches = (values, selected) => {
+  const normalizedSelected = exportText(selected).toLowerCase();
+  if (!normalizedSelected || normalizedSelected === 'all') return true;
+  return values.some((value) => exportText(value).toLowerCase() === normalizedSelected);
+};
+
+const exportInRange = (value, range) => {
+  if (!range?.start && !range?.end) return true;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  if (range.start && date < range.start) return false;
+  if (range.end && date > range.end) return false;
+  return true;
+};
+
+const exportProcessingTime = (application = {}) => {
+  const start = new Date(application.appliedAt || application.createdAt || '');
+  const endValue = application.hiredAt || application.reviewedAt || application.updatedAt;
+  const end = new Date(endValue || '');
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return '';
+  const days = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / 86400000));
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
+};
+
+const exportAddressParts = (profile = {}, employer = false) => {
+  if (employer) {
+    return {
+      region: exportText(profile.region),
+      province: exportText(profile.province),
+      city: exportText(profile.cityMunicipality || profile.city || profile.municipality || profile.regionCity),
+      street: exportText(profile.streetAddress || profile.companyAddress),
+    };
+  }
+  return {
+    region: exportText(profile.region),
+    province: exportText(profile.province),
+    city: exportText(profile.cityMunicipality || profile.cityProvince || profile.city || profile.municipality),
+    street: exportText(profile.streetAddress || profile.address),
+  };
+};
+
+const styleExportWorksheet = (worksheet, title, headers, widths, options = {}) => {
+  const titleRow = options.titleRow || 1;
+  const generatedRow = titleRow + 1;
+  const headerRowNumber = options.headerRow || titleRow + 3;
+
+  worksheet.mergeCells(titleRow, 1, titleRow, headers.length);
+  const titleCell = worksheet.getCell(titleRow, 1);
+  titleCell.value = title;
+  titleCell.font = { name: 'Arial', size: 13, bold: true };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  worksheet.getRow(titleRow).height = 21;
+
+  worksheet.mergeCells(generatedRow, 1, generatedRow, headers.length);
+  const generatedCell = worksheet.getCell(generatedRow, 1);
+  generatedCell.value = `Generated on: ${exportDate(new Date())}`;
+  generatedCell.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF666666' } };
+  generatedCell.alignment = { horizontal: 'center' };
+
+  const headerRow = worksheet.getRow(headerRowNumber);
+  headers.forEach((header, index) => {
+    const cell = headerRow.getCell(index + 1);
+    cell.value = header;
+    cell.font = { name: 'Arial', size: 9, bold: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF666666' } },
+      left: { style: 'thin', color: { argb: 'FF666666' } },
+      bottom: { style: 'thin', color: { argb: 'FF666666' } },
+      right: { style: 'thin', color: { argb: 'FF666666' } },
+    };
+  });
+  headerRow.height = 27;
+
+  worksheet.columns = widths.map((width) => ({ width }));
+  worksheet.views = [{ state: 'frozen', ySplit: headerRowNumber }];
+  worksheet.autoFilter = { from: { row: headerRowNumber, column: 1 }, to: { row: headerRowNumber, column: headers.length } };
+};
+
+const addExportDataRows = (worksheet, startRow, rows) => {
+  rows.forEach((values, rowIndex) => {
+    const row = worksheet.getRow(startRow + rowIndex);
+    values.forEach((value, columnIndex) => {
+      const cell = row.getCell(columnIndex + 1);
+      cell.value = value === undefined || value === null ? '' : value;
+      cell.font = { name: 'Arial', size: 9 };
+      cell.alignment = { vertical: 'top', wrapText: false };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        right: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+      };
+    });
+  });
+};
+
+exports.exportAdminRecordsExcel = async (req, res) => {
+  try {
+    const mode = ['all', 'filtered', 'report'].includes(String(req.body?.mode || '').toLowerCase())
+      ? String(req.body.mode).toLowerCase()
+      : 'all';
+    const filters = mode === 'all' ? {} : (req.body?.filters || {});
+    const range = getAdminAnalyticsDateRange({
+      preset: filters.date || 'overall',
+      specificDate: filters.specificDate,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    });
+
+    const [users, jobs, applications] = await Promise.all([
+      User.find({ status: { $ne: 'deleted' } }).select('-password').lean(),
+      Job.find({}).lean(),
+      Application.find({}).lean(),
+    ]);
+
+    const userById = new Map(users.map((user) => [String(user._id), user]));
+    const jobById = new Map(jobs.map((job) => [String(job._id), job]));
+    const applicationsByJob = new Map();
+    const applicationsByJobseeker = new Map();
+
+    applications.forEach((application) => {
+      const jobId = String(application.job || '');
+      const seekerId = String(application.jobseeker || '');
+      if (jobId) applicationsByJob.set(jobId, (applicationsByJob.get(jobId) || 0) + 1);
+      if (seekerId) applicationsByJobseeker.set(seekerId, (applicationsByJobseeker.get(seekerId) || 0) + 1);
+    });
+
+    const jobseekerMatches = (user, includeDate = true) => {
+      if (!user || String(user.role || '').toLowerCase() !== 'jobseeker') return false;
+      if (includeDate && !exportInRange(user.createdAt, range)) return false;
+      if (!exportMatches(exportProfileValues(user, 'campus'), filters.campus)) return false;
+      if (!exportMatches(exportProfileValues(user, 'yearGraduated'), filters.yearGraduated)) return false;
+      if (!exportMatches(exportProfileValues(user, 'course'), filters.course)) return false;
+      if (!exportMatches(exportProfileValues(user, 'gender'), filters.gender)) return false;
+      return true;
+    };
+
+    const jobseekers = users.filter((user) => jobseekerMatches(user, true));
+    const employers = users.filter((user) =>
+      String(user.role || '').toLowerCase() === 'employer' && exportInRange(user.createdAt, range)
+    );
+    const filteredJobs = jobs.filter((job) => exportInRange(job.publishedAt || job.createdAt, range));
+    const filteredApplications = applications.filter((application) => {
+      if (!exportInRange(application.appliedAt || application.createdAt, range)) return false;
+      const seeker = userById.get(String(application.jobseeker || ''));
+      return jobseekerMatches(seeker, false);
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'AGAPAY';
+    workbook.company = 'PHINMA Araullo University';
+    workbook.created = new Date();
+
+    const jobSeekerHeaders = ['No.', 'Date Registered', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Region', 'Province', 'City / Municipality', 'Street Address'];
+    const employerHeaders = ['No.', 'Date Registered', 'Full Name', 'Email', 'Contact Number', 'Company Name', 'Industry', 'Region', 'Province', 'City / Municipality', 'Street Address'];
+    const jobOfferHeaders = ['No.', 'Date Posted', 'Company Name', 'Industry', 'Job Title', 'Work Mode', 'Employment Type', 'Vacancy', 'Applicant', 'Status', 'Valid Until'];
+    const applicationHeaders = ['No.', 'Date Applied', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Job Title', 'Work Mode', 'Employment Type', 'Company Name', 'Industry', 'Application Status', 'Processing Time', 'Times Applied', 'Hired Date'];
+
+    const jobSeekerSheet = workbook.addWorksheet('Job Seeker');
+    styleExportWorksheet(jobSeekerSheet, 'Phinma Araullo University - Job Seeker List', jobSeekerHeaders, [7, 16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24, 36]);
+    addExportDataRows(jobSeekerSheet, 5, jobseekers.map((user, index) => {
+      const profile = user.jobSeekerProfile || {};
+      const address = exportAddressParts(profile, false);
+      return [index + 1, exportDate(user.createdAt), exportFullName(user), user.email || '', profile.phoneNumber || user.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(user) === 'Unspecified' ? '' : getJobseekerCampus(user), exportProfileValues(user, 'course')[0] || '', exportProfileValues(user, 'yearGraduated')[0] || '', address.region, address.province, address.city, address.street];
+    }));
+
+    const employerSheet = workbook.addWorksheet('Employer');
+    styleExportWorksheet(employerSheet, 'Phinma Araullo University - Employer List', employerHeaders, [7, 16, 28, 30, 17, 32, 24, 20, 20, 24, 38]);
+    addExportDataRows(employerSheet, 5, employers.map((user, index) => {
+      const profile = user.employerProfile || {};
+      const address = exportAddressParts(profile, true);
+      return [index + 1, exportDate(user.createdAt), exportFullName(user), user.email || profile.businessEmail || '', profile.mobileNumber || user.registrationContactNumber || '', profile.companyName || '', profile.industry || '', address.region, address.province, address.city, address.street];
+    }));
+
+    const jobOfferSheet = workbook.addWorksheet('Job Offers');
+    styleExportWorksheet(jobOfferSheet, 'Phinma Araullo University - Job Offers List', jobOfferHeaders, [7, 16, 30, 24, 32, 18, 22, 12, 12, 14, 16]);
+    addExportDataRows(jobOfferSheet, 5, filteredJobs.map((job, index) => {
+      const employer = userById.get(String(job.employer || ''));
+      return [index + 1, exportDate(job.publishedAt || job.createdAt), job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', job.title || '', job.workMode || '', job.jobType || '', Number(job.vacancies || 0), applicationsByJob.get(String(job._id)) || Number(job.applicationCount || 0), getAdminJobOfferStatus(job), exportDate(job.applicationDeadline)];
+    }));
+
+    const applicationSheet = workbook.addWorksheet('Applications');
+    applicationSheet.getCell('A1').value = 'Campus';
+    applicationSheet.getCell('B1').value = 'AU MAIN';
+    applicationSheet.getCell('C1').value = 'AU SOUTH';
+    applicationSheet.getCell('D1').value = 'AU SAN JOSE';
+    applicationSheet.getCell('A2').value = 'Hired Rate Percentage';
+
+    const campusOrder = ['AU Main', 'AU South', 'AU San Jose'];
+    campusOrder.forEach((campus, index) => {
+      const campusApplications = filteredApplications.filter((application) => {
+        const seeker = userById.get(String(application.jobseeker || ''));
+        return getJobseekerCampus(seeker) === campus;
+      });
+      const hired = campusApplications.filter((application) => String(application.status || '').toLowerCase() === 'hired').length;
+      applicationSheet.getCell(2, index + 2).value = campusApplications.length ? `${((hired / campusApplications.length) * 100).toFixed(1)}%` : '0%';
+    });
+
+    for (let rowNumber = 1; rowNumber <= 2; rowNumber += 1) {
+      const row = applicationSheet.getRow(rowNumber);
+      for (let column = 1; column <= 4; column += 1) {
+        const cell = row.getCell(column);
+        cell.font = { name: 'Arial', size: 9, bold: true };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowNumber === 1 ? 'FFD9D9D9' : 'FFF2F2F2' } };
+        cell.alignment = { horizontal: column === 1 ? 'left' : 'center', vertical: 'middle' };
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      }
+    }
+
+    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [7, 16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 32, 18, 22, 30, 24, 20, 18, 15, 16], { titleRow: 4, headerRow: 7 });
+    addExportDataRows(applicationSheet, 8, filteredApplications.map((application, index) => {
+      const seeker = userById.get(String(application.jobseeker || '')) || {};
+      const profile = seeker.jobSeekerProfile || {};
+      const job = jobById.get(String(application.job || '')) || {};
+      const employer = userById.get(String(application.employer || job.employer || '')) || {};
+      return [index + 1, exportDate(application.appliedAt || application.createdAt), exportFullName(seeker), seeker.email || '', profile.phoneNumber || seeker.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(seeker) === 'Unspecified' ? '' : getJobseekerCampus(seeker), exportProfileValues(seeker, 'course')[0] || '', exportProfileValues(seeker, 'yearGraduated')[0] || '', job.title || '', job.workMode || '', job.jobType || '', job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', application.status || '', exportProcessingTime(application), applicationsByJobseeker.get(String(application.jobseeker || '')) || 0, exportDate(application.hiredAt)];
+    }));
+
+    const modeLabel = mode === 'all' ? 'all-records' : mode === 'filtered' ? 'filtered-records' : 'agapay-reports';
+    const filename = `agapay-${modeLabel}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error('Admin Excel export error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to generate the Excel export.' });
+  }
 };
 

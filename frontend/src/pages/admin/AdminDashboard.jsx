@@ -14,7 +14,6 @@ import {
   UserRoundMinus,
   X,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import api from "../../services/api";
 
 const numberFormat = new Intl.NumberFormat("en-US");
@@ -105,19 +104,9 @@ const initialFilters = {
   startDate: "",
   endDate: "",
   campus: "",
-  verificationStatus: "",
-  jobStatus: "",
-  industry: "",
-  jobType: "",
-  workMode: "",
-  applicationStatus: "",
-  requestEditStatus: "",
   yearGraduated: "",
   course: "",
-  availability: "",
-  experience: "",
   gender: "",
-  educationLevel: "",
 };
 
 const statCardImages = {
@@ -1596,18 +1585,88 @@ const AnalyticsSkeleton = () => (
   </div>
 );
 
+const ExportPasswordModal = ({ open, actionLabel, password, onPasswordChange, onCancel, onConfirm, submitting, message }) => {
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/45 px-4 py-6">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-extrabold text-slate-900">Confirm Export</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Enter your admin password before accessing {actionLabel || "this export"}.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X size={17} />
+          </button>
+        </div>
+
+        <label className="mt-5 block">
+          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Admin Password</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => onPasswordChange(event.target.value.slice(0, 25))}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && password && !submitting) onConfirm();
+            }}
+            autoFocus
+            maxLength={25}
+            autoComplete="current-password"
+            placeholder="Enter password"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+          />
+        </label>
+
+        {message ? (
+          <p className="mt-2 text-xs font-medium text-red-600">{message}</p>
+        ) : null}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!password || submitting}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download size={14} /> {submitting ? "Preparing..." : "Continue Export"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(emptyAnalytics);
   const [filters, setFilters] = useState(initialFilters);
   const [activeTab, setActiveTab] = useState("overview");
-  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [showSpecificDateModal, setShowSpecificDateModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
-  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportRequest, setExportRequest] = useState(null);
+  const [exportPassword, setExportPassword] = useState("");
+  const [exportPasswordMessage, setExportPasswordMessage] = useState("");
   const [dummyMode, setDummyMode] = useState(false);
 
   const dummyAnalytics = useMemo(
@@ -1708,71 +1767,85 @@ const AdminDashboard = () => {
   const resetFilters = () => setFilters(initialFilters);
   const hasFilters = JSON.stringify(filters) !== JSON.stringify(initialFilters);
 
-  const exportAnalyticsExcel = () => {
-    try {
-      setExporting(true);
-      const workbook = XLSX.utils.book_new();
-      const addSheet = (name, rows) =>
-        XLSX.utils.book_append_sheet(
-          workbook,
-          XLSX.utils.json_to_sheet(
-            rows?.length ? rows : [{ Message: "No data" }],
-          ),
-          name.slice(0, 31),
-        );
-      addSheet(
-        "KPIs",
-        Object.entries(kpis).map(([metric, value]) => ({
-          Metric: titleCase(metric),
-          Value: value,
-        })),
-      );
-      addSheet("Trends", displayedTrends);
-      addSheet("Application Funnel", sections.applications?.funnel || []);
-      addSheet("Job Categories", sections.jobs?.categories || []);
-      addSheet("User Verification", sections.users?.verification || []);
-      addSheet("Messages", sections.operations?.messages || []);
-      addSheet("Notifications", sections.operations?.notifications || []);
-      addSheet("System Modules", sections.operations?.system?.modules || []);
-      XLSX.writeFile(
-        workbook,
-        `admin-analytics-${new Date().toISOString().slice(0, 10)}.xlsx`,
-      );
-    } catch (err) {
-      setError("Unable to export analytics data.");
-    } finally {
-      setExporting(false);
-    }
+  const openExportPassword = (type, label) => {
+    setExportRequest({ type, label });
+    setExportPassword("");
+    setExportPasswordMessage("");
   };
 
-  const exportAnalyticsPdf = () => {
-    const reportWindow = window.open("", "_blank", "width=1000,height=800");
-    if (!reportWindow) {
-      setError("Please allow pop-ups to export the PDF report.");
-      return;
-    }
+  const closeExportPassword = () => {
+    if (exporting) return;
+    setExportRequest(null);
+    setExportPassword("");
+    setExportPasswordMessage("");
+  };
+
+  const downloadExport = async () => {
+    if (!exportRequest || !exportPassword) return;
 
     try {
-      setExportingPdf(true);
-      reportWindow.opener = null;
-      const filterRows = Object.entries(filters)
-        .filter(([, value]) => value && value !== "all")
-        .map(([key, value]) => `<tr><td>${titleCase(key)}</td><td>${String(value)}</td></tr>`)
-        .join("");
-      const kpiRows = Object.entries(kpis)
-        .map(([key, value]) => `<tr><td>${titleCase(key)}</td><td>${value}</td></tr>`)
-        .join("");
-      const trendRows = displayedTrends
-        .map((row) => `<tr><td>${row.label || row.key || ""}</td><td>${row.registrations || 0}</td><td>${row.jobs || 0}</td><td>${row.applications || 0}</td><td>${row.hires || 0}</td></tr>`)
-        .join("");
+      setExporting(true);
+      setExportPasswordMessage("");
 
-      reportWindow.document.write(`<!doctype html><html><head><title>Admin Dashboard Report</title><style>body{font-family:Arial,sans-serif;padding:28px;color:#0f172a}h1{margin:0 0 4px}p{color:#64748b}table{width:100%;border-collapse:collapse;margin:16px 0 28px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:12px}th{background:#2e66a6;color:white}h2{margin-top:24px;font-size:16px}@media print{button{display:none}}</style></head><body><h1>Admin Dashboard Report</h1><p>Generated ${new Date().toLocaleString()}</p><h2>Applied Filters</h2><table><thead><tr><th>Filter</th><th>Value</th></tr></thead><tbody>${filterRows || '<tr><td colspan="2">Overall</td></tr>'}</tbody></table><h2>KPIs</h2><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${kpiRows}</tbody></table><h2>System Activity Trend</h2><table><thead><tr><th>Month</th><th>Registrations</th><th>Jobs</th><th>Applications</th><th>Hires</th></tr></thead><tbody>${trendRows || '<tr><td colspan="5">No data</td></tr>'}</tbody></table><script>window.onload=()=>{window.print();}</script></body></html>`);
-      reportWindow.document.close();
+      const exportFilters = {
+        date: filters.date,
+        specificDate: filters.specificDate,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        campus: filters.campus,
+        yearGraduated: filters.yearGraduated,
+        course: filters.course,
+        gender: filters.gender,
+      };
+
+      const response = await api.post(
+        "/admin/exports/excel",
+        {
+          mode: exportRequest.type,
+          filters: exportRequest.type === "all" ? {} : exportFilters,
+        },
+        {
+          responseType: "blob",
+          headers: { "x-admin-password": exportPassword },
+        },
+      );
+
+      const disposition = response.headers?.["content-disposition"] || "";
+      const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const filename = encodedMatch?.[1]
+        ? decodeURIComponent(encodedMatch[1])
+        : plainMatch?.[1] || `agapay-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      const blobUrl = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+
+      setExportRequest(null);
+      setExportPassword("");
+      setExportPasswordMessage("");
     } catch (err) {
-      reportWindow.close();
-      setError("Unable to prepare the PDF report.");
+      let message = "Unable to export records.";
+
+      if (err?.response?.data instanceof Blob) {
+        try {
+          const payload = JSON.parse(await err.response.data.text());
+          message = payload?.message || message;
+        } catch (_) {
+          // Keep the fallback message when the response is not JSON.
+        }
+      } else {
+        message = err?.response?.data?.message || message;
+      }
+
+      setExportPasswordMessage(message);
     } finally {
-      setExportingPdf(false);
+      setExporting(false);
     }
   };
 
@@ -1799,11 +1872,14 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-            <button type="button" onClick={exportAnalyticsExcel} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-60">
-              <Download size={14} /> {exporting ? "Exporting..." : "Export Excel"}
+            <button type="button" onClick={() => openExportPassword("all", "Export All Records")} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-60">
+              <Download size={14} /> Export All Records
             </button>
-            <button type="button" onClick={exportAnalyticsPdf} disabled={loading || exportingPdf} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60">
-              <Download size={14} /> {exportingPdf ? "Preparing..." : "Export PDF"}
+            <button type="button" onClick={() => openExportPassword("filtered", "Filter Records")} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-60">
+              <Filter size={14} /> Filter Records
+            </button>
+            <button type="button" onClick={() => openExportPassword("report", "AGAPAY Reports")} disabled={loading || exporting} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#255487] disabled:opacity-60">
+              <Download size={14} /> AGAPAY Reports
             </button>
           </div>
         </header>
@@ -1854,7 +1930,7 @@ const AdminDashboard = () => {
         </div>
 
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <DateFilterDropdown
               value={filters.date}
               specificDate={filters.specificDate}
@@ -1864,25 +1940,10 @@ const AdminDashboard = () => {
               disabled={loading}
             />
             <FilterSelect label="Campus" value={filters.campus} onChange={(value) => updateFilter("campus", value)} values={["AU Main", "AU San Jose", "AU South"]} placeholderLabel="Select Campus" allLabel="All Campuses" preserveCase />
-            <FilterSelect label="Application Status" value={filters.applicationStatus} onChange={(value) => updateFilter("applicationStatus", value)} values={options.applicationStatuses || []} placeholderLabel="Select Status" allLabel="All Application Status" />
-            <FilterSelect label="Job Type" value={filters.jobType} onChange={(value) => updateFilter("jobType", value)} values={options.jobTypes || []} placeholderLabel="Select Job Type" allLabel="All Job Types" preserveCase />
-            <FilterSelect label="Work Mode" value={filters.workMode} onChange={(value) => updateFilter("workMode", value)} values={options.workModes || []} placeholderLabel="Select Work Mode" allLabel="All Work Modes" preserveCase />
-            <FilterSelect label="Industry" value={filters.industry} onChange={(value) => updateFilter("industry", value)} values={options.industries || []} placeholderLabel="Select Industry" allLabel="All Industries" preserveCase />
+            <FilterSelect label="Year Graduated" value={filters.yearGraduated} onChange={(value) => updateFilter("yearGraduated", value)} values={options.yearsGraduated || []} placeholderLabel="Select Year" allLabel="All Year Graduated" preserveCase />
+            <FilterSelect label="Course" value={filters.course} onChange={(value) => updateFilter("course", value)} values={options.courses || []} placeholderLabel="Select Course" allLabel="All Course" preserveCase />
+            <FilterSelect label="Gender" value={filters.gender} onChange={(value) => updateFilter("gender", value)} values={options.genders || []} placeholderLabel="Select Gender" allLabel="All Gender" preserveCase />
           </div>
-
-          {showMoreFilters ? (
-            <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              <FilterSelect label="Job Status" value={filters.jobStatus} onChange={(value) => updateFilter("jobStatus", value)} values={options.jobStatuses || []} placeholderLabel="Select Job Status" allLabel="All Job Statuses" />
-              <FilterSelect label="Verification Status" value={filters.verificationStatus} onChange={(value) => updateFilter("verificationStatus", value)} values={options.verificationStatuses || []} placeholderLabel="Select Verification Status" allLabel="All Verification Statuses" />
-              <FilterSelect label="Request Edit" value={filters.requestEditStatus} onChange={(value) => updateFilter("requestEditStatus", value)} values={options.requestEditStatuses || []} placeholderLabel="Select Request Edit" allLabel="All Request Edit" />
-              <FilterSelect label="Year Graduated" value={filters.yearGraduated} onChange={(value) => updateFilter("yearGraduated", value)} values={options.yearsGraduated || []} placeholderLabel="Select Year" allLabel="All Year Graduated" preserveCase />
-              <FilterSelect label="Course" value={filters.course} onChange={(value) => updateFilter("course", value)} values={options.courses || []} placeholderLabel="Select Course" allLabel="All Course" preserveCase />
-              <FilterSelect label="How Soon Can Start" value={filters.availability} onChange={(value) => updateFilter("availability", value)} values={options.availabilities || []} placeholderLabel="Select Availability" allLabel="All Availability" preserveCase />
-              <FilterSelect label="Experience" value={filters.experience} onChange={(value) => updateFilter("experience", value)} values={options.experiences || []} placeholderLabel="Select Experience" allLabel="All Experience" preserveCase />
-              <FilterSelect label="Gender" value={filters.gender} onChange={(value) => updateFilter("gender", value)} values={options.genders || []} placeholderLabel="Select Gender" allLabel="All Gender" preserveCase />
-              <FilterSelect label="Education Level" value={filters.educationLevel} onChange={(value) => updateFilter("educationLevel", value)} values={options.educationLevels || []} placeholderLabel="Select Education" allLabel="All Education Level" preserveCase />
-            </div>
-          ) : null}
 
           <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
             <label className="mr-auto inline-flex h-9 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
@@ -1892,9 +1953,6 @@ const AdminDashboard = () => {
               </button>
               <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>{dummyMode ? "ON" : "OFF"}</span>
             </label>
-            <button type="button" onClick={() => setShowMoreFilters((value) => !value)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#2e66a6]/20 bg-[#2e66a6]/5 px-4 text-xs font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10">
-              <Filter size={13} /> {showMoreFilters ? "Hide Filters" : "More Filters"}
-            </button>
             <button type="button" onClick={resetFilters} disabled={!hasFilters} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
               <RefreshCw size={13} /> Clear All
             </button>
@@ -2112,6 +2170,17 @@ const AdminDashboard = () => {
           endDate={filters.endDate}
           onCancel={() => setShowCustomDateModal(false)}
           onApply={applyCustomDateRange}
+        />
+
+        <ExportPasswordModal
+          open={Boolean(exportRequest)}
+          actionLabel={exportRequest?.label}
+          password={exportPassword}
+          onPasswordChange={(value) => { setExportPassword(value); setExportPasswordMessage(""); }}
+          onCancel={closeExportPassword}
+          onConfirm={downloadExport}
+          submitting={exporting}
+          message={exportPasswordMessage}
         />
       </div>
     </main>
