@@ -263,7 +263,7 @@ const AdminFilterRecords = () => {
               {appliedFilters.companyName ? <span className="max-w-[220px] truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{appliedFilters.companyName}</span> : null}
             </div>
 
-            <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-100 p-4 shadow-sm sm:p-5">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="relative w-full max-w-sm">
                   <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
