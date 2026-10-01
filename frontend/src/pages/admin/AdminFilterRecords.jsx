@@ -338,7 +338,7 @@ const AdminFilterRecords = () => {
             </div>
 
             <img
-              src="/images/filterby.png"
+              src="/images/GlossyIcon.png"
               alt=""
               aria-hidden="true"
               className="pointer-events-none mx-auto mb-4 mt-1 h-28 w-28 object-contain opacity-20"
