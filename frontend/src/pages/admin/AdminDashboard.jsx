@@ -1660,7 +1660,7 @@ const WithdrawalStageCard = ({ data = [] }) => {
 };
 
 const ApplicationsBeforeHireCard = ({ data = [] }) => (
-  <section className="min-w-0 rounded-2xl p-4 xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70">
+  <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
     <RecruitmentCardTitle
       icon={FaListOl}
       title="Applications Before Hire"
@@ -1674,7 +1674,7 @@ const HireRateByCampusCard = ({ data = [] }) => {
   const rows = Array.isArray(data) ? data : [];
   if (!rows.length) {
     return (
-      <section className="min-w-0 rounded-2xl p-4 xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70">
+      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
         <RecruitmentCardTitle
           icon={FaUniversity}
           title="Hire Rate by Campus"
@@ -1686,7 +1686,7 @@ const HireRateByCampusCard = ({ data = [] }) => {
   }
   const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
   return (
-    <section className="min-w-0 rounded-2xl p-4 xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70">
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
         icon={Building2}
         title="Hire Rate by Campus"
@@ -2313,7 +2313,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="User Roles"
               subtitle="Admin, employer, and jobseeker accounts"
-              className="xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
+              className="xl:col-span-6"
               icon={FaUsers}
             >
               <DonutChart data={sections.users?.roles} showPercentage />
@@ -2321,7 +2321,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Job Status"
               subtitle="Lifecycle state of job postings"
-              className="xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
+              className="xl:col-span-6"
               icon={FaFileAlt}
             >
               <DonutChart data={sections.jobs?.statuses} showPercentage />
@@ -2334,14 +2334,14 @@ const AdminDashboard = () => {
             <ChartCard
               title="Application Status"
               subtitle="Application status breakdown"
-              className="xl:col-span-6 xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
+              className="xl:col-span-6"
             >
               <HorizontalBars data={sections.applications?.funnel} maxItems={6} />
             </ChartCard>
             <ChartCard
               title="Employment Type"
               subtitle="Job supply grouped by employment type"
-              className="xl:col-span-6 xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
+              className="xl:col-span-6"
               icon={FaBriefcase}
             >
               <HorizontalBars data={sections.jobs?.employmentTypes} centered />
@@ -2392,7 +2392,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Gender Distribution"
               subtitle="Job seekers by gender"
-              className="xl:col-span-6 xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
+              className="xl:col-span-6"
               icon={FaUser}
             >
               <DonutChart data={sections.users?.genders} showPercentage />
@@ -2400,7 +2400,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="How Soon Can They Start?"
               subtitle="Applicant start availability"
-              className="xl:col-span-6 xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
+              className="xl:col-span-6"
               icon={FaAward}
             >
               <VerticalBars data={sections.users?.availabilities} maxItems={5} />
@@ -2422,7 +2422,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Educational Attainment"
               subtitle="Job seekers by highest completed qualification"
-              className="xl:col-span-12 xl:col-span-12 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
+              className="xl:col-span-12"
               icon={FaGraduationCap}
             >
               <HorizontalBars data={sections.users?.educationLevels} maxItems={6} />
@@ -2440,14 +2440,12 @@ const AdminDashboard = () => {
               title="Job Edit Requests"
               subtitle="Governance requests by status"
               icon={FaPen}
-              className="border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
             >
               <HorizontalBars data={sections.operations?.editRequests} centered />
             </ChartCard>
             <ChartCard
               title="Most Requested Job Sections"
               subtitle="Sections employers request to edit"
-              className="border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
             >
               <HorizontalBars data={sections.operations?.editRequestSections} />
             </ChartCard>
