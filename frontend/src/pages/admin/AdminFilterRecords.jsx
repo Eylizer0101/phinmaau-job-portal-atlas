@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileSpreadsheet, FileText, Filter, RefreshCw, Search, X } from "lucide-react";
+import { FileSpreadsheet, FileText, Filter, RefreshCw, Search, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
@@ -231,16 +231,10 @@ const AdminFilterRecords = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] px-4 py-5 sm:px-6 lg:px-7">
-      <div className="mx-auto max-w-7xl px-1 py-5">
-        <div className="mb-4 flex items-center gap-3">
-          <button type="button" onClick={() => navigate("/admin/dashboard")} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-            <ArrowLeft size={16} /> Back to Dashboard
-          </button>
-        </div>
-
+      <div className="mx-auto max-w-7xl px-1 py-3">
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
-          <section className="min-w-0 self-start overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
-            <div className="bg-gradient-to-r from-[#163f72] via-[#2e66a6] to-[#49a9d5] px-5 py-5 text-white sm:px-6">
+          <main className="min-w-0">
+            <div className="overflow-hidden rounded-xl bg-gradient-to-r from-[#163f72] via-[#2e66a6] to-[#49a9d5] px-5 py-5 text-white shadow-sm sm:px-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold">Filter Records</h1>
@@ -257,14 +251,14 @@ const AdminFilterRecords = () => {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3">
+            <div className="mt-3 flex flex-wrap items-center gap-2 px-1">
               <span className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#2e66a6] px-3 text-xs font-semibold text-white"><Filter size={14} /> Active Table</span>
               <span className="rounded-full bg-[#e8f4ff] px-3 py-1.5 text-xs font-semibold text-[#2e66a6]">{roleLabel(appliedFilters.role)}</span>
               {appliedFilters.applicationStatus ? <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">{appliedFilters.applicationStatus}</span> : null}
               {appliedFilters.companyName ? <span className="max-w-[220px] truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{appliedFilters.companyName}</span> : null}
             </div>
 
-            <div className="p-4 sm:p-5">
+            <div className="mt-3 rounded-xl bg-white p-4 shadow-sm sm:p-5">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="relative w-full max-w-sm">
                   <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -279,7 +273,7 @@ const AdminFilterRecords = () => {
                 <div className="text-xs font-medium text-slate-500">Showing {records.length ? (page - 1) * perPage + 1 : 0}-{Math.min(page * perPage, records.length)} of {records.length}</div>
               </div>
 
-              <div className="max-h-[620px] overflow-auto rounded-xl border border-slate-200 bg-white">
+              <div className="max-h-[620px] overflow-auto bg-white">
                 <table className="min-w-max border-separate border-spacing-0 text-left text-xs">
                   <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_rgba(148,163,184,0.25)]">
                     <tr>
@@ -309,20 +303,20 @@ const AdminFilterRecords = () => {
               </div>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1} className="h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-40">Previous</button>
+                <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1} className="h-9 rounded-lg px-3 text-xs font-semibold text-slate-700 disabled:opacity-40">Previous</button>
                 <div className="text-xs font-semibold text-slate-500">Page {page} of {totalPages}</div>
-                <button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page >= totalPages} className="h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-40">Next</button>
+                <button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page >= totalPages} className="h-9 rounded-lg px-3 text-xs font-semibold text-slate-700 disabled:opacity-40">Next</button>
               </div>
             </div>
-          </section>
+          </main>
 
-          <aside className="relative overflow-hidden rounded-[20px] border border-[#1f5f95]/30 bg-gradient-to-b from-[#163f72] via-[#2e66a6] to-[#38a0c8] shadow-sm xl:sticky xl:top-5 xl:self-start">
-            <div className="relative z-10 flex items-center justify-between border-b border-white/15 px-4 py-4 text-white">
+          <aside className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#163f72] via-[#2e66a6] to-[#38a0c8] shadow-sm xl:sticky xl:top-5 xl:self-start">
+            <div className="relative z-10 flex items-center justify-between px-4 py-4 text-white">
               <div className="flex items-center gap-2"><Filter size={18} /><h2 className="text-lg font-bold">Filter Controls</h2></div>
               <button type="button" onClick={resetFilters} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-[#245a93]"><RefreshCw size={13} /> Reset</button>
             </div>
 
-            <div className="relative z-10 m-3 rounded-2xl bg-white p-4 shadow-lg">
+            <div className="relative z-10 mx-3 rounded-xl bg-white p-4 shadow-sm">
               <SelectField label="Role" value={filters.role} onChange={changeRole} options={ROLE_OPTIONS} placeholder="Select Role" />
 
               {showJobseekerFilters ? (
@@ -339,17 +333,16 @@ const AdminFilterRecords = () => {
               {showJobFilters ? <div className="mt-3"><SelectField label={filters.role === "jobOffer" ? "Job Status" : "Application Status"} value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={optionItems(options.applicationStatuses)} placeholder="All Status" /></div> : null}
             </div>
 
-            <div className="relative z-10 px-3 pb-3">
+            <div className="relative z-10 px-3 pb-4 pt-3">
               <button type="button" onClick={applyFilters} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-bold text-[#245a93] shadow-md"><Filter size={15} /> Apply Filter</button>
             </div>
 
-            <div className="pointer-events-none relative z-0 h-[150px] overflow-hidden" aria-hidden="true">
-              <img
-                src="/images/filterby.png"
-                alt=""
-                className="absolute bottom-[-22px] right-[-6px] h-40 w-40 object-contain opacity-[0.22]"
-              />
-            </div>
+            <img
+              src="/images/filterby.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none mx-auto mb-4 mt-1 h-28 w-28 object-contain opacity-20"
+            />
           </aside>
         </div>
       </div>
