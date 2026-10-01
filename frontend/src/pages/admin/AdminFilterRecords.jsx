@@ -239,8 +239,14 @@ const AdminFilterRecords = () => {
 
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
           <main className="min-w-0">
-            <div className="overflow-hidden rounded-xl bg-gradient-to-r from-[#163f72] via-[#2e66a6] to-[#49a9d5] px-5 py-5 text-white shadow-sm sm:px-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#163f72] via-[#2e66a6] to-[#49a9d5] px-5 py-5 text-white shadow-sm sm:px-6">
+              <img
+                src="/images/WhiteDoutton.png"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute right-3 top-1/2 h-20 w-20 -translate-y-1/2 object-contain opacity-[0.14]"
+              />
+              <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold">Filter Records</h1>
                   <p className="mt-1 text-sm text-white/80">{records.length} record(s) · {roleLabel(appliedFilters.role)}</p>
