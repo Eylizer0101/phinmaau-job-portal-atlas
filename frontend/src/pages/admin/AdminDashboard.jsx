@@ -2313,7 +2313,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="User Roles"
               subtitle="Admin, employer, and jobseeker accounts"
-              className="xl:col-span-6"
+              className="xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
               icon={FaUsers}
             >
               <DonutChart data={sections.users?.roles} showPercentage />
@@ -2321,7 +2321,7 @@ const AdminDashboard = () => {
             <ChartCard
               title="Job Status"
               subtitle="Lifecycle state of job postings"
-              className="xl:col-span-6"
+              className="xl:col-span-6 border-transparent bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] [&>div:first-child]:border-white/15 [&_h2]:text-white [&_p]:text-white/70"
               icon={FaFileAlt}
             >
               <DonutChart data={sections.jobs?.statuses} showPercentage />
