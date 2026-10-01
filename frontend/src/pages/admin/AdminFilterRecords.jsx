@@ -244,7 +244,7 @@ const AdminFilterRecords = () => {
                 src="/images/WhiteDoutton.png"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute -right-3 top-1/2 h-32 w-32 -translate-y-1/2 object-contain opacity-[0.18]"
+                className="pointer-events-none absolute -right-8 top-1/2 h-44 w-44 -translate-y-1/2 rotate-[18deg] object-contain opacity-[0.20]"
               />
               <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
                 <div>
