@@ -2133,7 +2133,7 @@ const AdminDashboard = () => {
               <button type="button" onClick={() => openExportPassword("all", "Export All Records")} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-xs font-bold text-[#2e66a6] shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 disabled:opacity-60">
                 <Download size={15} /> Export All Records
               </button>
-              <button type="button" onClick={() => openExportPassword("filtered", "Filter Records")} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-xs font-bold text-[#2e66a6] shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 disabled:opacity-60">
+              <button type="button" onClick={() => navigate("/admin/filter-records")} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-xs font-bold text-[#2e66a6] shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 disabled:opacity-60">
                 <Filter size={15} /> Filter Records
               </button>
               <button type="button" onClick={() => openExportPassword("report", "AGAPAY Reports")} disabled={loading || exporting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-xs font-bold text-white shadow-[0_7px_18px_rgba(46,102,166,0.24)] transition hover:bg-[#255487] disabled:opacity-60">

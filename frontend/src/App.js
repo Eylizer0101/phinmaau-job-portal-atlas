@@ -77,6 +77,7 @@ import JobSeekerLayout from './layouts/JobSeekerLayout';
 // ✅ ADMIN
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminFilterRecords from './pages/admin/AdminFilterRecords';
 import UserManagement from './pages/admin/UserManagement';
 import UserManagementDetails from './pages/admin/UserManagementDetails';
 import AdminUserApplicationHistory from './pages/admin/AdminUserApplicationHistory';
@@ -518,6 +519,16 @@ function App() {
             <RequireRole role="admin" redirectTo="/login">
               <AdminLayout>
                 <AdminDashboard />
+              </AdminLayout>
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/filter-records"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminLayout>
+                <AdminFilterRecords />
               </AdminLayout>
             </RequireRole>
           }

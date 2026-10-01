@@ -18,6 +18,11 @@ router.put('/profile/password', adminController.updateAdminPassword);
 // Dashboard analytics route
 router.get('/dashboard', adminController.getAdminDashboardAnalytics);
 
+// Filter Records page routes
+router.get('/filter-records', adminController.getAdminFilterRecords);
+router.post('/filter-records/export/excel', adminController.requireAdminPasswordForCredential, adminController.exportAdminFilterRecordsExcel);
+router.post('/filter-records/export/pdf', adminController.requireAdminPasswordForCredential, adminController.exportAdminFilterRecordsPdf);
+
 // Password-protected Excel record exports
 router.post('/exports/excel', adminController.requireAdminPasswordForCredential, adminController.exportAdminRecordsExcel);
 

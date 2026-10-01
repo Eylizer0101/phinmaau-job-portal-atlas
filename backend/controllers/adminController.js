@@ -6279,6 +6279,304 @@ const addExportDataRows = (worksheet, startRow, rows) => {
   });
 };
 
+
+const normalizeAdminFilterRole = (value) => {
+  const normalized = exportText(value).toLowerCase().replace(/[_-]+/g, ' ');
+  if (['employer', 'employers'].includes(normalized)) return 'employer';
+  if (['job offer', 'job offers', 'joboffer', 'joboffers', 'jobs'].includes(normalized)) return 'jobOffer';
+  if (['application', 'applications'].includes(normalized)) return 'application';
+  return 'jobseeker';
+};
+
+const filterRecordMatches = (value, selected) => {
+  const target = exportText(selected).toLowerCase();
+  if (!target || target === 'all') return true;
+  return exportText(value).toLowerCase() === target;
+};
+
+const filterRecordIncludes = (value, selected) => {
+  const target = exportText(selected).toLowerCase();
+  if (!target || target === 'all') return true;
+  return exportText(value).toLowerCase().includes(target);
+};
+
+const uniqueFilterValues = (records, key) =>
+  [...new Set(records.map((record) => exportText(record?.[key])).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+const buildAdminFilterRecords = async (rawFilters = {}) => {
+  const role = normalizeAdminFilterRole(rawFilters.role);
+  const [users, jobs, applications] = await Promise.all([
+    User.find({ status: { $ne: 'deleted' } }).select('-password').lean(),
+    Job.find({}).lean(),
+    Application.find({}).lean(),
+  ]);
+
+  const userById = new Map(users.map((user) => [String(user._id), user]));
+  const jobById = new Map(jobs.map((job) => [String(job._id), job]));
+  const applicationsByJob = new Map();
+  const applicationsByJobseeker = new Map();
+
+  applications.forEach((application) => {
+    const jobId = String(application.job || '');
+    const seekerId = String(application.jobseeker || '');
+    if (jobId) applicationsByJob.set(jobId, (applicationsByJob.get(jobId) || 0) + 1);
+    if (seekerId) applicationsByJobseeker.set(seekerId, (applicationsByJobseeker.get(seekerId) || 0) + 1);
+  });
+
+  let records = [];
+
+  if (role === 'jobseeker') {
+    records = users
+      .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
+      .map((user) => {
+        const profile = user.jobSeekerProfile || {};
+        const address = exportAddressParts(profile, false);
+        return {
+          id: String(user._id),
+          role: 'jobseeker',
+          date: exportDate(user.createdAt),
+          fullName: exportFullName(user),
+          email: user.email || '',
+          contactNumber: profile.phoneNumber || user.registrationContactNumber || '',
+          age: exportAge(profile.birthday),
+          civilStatus: profile.civilStatus || '',
+          gender: profile.gender || '',
+          campus: getJobseekerCampus(user) === 'Unspecified' ? '' : getJobseekerCampus(user),
+          course: exportProfileValues(user, 'course')[0] || '',
+          yearGraduated: exportProfileValues(user, 'yearGraduated')[0] || '',
+          region: address.region,
+          province: address.province,
+          cityMunicipality: address.city,
+          streetAddress: address.street,
+        };
+      });
+  } else if (role === 'employer') {
+    records = users
+      .filter((user) => String(user.role || '').toLowerCase() === 'employer')
+      .map((user) => {
+        const profile = user.employerProfile || {};
+        const address = exportAddressParts(profile, true);
+        return {
+          id: String(user._id),
+          role: 'employer',
+          date: exportDate(user.createdAt),
+          fullName: exportFullName(user),
+          email: user.email || profile.businessEmail || '',
+          contactNumber: profile.mobileNumber || user.registrationContactNumber || '',
+          companyName: profile.companyName || '',
+          industry: profile.industry || '',
+          region: address.region,
+          province: address.province,
+          cityMunicipality: address.city,
+          streetAddress: address.street,
+        };
+      });
+  } else if (role === 'jobOffer') {
+    records = jobs.map((job) => {
+      const employer = userById.get(String(job.employer || '')) || {};
+      return {
+        id: String(job._id),
+        role: 'jobOffer',
+        date: exportDate(job.publishedAt || job.createdAt),
+        companyName: job.companyName || employer?.employerProfile?.companyName || '',
+        industry: employer?.employerProfile?.industry || job.category || '',
+        jobTitle: job.title || '',
+        workMode: job.workMode || '',
+        employmentType: job.jobType || '',
+        vacancy: Number(job.vacancies || 0),
+        applicant: applicationsByJob.get(String(job._id)) || Number(job.applicationCount || 0),
+        applicationStatus: getAdminJobOfferStatus(job),
+        validUntil: exportDate(job.applicationDeadline),
+      };
+    });
+  } else {
+    records = applications.map((application) => {
+      const seeker = userById.get(String(application.jobseeker || '')) || {};
+      const profile = seeker.jobSeekerProfile || {};
+      const job = jobById.get(String(application.job || '')) || {};
+      const employer = userById.get(String(application.employer || job.employer || '')) || {};
+      const address = exportAddressParts(profile, false);
+      return {
+        id: String(application._id),
+        role: 'application',
+        date: exportDate(application.appliedAt || application.createdAt),
+        fullName: exportFullName(seeker),
+        email: seeker.email || '',
+        contactNumber: profile.phoneNumber || seeker.registrationContactNumber || '',
+        age: exportAge(profile.birthday),
+        civilStatus: profile.civilStatus || '',
+        gender: profile.gender || '',
+        campus: getJobseekerCampus(seeker) === 'Unspecified' ? '' : getJobseekerCampus(seeker),
+        course: exportProfileValues(seeker, 'course')[0] || '',
+        yearGraduated: exportProfileValues(seeker, 'yearGraduated')[0] || '',
+        region: address.region,
+        province: address.province,
+        cityMunicipality: address.city,
+        streetAddress: address.street,
+        companyName: job.companyName || employer?.employerProfile?.companyName || '',
+        industry: employer?.employerProfile?.industry || job.category || '',
+        jobTitle: job.title || '',
+        workMode: job.workMode || '',
+        employmentType: job.jobType || '',
+        applicationStatus: application.status || '',
+        processingTime: exportProcessingTime(application),
+        timesApplied: applicationsByJobseeker.get(String(application.jobseeker || '')) || 0,
+        hiredDate: exportDate(application.hiredAt),
+      };
+    });
+  }
+
+  const optionsSource = records;
+  const filters = rawFilters || {};
+
+  records = records.filter((record) => {
+    if (!filterRecordMatches(record.campus, filters.campus)) return false;
+    if (!filterRecordMatches(record.course, filters.course)) return false;
+    if (!filterRecordMatches(record.yearGraduated, filters.yearGraduated)) return false;
+    if (!filterRecordMatches(record.gender, filters.gender)) return false;
+    if (!filterRecordMatches(record.companyName, filters.companyName)) return false;
+    if (!filterRecordMatches(record.jobTitle, filters.jobTitle)) return false;
+    if (!filterRecordMatches(record.applicationStatus, filters.applicationStatus)) return false;
+    if (!filterRecordIncludes(record.fullName, filters.search) &&
+        !filterRecordIncludes(record.email, filters.search) &&
+        !filterRecordIncludes(record.companyName, filters.search) &&
+        !filterRecordIncludes(record.jobTitle, filters.search)) return false;
+    return true;
+  });
+
+  return {
+    role,
+    records,
+    options: {
+      campuses: uniqueFilterValues(optionsSource, 'campus'),
+      courses: uniqueFilterValues(optionsSource, 'course'),
+      yearsGraduated: uniqueFilterValues(optionsSource, 'yearGraduated'),
+      genders: uniqueFilterValues(optionsSource, 'gender'),
+      companyNames: uniqueFilterValues(optionsSource, 'companyName'),
+      jobTitles: uniqueFilterValues(optionsSource, 'jobTitle'),
+      applicationStatuses: uniqueFilterValues(optionsSource, 'applicationStatus'),
+    },
+  };
+};
+
+const adminFilterRecordColumns = {
+  jobseeker: [
+    ['date', 'Date Registered'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'],
+    ['age', 'Age'], ['civilStatus', 'Civil Status'], ['gender', 'Gender'], ['campus', 'Campus'], ['course', 'Course'],
+    ['yearGraduated', 'Year Graduated'], ['region', 'Region'], ['province', 'Province'], ['cityMunicipality', 'City / Municipality'], ['streetAddress', 'Street Address'],
+  ],
+  employer: [
+    ['date', 'Date Registered'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'],
+    ['companyName', 'Company Name'], ['industry', 'Industry'], ['region', 'Region'], ['province', 'Province'],
+    ['cityMunicipality', 'City / Municipality'], ['streetAddress', 'Street Address'],
+  ],
+  jobOffer: [
+    ['date', 'Date Posted'], ['companyName', 'Company Name'], ['industry', 'Industry'], ['jobTitle', 'Job Title'],
+    ['workMode', 'Work Mode'], ['employmentType', 'Employment Type'], ['vacancy', 'Vacancy'], ['applicant', 'Applicant'],
+    ['applicationStatus', 'Status'], ['validUntil', 'Valid Until'],
+  ],
+  application: [
+    ['date', 'Date Applied'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'], ['age', 'Age'],
+    ['civilStatus', 'Civil Status'], ['gender', 'Gender'], ['campus', 'Campus'], ['course', 'Course'], ['yearGraduated', 'Year Graduated'],
+    ['region', 'Region'], ['province', 'Province'], ['cityMunicipality', 'City / Municipality'], ['streetAddress', 'Street Address'],
+    ['applicationStatus', 'Application Status'], ['companyName', 'Company Name'], ['jobTitle', 'Job Title'], ['workMode', 'Work Mode'],
+    ['employmentType', 'Employment Type'], ['processingTime', 'Processing Time'], ['timesApplied', 'Times Applied'], ['hiredDate', 'Hired Date'],
+  ],
+};
+
+exports.getAdminFilterRecords = async (req, res) => {
+  try {
+    const payload = await buildAdminFilterRecords(req.query || {});
+    return res.json({ success: true, ...payload, total: payload.records.length });
+  } catch (error) {
+    console.error('Admin filter records error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load filter records.' });
+  }
+};
+
+exports.exportAdminFilterRecordsExcel = async (req, res) => {
+  try {
+    const payload = await buildAdminFilterRecords(req.body?.filters || {});
+    const columns = adminFilterRecordColumns[payload.role] || adminFilterRecordColumns.jobseeker;
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'AGAPAY';
+    workbook.company = 'PHINMA Araullo University';
+    workbook.created = new Date();
+
+    const roleLabel = payload.role === 'jobOffer' ? 'Job Offers' : payload.role === 'application' ? 'Applications' : payload.role === 'employer' ? 'Employer' : 'Job Seeker';
+    const sheet = workbook.addWorksheet(roleLabel.slice(0, 31));
+    styleExportWorksheet(
+      sheet,
+      `Phinma Araullo University - ${roleLabel} Filter Records`,
+      columns.map(([, label]) => label),
+      columns.map(([, label]) => Math.min(38, Math.max(14, label.length + 5))),
+    );
+    addExportDataRows(sheet, 5, payload.records.map((record) => columns.map(([key]) => record[key] ?? '')));
+
+    const safeRole = payload.role === 'jobOffer' ? 'job-offers' : payload.role;
+    const filename = `agapay-filter-records-${safeRole}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error('Admin filter records Excel export error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to generate the Excel export.' });
+  }
+};
+
+const escapePdfHtml = (value) => exportText(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
+exports.exportAdminFilterRecordsPdf = async (req, res) => {
+  let browser = null;
+  try {
+    const payload = await buildAdminFilterRecords(req.body?.filters || {});
+    const columns = adminFilterRecordColumns[payload.role] || adminFilterRecordColumns.jobseeker;
+    const roleLabel = payload.role === 'jobOffer' ? 'Job Offers' : payload.role === 'application' ? 'Applications' : payload.role === 'employer' ? 'Employer' : 'Job Seeker';
+
+    const tableHead = columns.map(([, label]) => `<th>${escapePdfHtml(label)}</th>`).join('');
+    const tableBody = payload.records.length
+      ? payload.records.map((record) => `<tr>${columns.map(([key]) => `<td>${escapePdfHtml(record[key])}</td>`).join('')}</tr>`).join('')
+      : `<tr><td colspan="${columns.length}" style="text-align:center;padding:24px;">No matching records.</td></tr>`;
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+      @page{size:A4 landscape;margin:12mm} body{font-family:Arial,sans-serif;color:#172033;font-size:9px}
+      h1{font-size:18px;margin:0;color:#153f73} .sub{margin:5px 0 14px;color:#64748b}
+      table{width:100%;border-collapse:collapse;table-layout:auto} th{background:#2e66a6;color:#fff;padding:7px 6px;border:1px solid #dbe4ef;white-space:nowrap}
+      td{padding:6px;border:1px solid #dbe4ef;vertical-align:top;word-break:break-word} tr:nth-child(even) td{background:#f8fafc}
+      .meta{display:flex;justify-content:space-between;margin-bottom:10px;color:#64748b}
+    </style></head><body><h1>PHINMA Araullo University - ${escapePdfHtml(roleLabel)} Filter Records</h1>
+    <div class="meta"><span>${payload.records.length} record(s)</span><span>Generated: ${escapePdfHtml(exportDate(new Date()))}</span></div>
+    <table><thead><tr>${tableHead}</tr></thead><tbody>${tableBody}</tbody></table></body></html>`;
+
+    const puppeteer = require('puppeteer');
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({ format: 'A4', landscape: true, printBackground: true, margin: { top: '12mm', right: '10mm', bottom: '12mm', left: '10mm' } });
+
+    const safeRole = payload.role === 'jobOffer' ? 'job-offers' : payload.role;
+    const filename = `agapay-filter-records-${safeRole}-${new Date().toISOString().slice(0, 10)}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(Buffer.from(pdf));
+  } catch (error) {
+    console.error('Admin filter records PDF export error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to generate the PDF export.' });
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+  }
+};
+
 exports.exportAdminRecordsExcel = async (req, res) => {
   try {
     const mode = ['all', 'filtered', 'report'].includes(String(req.body?.mode || '').toLowerCase())
