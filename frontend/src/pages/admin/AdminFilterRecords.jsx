@@ -231,7 +231,7 @@ const AdminFilterRecords = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] px-4 py-5 sm:px-6 lg:px-7">
-      <div className="mx-auto max-w-[1680px]">
+      <div className="mx-auto max-w-7xl px-1 py-8">
         <div className="mb-4 flex items-center gap-3">
           <button type="button" onClick={() => navigate("/admin/dashboard")} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
             <ArrowLeft size={16} /> Back to Dashboard
