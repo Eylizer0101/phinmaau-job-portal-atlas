@@ -244,7 +244,7 @@ const AdminFilterRecords = () => {
                 src="/images/WhiteDoutton.png"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute right-3 top-1/2 h-20 w-20 -translate-y-1/2 object-contain opacity-[0.14]"
+                className="pointer-events-none absolute -right-3 top-1/2 h-32 w-32 -translate-y-1/2 object-contain opacity-[0.18]"
               />
               <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -347,7 +347,7 @@ const AdminFilterRecords = () => {
               src="/images/GlossyIcon.png"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none mx-auto mb-4 mt-1 h-28 w-28 object-contain opacity-20"
+              className="pointer-events-none ml-auto mr-2 mb-3 mt-1 h-40 w-40 object-contain opacity-25"
             />
           </aside>
         </div>
