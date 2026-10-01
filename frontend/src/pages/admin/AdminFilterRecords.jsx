@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileSpreadsheet, FileText, Filter, Image as ImageIcon, RefreshCw, Search, X } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, FileText, Filter, RefreshCw, Search, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
@@ -343,12 +343,12 @@ const AdminFilterRecords = () => {
               <button type="button" onClick={applyFilters} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-bold text-[#245a93] shadow-md"><Filter size={15} /> Apply Filter</button>
             </div>
 
-            <div className="mx-3 mb-3 mt-1 flex min-h-[145px] items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-4 text-white/80">
-              <div className="text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15"><ImageIcon size={30} /></div>
-                <p className="mt-2 text-xs font-semibold">Filter Records Illustration</p>
-                <p className="mt-1 text-[11px] text-white/65">You can replace this area with your preferred image.</p>
-              </div>
+            <div className="mx-3 mb-3 mt-1 flex min-h-[145px] items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-4">
+              <img
+                src="/images/filterby.png"
+                alt="Filter"
+                className="h-28 w-28 object-contain"
+              />
             </div>
           </aside>
         </div>
