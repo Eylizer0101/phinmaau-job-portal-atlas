@@ -231,15 +231,15 @@ const AdminFilterRecords = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] px-4 py-5 sm:px-6 lg:px-7">
-      <div className="mx-auto max-w-7xl px-1 py-8">
+      <div className="mx-auto max-w-7xl px-1 py-5">
         <div className="mb-4 flex items-center gap-3">
           <button type="button" onClick={() => navigate("/admin/dashboard")} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
             <ArrowLeft size={16} /> Back to Dashboard
           </button>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
-          <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
+          <section className="min-w-0 self-start overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
             <div className="bg-gradient-to-r from-[#163f72] via-[#2e66a6] to-[#49a9d5] px-5 py-5 text-white sm:px-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -316,13 +316,13 @@ const AdminFilterRecords = () => {
             </div>
           </section>
 
-          <aside className="overflow-hidden rounded-2xl border border-[#1f5f95]/30 bg-gradient-to-b from-[#163f72] via-[#2e66a6] to-[#38a0c8] shadow-sm xl:sticky xl:top-5 xl:self-start">
-            <div className="flex items-center justify-between border-b border-white/15 px-4 py-4 text-white">
+          <aside className="relative overflow-hidden rounded-[20px] border border-[#1f5f95]/30 bg-gradient-to-b from-[#163f72] via-[#2e66a6] to-[#38a0c8] shadow-sm xl:sticky xl:top-5 xl:self-start">
+            <div className="relative z-10 flex items-center justify-between border-b border-white/15 px-4 py-4 text-white">
               <div className="flex items-center gap-2"><Filter size={18} /><h2 className="text-lg font-bold">Filter Controls</h2></div>
               <button type="button" onClick={resetFilters} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-[#245a93]"><RefreshCw size={13} /> Reset</button>
             </div>
 
-            <div className="m-3 rounded-2xl bg-white p-4 shadow-lg">
+            <div className="relative z-10 m-3 rounded-2xl bg-white p-4 shadow-lg">
               <SelectField label="Role" value={filters.role} onChange={changeRole} options={ROLE_OPTIONS} placeholder="Select Role" />
 
               {showJobseekerFilters ? (
@@ -339,15 +339,15 @@ const AdminFilterRecords = () => {
               {showJobFilters ? <div className="mt-3"><SelectField label={filters.role === "jobOffer" ? "Job Status" : "Application Status"} value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={optionItems(options.applicationStatuses)} placeholder="All Status" /></div> : null}
             </div>
 
-            <div className="px-3 pb-3">
+            <div className="relative z-10 px-3 pb-3">
               <button type="button" onClick={applyFilters} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-bold text-[#245a93] shadow-md"><Filter size={15} /> Apply Filter</button>
             </div>
 
-            <div className="mx-3 mb-3 mt-1 flex min-h-[145px] items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-4">
+            <div className="pointer-events-none relative z-0 h-[150px] overflow-hidden" aria-hidden="true">
               <img
                 src="/images/filterby.png"
-                alt="Filter"
-                className="h-28 w-28 object-contain"
+                alt=""
+                className="absolute bottom-[-22px] right-[-6px] h-40 w-40 object-contain opacity-[0.22]"
               />
             </div>
           </aside>

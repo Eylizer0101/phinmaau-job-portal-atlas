@@ -1981,7 +1981,17 @@ const AdminDashboard = () => {
     setShowCustomDateModal(false);
   };
   const resetFilters = () => setFilters(initialFilters);
-  const hasFilters = JSON.stringify(filters) !== JSON.stringify(initialFilters);
+  const hasFilters = useMemo(() => {
+    const isActiveValue = (value) => {
+      const normalized = String(value ?? "").trim().toLowerCase();
+      return normalized !== "" && normalized !== "all";
+    };
+
+    if (filters.date !== "overall") return true;
+    if (filters.specificDate || filters.startDate || filters.endDate) return true;
+
+    return [filters.campus, filters.yearGraduated, filters.course, filters.gender].some(isActiveValue);
+  }, [filters]);
 
   const openExportPassword = (type, label) => {
     setExportRequest({ type, label });
