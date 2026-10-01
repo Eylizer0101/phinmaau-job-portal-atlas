@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FileSpreadsheet, FileText, Filter, RefreshCw, Search, X } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, FileText, Filter, RefreshCw, Search, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
@@ -226,8 +226,17 @@ const AdminFilterRecords = () => {
   const showJobFilters = filters.role === "jobOffer" || filters.role === "application";
 
   return (
-    <div className="min-h-screen bg-white px-4 py-5 sm:px-6 lg:px-7">
-      <div className="mx-auto max-w-7xl px-1 py-3">
+    <div className="min-h-screen bg-white py-3">
+      <div className="w-full">
+        <button
+          type="button"
+          onClick={() => navigate("/admin/dashboard")}
+          className="mb-4 inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          <ArrowLeft size={16} />
+          Back to Dashboard
+        </button>
+
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
           <main className="min-w-0">
             <div className="overflow-hidden rounded-xl bg-gradient-to-r from-[#163f72] via-[#2e66a6] to-[#49a9d5] px-5 py-5 text-white shadow-sm sm:px-6">
@@ -254,7 +263,7 @@ const AdminFilterRecords = () => {
               {appliedFilters.companyName ? <span className="max-w-[220px] truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{appliedFilters.companyName}</span> : null}
             </div>
 
-            <div className="mt-3 rounded-xl bg-white p-4 shadow-sm sm:p-5">
+            <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="relative w-full max-w-sm">
                   <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
