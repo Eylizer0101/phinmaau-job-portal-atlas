@@ -114,16 +114,13 @@ const AdminFilterRecords = () => {
   const [options, setOptions] = useState({ campuses: [], courses: [], yearsGraduated: [], genders: [], companyNames: [], jobTitles: [], applicationStatuses: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [page, setPage] = useState(1);
   const [exportType, setExportType] = useState("");
   const [exportPassword, setExportPassword] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [exporting, setExporting] = useState(false);
-  const perPage = 25;
 
   const activeColumns = columnSets[appliedFilters.role] || columnSets.jobseeker;
-  const totalPages = Math.max(1, Math.ceil(records.length / perPage));
-  const pagedRecords = useMemo(() => records.slice((page - 1) * perPage, page * perPage), [records, page]);
+  const pagedRecords = useMemo(() => records, [records]);
 
   useEffect(() => {
     let cancelled = false;
@@ -136,7 +133,6 @@ const AdminFilterRecords = () => {
         if (cancelled) return;
         setRecords(Array.isArray(response.data?.records) ? response.data.records : []);
         setOptions(response.data?.options || {});
-        setPage(1);
       } catch (err) {
         if (cancelled) return;
         setRecords([]);
@@ -230,7 +226,7 @@ const AdminFilterRecords = () => {
   const showJobFilters = filters.role === "jobOffer" || filters.role === "application";
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] px-4 py-5 sm:px-6 lg:px-7">
+    <div className="min-h-screen bg-white px-4 py-5 sm:px-6 lg:px-7">
       <div className="mx-auto max-w-7xl px-1 py-3">
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_270px]">
           <main className="min-w-0">
@@ -270,7 +266,7 @@ const AdminFilterRecords = () => {
                     className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   />
                 </div>
-                <div className="text-xs font-medium text-slate-500">Showing {records.length ? (page - 1) * perPage + 1 : 0}-{Math.min(page * perPage, records.length)} of {records.length}</div>
+                <div className="text-xs font-medium text-slate-500">Showing {records.length ? 1 : 0}-{records.length} of {records.length}</div>
               </div>
 
               <div className="max-h-[620px] overflow-auto bg-white">
@@ -302,11 +298,6 @@ const AdminFilterRecords = () => {
                 </table>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1} className="h-9 rounded-lg px-3 text-xs font-semibold text-slate-700 disabled:opacity-40">Previous</button>
-                <div className="text-xs font-semibold text-slate-500">Page {page} of {totalPages}</div>
-                <button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={page >= totalPages} className="h-9 rounded-lg px-3 text-xs font-semibold text-slate-700 disabled:opacity-40">Next</button>
-              </div>
             </div>
           </main>
 
