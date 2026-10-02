@@ -23,8 +23,9 @@ router.get('/filter-records', adminController.getAdminFilterRecords);
 router.post('/filter-records/export/excel', adminController.requireAdminPasswordForCredential, adminController.exportAdminFilterRecordsExcel);
 router.post('/filter-records/export/pdf', adminController.requireAdminPasswordForCredential, adminController.exportAdminFilterRecordsPdf);
 
-// Password-protected Excel record exports
+// Password-protected record exports
 router.post('/exports/excel', adminController.requireAdminPasswordForCredential, adminController.exportAdminRecordsExcel);
+router.post('/exports/report/pdf', adminController.requireAdminPasswordForCredential, adminController.exportAdminAgapayReportPdf);
 
 // Dedicated Admin Analytics page data
 router.get('/analytics', adminController.getAdminAnalytics);

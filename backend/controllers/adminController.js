@@ -6577,6 +6577,310 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
   }
 };
 
+
+exports.exportAdminAgapayReportPdf = async (req, res) => {
+  let browser = null;
+
+  try {
+    const filters = req.body?.filters || {};
+    const range = getAdminAnalyticsDateRange({
+      preset: filters.date || 'overall',
+      specificDate: filters.specificDate,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    });
+
+    const [usersAll, jobsAll, applicationsAll] = await Promise.all([
+      User.find({ status: { $ne: 'deleted' } })
+        .select('role createdAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.gender jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated')
+        .lean(),
+      Job.find({}).select('createdAt publishedAt').lean(),
+      Application.find({}).select('jobseeker status appliedAt createdAt').lean(),
+    ]);
+
+    const userById = new Map(usersAll.map((user) => [String(user._id), user]));
+    const selectedCampus = String(filters.campus || 'all').trim();
+    const selectedYear = String(filters.yearGraduated || 'all').trim();
+    const selectedCourse = String(filters.course || 'all').trim();
+    const selectedGender = String(filters.gender || 'all').trim();
+
+    const personalFilterActive = [selectedCampus, selectedYear, selectedCourse, selectedGender]
+      .some((value) => value && value.toLowerCase() !== 'all');
+
+    const jobseekerMatchesProfile = (user) => {
+      if (!user || String(user.role || '').toLowerCase() !== 'jobseeker') return false;
+      if (!exportMatches(exportProfileValues(user, 'campus'), selectedCampus)) return false;
+      if (!exportMatches(exportProfileValues(user, 'yearGraduated'), selectedYear)) return false;
+      if (!exportMatches(exportProfileValues(user, 'course'), selectedCourse)) return false;
+      if (!exportMatches(exportProfileValues(user, 'gender'), selectedGender)) return false;
+      return true;
+    };
+
+    const users = usersAll.filter((user) => {
+      if (!exportInRange(user.createdAt, range)) return false;
+      if (personalFilterActive && !jobseekerMatchesProfile(user)) return false;
+      return true;
+    });
+
+    const jobseekers = users.filter((user) => String(user.role || '').toLowerCase() === 'jobseeker');
+    const employers = users.filter((user) => String(user.role || '').toLowerCase() === 'employer');
+    const registeredUsers = [...jobseekers, ...employers];
+
+    const jobs = jobsAll.filter((job) => exportInRange(job.publishedAt || job.createdAt, range));
+    const applications = applicationsAll.filter((application) => {
+      if (!exportInRange(application.appliedAt || application.createdAt, range)) return false;
+      const seeker = userById.get(String(application.jobseeker || ''));
+      if (personalFilterActive && !jobseekerMatchesProfile(seeker)) return false;
+      return true;
+    });
+
+    const campusRows = DASHBOARD_CAMPUSES.map((campus) => {
+      const campusApplications = applications.filter((application) => {
+        const seeker = userById.get(String(application.jobseeker || ''));
+        return getJobseekerCampus(seeker) === campus;
+      });
+      const hired = campusApplications.filter((application) => analyticsLower(application.status) === 'hired').length;
+      const total = campusApplications.length;
+      const rate = total ? (hired / total) * 100 : 0;
+      return { campus, total, hired, rate };
+    });
+
+    const totalApplications = campusRows.reduce((sum, row) => sum + row.total, 0);
+    const totalHired = campusRows.reduce((sum, row) => sum + row.hired, 0);
+    const totalHireRate = totalApplications ? (totalHired / totalApplications) * 100 : 0;
+
+    const formatInteger = (value) => Number(value || 0).toLocaleString('en-US');
+    const formatRate = (value) => `${Number(value || 0).toFixed(2).replace(/\.00$/, '')}%`;
+    const reportDate = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+
+    const frontendUrl = String(
+      process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com'
+    ).replace(/\/$/, '');
+    const leftLogo = `${frontendUrl}/images/agapayreports/leftlogo.png`;
+    const rightLogo = `${frontendUrl}/images/agapayreports/rightlogo.png`;
+    const centerLogo = `${frontendUrl}/images/agapayreports/centerlogo.png`;
+
+    const campusTableRows = campusRows.map((row) => `
+      <tr>
+        <td>${escapePdfHtml(row.campus.toUpperCase())}</td>
+        <td class="center">${formatInteger(row.total)}</td>
+        <td class="center">${formatInteger(row.hired)}</td>
+        <td class="center">${formatRate(row.rate)}</td>
+      </tr>
+    `).join('');
+
+    const html = `<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            @page { size: A4 portrait; margin: 0; }
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              background: #ffffff;
+              color: #15251f;
+              font-family: Arial, Helvetica, sans-serif;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .page {
+              position: relative;
+              width: 210mm;
+              min-height: 297mm;
+              padding: 10mm 11mm 12mm;
+              overflow: hidden;
+              background: #ffffff;
+            }
+            .watermark {
+              position: absolute;
+              z-index: 0;
+              left: 50%;
+              top: 74mm;
+              width: 142mm;
+              height: 142mm;
+              transform: translateX(-50%);
+              object-fit: contain;
+              opacity: 0.16;
+            }
+            .content { position: relative; z-index: 1; }
+            .logos {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              min-height: 25mm;
+            }
+            .left-logo { width: 62mm; height: 18mm; object-fit: contain; object-position: left top; }
+            .right-logo { width: 70mm; height: 18mm; object-fit: contain; object-position: right top; }
+            h1 {
+              margin: 8mm 0 1.5mm;
+              text-align: center;
+              color: #123f35;
+              font-size: 21pt;
+              line-height: 1;
+              font-weight: 800;
+              letter-spacing: 0.2px;
+            }
+            .date {
+              text-align: center;
+              font-size: 11.5pt;
+              margin-bottom: 6mm;
+              color: #1c3d35;
+            }
+            .summary {
+              border: 0.45mm solid #597b6d;
+              border-radius: 2mm;
+              padding: 5.5mm 6mm;
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              column-gap: 13mm;
+              font-size: 11pt;
+              line-height: 1.72;
+              background: rgba(255,255,255,0.58);
+            }
+            .summary p { margin: 0; }
+            .table-wrap { margin-top: 5.5mm; }
+            table {
+              width: 100%;
+              border-collapse: separate;
+              border-spacing: 0;
+              font-size: 10.5pt;
+              background: rgba(255,255,255,0.48);
+            }
+            th, td {
+              border-right: 0.35mm solid #9eb2aa;
+              border-bottom: 0.35mm solid #9eb2aa;
+              padding: 4.2mm 4mm;
+            }
+            th:first-child, td:first-child { border-left: 0.35mm solid #9eb2aa; }
+            thead th { border-top: 0.35mm solid #9eb2aa; }
+            th {
+              text-align: center;
+              font-weight: 700;
+              color: #123f35;
+              background: rgba(255,255,255,0.64);
+            }
+            thead th:first-child { border-top-left-radius: 2mm; }
+            thead th:last-child { border-top-right-radius: 2mm; }
+            tbody tr:last-child td:first-child { border-bottom-left-radius: 2mm; }
+            tbody tr:last-child td:last-child { border-bottom-right-radius: 2mm; }
+            td { color: #13211d; background: rgba(255,255,255,0.42); }
+            .center { text-align: center; }
+            .total-row td { font-weight: 700; }
+            .approval {
+              position: absolute;
+              z-index: 2;
+              left: 0;
+              right: 0;
+              bottom: 15mm;
+              text-align: center;
+              color: #111111;
+              line-height: 1.45;
+            }
+            .approval .label { font-weight: 700; font-size: 11pt; margin-bottom: 1.2mm; }
+            .approval .name, .approval .role { font-size: 10.8pt; }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <img class="watermark" src="${escapePdfHtml(centerLogo)}" alt="" />
+            <div class="content">
+              <div class="logos">
+                <img class="left-logo" src="${escapePdfHtml(leftLogo)}" alt="PHINMA Education" />
+                <img class="right-logo" src="${escapePdfHtml(rightLogo)}" alt="Araullo University" />
+              </div>
+
+              <h1>AGAPAY RECORDS REPORTS</h1>
+              <div class="date">Date: ${escapePdfHtml(reportDate)}</div>
+
+              <div class="summary">
+                <div>
+                  <p>Total Jobseekers: ${formatInteger(jobseekers.length)}</p>
+                  <p>Total Employers: ${formatInteger(employers.length)}</p>
+                  <p>Total Registered Users: ${formatInteger(registeredUsers.length)}</p>
+                </div>
+                <div>
+                  <p>Total Job Posts: ${formatInteger(jobs.length)}</p>
+                  <p>Total Applications: ${formatInteger(applications.length)}</p>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Campus</th>
+                      <th>Total Applications</th>
+                      <th>Total Hired</th>
+                      <th>Hired Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${campusTableRows}
+                    <tr class="total-row">
+                      <td>TOTAL</td>
+                      <td class="center">${formatInteger(totalApplications)}</td>
+                      <td class="center">${formatInteger(totalHired)}</td>
+                      <td class="center">${formatRate(totalHireRate)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="approval">
+              <div class="label">APPROVED BY:</div>
+              <div class="name">JAN KRISTINE A. INOCENCIO</div>
+              <div class="role">LINKAGES MANAGER</div>
+            </div>
+          </div>
+        </body>
+      </html>`;
+
+    const puppeteer = require('puppeteer');
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 1 });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.evaluate(async () => {
+      const images = Array.from(document.images);
+      await Promise.all(images.map((image) => image.complete
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            image.addEventListener('load', resolve, { once: true });
+            image.addEventListener('error', resolve, { once: true });
+          })));
+    });
+
+    const pdf = await page.pdf({
+      format: 'A4',
+      landscape: false,
+      printBackground: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+    });
+
+    const filename = `agapay-records-report-${reportDate}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(Buffer.from(pdf));
+  } catch (error) {
+    console.error('AGAPAY report PDF export error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to generate the AGAPAY report.' });
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+  }
+};
+
 exports.exportAdminRecordsExcel = async (req, res) => {
   try {
     const mode = ['all', 'filtered', 'report'].includes(String(req.body?.mode || '').toLowerCase())

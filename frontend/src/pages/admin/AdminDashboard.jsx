@@ -2024,8 +2024,9 @@ const AdminDashboard = () => {
         gender: filters.gender,
       };
 
+      const isAgapayReport = exportRequest.type === "report";
       const response = await api.post(
-        "/admin/exports/excel",
+        isAgapayReport ? "/admin/exports/report/pdf" : "/admin/exports/excel",
         {
           mode: exportRequest.type,
           filters: exportRequest.type === "all" ? {} : exportFilters,
@@ -2039,9 +2040,10 @@ const AdminDashboard = () => {
       const disposition = response.headers?.["content-disposition"] || "";
       const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
       const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const fallbackExtension = isAgapayReport ? "pdf" : "xlsx";
       const filename = encodedMatch?.[1]
         ? decodeURIComponent(encodedMatch[1])
-        : plainMatch?.[1] || `agapay-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        : plainMatch?.[1] || `agapay-export-${new Date().toISOString().slice(0, 10)}.${fallbackExtension}`;
 
       const blobUrl = window.URL.createObjectURL(response.data);
       const link = document.createElement("a");
