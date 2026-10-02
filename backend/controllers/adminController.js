@@ -15,6 +15,29 @@ const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
 const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationResubmissionReminderEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
 
+const puppeteer = require('puppeteer');
+
+let adminReportBrowserPromise = null;
+
+const getAdminReportBrowser = async () => {
+  if (!adminReportBrowserPromise) {
+    adminReportBrowserPromise = puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    }).then((browser) => {
+      browser.once('disconnected', () => {
+        adminReportBrowserPromise = null;
+      });
+      return browser;
+    }).catch((error) => {
+      adminReportBrowserPromise = null;
+      throw error;
+    });
+  }
+
+  return adminReportBrowserPromise;
+};
+
 const DEFAULT_ADMIN_LOGO = '/images/phinma-logo.png';
 
 const isValidAdminPassword = async (req, rawPassword) => {
@@ -6579,7 +6602,7 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
 
 
 exports.exportAdminAgapayReportPdf = async (req, res) => {
-  let browser = null;
+  let page = null;
 
   try {
     const filters = req.body?.filters || {};
@@ -6850,24 +6873,14 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
         </body>
       </html>`;
 
-    const puppeteer = require('puppeteer');
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-
-    const page = await browser.newPage();
+    const browser = await getAdminReportBrowser();
+    page = await browser.newPage();
     await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 1 });
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    await page.evaluate(async () => {
-      const images = Array.from(document.images);
-      await Promise.all(images.map((image) => image.complete
-        ? Promise.resolve()
-        : new Promise((resolve) => {
-            image.addEventListener('load', resolve, { once: true });
-            image.addEventListener('error', resolve, { once: true });
-          })));
-    });
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(
+      () => Array.from(document.images).every((image) => image.complete),
+      { timeout: 3000 }
+    ).catch(() => {});
 
     const pdf = await page.pdf({
       format: 'A4',
@@ -6885,7 +6898,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     console.error('AGAPAY report PDF export error:', error);
     return res.status(500).json({ success: false, message: 'Unable to generate the AGAPAY report.' });
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    if (page) await page.close().catch(() => {});
   }
 };
 
