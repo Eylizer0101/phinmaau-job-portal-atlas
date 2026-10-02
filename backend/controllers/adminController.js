@@ -6717,6 +6717,12 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
             }
             .left-logo { width: 62mm; height: 18mm; object-fit: contain; object-position: left top; }
             .right-logo { width: 70mm; height: 18mm; object-fit: contain; object-position: right top; }
+            .header-divider {
+              width: 100%;
+              height: 0;
+              border-top: 0.45mm solid #9eb2aa;
+              margin: 1.5mm 0 0;
+            }
             h1 {
               margin: 8mm 0 1.5mm;
               text-align: center;
@@ -6794,6 +6800,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
                 <img class="left-logo" src="${escapePdfHtml(leftLogo)}" alt="PHINMA Education" />
                 <img class="right-logo" src="${escapePdfHtml(rightLogo)}" alt="Araullo University" />
               </div>
+              <div class="header-divider"></div>
 
               <h1>AGAPAY RECORDS REPORTS</h1>
               <div class="date">Date: ${escapePdfHtml(reportDate)}</div>
