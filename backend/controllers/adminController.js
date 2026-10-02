@@ -6781,11 +6781,10 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
             .center { text-align: center; }
             .total-row td { font-weight: 700; }
             .approval {
-              position: absolute;
+              position: relative;
               z-index: 2;
-              left: 0;
-              right: 0;
-              bottom: 15mm;
+              width: 75mm;
+              margin: 11mm 6mm 0 auto;
               text-align: center;
               color: #111111;
               line-height: 1.45;
