@@ -6718,6 +6718,8 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
             .left-logo { width: 68mm; height: 20mm; object-fit: contain; object-position: left top; }
             .right-logo { width: 76mm; height: 20mm; object-fit: contain; object-position: right top; }
             .header-divider {
+              position: relative;
+              top: -5mm;
               width: 100%;
               height: 0;
               border-top: 0.45mm solid #9eb2aa;
