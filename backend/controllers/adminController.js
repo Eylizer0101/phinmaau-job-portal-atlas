@@ -6663,7 +6663,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     ).replace(/\/$/, '');
     const leftLogo = `${frontendUrl}/images/agapayreports/leftlogo.png`;
     const rightLogo = `${frontendUrl}/images/agapayreports/rightlogo.png`;
-    const centerLogo = `${frontendUrl}/images/agapayreports/centerlogos.png`;
+    const centerLogo = `${frontendUrl}/images/agapayreports/centerlogo.png`;
 
     const campusTableRows = campusRows.map((row) => `
       <tr>
