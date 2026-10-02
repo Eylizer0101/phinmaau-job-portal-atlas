@@ -6747,7 +6747,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               column-gap: 13mm;
               font-size: 11pt;
               line-height: 1.72;
-              background: rgba(255,255,255,0.58);
+              background: transparent;
             }
             .summary p { margin: 0; }
             .table-wrap { margin-top: 5.5mm; }
@@ -6756,7 +6756,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               border-collapse: separate;
               border-spacing: 0;
               font-size: 10.5pt;
-              background: rgba(255,255,255,0.48);
+              background: transparent;
             }
             th, td {
               border-right: 0.35mm solid #9eb2aa;
@@ -6769,13 +6769,13 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               text-align: center;
               font-weight: 700;
               color: #123f35;
-              background: rgba(255,255,255,0.64);
+              background: transparent;
             }
             thead th:first-child { border-top-left-radius: 2mm; }
             thead th:last-child { border-top-right-radius: 2mm; }
             tbody tr:last-child td:first-child { border-bottom-left-radius: 2mm; }
             tbody tr:last-child td:last-child { border-bottom-right-radius: 2mm; }
-            td { color: #13211d; background: rgba(255,255,255,0.42); }
+            td { color: #13211d; background: transparent; }
             .center { text-align: center; }
             .total-row td { font-weight: 700; }
             .approval {
