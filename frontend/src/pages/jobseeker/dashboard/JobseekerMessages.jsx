@@ -1132,11 +1132,11 @@ const JobseekerMessages = () => {
                                       if (fType === 'image') {
                                         return (
                                           <>
-                                            <div className={UI.imgWrap}>
+                                            <div className={`${UI.imgWrap} ${me ? 'ml-auto' : 'mr-auto'}`}>
                                               <img
                                                 src={msg.__localFilePreview || getFileUrl(f.fileUrl)}
                                                 alt={f.originalName}
-                                                className={`${UI.imgOnly} cursor-zoom-in`}
+                                                className={`${UI.imgOnly} ${me ? 'object-right' : 'object-left'} cursor-zoom-in`}
                                                 loading="lazy"
                                                 role="button"
                                                 tabIndex={0}
@@ -1167,9 +1167,9 @@ const JobseekerMessages = () => {
                                         <>
                                           <button
                                             type="button"
-                                            onClick={() => openFile(f)}
-                                            className={`${barClass} text-left cursor-pointer hover:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
-                                            aria-label={`Preview ${f.originalName || 'attachment'}`}
+                                            onClick={() => downloadFile(f)}
+                                            className={`${barClass} max-w-[420px] text-left cursor-pointer hover:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
+                                            aria-label={`Download ${f.originalName || 'attachment'}`}
                                           >
                                             <div className={iconWrap}>
                                               <FontAwesomeIcon icon={icon} className="text-black/75" />

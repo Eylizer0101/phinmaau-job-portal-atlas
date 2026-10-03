@@ -2351,11 +2351,11 @@ const EmployerMessages = () => {
 
                                         return (
                                           <>
-                                            <div className={UI.imgWrap}>
+                                            <div className={`${UI.imgWrap} ${me ? 'ml-auto' : 'mr-auto'}`}>
                                               <img
                                                 src={imgSrc || 'https://via.placeholder.com/200x200?text=Image'}
                                                 alt={f.originalName || 'Image'}
-                                                className={`${UI.imgOnly} ${imgSrc ? 'cursor-zoom-in' : ''}`}
+                                                className={`${UI.imgOnly} ${me ? 'object-right' : 'object-left'} ${imgSrc ? 'cursor-zoom-in' : ''}`}
                                                 loading="lazy"
                                                 role={imgSrc ? 'button' : undefined}
                                                 tabIndex={imgSrc ? 0 : undefined}
@@ -2393,9 +2393,9 @@ const EmployerMessages = () => {
                                         <>
                                           <button
                                             type="button"
-                                            onClick={() => openFile(f)}
-                                            className={`${barClass} text-left cursor-pointer hover:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
-                                            aria-label={`Preview ${f.originalName || 'attachment'}`}
+                                            onClick={() => downloadFile(f)}
+                                            className={`${barClass} max-w-[420px] text-left cursor-pointer hover:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
+                                            aria-label={`Download ${f.originalName || 'attachment'}`}
                                           >
                                             <div className={iconWrap}>
                                               <FontAwesomeIcon icon={icon} className="text-gray-700" aria-hidden="true" />
