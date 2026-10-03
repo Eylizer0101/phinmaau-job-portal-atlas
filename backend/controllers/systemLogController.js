@@ -100,12 +100,12 @@ const buildQuery = (queryParams = {}) => {
     ];
   }
 
-  // Activity Logs are intentionally limited to actual Jobseeker and Employer
-  // activity. Admin and internal system records are not part of this page.
-  if (role === 'jobseeker' || role === 'employer') {
+  const visibleRoles = ['admin', 'subadmin', 'jobseeker', 'employer'];
+
+  if (visibleRoles.includes(role)) {
     query.actorRole = role;
   } else {
-    query.actorRole = { $in: ['jobseeker', 'employer'] };
+    query.actorRole = { $in: visibleRoles };
   }
   if (action !== 'all') query.action = action;
   if (moduleName !== 'all') query.module = moduleName;

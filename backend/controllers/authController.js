@@ -1984,6 +1984,15 @@ exports.login = async (req, res) => {
       ...(user.role === 'admin' ? { adminIdentity: adminIdentity || 'admin' } : {}),
     });
 
+    if (user.role === 'admin') {
+      req.adminIdentity = adminIdentity || 'admin';
+      req.auditActorRole = req.adminIdentity;
+      req.auditActorEmail =
+        req.adminIdentity === 'subadmin'
+          ? normalizeEmail(user.adminProfile?.subAdminEmail || '')
+          : normalizeEmail(process.env.DEFAULT_ADMIN_EMAIL || user.email);
+    }
+
     return res.json({
       message: 'Login successful',
       token,

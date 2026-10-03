@@ -171,6 +171,17 @@ const verifyToken = async (req, res, next) => {
 
             // ✅ DO NOT CHECK status here (para walang maapektuhan na admin verification flow)
             req.userId = userId;
+
+            // Keep Main Admin and Sub Admin distinguishable in Activity Logs
+            // for admin routes that use verifyToken.
+            if (req.user.role === 'admin') {
+                req.adminIdentity = decoded.adminIdentity === 'subadmin' ? 'subadmin' : 'admin';
+                req.auditActorRole = req.adminIdentity;
+                req.auditActorEmail = req.adminIdentity === 'subadmin'
+                    ? (req.user.adminProfile?.subAdminEmail || req.user.email)
+                    : req.user.email;
+            }
+
             next();
         } catch (error) {
             console.error('Token verification error:', error);
