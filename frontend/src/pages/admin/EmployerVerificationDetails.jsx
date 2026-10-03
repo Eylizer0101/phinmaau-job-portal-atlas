@@ -1030,8 +1030,10 @@ const EmployerVerificationDetails = () => {
     }
   };
 
-  const openDoc = (docType, label = "credential") => {
-    requestCredentialAccess("view", docType, label);
+  const openDoc = (docType) => {
+    const documentUrl = toPublicUrl(docs?.[docType]?.url);
+    if (!documentUrl) return;
+    window.open(documentUrl, "_blank", "noopener,noreferrer");
   };
 
   const downloadDoc = (docType, fallbackName = "document") => {

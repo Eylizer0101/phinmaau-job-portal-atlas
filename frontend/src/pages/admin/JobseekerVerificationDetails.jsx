@@ -680,6 +680,14 @@ const JobseekerVerificationDetails = () => {
     return `${API_BASE}${url}`;
   };
 
+  const buildPublicFileUrl = (url) => {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+
+    const apiOrigin = String(API_BASE).replace(/\/api\/?$/, "");
+    return `${apiOrigin}${String(url).startsWith("/") ? "" : "/"}${url}`;
+  };
+
   const getFileNameFromUrl = (url, fallback = "document") => {
     if (!url) return fallback;
 
@@ -995,8 +1003,10 @@ const JobseekerVerificationDetails = () => {
     }
   };
 
-  const handleViewFile = (docType, label = "credential") => {
-    requestCredentialAccess("view", docType, label);
+  const handleViewFile = (docType) => {
+    const documentUrl = buildPublicFileUrl(documentDetails?.[docType]?.url);
+    if (!documentUrl) return;
+    window.open(documentUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleDownloadFile = (docType, fallbackName = "document") => {
