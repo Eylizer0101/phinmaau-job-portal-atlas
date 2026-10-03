@@ -1841,9 +1841,27 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 sm:text-[30px]">
-                    Admin Dashboard
-                  </h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 sm:text-[30px]">
+                      Admin Dashboard
+                    </h1>
+                    <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-transparent px-2.5 text-xs font-bold text-slate-700 opacity-0 shadow-none transition-opacity duration-150 hover:opacity-[0.06] focus-within:opacity-[0.12]">
+                      <span className="whitespace-nowrap">Dummy Data</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={dummyMode}
+                        onClick={toggleDemoData}
+                        disabled={dummyLoading}
+                        className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"} ${dummyLoading ? "cursor-wait opacity-60" : ""}`}
+                      >
+                        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
+                      </button>
+                      <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
+                        {dummyLoading ? "..." : dummyMode ? "ON" : "OFF"}
+                      </span>
+                    </label>
+                  </div>
                   <p className="mt-1 max-w-[620px] text-xs leading-5 text-slate-500">
                     Compact system-wide analysis of users, jobs, applications, verification, and operations.
                   </p>
@@ -1883,23 +1901,6 @@ const AdminDashboard = () => {
                 <Activity size={15} /> AGAPAY Reports
               </button>
 
-              <div className="ml-auto hidden h-9 w-px bg-slate-200 lg:block" />
-              <label className="inline-flex h-10 cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-transparent px-3.5 text-xs font-bold text-slate-700 opacity-0 shadow-none transition-opacity duration-150 hover:opacity-[0.06] focus-within:opacity-[0.12]">
-                <span className="whitespace-nowrap">Dummy Data</span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={dummyMode}
-                  onClick={toggleDemoData}
-                  disabled={dummyLoading}
-                  className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"} ${dummyLoading ? "cursor-wait opacity-60" : ""}`}
-                >
-                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
-                </button>
-                <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
-                  {dummyLoading ? "..." : dummyMode ? "ON" : "OFF"}
-                </span>
-              </label>
             </div>
           </div>
         </header>
