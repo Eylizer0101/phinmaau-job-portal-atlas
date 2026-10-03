@@ -633,7 +633,7 @@ const AdminJobOffers = () => {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-slate-50/70 px-0 py-7 sm:py-8">
+      <div className="min-h-screen px-0 py-7 sm:py-8">
         <div className="mx-auto w-full max-w-[1480px] space-y-6 px-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>

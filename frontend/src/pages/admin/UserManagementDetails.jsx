@@ -2709,7 +2709,7 @@ const UserManagementDetails = () => {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
+      <div className="min-h-screen px-0 py-8">
         <div className="w-full space-y-5">
           <button
             type="button"
