@@ -368,360 +368,6 @@ const monthNames = [
   "December",
 ];
 
-const dummyMonthlyTrends = [
-  { key: "2026-01", label: "January", registrations: 18, jobs: 11, applications: 32, hires: 6 },
-  { key: "2026-02", label: "February", registrations: 22, jobs: 13, applications: 38, hires: 7 },
-  { key: "2026-03", label: "March", registrations: 27, jobs: 15, applications: 44, hires: 9 },
-  { key: "2026-04", label: "April", registrations: 24, jobs: 16, applications: 41, hires: 8 },
-  { key: "2026-05", label: "May", registrations: 31, jobs: 18, applications: 49, hires: 11 },
-  { key: "2026-06", label: "June", registrations: 36, jobs: 20, applications: 56, hires: 13 },
-  { key: "2026-07", label: "July", registrations: 33, jobs: 19, applications: 52, hires: 12 },
-  { key: "2026-08", label: "August", registrations: 40, jobs: 23, applications: 63, hires: 15 },
-  { key: "2026-09", label: "September", registrations: 46, jobs: 27, applications: 71, hires: 18 },
-  { key: "2026-10", label: "October", registrations: 42, jobs: 25, applications: 67, hires: 16 },
-  { key: "2026-11", label: "November", registrations: 49, jobs: 29, applications: 76, hires: 20 },
-  { key: "2026-12", label: "December", registrations: 54, jobs: 31, applications: 82, hires: 22 },
-];
-
-const getDummyFilterMultiplier = (filters = {}) => {
-  const filterWeights = {
-    campus: 0.72,
-    verificationStatus: 0.8,
-    jobStatus: 0.84,
-    industry: 0.74,
-    jobType: 0.78,
-    workMode: 0.8,
-    applicationStatus: 0.76,
-    requestEditStatus: 0.9,
-    yearGraduated: 0.84,
-    course: 0.78,
-    availability: 0.88,
-    experience: 0.84,
-    gender: 0.9,
-    educationLevel: 0.82,
-  };
-
-  return Object.entries(filterWeights).reduce((multiplier, [key, weight]) => {
-    const value = String(filters?.[key] || "all").toLowerCase();
-    return value && value !== "all" ? multiplier * weight : multiplier;
-  }, 1);
-};
-
-const getDummyTrendData = (filters = {}) => {
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
-  const multiplier = getDummyFilterMultiplier(filters);
-
-  let rows = dummyMonthlyTrends.map((item) => ({ ...item }));
-
-  const pickMonth = (monthIndex) =>
-    rows.filter((item) => Number(item.key.slice(5, 7)) - 1 === monthIndex);
-
-  if (["today", "yesterday", "thisWeek", "lastWeek", "thisMonth"].includes(filters.date)) {
-    rows = pickMonth(currentMonth);
-  } else if (filters.date === "lastMonth") {
-    rows = pickMonth((currentMonth + 11) % 12);
-  } else if (filters.date === "specific" && filters.specificDate) {
-    const specific = new Date(`${filters.specificDate}T00:00:00`);
-    if (!Number.isNaN(specific.getTime()) && specific.getFullYear() === 2026) {
-      rows = pickMonth(specific.getMonth());
-    } else {
-      rows = [];
-    }
-  } else if (filters.date === "range" && filters.startDate && filters.endDate) {
-    const start = new Date(`${filters.startDate}T00:00:00`);
-    const end = new Date(`${filters.endDate}T23:59:59`);
-    rows = rows.filter((item) => {
-      const rowDate = new Date(`${item.key}-01T00:00:00`);
-      return rowDate >= start && rowDate <= end;
-    });
-  } else if (filters.date === "lastYear") {
-    rows = rows.map((item) => ({
-      ...item,
-      key: item.key.replace("2026", String(currentYear - 1)),
-      label: item.label,
-    }));
-  }
-
-  return rows.map((item, index) => {
-    const variation = 0.96 + (index % 4) * 0.025;
-    const factor = multiplier * variation;
-
-    return {
-      ...item,
-      registrations: Math.max(1, Math.round(item.registrations * factor)),
-      jobs: Math.max(1, Math.round(item.jobs * factor)),
-      applications: Math.max(1, Math.round(item.applications * factor)),
-      hires: Math.max(1, Math.round(item.hires * factor)),
-    };
-  });
-};
-
-
-const dummyFilterOptions = {
-  campuses: ["AU Main", "AU San Jose", "AU South"],
-  applicationStatuses: ["pending", "screening", "for interview", "hired", "declined", "withdrawn"],
-  jobTypes: ["Part Time", "Full Time", "Contractual", "Permanent"],
-  workModes: ["Onsite", "Remote", "Hybrid / Blended"],
-  industries: ["Information Technology", "Banking / Financial Services", "Education", "Retail", "Manufacturing", "Healthcare", "Hospitality", "Oil / Gas / Petroleum"],
-  jobStatuses: ["published", "draft", "filled", "closed"],
-  verificationStatuses: ["pending", "verified", "declined", "on hold"],
-  requestEditStatuses: ["pending", "approved", "declined"],
-  yearsGraduated: ["2026", "2025", "2024", "2023", "2022", "2021", "2020"],
-  courses: ["BSIT", "BSCE", "BSCRIM", "BSBA", "BSA", "BSED", "BSN"],
-  availabilities: ["Ready to Start", "Within a Few Days", "Within 1 Week", "Within 2 Weeks", "Within 1 Month"],
-  experiences: ["No Experience", "< 1 Year", "1-3 Years", "4-5 Years", "6+ Years"],
-  genders: ["Male", "Female", "Prefer Not to Say"],
-  educationLevels: ["College Graduate", "Master's Degree", "Doctorate"],
-};
-
-const scaleDummyRows = (rows = [], multiplier = 1, selected = "") => {
-  const cleanSelected = String(selected || "").trim().toLowerCase();
-  const filtered = cleanSelected && cleanSelected !== "all"
-    ? rows.filter((item) => String(item.name || "").trim().toLowerCase() === cleanSelected)
-    : rows;
-
-  return filtered.map((item, index) => ({
-    ...item,
-    value: Math.max(1, Math.round(Number(item.value || 0) * multiplier * (0.97 + (index % 3) * 0.025))),
-  }));
-};
-
-const getDummyAnalytics = (filters = {}) => {
-  const multiplier = Math.max(0.16, getDummyFilterMultiplier(filters));
-  const scale = (value, minimum = 1) => Math.max(minimum, Math.round(Number(value || 0) * multiplier));
-
-  const roles = scaleDummyRows([
-    { name: "Employer", value: 64 },
-    { name: "Jobseeker", value: 186 },
-    { name: "Admin", value: 4 },
-  ], multiplier);
-
-  const verification = scaleDummyRows([
-    { name: "Verified", value: 174 },
-    { name: "Pending", value: 29 },
-    { name: "On Hold", value: 17 },
-    { name: "Declined", value: 12 },
-  ], multiplier, filters.verificationStatus);
-
-  const campuses = scaleDummyRows([
-    { name: "AU Main", value: 92 },
-    { name: "AU San Jose", value: 54 },
-    { name: "AU South", value: 40 },
-  ], multiplier, filters.campus);
-
-  const genders = scaleDummyRows([
-    { name: "Male", value: 103 },
-    { name: "Female", value: 77 },
-    { name: "Prefer Not to Say", value: 6 },
-  ], multiplier, filters.gender);
-
-  const availabilities = scaleDummyRows([
-    { name: "Ready to Start", value: 48 },
-    { name: "Within a Few Days", value: 42 },
-    { name: "Within 1 Week", value: 38 },
-    { name: "Within 2 Weeks", value: 31 },
-    { name: "Within 1 Month", value: 27 },
-  ], multiplier, filters.availability);
-
-  const relocation = scaleDummyRows([
-    { name: "Yes", value: 105 },
-    { name: "Open to Discuss", value: 55 },
-    { name: "No", value: 26 },
-  ], multiplier);
-
-  const experiences = scaleDummyRows([
-    { name: "No Experience", value: 28 },
-    { name: "< 1 Year", value: 39 },
-    { name: "1-3 Years", value: 58 },
-    { name: "4-5 Years", value: 37 },
-    { name: "6+ Years", value: 24 },
-  ], multiplier, filters.experience);
-
-  const educationLevels = scaleDummyRows([
-    { name: "College Graduate", value: 137 },
-    { name: "Master's Degree", value: 34 },
-    { name: "Doctorate", value: 15 },
-  ], multiplier, filters.educationLevel);
-
-  const jobStatuses = scaleDummyRows([
-    { name: "Published", value: 52 },
-    { name: "Draft", value: 18 },
-    { name: "Filled", value: 24 },
-    { name: "Closed", value: 13 },
-  ], multiplier, filters.jobStatus);
-
-  const industries = scaleDummyRows([
-    { name: "Information Technology", value: 31 },
-    { name: "Banking / Financial Services", value: 24 },
-    { name: "Education", value: 19 },
-    { name: "Retail", value: 16 },
-    { name: "Manufacturing", value: 14 },
-    { name: "Healthcare", value: 12 },
-  ], multiplier, filters.industry);
-
-  const employmentTypes = scaleDummyRows([
-    { name: "Part Time", value: 18 },
-    { name: "Full Time", value: 72 },
-    { name: "Contractual", value: 11 },
-    { name: "Permanent", value: 9 },
-  ], multiplier, filters.jobType);
-
-  const workModes = scaleDummyRows([
-    { name: "Onsite", value: 58 },
-    { name: "Remote", value: 21 },
-    { name: "Hybrid / Blended", value: 31 },
-  ], multiplier, filters.workMode);
-
-  const funnel = scaleDummyRows([
-    { name: "Pending", value: 128 },
-    { name: "Screening", value: 91 },
-    { name: "For Interview", value: 56 },
-    { name: "Hired", value: 34 },
-    { name: "Declined", value: 29 },
-    { name: "Withdrawn", value: 14 },
-  ], multiplier, filters.applicationStatus);
-
-  const topHiringCompanies = scaleDummyRows([
-    { name: "BDO Unibank", value: 18 },
-    { name: "SM Corporation", value: 15 },
-    { name: "Jollibee Foods Corporation", value: 13 },
-    { name: "Petron Corporation", value: 10 },
-    { name: "McDonald's", value: 8 },
-  ], multiplier);
-
-  const employmentStatus = scaleDummyRows([
-    { name: "Inactive", value: 20 },
-    { name: "Active", value: 8 },
-  ], multiplier);
-
-  const durationBuckets = scaleDummyRows([
-    { name: "< 1 week", value: 18 },
-    { name: "1-2 weeks", value: 31 },
-    { name: "2-4 weeks", value: 25 },
-    { name: "1-2 months", value: 16 },
-    { name: "> 2 months", value: 8 },
-  ], multiplier);
-
-  const withdrawalByStage = scaleDummyRows([
-    { name: "Pending", value: 11 },
-    { name: "For Interview", value: 7 },
-  ], multiplier);
-
-  const applicationsBeforeHire = scaleDummyRows([
-    { name: "1 time", value: 45 },
-    { name: "2 times", value: 25 },
-    { name: "3 times", value: 15 },
-    { name: "4+ times", value: 10 },
-  ], multiplier);
-
-  const hireRateByCampusBase = [
-    { name: "AU Main", value: 85, hired: 34, total: 40 },
-    { name: "AU South", value: 75, hired: 24, total: 32 },
-    { name: "AU San Jose", value: 67, hired: 18, total: 27 },
-  ];
-  const selectedCampus = String(filters.campus || "").toLowerCase();
-  const hireRateByCampus = hireRateByCampusBase
-    .filter((item) => !selectedCampus || selectedCampus === "all" || item.name.toLowerCase() === selectedCampus)
-    .map((item) => ({ ...item, hired: scale(item.hired), total: scale(item.total) }));
-
-  const editRequests = scaleDummyRows([
-    { name: "Pending", value: 14 },
-    { name: "Approved", value: 33 },
-    { name: "Declined", value: 8 },
-  ], multiplier, filters.requestEditStatus);
-
-  const editRequestSections = scaleDummyRows([
-    { name: "Job Description", value: 17 },
-    { name: "Qualifications", value: 13 },
-    { name: "Salary", value: 10 },
-    { name: "Skills & Benefits", value: 8 },
-    { name: "Work Locations", value: 7 },
-  ], multiplier);
-
-  const employmentStatusRequestTypes = [
-    { name: "Contract Ended", value: scale(12) },
-    { name: "Employment Ended", value: scale(8) },
-  ];
-
-  const employmentStatusUpdates = [
-    { name: "Pending", value: scale(5) },
-    { name: "Approved", value: scale(5) },
-    { name: "Declined", value: scale(1) },
-    { name: "No Response", value: scale(0, 0) },
-  ];
-
-  const messages = scaleDummyRows([
-    { name: "Text", value: 196 },
-    { name: "Image", value: 44 },
-    { name: "File", value: 18 },
-  ], multiplier);
-
-  const notifications = scaleDummyRows([
-    { name: "Job Match", value: 136 },
-    { name: "System", value: 57 },
-    { name: "New Application", value: 49 },
-    { name: "Verification", value: 32 },
-    { name: "Application Update", value: 25 },
-    { name: "Interview", value: 18 },
-  ], multiplier);
-
-  const modules = scaleDummyRows([
-    { name: "Authentication", value: 388 },
-    { name: "Profile", value: 160 },
-    { name: "Applications", value: 78 },
-    { name: "Job Management", value: 43 },
-    { name: "Verification", value: 18 },
-    { name: "Company", value: 13 },
-  ], multiplier);
-
-  const totalJobseekers = scale(186);
-  const totalEmployers = scale(64);
-  const applications = scale(352);
-  const hired = scale(34);
-  const totalUsers = totalJobseekers + totalEmployers + scale(4);
-
-  return {
-    generatedAt: new Date().toISOString(),
-    kpis: {
-      totalUsers,
-      totalJobseekers,
-      totalEmployers,
-      totalRegisteredUsers: totalJobseekers + totalEmployers,
-      totalJobPosts: scale(110),
-      activeJobs: scale(52),
-      applications,
-      hired,
-      hireRate: applications ? Number(((hired / applications) * 100).toFixed(1)) : 0,
-      pendingVerification: scale(29),
-      pendingJobseekers: scale(18),
-      pendingEmployers: scale(11),
-      pendingEditRequests: scale(14),
-      unreadMessages: scale(63),
-      systemFailures: scale(4, 0),
-    },
-    trends: getDummyTrendData(filters),
-    filters: { options: dummyFilterOptions },
-    sections: {
-      users: { roles, statuses: scaleDummyRows([{ name: "Active", value: 224 }, { name: "Inactive", value: 18 }, { name: "Suspended", value: 5 }, { name: "Pending", value: 7 }], multiplier), verification, campuses, genders, availabilities, relocation, experiences, educationLevels },
-      jobs: { statuses: jobStatuses, categories: industries, industries, employmentTypes, workModes, totalVacancies: scale(164), totalViews: scale(7840) },
-      applications: {
-        funnel, interviewRate: 15.9, hireRate: applications ? Number(((hired / applications) * 100).toFixed(1)) : 0, employmentStatus, topHiringCompanies,
-        applicationProcessDuration: { averageDays: 24, shortestDays: 4, longestDays: 76, buckets: durationBuckets },
-        withdrawalByStage, applicationsBeforeHire, hireRateByCampus,
-      },
-      verification: { emailRequests: scale(73), emailVerified: scale(61), emailCompletionRate: 83.6, byRole: verification },
-      operations: {
-        editRequests, editRequestSections, employmentStatusRequestTypes, employmentStatusUpdates, messages,
-        messageRead: scaleDummyRows([{ name: "Read", value: 195 }, { name: "Unread", value: 63 }], multiplier),
-        conversationPreferences: scaleDummyRows([{ name: "Enabled", value: 74 }, { name: "Muted", value: 16 }], multiplier),
-        notifications, notificationRead: scaleDummyRows([{ name: "Read", value: 271 }, { name: "Unread", value: 46 }], multiplier),
-        system: { statuses: scaleDummyRows([{ name: "Success", value: 654 }, { name: "Failed", value: 69 }], multiplier), modules, methods: scaleDummyRows([{ name: "GET", value: 442 }, { name: "POST", value: 201 }, { name: "PATCH", value: 58 }, { name: "DELETE", value: 22 }], multiplier), p95DurationMs: 4012, serverErrors: scale(4, 0) },
-      },
-    },
-  };
-};
-
 const getYearOptions = () => {
   const firstYear = 1950;
   const currentYear = new Date().getFullYear();
@@ -1937,16 +1583,13 @@ const AdminDashboard = () => {
   const [exportPassword, setExportPassword] = useState("");
   const [exportPasswordMessage, setExportPasswordMessage] = useState("");
   const [dummyMode, setDummyMode] = useState(false);
+  const [dummyLoading, setDummyLoading] = useState(false);
 
   useEffect(() => {
     saveAgapayAdminDashboardFiltersState({ filters, activeTab });
   }, [filters, activeTab]);
 
-  const dummyAnalytics = useMemo(
-    () => getDummyAnalytics(filters),
-    [filters],
-  );
-  const displayedAnalytics = dummyMode ? dummyAnalytics : analytics;
+  const displayedAnalytics = analytics;
   const options = displayedAnalytics?.filters?.options || {};
   const kpis = displayedAnalytics?.kpis || emptyAnalytics.kpis;
   const sections = displayedAnalytics?.sections || emptyAnalytics.sections;
@@ -1988,15 +1631,46 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (dummyMode) {
-      setLoading(false);
-      setError("");
-      return undefined;
-    }
     const timer = setTimeout(fetchAnalytics, 180);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestParams, dummyMode]);
+  }, [requestParams]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadDemoStatus = async () => {
+      try {
+        const response = await api.post("/admin/demo-data", { action: "status" });
+        if (active) setDummyMode(Boolean(response.data?.enabled));
+      } catch (err) {
+        console.error("Demo data status error:", err);
+      }
+    };
+
+    loadDemoStatus();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const toggleDemoData = async () => {
+    if (dummyLoading) return;
+
+    try {
+      setDummyLoading(true);
+      setError("");
+      const action = dummyMode ? "disable" : "enable";
+      const response = await api.post("/admin/demo-data", { action });
+      setDummyMode(Boolean(response.data?.enabled));
+      await fetchAnalytics();
+    } catch (err) {
+      console.error("Demo data toggle error:", err);
+      setError(err?.response?.data?.message || "Unable to update demo data.");
+    } finally {
+      setDummyLoading(false);
+    }
+  };
 
   const updateFilter = (name, value) =>
     setFilters((previous) => ({ ...previous, [name]: value }));
@@ -2216,13 +1890,14 @@ const AdminDashboard = () => {
                   type="button"
                   role="switch"
                   aria-checked={dummyMode}
-                  onClick={() => setDummyMode((value) => !value)}
-                  className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"}`}
+                  onClick={toggleDemoData}
+                  disabled={dummyLoading}
+                  className={`relative h-5 w-10 rounded-full transition ${dummyMode ? "bg-[#2e66a6]" : "bg-slate-300"} ${dummyLoading ? "cursor-wait opacity-60" : ""}`}
                 >
                   <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${dummyMode ? "left-[22px]" : "left-0.5"}`} />
                 </button>
                 <span className={`text-[10px] font-extrabold ${dummyMode ? "text-[#2e66a6]" : "text-slate-400"}`}>
-                  {dummyMode ? "ON" : "OFF"}
+                  {dummyLoading ? "..." : dummyMode ? "ON" : "OFF"}
                 </span>
               </label>
             </div>
@@ -2344,7 +2019,7 @@ const AdminDashboard = () => {
                 </div>
                 <p className="mt-0.5 text-[11px] text-white/70">
                   {dummyMode
-                    ? "January to December preview data — filters update the sample chart"
+                    ? "Database demo records are active — filters use the injected presentation data"
                     : "Registrations, jobs, applications, and hires by month"}
                 </p>
               </div>

@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const demoDataController = require('../controllers/demoDataController');
 const authMiddleware = require('../middleware/authMiddleware');
 const uploadMiddleware = require('../middleware/uploadMiddleware');
 
@@ -17,6 +18,9 @@ router.put('/profile/password', adminController.updateAdminPassword);
 
 // Dashboard analytics route
 router.get('/dashboard', adminController.getAdminDashboardAnalytics);
+
+// Presentation demo data (single admin-only endpoint for status / enable / disable)
+router.post('/demo-data', demoDataController.manageDemoData);
 
 // Filter Records page routes
 router.get('/filter-records', adminController.getAdminFilterRecords);
