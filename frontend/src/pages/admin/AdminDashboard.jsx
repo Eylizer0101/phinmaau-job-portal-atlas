@@ -18,6 +18,25 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 
+import {
+  FaAward,
+  FaBookOpen,
+  FaBriefcase,
+  FaCheckCircle,
+  FaFileAlt,
+  FaFolderOpen,
+  FaGraduationCap,
+  FaListOl,
+  FaListUl,
+  FaPen,
+  FaUniversity,
+  FaUser,
+  FaUserCheck,
+  FaUsers,
+  FaWaveSquare,
+} from "../../components/shared/JobseekerIcons";
+
+
 const AGAPAY_ADMIN_DASHBOARD_FILTERS_KEY = "agapay:admin:dashboard:filters";
 
 const readAgapayAdminDashboardFiltersState = () => {
@@ -37,25 +56,6 @@ const saveAgapayAdminDashboardFiltersState = (value) => {
     // Keep the page usable even when session storage is unavailable.
   }
 };
-
-import {
-  FaAward,
-  FaBookOpen,
-  FaBriefcase,
-  FaCheckCircle,
-  FaFileAlt,
-  FaFolderOpen,
-  FaGraduationCap,
-  FaListOl,
-  FaListUl,
-  FaPen,
-  FaUniversity,
-  FaUser,
-  FaUserCheck,
-  FaUsers,
-  FaWaveSquare,
-} from "../../components/shared/JobseekerIcons";
-
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
