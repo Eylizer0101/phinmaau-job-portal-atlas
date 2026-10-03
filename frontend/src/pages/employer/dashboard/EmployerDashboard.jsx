@@ -680,8 +680,16 @@ const EmployerDashboard = () => {
             (app) => app.status === 'pending' && !app.alreadyEmployed
           );
           const forInterviewApplications = allApplications.filter((app) => app.status === 'for interview');
-          const hiredApplications = allApplications.filter((app) => app.status === 'hired');
-          const declinedApplications = allApplications.filter((app) => app.status === 'declined');
+          const hiredApplications = allApplications.filter(
+            (app) =>
+              app.status === 'hired' &&
+              String(app.employmentStatus || 'active').toLowerCase() !== 'inactive'
+          );
+          const declinedApplications = allApplications.filter(
+            (app) =>
+              app.status === 'declined' &&
+              app.isDeclinedArchived !== true
+          );
 
           const new7d =
             typeof appStats.new7d === 'number'

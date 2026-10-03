@@ -725,7 +725,19 @@ exports.createJob = async (req, res) => {
     if (!isDraft && !manualLocation) {
       return res.status(400).json({
         success: false,
-        message: 'Location (City) is required.'
+        message: 'Complete work address is required.'
+      });
+    }
+    if (!isDraft && !provinceValue) {
+      return res.status(400).json({
+        success: false,
+        message: 'Province is required.'
+      });
+    }
+    if (!isDraft && !cityValue) {
+      return res.status(400).json({
+        success: false,
+        message: 'City / Municipality is required.'
       });
     }
 
@@ -1354,8 +1366,8 @@ exports.getEmployerJobs = async (req, res) => {
 };
 
 const EDIT_SECTION_FIELDS = {
-  'Job Details': new Set(['title', 'description', 'jobType', 'workMode', 'vacancies', 'isUrgent', 'category']),
-  'Requirements & Qualifications': new Set(['requirements', 'experienceLevel', 'educationLevel', 'openToFreshGraduates']),
+  'Job Details': new Set(['title', 'jobType', 'workMode', 'vacancies', 'isUrgent', 'category']),
+  'Requirements & Qualifications': new Set(['description', 'requirements', 'experienceLevel', 'educationLevel', 'openToFreshGraduates']),
   'Skills & Benefits': new Set(['skillsRequired', 'perksAndBenefits', 'otherBenefits']),
   'Work Locations': new Set(['location', 'locationProvince', 'locationCity', 'willingToRelocate', 'locationLatitude', 'locationLongitude', 'locationImage']),
   'Salary': new Set(['salaryMin', 'salaryMax', 'hideSalary']),

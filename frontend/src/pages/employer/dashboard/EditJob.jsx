@@ -1751,13 +1751,13 @@ const EditJob = () => {
       if (!String(formData.jobType || '').trim()) return 'Employment type is required';
       if (!String(formData.workMode || '').trim()) return 'Work mode is required';
       if (!vacanciesValid) return 'Vacancies must be a whole number from 1 to 50';
-      const descriptionText = getRichTextPlainText(formData.description);
-      if (!descriptionText) return 'Job description is required';
-      if (descriptionText.length < JOB_DESCRIPTION_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 500 to 2,000 characters';
     }
 
     if (canEditSection('Requirements & Qualifications')) {
       if (!String(formData.educationLevel || '').trim()) return 'Education level is required';
+      const descriptionText = getRichTextPlainText(formData.description);
+      if (!descriptionText) return 'Job description is required';
+      if (descriptionText.length < JOB_DESCRIPTION_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 500 to 2,000 characters';
       const requirementsText = getRichTextPlainText(formData.requirements);
       if (!requirementsText) return 'Job requirements are required';
       if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 500 to 2,000 characters';
@@ -1865,7 +1865,7 @@ const EditJob = () => {
     appendSectionField('Job Details', 'vacancies', formData.vacancies ? String(Number(formData.vacancies)) : '');
     appendSectionField('Job Details', 'category', companyCategoryDefault || normalizeCategory(storedUser?.employerProfile?.industry));
 
-    appendSectionField('Job Details', 'description', String(formData.description || '').trim());
+    appendSectionField('Requirements & Qualifications', 'description', String(formData.description || '').trim());
     appendSectionField('Requirements & Qualifications', 'requirements', String(formData.requirements || '').trim());
     appendSectionField('Requirements & Qualifications', 'experienceLevel', normalizeExperienceLevel(formData.experienceLevel));
     appendSectionField('Requirements & Qualifications', 'educationLevel', String(formData.educationLevel || '').trim());
@@ -2901,15 +2901,13 @@ const EditJob = () => {
                     <div className="hidden border-t border-gray-100" />
 
                     <section className={`${activeStep === 2 ? 'block' : 'hidden'} space-y-5`}>
-                      <h3 className="text-base font-bold text-gray-900">Job Details</h3>
-
                       <Field
                         id="description"
                         label="Job Description"
                       
                         error={fieldErrors.description}
                       >
-                        <div><RichTextEditor id="description" name="description" value={formData.description} onChange={handleChange} onBlur={() => markTouched('description')} rows={7} error={Boolean(fieldErrors.description)} placeholder="Write the role overview and day-to-day responsibilities..." disabled={isSectionFieldDisabled('Job Details')} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.description).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
+                        <div><RichTextEditor id="description" name="description" value={formData.description} onChange={handleChange} onBlur={() => markTouched('description')} rows={7} error={Boolean(fieldErrors.description)} placeholder="Write the role overview and day-to-day responsibilities..." disabled={isSectionFieldDisabled('Requirements & Qualifications')} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.description).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
                       </Field>
 
                       <Field

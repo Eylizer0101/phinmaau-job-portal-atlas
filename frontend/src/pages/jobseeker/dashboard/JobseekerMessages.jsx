@@ -247,13 +247,36 @@ const JobseekerMessages = () => {
   const openFile = (fileData) => {
     const url = getFileUrl(fileData?.fileUrl);
     if (!url) return;
-    window.open(url, '_blank', 'noopener,noreferrer');
+
+    const fileType = normalizeFileType(fileData?.fileType, fileData?.originalName);
+    const extension = String(fileData?.originalName || '').split('.').pop()?.toLowerCase();
+    const previewUrl =
+      fileType === 'document' && ['doc', 'docx'].includes(extension)
+        ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+        : url;
+
+    window.open(previewUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const downloadFile = (fileData) => {
+  const downloadFile = async (fileData) => {
     const url = getFileUrl(fileData?.fileUrl);
     if (!url) return;
-    window.open(url, '_blank', 'noopener,noreferrer');
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileData?.originalName || 'file';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const formatTime = (dateString) => {
@@ -308,6 +331,34 @@ const JobseekerMessages = () => {
     if (type === 'pdf') return faFilePdf;
     if (type === 'document') return faFileWord;
     return faFile;
+  };
+
+  const URL_PATTERN = /(https?:\/\/[^\s]+)/gi;
+
+  const renderLinkedText = (content, isMine = false) => {
+    const text = String(content || '');
+    if (!text) return null;
+
+    return text.split(URL_PATTERN).map((part, index) => {
+      if (!/^https?:\/\//i.test(part)) {
+        return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+      }
+
+      return (
+        <a
+          key={`url-${index}`}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`font-semibold underline underline-offset-2 break-all ${
+            isMine ? 'text-white hover:text-blue-100' : 'text-[#2e66a6] hover:text-[#25578f]'
+          }`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    });
   };
 
   const isNearBottom = () => {
@@ -1061,8 +1112,17 @@ const JobseekerMessages = () => {
                                               <img
                                                 src={msg.__localFilePreview || getFileUrl(f.fileUrl)}
                                                 alt={f.originalName}
-                                                className={UI.imgOnly}
+                                                className={`${UI.imgOnly} cursor-zoom-in`}
                                                 loading="lazy"
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => openFile(f)}
+                                                onKeyDown={(event) => {
+                                                  if (event.key === 'Enter' || event.key === ' ') {
+                                                    event.preventDefault();
+                                                    openFile(f);
+                                                  }
+                                                }}
                                               />
 
                                               <div className={UI.imgOverlay}>
@@ -1090,7 +1150,7 @@ const JobseekerMessages = () => {
 
                                             {msg.content &&
                                               msg.content !== `Sent a ${msg.file.fileType} file: ${msg.file.originalName}` && (
-                                                <p className="mt-2 text-sm text-black break-words">{msg.content}</p>
+                                                <p className="mt-2 text-sm text-black break-words">{renderLinkedText(msg.content, me)}</p>
                                               )}
 
                                           </>
@@ -1139,7 +1199,7 @@ const JobseekerMessages = () => {
 
                                           {msg.content &&
                                             msg.content !== `Sent a ${msg.file.fileType} file: ${msg.file.originalName}` && (
-                                              <p className="mt-2 text-sm text-black break-words">{msg.content}</p>
+                                              <p className="mt-2 text-sm text-black break-words">{renderLinkedText(msg.content, me)}</p>
                                             )}
 
                                         </>
@@ -1151,7 +1211,7 @@ const JobseekerMessages = () => {
                                   ) : (
                                     <div className={bubbleClass}>
                                       <p className={`${me ? 'text-white' : 'text-black'} text-sm break-words`}>
-                                        {msg.content}
+                                        {renderLinkedText(msg.content, me)}
                                       </p>
                                     </div>
                                   )}

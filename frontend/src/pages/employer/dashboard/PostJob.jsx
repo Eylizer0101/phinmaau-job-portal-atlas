@@ -12,6 +12,7 @@ import {
   WILLING_TO_RELOCATE_OPTIONS,
   PERKS_AND_BENEFITS_OPTIONS
 } from '../../../constants/postJobDropdownOptions';
+import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 import {
   FaBold,
   FaItalic,
@@ -468,6 +469,60 @@ const toCoordinate = (value) => {
   return Number.isFinite(n) ? n : null;
 };
 
+const ALL_PH_PROVINCES = Array.from(
+  new Set(Object.values(PH_PROVINCES_BY_REGION).flat().filter(Boolean))
+);
+
+const ALL_PH_CITIES = Array.from(
+  new Set(Object.values(PH_CITIES_BY_PROVINCE).flat().filter(Boolean))
+);
+
+const normalizeLocationLookup = (value = '') =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/\bcity of\b/g, '')
+    .replace(/\bcity\b/g, '')
+    .replace(/[^a-z0-9ñ\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const findKnownLocation = (value, options = []) => {
+  const normalized = normalizeLocationLookup(value);
+  if (!normalized) return '';
+
+  return (
+    options.find((option) => normalizeLocationLookup(option) === normalized) ||
+    options.find((option) => normalized.includes(normalizeLocationLookup(option))) ||
+    ''
+  );
+};
+
+const extractStructuredLocation = (addressDetails = {}, displayName = '') => {
+  const rawProvince =
+    addressDetails.province ||
+    addressDetails.state_district ||
+    addressDetails.state ||
+    '';
+
+  const rawCity =
+    addressDetails.city ||
+    addressDetails.municipality ||
+    addressDetails.town ||
+    addressDetails.village ||
+    addressDetails.city_district ||
+    '';
+
+  const province =
+    findKnownLocation(rawProvince, ALL_PH_PROVINCES) ||
+    findKnownLocation(displayName, ALL_PH_PROVINCES);
+
+  const city =
+    findKnownLocation(rawCity, ALL_PH_CITIES) ||
+    findKnownLocation(displayName, ALL_PH_CITIES);
+
+  return { province, city };
+};
+
 const createPinIcon = () => {
   return L.divIcon({
     className: 'agapay-leaflet-pin',
@@ -543,18 +598,19 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       }
 
       const address = data?.display_name || `${roundedLat}, ${roundedLng}`;
+      const { province, city } = extractStructuredLocation(data?.address || {}, address);
 
       setQuery(address);
       setResults([]);
       setStatus('Exact map location selected.');
-      onChange({ address, lat: roundedLat, lng: roundedLng });
+      onChange({ address, lat: roundedLat, lng: roundedLng, province, city });
       updateMarker(roundedLat, roundedLng, false);
     } catch (err) {
       const fallbackAddress = `${roundedLat}, ${roundedLng}`;
       setQuery(fallbackAddress);
       setResults([]);
       setStatus('Location selected. Address lookup failed, but coordinates are saved.');
-      onChange({ address: fallbackAddress, lat: roundedLat, lng: roundedLng });
+      onChange({ address: fallbackAddress, lat: roundedLat, lng: roundedLng, province: '', city: '' });
       updateMarker(roundedLat, roundedLng, false);
     }
   }, [onChange, updateMarker]);
@@ -570,7 +626,7 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
     setStatus('Searching location...');
 
     try {
-      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=ph&accept-language=en&q=${encodeURIComponent(clean)}`;
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=ph&accept-language=en&q=${encodeURIComponent(clean)}`;
       const response = await fetch(url);
       const data = await response.json();
       const philippinesResults = (Array.isArray(data) ? data : []).filter((item) =>
@@ -602,10 +658,12 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
     const roundedLat = Number(nextLat.toFixed(6));
     const roundedLng = Number(nextLng.toFixed(6));
 
+    const { province, city } = extractStructuredLocation(item?.address || {}, address);
+
     setQuery(address);
     setResults([]);
     setStatus('Exact map location selected.');
-    onChange({ address, lat: roundedLat, lng: roundedLng });
+    onChange({ address, lat: roundedLat, lng: roundedLng, province, city });
     updateMarker(roundedLat, roundedLng, true);
   }, [onChange, updateMarker]);
 
@@ -728,7 +786,7 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
           onChange={(e) => {
             const nextValue = e.target.value;
             setQuery(nextValue);
-            onChange({ address: nextValue, lat: latitude || '', lng: longitude || '' });
+            onChange({ address: nextValue, lat: latitude || '', lng: longitude || '', province: '', city: '' });
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -1407,6 +1465,8 @@ const PostJob = () => {
       getRichTextPlainText(formData.description).length >= JOB_DESCRIPTION_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
       getRichTextPlainText(formData.requirements).length >= JOB_REQUIREMENTS_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
       formData.location.trim() &&
+      String(formData.locationProvince || '').trim() &&
+      String(formData.locationCity || '').trim() &&
       EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
       String(formData.educationLevel || '').trim() &&
       WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim()) &&
@@ -1435,6 +1495,8 @@ const PostJob = () => {
     3: Boolean(skillsCountValid),
     4: Boolean(
       formData.location.trim() &&
+      String(formData.locationProvince || '').trim() &&
+      String(formData.locationCity || '').trim() &&
       WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())
     ),
   }), [formData, isDeadlineValid, salaryValid, skillsCountValid]);
@@ -1528,6 +1590,10 @@ const PostJob = () => {
       errors.location = 'Complete work address is required.';
     } else if ((touched.location || submitted) && formData.location.trim().length > 150) {
       errors.location = 'Complete work address must not exceed 150 characters.';
+    } else if (submitted && !String(formData.locationProvince || '').trim()) {
+      errors.location = 'Province is required. Please choose a Philippine address from the map results.';
+    } else if (submitted && !String(formData.locationCity || '').trim()) {
+      errors.location = 'City / Municipality is required. Please choose a Philippine address from the map results.';
     }
 
     if ((touched.jobType || submitted) && !String(formData.jobType || '').trim()) {
@@ -1603,6 +1669,8 @@ const PostJob = () => {
     if (!requirementsText) return 'Job requirements are required';
     if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 500 to 2,000 characters';
     if (!formData.location.trim()) return 'Complete work address is required';
+    if (!String(formData.locationProvince || '').trim()) return 'Province is required';
+    if (!String(formData.locationCity || '').trim()) return 'City / Municipality is required';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be from today through 6 months from today';
     if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
@@ -1668,8 +1736,8 @@ const PostJob = () => {
     }
     payload.append('category', companyCategoryDefault);
     payload.append('location', String(formData.location || '').trim());
-    payload.append('locationProvince', '');
-    payload.append('locationCity', '');
+    payload.append('locationProvince', String(formData.locationProvince || '').trim());
+    payload.append('locationCity', String(formData.locationCity || '').trim());
     payload.append('educationLevel', String(formData.educationLevel || '').trim());
 
     payload.append('openToFreshGraduates', String(formData.openToFreshGraduates));
@@ -2318,8 +2386,6 @@ const PostJob = () => {
                     <div className="hidden border-t border-gray-100" />
 
                     <section className={`${activeStep === 2 ? 'block' : 'hidden'} space-y-5`}>
-                      <h3 className="text-base font-bold text-gray-900">Job Details</h3>
-
                       <Field
                         id="description"
                         label="Job Description"
@@ -2528,10 +2594,12 @@ const PostJob = () => {
                             longitude={formData.locationLongitude}
                             error={fieldErrors.location}
                             placeholder="e.g., Unit 201, ABC Building, 123 Rizal St., Brgy. San Roque, Cabanatuan City, Nueva Ecija."
-                            onChange={({ address, lat, lng }) => {
+                            onChange={({ address, lat, lng, province = '', city = '' }) => {
                               setFormData((prev) => ({
                                 ...prev,
                                 location: address,
+                                locationProvince: province,
+                                locationCity: city,
                                 locationLatitude: lat,
                                 locationLongitude: lng,
                               }));
@@ -2541,6 +2609,28 @@ const PostJob = () => {
                             }}
                           />
                         </Field>
+
+                        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <Field id="locationProvince" label="Province" required>
+                            <input
+                              id="locationProvince"
+                              value={formData.locationProvince}
+                              readOnly
+                              className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900"
+                              placeholder="Select an address above"
+                            />
+                          </Field>
+
+                          <Field id="locationCity" label="City / Municipality" required>
+                            <input
+                              id="locationCity"
+                              value={formData.locationCity}
+                              readOnly
+                              className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900"
+                              placeholder="Select an address above"
+                            />
+                          </Field>
+                        </div>
                         </div>
                       </div>
                     </section>

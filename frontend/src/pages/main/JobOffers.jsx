@@ -63,40 +63,21 @@ const findCanonicalLocation = (value, preferredType = '') => {
 };
 
 const getJobLocationLabels = (job) => {
-  // The full job address is the source of truth for location filtering.
-  // Saved city/province fields are used only when the full address is missing.
+  const savedProvince = findCanonicalLocation(job?.locationProvince, 'province');
+  if (savedProvince) return [savedProvince];
+
   const address = normalizeLocationPart(job?.location);
+  if (!address) return [];
 
-  if (address) {
-    const parts = address
-      .split(',')
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .reverse();
+  const addressProvince = address
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reverse()
+    .map((part) => findCanonicalLocation(part, 'province'))
+    .find(Boolean);
 
-    const addressProvince = parts
-      .map((part) => findCanonicalLocation(part, 'province'))
-      .find(Boolean) || '';
-
-    const addressCity = parts
-      .map((part) => findCanonicalLocation(part, 'city'))
-      .find((label) =>
-        label && normalizeLocationKey(label) !== normalizeLocationKey(addressProvince)
-      ) || '';
-
-    const addressLabels = Array.from(new Set([
-      ...parts.map((part) => normalizeLocationPart(part)).filter(Boolean),
-      addressCity,
-      addressProvince,
-    ].filter(Boolean)));
-
-    if (addressLabels.length) return addressLabels;
-  }
-
-  const city = findCanonicalLocation(job?.locationCity, 'city');
-  const province = findCanonicalLocation(job?.locationProvince, 'province');
-
-  return Array.from(new Set([city, province].filter(Boolean)));
+  return addressProvince ? [addressProvince] : [];
 };
 
 const jobMatchesSelectedLocations = (job, selectedLocations) => {
@@ -124,7 +105,6 @@ const buildLocationGroups = (jobs) => {
   );
 
   const topLocations = ranked
-    .filter(([, count]) => count > 1)
     .slice(0, 5)
     .map(([label]) => label);
 
@@ -183,6 +163,7 @@ const CheckboxDropdown = ({
   topItems = [],
   allItems = [],
   searchMaxLength,
+  allLabel = '',
 }) => {
   const [localSearch, setLocalSearch] = useState("");
 
@@ -261,6 +242,18 @@ const CheckboxDropdown = ({
           )}
 
           <div className={`${enableSearch ? 'mt-4' : ''} max-h-[280px] overflow-auto pr-1`}>
+            {allLabel && !searchValue && (
+              <label className="mb-2 flex cursor-pointer items-center gap-3 border-b border-gray-100 pb-3 text-sm font-semibold text-black">
+                <input
+                  type="checkbox"
+                  checked={selected.length === 0}
+                  onChange={() => setSelected([])}
+                  className="h-4 w-4"
+                />
+                <span className="select-none whitespace-nowrap">{allLabel}</span>
+              </label>
+            )}
+
             {hasGroupedItems ? (
               isSearchingGroupedItems ? (
                 filteredSearchResults.length > 0 ? (
@@ -1426,6 +1419,7 @@ const JobOffers = () => {
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}
                   pillBtn={pillBtn}
+                  allLabel="All Top Locations"
                 />
 
                 <CheckboxDropdown
@@ -1439,6 +1433,7 @@ const JobOffers = () => {
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}
                   pillBtn={pillBtn}
+                  allLabel="All Job Title"
                 />
 
                 <CheckboxDropdown
@@ -1452,6 +1447,7 @@ const JobOffers = () => {
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}
                   pillBtn={pillBtn}
+                  allLabel="All Employment Type"
                 />
 
                 <CheckboxDropdown
@@ -1465,6 +1461,7 @@ const JobOffers = () => {
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}
                   pillBtn={pillBtn}
+                  allLabel="All Education Level"
                 />
 
                 <CheckboxDropdown
@@ -1480,6 +1477,7 @@ const JobOffers = () => {
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}
                   pillBtn={pillBtn}
+                  allLabel="All Company"
                 />
 
                 <SalaryDropdown

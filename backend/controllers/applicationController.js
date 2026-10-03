@@ -1929,8 +1929,14 @@ exports.getEmployerApplications = async (req, res) => {
       total: applications.length,
       pending: applications.filter((app) => app.status === 'pending').length,
       forInterview: applications.filter((app) => app.status === 'for interview').length,
-      hired: applications.filter((app) => app.status === 'hired').length,
-      declined: applications.filter((app) => app.status === 'declined').length,
+      hired: applications.filter(
+        (app) => app.status === 'hired' && String(app.employmentStatus || 'active').toLowerCase() !== 'inactive'
+      ).length,
+      declined: applications.filter(
+        (app) =>
+          app.status === 'declined' &&
+          app.isDeclinedArchived !== true
+      ).length,
       withdrawn: applications.filter((app) => app.status === 'withdrawn').length,
       new7d: applications.filter((app) => {
         if (!app.appliedAt) return false;

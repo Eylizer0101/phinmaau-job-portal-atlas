@@ -216,6 +216,34 @@ const getFileIcon = (type) => {
   return faFile;
 };
 
+const URL_PATTERN = /(https?:\/\/[^\s]+)/gi;
+
+const renderLinkedText = (content, isMine = false) => {
+  const text = String(content || '');
+  if (!text) return null;
+
+  return text.split(URL_PATTERN).map((part, index) => {
+    if (!/^https?:\/\//i.test(part)) {
+      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+    }
+
+    return (
+      <a
+        key={`url-${index}`}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`font-semibold underline underline-offset-2 break-all ${
+          isMine ? 'text-white hover:text-blue-100' : 'text-[#2e66a6] hover:text-[#23508a]'
+        }`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {part}
+      </a>
+    );
+  });
+};
+
 const makeClientId = () => `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
 const buildDisplayName = (u) => {
@@ -1008,22 +1036,39 @@ const EmployerMessages = () => {
     (fileData) => {
       const url = getFileUrl(fileData?.fileUrl);
       if (!url) return;
-      window.open(url, '_blank', 'noopener,noreferrer');
+
+      const fileType = normalizeFileType(fileData?.fileType, fileData?.originalName);
+      const extension = String(fileData?.originalName || '').split('.').pop()?.toLowerCase();
+      const previewUrl =
+        fileType === 'document' && ['doc', 'docx'].includes(extension)
+          ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+          : url;
+
+      window.open(previewUrl, '_blank', 'noopener,noreferrer');
     },
     [getFileUrl]
   );
 
   const downloadFile = useCallback(
-    (fileData) => {
+    async (fileData) => {
       const url = getFileUrl(fileData?.fileUrl);
       if (!url) return;
 
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileData?.originalName || 'file';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Download failed');
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileData?.originalName || 'file';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
     },
     [getFileUrl]
   );
@@ -2286,8 +2331,19 @@ const EmployerMessages = () => {
                                               <img
                                                 src={imgSrc || 'https://via.placeholder.com/200x200?text=Image'}
                                                 alt={f.originalName || 'Image'}
-                                                className={UI.imgOnly}
+                                                className={`${UI.imgOnly} ${f.fileUrl ? 'cursor-zoom-in' : ''}`}
                                                 loading="lazy"
+                                                role={f.fileUrl ? 'button' : undefined}
+                                                tabIndex={f.fileUrl ? 0 : undefined}
+                                                onClick={() => {
+                                                  if (f.fileUrl) openFile(f);
+                                                }}
+                                                onKeyDown={(event) => {
+                                                  if (f.fileUrl && (event.key === 'Enter' || event.key === ' ')) {
+                                                    event.preventDefault();
+                                                    openFile(f);
+                                                  }
+                                                }}
                                                 onError={(e) => {
                                                   e.currentTarget.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
                                                 }}
@@ -2318,7 +2374,12 @@ const EmployerMessages = () => {
                                               )}
                                             </div>
 
-                                            {msg.content && <p className="mt-2 text-sm text-gray-800 break-words">{msg.content}</p>}
+                                            {msg.content &&
+                                              msg.content !== `Sent a ${msg.file.fileType} file: ${msg.file.originalName}` && (
+                                                <p className="mt-2 text-sm text-gray-800 break-words">
+                                                  {renderLinkedText(msg.content, me)}
+                                                </p>
+                                              )}
 
                                           </>
                                         );
@@ -2360,7 +2421,12 @@ const EmployerMessages = () => {
                                             )}
                                           </div>
 
-                                          {msg.content && <p className="mt-2 text-sm text-gray-800 break-words">{msg.content}</p>}
+                                          {msg.content &&
+                                              msg.content !== `Sent a ${msg.file.fileType} file: ${msg.file.originalName}` && (
+                                                <p className="mt-2 text-sm text-gray-800 break-words">
+                                                  {renderLinkedText(msg.content, me)}
+                                                </p>
+                                              )}
 
                                         </>
                                       );
@@ -2370,7 +2436,7 @@ const EmployerMessages = () => {
                                   <InterviewBubble msg={msg} me={me} />
                                   ) : (
                                     <div className={`${UI.bubbleBase} ${me ? UI.bubbleTextMe : UI.bubbleTextOther}`}>
-                                      <p className={`${me ? 'text-white' : 'text-gray-800'} text-sm break-words`}>{msg.content}</p>
+                                      <p className={`${me ? 'text-white' : 'text-gray-800'} text-sm break-words`}>{renderLinkedText(msg.content, me)}</p>
                                     </div>
                                   )}
 
