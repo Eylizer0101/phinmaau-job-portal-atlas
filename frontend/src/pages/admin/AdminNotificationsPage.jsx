@@ -4,6 +4,27 @@ import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 
+
+const AGAPAY_ADMIN_NOTIFICATIONS_FILTERS_KEY = "agapay:admin:notifications:filters";
+
+const readAgapayAdminNotificationsFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_NOTIFICATIONS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminNotificationsFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_NOTIFICATIONS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const formatNotificationTime = (value) => {
   if (!value) return "Just now";
   const date = new Date(value);
@@ -84,12 +105,17 @@ const getAdminNotificationLink = (notification) => {
 
 const AdminNotificationsPage = () => {
   const navigate = useNavigate();
+  const persistedFilterState = readAgapayAdminNotificationsFiltersState();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState(() => persistedFilterState.activeFilter || "all");
+  const [searchQuery, setSearchQuery] = useState(() => persistedFilterState.searchQuery || "");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminNotificationsFiltersState({ activeFilter, searchQuery, pageSize });
+  }, [activeFilter, searchQuery, pageSize]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 

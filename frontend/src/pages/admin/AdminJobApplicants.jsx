@@ -4,6 +4,27 @@ import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
+
+const AGAPAY_ADMIN_JOB_APPLICANTS_FILTERS_KEY = "agapay:admin:job-applicants:filters";
+
+const readAgapayAdminJobApplicantsFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_JOB_APPLICANTS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminJobApplicantsFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_JOB_APPLICANTS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const UI = {
@@ -1135,14 +1156,19 @@ const AdminJobApplicants = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [levelFilter, setLevelFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [customDateFrom, setCustomDateFrom] = useState("");
-  const [customDateTo, setCustomDateTo] = useState("");
+  const persistedFilterState = readAgapayAdminJobApplicantsFiltersState();
+  const [search, setSearch] = useState(() => persistedFilterState.search || "");
+  const [statusFilter, setStatusFilter] = useState(() => persistedFilterState.statusFilter || "all");
+  const [levelFilter, setLevelFilter] = useState(() => persistedFilterState.levelFilter || "all");
+  const [dateFilter, setDateFilter] = useState(() => persistedFilterState.dateFilter || "all");
+  const [customDateFrom, setCustomDateFrom] = useState(() => persistedFilterState.customDateFrom || "");
+  const [customDateTo, setCustomDateTo] = useState(() => persistedFilterState.customDateTo || "");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminJobApplicantsFiltersState({ search, statusFilter, levelFilter, dateFilter, customDateFrom, customDateTo, pageSize });
+  }, [search, statusFilter, levelFilter, dateFilter, customDateFrom, customDateTo, pageSize]);
 
   const archiveNavigation = useMemo(() => {
     const params = new URLSearchParams(location.search);

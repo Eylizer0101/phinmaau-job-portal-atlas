@@ -4,6 +4,27 @@ import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
+
+const AGAPAY_ADMIN_APPLICATIONS_FILTERS_KEY = "agapay:admin:applications:filters";
+
+const readAgapayAdminApplicationsFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_APPLICATIONS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminApplicationsFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_APPLICATIONS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const STATUS_OPTIONS = ['Pending', 'For Interview', 'Hired', 'Declined'];
 const HIDDEN_APPLICATION_STATUSES = new Set(['withdrawn', 'cancelled', 'vacancy full']);
 const SORT_OPTIONS = [
@@ -629,21 +650,26 @@ const StatCard = ({ label, value }) => (
 
 const AdminApplications = () => {
   const navigate = useNavigate();
+  const persistedFilterState = readAgapayAdminApplicationsFiltersState();
   const [applications, setApplications] = useState([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, forInterview: 0, hired: 0, declined: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [campusFilter, setCampusFilter] = useState('All Campus');
-  const [courseFilter, setCourseFilter] = useState('All Course');
-  const [jobTitleFilter, setJobTitleFilter] = useState('All Job Title');
-  const [companyFilter, setCompanyFilter] = useState('All Company');
-  const [statusFilter, setStatusFilter] = useState('All Status');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [search, setSearch] = useState(() => persistedFilterState.search || '');
+  const [campusFilter, setCampusFilter] = useState(() => persistedFilterState.campusFilter || 'All Campus');
+  const [courseFilter, setCourseFilter] = useState(() => persistedFilterState.courseFilter || 'All Course');
+  const [jobTitleFilter, setJobTitleFilter] = useState(() => persistedFilterState.jobTitleFilter || 'All Job Title');
+  const [companyFilter, setCompanyFilter] = useState(() => persistedFilterState.companyFilter || 'All Company');
+  const [statusFilter, setStatusFilter] = useState(() => persistedFilterState.statusFilter || 'All Status');
+  const [dateFilter, setDateFilter] = useState(() => persistedFilterState.dateFilter || 'all');
+  const [dateFrom, setDateFrom] = useState(() => persistedFilterState.dateFrom || '');
+  const [dateTo, setDateTo] = useState(() => persistedFilterState.dateTo || '');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminApplicationsFiltersState({ search, campusFilter, courseFilter, jobTitleFilter, companyFilter, statusFilter, dateFilter, dateFrom, dateTo, pageSize });
+  }, [search, campusFilter, courseFilter, jobTitleFilter, companyFilter, statusFilter, dateFilter, dateFrom, dateTo, pageSize]);
 
   const fetchApplications = useCallback(async () => {
     try {

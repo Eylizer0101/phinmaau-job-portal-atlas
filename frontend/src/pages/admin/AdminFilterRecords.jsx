@@ -3,6 +3,27 @@ import { ArrowLeft, Eye, EyeOff, FileSpreadsheet, FileText, Filter, RefreshCw, X
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
+
+const AGAPAY_ADMIN_FILTER_RECORDS_FILTERS_KEY = "agapay:admin:filter-records:filters";
+
+const readAgapayAdminFilterRecordsFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_FILTER_RECORDS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminFilterRecordsFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_FILTER_RECORDS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const ROLE_OPTIONS = [
   ["jobseeker", "Job Seeker"],
   ["employer", "Employer"],
@@ -140,8 +161,9 @@ const PasswordModal = ({ open, title, password, setPassword, message, busy, onCl
 
 const AdminFilterRecords = () => {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState({ ...INITIAL_FILTERS, role: "all" });
+  const persistedFilterState = readAgapayAdminFilterRecordsFiltersState();
+  const [filters, setFilters] = useState(() => ({ ...INITIAL_FILTERS, ...(persistedFilterState.filters || {}) }));
+  const [appliedFilters, setAppliedFilters] = useState(() => ({ ...INITIAL_FILTERS, role: "all", ...(persistedFilterState.appliedFilters || {}) }));
   const [records, setRecords] = useState([]);
   const [options, setOptions] = useState({
     campuses: [], courses: [], yearsGraduated: [], genders: [], companyNames: [], industries: [], jobTitles: [],
@@ -153,6 +175,10 @@ const AdminFilterRecords = () => {
   const [exportPassword, setExportPassword] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    saveAgapayAdminFilterRecordsFiltersState({ filters, appliedFilters });
+  }, [filters, appliedFilters]);
 
   const activeColumns = columnSets[appliedFilters.role] || columnSets.all;
   const pagedRecords = useMemo(() => records, [records]);

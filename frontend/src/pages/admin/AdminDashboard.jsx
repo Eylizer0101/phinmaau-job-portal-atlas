@@ -17,6 +17,27 @@ import {
   X,
 } from "lucide-react";
 import api from "../../services/api";
+
+const AGAPAY_ADMIN_DASHBOARD_FILTERS_KEY = "agapay:admin:dashboard:filters";
+
+const readAgapayAdminDashboardFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_DASHBOARD_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminDashboardFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_DASHBOARD_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 import {
   FaAward,
   FaBookOpen,
@@ -1903,9 +1924,10 @@ const ExportPasswordModal = ({ open, actionLabel, password, onPasswordChange, on
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const persistedFilterState = readAgapayAdminDashboardFiltersState();
   const [analytics, setAnalytics] = useState(emptyAnalytics);
-  const [filters, setFilters] = useState(initialFilters);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [filters, setFilters] = useState(() => ({ ...initialFilters, ...(persistedFilterState.filters || {}) }));
+  const [activeTab, setActiveTab] = useState(() => persistedFilterState.activeTab || "overview");
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [showSpecificDateModal, setShowSpecificDateModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -1915,6 +1937,10 @@ const AdminDashboard = () => {
   const [exportPassword, setExportPassword] = useState("");
   const [exportPasswordMessage, setExportPasswordMessage] = useState("");
   const [dummyMode, setDummyMode] = useState(false);
+
+  useEffect(() => {
+    saveAgapayAdminDashboardFiltersState({ filters, activeTab });
+  }, [filters, activeTab]);
 
   const dummyAnalytics = useMemo(
     () => getDummyAnalytics(filters),

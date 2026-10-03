@@ -4,6 +4,27 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
+
+const AGAPAY_ADMIN_EDIT_REQUESTS_FILTERS_KEY = "agapay:admin:edit-requests:filters";
+
+const readAgapayAdminEditRequestsFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_EDIT_REQUESTS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminEditRequestsFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_EDIT_REQUESTS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -267,23 +288,28 @@ const rowDetailsPath = (item = {}) => {
 
 const AdminEmployerJobEditRequests = () => {
   const navigate = useNavigate();
+  const persistedFilterState = readAgapayAdminEditRequestsFiltersState();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [role, setRole] = useState('all');
-  const [companyFilter, setCompanyFilter] = useState('all');
-  const [jobTitleFilter, setJobTitleFilter] = useState('all');
-  const [campusFilter, setCampusFilter] = useState('all');
-  const [courseFilter, setCourseFilter] = useState('all');
-  const [requestType, setRequestType] = useState('all');
-  const [status, setStatus] = useState('pending');
-  const [time, setTime] = useState('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [search, setSearch] = useState(() => persistedFilterState.search || '');
+  const [role, setRole] = useState(() => persistedFilterState.role || 'all');
+  const [companyFilter, setCompanyFilter] = useState(() => persistedFilterState.companyFilter || 'all');
+  const [jobTitleFilter, setJobTitleFilter] = useState(() => persistedFilterState.jobTitleFilter || 'all');
+  const [campusFilter, setCampusFilter] = useState(() => persistedFilterState.campusFilter || 'all');
+  const [courseFilter, setCourseFilter] = useState(() => persistedFilterState.courseFilter || 'all');
+  const [requestType, setRequestType] = useState(() => persistedFilterState.requestType || 'all');
+  const [status, setStatus] = useState(() => persistedFilterState.status || 'pending');
+  const [time, setTime] = useState(() => persistedFilterState.time || 'all');
+  const [dateFrom, setDateFrom] = useState(() => persistedFilterState.dateFrom || '');
+  const [dateTo, setDateTo] = useState(() => persistedFilterState.dateTo || '');
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminEditRequestsFiltersState({ search, role, companyFilter, jobTitleFilter, campusFilter, courseFilter, requestType, status, time, dateFrom, dateTo, pageSize });
+  }, [search, role, companyFilter, jobTitleFilter, campusFilter, courseFilter, requestType, status, time, dateFrom, dateTo, pageSize]);
 
   useEffect(() => {
     let active = true;

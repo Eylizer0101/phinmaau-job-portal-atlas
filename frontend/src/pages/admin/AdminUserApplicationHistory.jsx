@@ -6,6 +6,27 @@ import Pagination from "../../components/shared/Pagination";
 import ApplicationHistoryCard from "../../components/admin/ApplicationHistoryCard";
 import ApplicationDateFilter, { isApplicationDateInRange } from "../../components/admin/ApplicationDateFilter";
 
+
+const AGAPAY_ADMIN_USER_APPLICATION_HISTORY_FILTERS_KEY = "agapay:admin:user-application-history:filters";
+
+const readAgapayAdminUserApplicationHistoryFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_USER_APPLICATION_HISTORY_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminUserApplicationHistoryFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_USER_APPLICATION_HISTORY_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const Icon = ({ name, className = "h-4 w-4" }) => {
@@ -415,18 +436,23 @@ const AdminUserApplicationHistory = () => {
 
   const [user, setUser] = useState(null);
   const [applications, setApplications] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("all");
-  const [industryFilter, setIndustryFilter] = useState("all");
-  const [jobTitleFilter, setJobTitleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("all");
+  const persistedFilterState = readAgapayAdminUserApplicationHistoryFiltersState();
+  const [searchQuery, setSearchQuery] = useState(() => persistedFilterState.searchQuery || "");
+  const [companyFilter, setCompanyFilter] = useState(() => persistedFilterState.companyFilter || "all");
+  const [industryFilter, setIndustryFilter] = useState(() => persistedFilterState.industryFilter || "all");
+  const [jobTitleFilter, setJobTitleFilter] = useState(() => persistedFilterState.jobTitleFilter || "all");
+  const [statusFilter, setStatusFilter] = useState(() => persistedFilterState.statusFilter || "all");
+  const [timeFilter, setTimeFilter] = useState(() => persistedFilterState.timeFilter || "all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminUserApplicationHistoryFiltersState({ searchQuery, companyFilter, industryFilter, jobTitleFilter, statusFilter, timeFilter, pageSize });
+  }, [searchQuery, companyFilter, industryFilter, jobTitleFilter, statusFilter, timeFilter, pageSize]);
 
   const fetchApplicationHistory = useCallback(async () => {
     try {

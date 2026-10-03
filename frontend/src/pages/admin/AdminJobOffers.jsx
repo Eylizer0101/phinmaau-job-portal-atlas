@@ -4,6 +4,27 @@ import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
+
+const AGAPAY_ADMIN_JOB_OFFERS_FILTERS_KEY = "agapay:admin:job-offers:filters";
+
+const readAgapayAdminJobOffersFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_JOB_OFFERS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminJobOffersFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_JOB_OFFERS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const Icon = ({ name, className = 'h-4 w-4' }) => {
@@ -514,20 +535,20 @@ const AdminJobOffers = () => {
   const [options, setOptions] = useState({ companies: [], industries: [], jobTitles: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const persistedFilterState = readAgapayAdminJobOffersFiltersState();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
   const [total, setTotal] = useState(0);
   const pageCacheRef = useRef(new Map());
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'All Status',
-    company: 'All Company',
-    industry: 'All Industry',
-    jobTitle: 'All Job Title',
-    date: 'all',
-    dateFrom: '',
-    dateTo: '',
-  });
+  const [filters, setFilters] = useState(() => ({
+    search: '', status: 'All Status', company: 'All Company', industry: 'All Industry',
+    jobTitle: 'All Job Title', date: 'all', dateFrom: '', dateTo: '',
+    ...(persistedFilterState.filters || {}),
+  }));
+
+  useEffect(() => {
+    saveAgapayAdminJobOffersFiltersState({ filters, pageSize });
+  }, [filters, pageSize]);
 
   const fetchJobs = useCallback(async () => {
     try {

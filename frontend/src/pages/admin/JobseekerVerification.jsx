@@ -5,6 +5,27 @@ import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
 import Pagination from "../../components/shared/Pagination";
 
+
+const AGAPAY_ADMIN_JOBSEEKER_VERIFICATION_FILTERS_KEY = "agapay:admin:jobseeker-verification:filters";
+
+const readAgapayAdminJobseekerVerificationFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_JOBSEEKER_VERIFICATION_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminJobseekerVerificationFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_JOBSEEKER_VERIFICATION_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const Icon = ({ name, className = "h-5 w-5", ...props }) => {
@@ -674,10 +695,16 @@ const JobseekerVerification = () => {
     statuses: [],
   });
 
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const persistedFilterState = readAgapayAdminJobseekerVerificationFiltersState();
+  const restoredFilters = { ...DEFAULT_FILTERS, ...(persistedFilterState.filters || {}), page: 1 };
+  const [filters, setFilters] = useState(restoredFilters);
   const pageCacheRef = useRef(new Map());
 
-  const [searchDraft, setSearchDraft] = useState("");
+  const [searchDraft, setSearchDraft] = useState(() => persistedFilterState.searchDraft ?? restoredFilters.search ?? "");
+
+  useEffect(() => {
+    saveAgapayAdminJobseekerVerificationFiltersState({ filters: { ...filters, page: 1 }, searchDraft });
+  }, [filters, searchDraft]);
 
   const [pagination, setPagination] = useState({
     page: 1,

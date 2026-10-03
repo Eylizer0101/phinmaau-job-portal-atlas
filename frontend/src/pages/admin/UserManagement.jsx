@@ -4,6 +4,27 @@ import api from '../../services/api';
 import AdminLayout from '../../layouts/AdminLayout';
 import Pagination from '../../components/shared/Pagination';
 
+
+const AGAPAY_ADMIN_USER_MANAGEMENT_FILTERS_KEY = "agapay:admin:user-management:filters";
+
+const readAgapayAdminUserManagementFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_USER_MANAGEMENT_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminUserManagementFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_USER_MANAGEMENT_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
@@ -1132,23 +1153,28 @@ const UserManagement = () => {
     industries: [],
   });
 
+  const persistedFilterState = readAgapayAdminUserManagementFiltersState();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [campusFilter, setCampusFilter] = useState('all');
-  const [courseFilter, setCourseFilter] = useState('all');
-  const [companyFilter, setCompanyFilter] = useState('all');
-  const [industryFilter, setIndustryFilter] = useState('all');
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState('newest');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [roleFilter, setRoleFilter] = useState(() => persistedFilterState.roleFilter || 'all');
+  const [campusFilter, setCampusFilter] = useState(() => persistedFilterState.campusFilter || 'all');
+  const [courseFilter, setCourseFilter] = useState(() => persistedFilterState.courseFilter || 'all');
+  const [companyFilter, setCompanyFilter] = useState(() => persistedFilterState.companyFilter || 'all');
+  const [industryFilter, setIndustryFilter] = useState(() => persistedFilterState.industryFilter || 'all');
+  const [query, setQuery] = useState(() => persistedFilterState.query || '');
+  const [sort, setSort] = useState(() => persistedFilterState.sort || 'newest');
+  const [dateFilter, setDateFilter] = useState(() => persistedFilterState.dateFilter || 'all');
+  const [dateFrom, setDateFrom] = useState(() => persistedFilterState.dateFrom || '');
+  const [dateTo, setDateTo] = useState(() => persistedFilterState.dateTo || '');
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
 
   const [actionTarget, setActionTarget] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminUserManagementFiltersState({ roleFilter, campusFilter, courseFilter, companyFilter, industryFilter, query, sort, dateFilter, dateFrom, dateTo, pageSize });
+  }, [roleFilter, campusFilter, courseFilter, companyFilter, industryFilter, query, sort, dateFilter, dateFrom, dateTo, pageSize]);
   const [totalUsers, setTotalUsers] = useState(0);
 
   const pageCacheRef = useRef(new Map());

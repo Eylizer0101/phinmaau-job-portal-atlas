@@ -4,6 +4,27 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 
+
+const AGAPAY_ADMIN_ARCHIVE_FILTERS_KEY = "agapay:admin:archive:filters";
+
+const readAgapayAdminArchiveFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_ARCHIVE_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminArchiveFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_ARCHIVE_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const PRIMARY = "#212C61";
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -552,25 +573,22 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
 
 const AdminArchive = () => {
   const navigate = useNavigate();
+  const persistedFilterState = readAgapayAdminArchiveFiltersState();
   const [archiveGroups, setArchiveGroups] = useState([]);
-  const [archiveOptions, setArchiveOptions] = useState({
-    companies: [],
-    industries: [],
-  });
+  const [archiveOptions, setArchiveOptions] = useState({ companies: [], industries: [] });
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [filters, setFilters] = useState({
-    search: "",
-    company: "all",
-    industry: "all",
-    type: "all",
-    date: "all",
-    dateFrom: "",
-    dateTo: "",
-  });
+  const [filters, setFilters] = useState(() => ({
+    search: "", company: "all", industry: "all", type: "all", date: "all", dateFrom: "", dateTo: "",
+    ...(persistedFilterState.filters || {}),
+  }));
+
+  useEffect(() => {
+    saveAgapayAdminArchiveFiltersState({ filters, pageSize });
+  }, [filters, pageSize]);
 
   const updateFilter = (key, value) => {
     setFilters((previous) => ({ ...previous, [key]: value }));

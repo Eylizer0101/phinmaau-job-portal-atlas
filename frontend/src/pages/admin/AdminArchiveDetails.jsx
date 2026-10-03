@@ -4,6 +4,27 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 
+
+const AGAPAY_ADMIN_ARCHIVE_DETAILS_FILTERS_KEY = "agapay:admin:archive-details:filters";
+
+const readAgapayAdminArchiveDetailsFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_ARCHIVE_DETAILS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminArchiveDetailsFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_ARCHIVE_DETAILS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const formatDateInput = (date) => {
@@ -1090,17 +1111,18 @@ const AdminArchiveDetails = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const persistedFilterState = readAgapayAdminArchiveDetailsFiltersState();
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [filters, setFilters] = useState({
-    search: "",
-    title: "all",
-    type: "all",
-    date: "all",
-    dateFrom: "",
-    dateTo: "",
-  });
+  const [filters, setFilters] = useState(() => ({
+    search: "", title: "all", type: "all", date: "all", dateFrom: "", dateTo: "",
+    ...(persistedFilterState.filters || {}),
+  }));
+
+  useEffect(() => {
+    saveAgapayAdminArchiveDetailsFiltersState({ filters, pageSize });
+  }, [filters, pageSize]);
 
   const loadDetails = useCallback(async () => {
     if (type !== "account") {

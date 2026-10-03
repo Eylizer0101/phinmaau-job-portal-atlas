@@ -4,6 +4,27 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 
+
+const AGAPAY_ADMIN_EMPLOYER_POSTING_HISTORY_FILTERS_KEY = "agapay:admin:employer-posting-history:filters";
+
+const readAgapayAdminEmployerPostingHistoryFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_EMPLOYER_POSTING_HISTORY_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminEmployerPostingHistoryFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_EMPLOYER_POSTING_HISTORY_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const Icon = ({ name, className = "h-5 w-5" }) => {
@@ -530,14 +551,19 @@ const AdminEmployerPostingHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [search, setSearch] = useState("");
-  const [jobTitle, setJobTitle] = useState("all");
-  const [status, setStatus] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const persistedFilterState = readAgapayAdminEmployerPostingHistoryFiltersState();
+  const [search, setSearch] = useState(() => persistedFilterState.search || "");
+  const [jobTitle, setJobTitle] = useState(() => persistedFilterState.jobTitle || "all");
+  const [status, setStatus] = useState(() => persistedFilterState.status || "all");
+  const [dateFilter, setDateFilter] = useState(() => persistedFilterState.dateFilter || "all");
+  const [dateFrom, setDateFrom] = useState(() => persistedFilterState.dateFrom || "");
+  const [dateTo, setDateTo] = useState(() => persistedFilterState.dateTo || "");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminEmployerPostingHistoryFiltersState({ search, jobTitle, status, dateFilter, dateFrom, dateTo, pageSize });
+  }, [search, jobTitle, status, dateFilter, dateFrom, dateTo, pageSize]);
 
   useEffect(() => {
     const fetchPostingHistory = async () => {

@@ -4,6 +4,27 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 
+
+const AGAPAY_ADMIN_EMPLOYER_REVIEWS_FILTERS_KEY = "agapay:admin:employer-reviews:filters";
+
+const readAgapayAdminEmployerReviewsFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_EMPLOYER_REVIEWS_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminEmployerReviewsFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_EMPLOYER_REVIEWS_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const API_ORIGIN = (process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api")
   .replace(/\/api\/?$/, "");
 
@@ -63,10 +84,15 @@ const AdminEmployerReviews = () => {
   const [user, setUser] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const persistedFilterState = readAgapayAdminEmployerReviewsFiltersState();
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => persistedFilterState.search || "");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+
+  useEffect(() => {
+    saveAgapayAdminEmployerReviewsFiltersState({ search, pageSize });
+  }, [search, pageSize]);
 
   useEffect(() => {
     let active = true;

@@ -4,6 +4,27 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 
+
+const AGAPAY_ADMIN_ARCHIVE_DECLINED_FILTERS_KEY = "agapay:admin:archive-declined:filters";
+
+const readAgapayAdminArchiveDeclinedFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_ARCHIVE_DECLINED_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminArchiveDeclinedFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_ARCHIVE_DECLINED_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const formatDate = (value) => {
   if (!value) return "—";
   const date = new Date(value);
@@ -219,18 +240,23 @@ const AdminArchiveDeclinedApplicants = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const persistedFilterState = readAgapayAdminArchiveDeclinedFiltersState();
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [search, setSearch] = useState("");
-  const [level, setLevel] = useState("all");
-  const [date, setDate] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [search, setSearch] = useState(() => persistedFilterState.search || "");
+  const [level, setLevel] = useState(() => persistedFilterState.level || "all");
+  const [date, setDate] = useState(() => persistedFilterState.date || "all");
+  const [dateFrom, setDateFrom] = useState(() => persistedFilterState.dateFrom || "");
+  const [dateTo, setDateTo] = useState(() => persistedFilterState.dateTo || "");
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
   const [openingProfileId, setOpeningProfileId] = useState("");
+
+  useEffect(() => {
+    saveAgapayAdminArchiveDeclinedFiltersState({ search, level, date, dateFrom, dateTo, pageSize });
+  }, [search, level, date, dateFrom, dateTo, pageSize]);
 
   const backPath = location.state?.backPath || `/admin/archive/account/${employerId}`;
 

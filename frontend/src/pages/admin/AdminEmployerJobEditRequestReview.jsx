@@ -16,6 +16,27 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import { BookmarksSvgIcon, JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
 
+
+const AGAPAY_ADMIN_EDIT_REQUEST_REVIEW_FILTERS_KEY = "agapay:admin:edit-request-review:filters";
+
+const readAgapayAdminEditRequestReviewFiltersState = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(AGAPAY_ADMIN_EDIT_REQUEST_REVIEW_FILTERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgapayAdminEditRequestReviewFiltersState = (value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(AGAPAY_ADMIN_EDIT_REQUEST_REVIEW_FILTERS_KEY, JSON.stringify(value));
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
 const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
 
 const assetUrl = (value, fallback = '/images/default-company-logo.png') => {
@@ -176,7 +197,12 @@ const AdminEmployerJobEditRequestReview = () => {
   const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
+  const persistedFilterState = readAgapayAdminEditRequestReviewFiltersState();
+  const [search, setSearch] = useState(() => persistedFilterState.search || '');
+
+  useEffect(() => {
+    saveAgapayAdminEditRequestReviewFiltersState({ search });
+  }, [search]);
   const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
   const [sort, setSort] = useState('');
