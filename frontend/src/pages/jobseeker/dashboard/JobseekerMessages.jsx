@@ -20,7 +20,6 @@ import {
   faTimes,
   faSpinner,
   faArrowLeft,
-  faEye,
   faUser,
 } from '@fortawesome/free-solid-svg-icons';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
@@ -151,6 +150,7 @@ const JobseekerMessages = () => {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const [showSidebar, setShowSidebar] = useState(true);
 
@@ -244,8 +244,8 @@ const JobseekerMessages = () => {
     );
   };
 
-  const openFile = (fileData) => {
-    const url = getFileUrl(fileData?.fileUrl);
+  const openFile = (fileData, fallbackUrl = '') => {
+    const url = getFileUrl(fileData?.fileUrl) || fallbackUrl;
     if (!url) return;
 
     const fileType = normalizeFileType(fileData?.fileType, fileData?.originalName);
@@ -255,8 +255,32 @@ const JobseekerMessages = () => {
         ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
         : url;
 
-    window.open(previewUrl, '_blank', 'noopener,noreferrer');
+    setPreviewFile({
+      fileData,
+      fileType,
+      url,
+      previewUrl,
+    });
   };
+
+  const closePreviewFile = () => setPreviewFile(null);
+
+  useEffect(() => {
+    if (!previewFile) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closePreviewFile();
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [previewFile]);
 
   const downloadFile = async (fileData) => {
     const url = getFileUrl(fileData?.fileUrl);
@@ -1116,36 +1140,14 @@ const JobseekerMessages = () => {
                                                 loading="lazy"
                                                 role="button"
                                                 tabIndex={0}
-                                                onClick={() => openFile(f)}
+                                                onClick={() => openFile(f, msg.__localFilePreview)}
                                                 onKeyDown={(event) => {
                                                   if (event.key === 'Enter' || event.key === ' ') {
                                                     event.preventDefault();
-                                                    openFile(f);
+                                                    openFile(f, msg.__localFilePreview);
                                                   }
                                                 }}
                                               />
-
-                                              <div className={UI.imgOverlay}>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => openFile(f)}
-                                                  className={UI.imgOverlayBtn}
-                                                  aria-label="View image"
-                                                  title="View"
-                                                >
-                                                  <FontAwesomeIcon icon={faEye} />
-                                                </button>
-
-                                                <button
-                                                  type="button"
-                                                  onClick={() => downloadFile(f)}
-                                                  className={UI.imgOverlayBtn}
-                                                  aria-label="Download image"
-                                                  title="Download"
-                                                >
-                                                  <FontAwesomeIcon icon={faDownload} />
-                                                </button>
-                                              </div>
                                             </div>
 
                                             {msg.content &&
@@ -1160,11 +1162,15 @@ const JobseekerMessages = () => {
                                       const icon = getFileIcon(fType);
                                       const barClass = `${UI.attachBar} ${me ? UI.attachBarMe : UI.attachBarOther}`;
                                       const iconWrap = me ? UI.attachIconWrapMe : UI.attachIconWrapOther;
-                                      const btnClass = `${UI.attachBtn} ${me ? UI.attachBtnMe : UI.attachBtnOther}`;
 
                                       return (
                                         <>
-                                          <div className={barClass}>
+                                          <button
+                                            type="button"
+                                            onClick={() => openFile(f)}
+                                            className={`${barClass} text-left cursor-pointer hover:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
+                                            aria-label={`Preview ${f.originalName || 'attachment'}`}
+                                          >
                                             <div className={iconWrap}>
                                               <FontAwesomeIcon icon={icon} className="text-black/75" />
                                             </div>
@@ -1175,27 +1181,7 @@ const JobseekerMessages = () => {
                                               </p>
                                               <p className="text-xs text-black/50">{formatFileSize(f.fileSize)}</p>
                                             </div>
-
-                                            <button
-                                              type="button"
-                                              onClick={() => openFile(f)}
-                                              className={btnClass}
-                                              title="View"
-                                              aria-label="View"
-                                            >
-                                              <FontAwesomeIcon icon={faEye} className="text-black" />
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              onClick={() => downloadFile(f)}
-                                              className={btnClass}
-                                              title="Download"
-                                              aria-label="Download"
-                                            >
-                                              <FontAwesomeIcon icon={faDownload} className="text-black" />
-                                            </button>
-                                          </div>
+                                          </button>
 
                                           {msg.content &&
                                             msg.content !== `Sent a ${msg.file.fileType} file: ${msg.file.originalName}` && (
@@ -1355,6 +1341,72 @@ const JobseekerMessages = () => {
           </div>
         </div>
       </div>
+
+      {previewFile && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Preview ${previewFile.fileData?.originalName || 'attachment'}`}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closePreviewFile();
+          }}
+        >
+          <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-[#e6edf5] px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-black sm:text-base">
+                  {previewFile.fileData?.originalName || 'Attachment preview'}
+                </p>
+                <p className="text-xs text-black/50">
+                  {previewFile.fileData?.fileSize ? formatFileSize(previewFile.fileData.fileSize) : 'Preview'}
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => downloadFile(previewFile.fileData)}
+                  className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
+                  aria-label="Download attachment"
+                  title="Download"
+                >
+                  <FontAwesomeIcon icon={faDownload} />
+                  <span className="hidden sm:inline">Download</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={closePreviewFile}
+                  className={`${UI.btnBase} ${UI.btnIcon} ${UI.btnSecondary} ${UI.ring}`}
+                  aria-label="Close preview"
+                  title="Close"
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 bg-[#f8fafc] p-3 sm:p-4">
+              {previewFile.fileType === 'image' ? (
+                <div className="flex h-full w-full items-center justify-center overflow-auto">
+                  <img
+                    src={previewFile.url}
+                    alt={previewFile.fileData?.originalName || 'Image preview'}
+                    className="max-h-full max-w-full rounded-xl object-contain"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={previewFile.previewUrl}
+                  title={previewFile.fileData?.originalName || 'Document preview'}
+                  className="h-full w-full rounded-xl border border-[#e6edf5] bg-white"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </JobSeekerLayout>
   );
 };

@@ -21,7 +21,6 @@ import {
   faSpinner,
   faChevronDown,
   faArrowLeft,
-  faEye,
   faChevronLeft,
   faChevronRight,
   faUser,
@@ -989,6 +988,7 @@ const EmployerMessages = () => {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const [showSidebar, setShowSidebar] = useState(true);
 
@@ -1033,8 +1033,8 @@ const EmployerMessages = () => {
   );
 
   const openFile = useCallback(
-    (fileData) => {
-      const url = getFileUrl(fileData?.fileUrl);
+    (fileData, fallbackUrl = '') => {
+      const url = getFileUrl(fileData?.fileUrl) || fallbackUrl;
       if (!url) return;
 
       const fileType = normalizeFileType(fileData?.fileType, fileData?.originalName);
@@ -1044,10 +1044,34 @@ const EmployerMessages = () => {
           ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
           : url;
 
-      window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      setPreviewFile({
+        fileData,
+        fileType,
+        url,
+        previewUrl,
+      });
     },
     [getFileUrl]
   );
+
+  const closePreviewFile = useCallback(() => setPreviewFile(null), []);
+
+  useEffect(() => {
+    if (!previewFile) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closePreviewFile();
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [previewFile, closePreviewFile]);
 
   const downloadFile = useCallback(
     async (fileData) => {
@@ -2331,47 +2355,23 @@ const EmployerMessages = () => {
                                               <img
                                                 src={imgSrc || 'https://via.placeholder.com/200x200?text=Image'}
                                                 alt={f.originalName || 'Image'}
-                                                className={`${UI.imgOnly} ${f.fileUrl ? 'cursor-zoom-in' : ''}`}
+                                                className={`${UI.imgOnly} ${imgSrc ? 'cursor-zoom-in' : ''}`}
                                                 loading="lazy"
-                                                role={f.fileUrl ? 'button' : undefined}
-                                                tabIndex={f.fileUrl ? 0 : undefined}
+                                                role={imgSrc ? 'button' : undefined}
+                                                tabIndex={imgSrc ? 0 : undefined}
                                                 onClick={() => {
-                                                  if (f.fileUrl) openFile(f);
+                                                  if (imgSrc) openFile(f, imgSrc);
                                                 }}
                                                 onKeyDown={(event) => {
-                                                  if (f.fileUrl && (event.key === 'Enter' || event.key === ' ')) {
+                                                  if (imgSrc && (event.key === 'Enter' || event.key === ' ')) {
                                                     event.preventDefault();
-                                                    openFile(f);
+                                                    openFile(f, imgSrc);
                                                   }
                                                 }}
                                                 onError={(e) => {
                                                   e.currentTarget.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
                                                 }}
                                               />
-
-                                              {f.fileUrl && (
-                                                <div className={UI.imgOverlay}>
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => openFile(f)}
-                                                    className={UI.imgOverlayBtn}
-                                                    aria-label="View image"
-                                                    title="View"
-                                                  >
-                                                    <FontAwesomeIcon icon={faEye} aria-hidden="true" />
-                                                  </button>
-
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => downloadFile(f)}
-                                                    className={UI.imgOverlayBtn}
-                                                    aria-label="Download image"
-                                                    title="Download"
-                                                  >
-                                                    <FontAwesomeIcon icon={faDownload} aria-hidden="true" />
-                                                  </button>
-                                                </div>
-                                              )}
                                             </div>
 
                                             {msg.content &&
@@ -2388,11 +2388,15 @@ const EmployerMessages = () => {
                                       const icon = getFileIcon(fType);
                                       const barClass = `${UI.attachBar} ${me ? UI.attachBarMe : UI.attachBarOther}`;
                                       const iconWrap = me ? UI.attachIconWrapMe : UI.attachIconWrapOther;
-                                      const btnClass = `${UI.attachBtn} ${me ? UI.attachBtnMe : UI.attachBtnOther}`;
 
                                       return (
                                         <>
-                                          <div className={barClass}>
+                                          <button
+                                            type="button"
+                                            onClick={() => openFile(f)}
+                                            className={`${barClass} text-left cursor-pointer hover:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
+                                            aria-label={`Preview ${f.originalName || 'attachment'}`}
+                                          >
                                             <div className={iconWrap}>
                                               <FontAwesomeIcon icon={icon} className="text-gray-700" aria-hidden="true" />
                                             </div>
@@ -2403,23 +2407,7 @@ const EmployerMessages = () => {
                                               </p>
                                               <p className="text-xs text-gray-500">{formatFileSize(f.fileSize)}</p>
                                             </div>
-
-                                            {f.fileUrl && (
-                                              <>
-                                                <button type="button" onClick={() => openFile(f)} className={btnClass} aria-label="View">
-                                                  <FontAwesomeIcon icon={faEye} className="text-gray-800" aria-hidden="true" />
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => downloadFile(f)}
-                                                  className={btnClass}
-                                                  aria-label="Download"
-                                                >
-                                                  <FontAwesomeIcon icon={faDownload} className="text-gray-800" aria-hidden="true" />
-                                                </button>
-                                              </>
-                                            )}
-                                          </div>
+                                          </button>
 
                                           {msg.content &&
                                               msg.content !== `Sent a ${msg.file.fileType} file: ${msg.file.originalName}` && (
@@ -2634,6 +2622,72 @@ const EmployerMessages = () => {
           )}
         </div>
       </div>
+
+      {previewFile && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Preview ${previewFile.fileData?.originalName || 'attachment'}`}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closePreviewFile();
+          }}
+        >
+          <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-gray-900 sm:text-base">
+                  {previewFile.fileData?.originalName || 'Attachment preview'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {previewFile.fileData?.fileSize ? formatFileSize(previewFile.fileData.fileSize) : 'Preview'}
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => downloadFile(previewFile.fileData)}
+                  className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
+                  aria-label="Download attachment"
+                  title="Download"
+                >
+                  <FontAwesomeIcon icon={faDownload} aria-hidden="true" />
+                  <span className="hidden sm:inline">Download</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={closePreviewFile}
+                  className={`${UI.btnBase} ${UI.btnIcon} ${UI.btnSecondary} ${UI.ring}`}
+                  aria-label="Close preview"
+                  title="Close"
+                >
+                  <FontAwesomeIcon icon={faTimes} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 bg-gray-50 p-3 sm:p-4">
+              {previewFile.fileType === 'image' ? (
+                <div className="flex h-full w-full items-center justify-center overflow-auto">
+                  <img
+                    src={previewFile.url}
+                    alt={previewFile.fileData?.originalName || 'Image preview'}
+                    className="max-h-full max-w-full rounded-xl object-contain"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={previewFile.previewUrl}
+                  title={previewFile.fileData?.originalName || 'Document preview'}
+                  className="h-full w-full rounded-xl border border-gray-200 bg-white"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </EmployerLayout>
   );
 };
