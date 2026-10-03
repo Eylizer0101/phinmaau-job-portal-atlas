@@ -869,14 +869,13 @@ const EmployerVerification = () => {
           includeMeta: filters.page === 1,
         };
 
-        const hasSearch = Boolean(filters.search);
-        if (hasSearch) params.search = filters.search;
-        if (!hasSearch && filters.company !== "all") params.company = filters.company;
-        if (!hasSearch && filters.industry !== "all") params.industry = filters.industry;
+        if (filters.search) params.search = filters.search;
+        if (filters.company !== "all") params.company = filters.company;
+        if (filters.industry !== "all") params.industry = filters.industry;
         if (archiveMode) params.status = "rejected";
-        else if (!hasSearch && filters.status !== "all") params.status = filters.status;
-        if (!hasSearch && filters.dateFrom) params.dateFrom = filters.dateFrom;
-        if (!hasSearch && filters.dateTo) params.dateTo = filters.dateTo;
+        else if (filters.status !== "all") params.status = filters.status;
+        if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+        if (filters.dateTo) params.dateTo = filters.dateTo;
 
         const cacheKey = JSON.stringify({ ...params, includeMeta: undefined });
         const cachedPage = pageCacheRef.current.get(cacheKey);

@@ -533,18 +533,17 @@ const AdminJobOffers = () => {
     try {
       setLoading(true);
       setError('');
-      const hasSearch = Boolean(filters.search.trim());
       const params = {
         page,
         limit: pageSize === 'all' ? 'all' : pageSize,
         search: filters.search,
-        status: !hasSearch && filters.status !== 'All Status' ? filters.status.toLowerCase() : '',
-        company: !hasSearch && filters.company !== 'All Company' ? filters.company : '',
-        industry: !hasSearch && filters.industry !== 'All Industry' ? filters.industry : '',
-        jobTitle: !hasSearch && filters.jobTitle !== 'All Job Title' ? filters.jobTitle : '',
-        date: hasSearch ? 'all' : filters.date,
-        dateFrom: hasSearch ? '' : filters.dateFrom,
-        dateTo: hasSearch ? '' : filters.dateTo,
+        status: filters.status !== 'All Status' ? filters.status.toLowerCase() : '',
+        company: filters.company !== 'All Company' ? filters.company : '',
+        industry: filters.industry !== 'All Industry' ? filters.industry : '',
+        jobTitle: filters.jobTitle !== 'All Job Title' ? filters.jobTitle : '',
+        date: filters.date,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
         includeMeta: page === 1,
       };
       const cacheKey = JSON.stringify({ ...params, includeMeta: undefined });

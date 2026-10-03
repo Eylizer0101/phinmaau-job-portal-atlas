@@ -2021,6 +2021,8 @@ exports.getAllUsers = async (req, res) => {
     const company = String(req.query.company || '').trim();
     const industry = String(req.query.industry || '').trim();
     const verifiedParam = req.query.verified;
+    const dateFrom = String(req.query.dateFrom || '').trim();
+    const dateTo = String(req.query.dateTo || '').trim();
     const includeMeta = String(req.query.includeMeta || 'true').toLowerCase() !== 'false';
 
     const verifiedUserCondition = {
@@ -2081,6 +2083,24 @@ exports.getAllUsers = async (req, res) => {
 
     if (typeof verifiedParam !== 'undefined') {
       baseQuery.isVerified = String(verifiedParam) === 'true';
+    }
+
+    if (dateFrom || dateTo) {
+      baseQuery.createdAt = {};
+
+      if (dateFrom) {
+        const start = new Date(`${dateFrom}T00:00:00`);
+        if (!Number.isNaN(start.getTime())) baseQuery.createdAt.$gte = start;
+      }
+
+      if (dateTo) {
+        const end = new Date(`${dateTo}T23:59:59.999`);
+        if (!Number.isNaN(end.getTime())) baseQuery.createdAt.$lte = end;
+      }
+
+      if (!Object.keys(baseQuery.createdAt).length) {
+        delete baseQuery.createdAt;
+      }
     }
 
     if (verificationStatus && verificationStatus !== 'all') {
@@ -4407,22 +4427,65 @@ const getAdminJobOfferStatus = (job) => {
   return 'Open';
 };
 
-const getAdminJobDateRange = (dateFilter) => {
+const getAdminJobDateRange = (dateFilter, dateFrom, dateTo) => {
   const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
+  const filter = String(dateFilter || 'all').trim().toLowerCase();
 
-  const filter = String(dateFilter || 'all').toLowerCase();
-  if (filter === 'today') return { $gte: start };
-  if (filter === '7days') {
-    start.setDate(start.getDate() - 6);
-    return { $gte: start };
+  const startOfDay = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const endOfDay = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(23, 59, 59, 999);
+    return date;
+  };
+
+  let start = null;
+  let end = null;
+
+  if (filter === 'custom') {
+    start = dateFrom ? startOfDay(`${dateFrom}T00:00:00`) : null;
+    end = dateTo ? endOfDay(`${dateTo}T00:00:00`) : null;
+  } else if (filter === 'today') {
+    start = startOfDay(now);
+    end = endOfDay(now);
+  } else if (filter === 'yesterday') {
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    start = startOfDay(yesterday);
+    end = endOfDay(yesterday);
+  } else if (filter === 'thisweek') {
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    start = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset));
+    end = endOfDay(now);
+  } else if (filter === '7days') {
+    start = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6));
+    end = endOfDay(now);
+  } else if (filter === 'thismonth') {
+    start = startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+    end = endOfDay(now);
+  } else if (filter === 'lastmonth') {
+    start = startOfDay(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    end = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0));
+  } else if (filter === 'thisyear') {
+    start = startOfDay(new Date(now.getFullYear(), 0, 1));
+    end = endOfDay(now);
+  } else if (filter === 'lastyear') {
+    start = startOfDay(new Date(now.getFullYear() - 1, 0, 1));
+    end = endOfDay(new Date(now.getFullYear() - 1, 11, 31));
   }
-  if (filter === '30days') {
-    start.setDate(start.getDate() - 29);
-    return { $gte: start };
-  }
-  return null;
+
+  if (!start && !end) return null;
+
+  const range = {};
+  if (start) range.$gte = start;
+  if (end) range.$lte = end;
+  return range;
 };
 
 exports.getAdminJobOffers = async (req, res) => {
@@ -4437,7 +4500,9 @@ exports.getAdminJobOffers = async (req, res) => {
     const company = String(req.query.company || '').trim();
     const industry = String(req.query.industry || '').trim();
     const jobTitle = String(req.query.jobTitle || '').trim();
-    const dateRange = getAdminJobDateRange(req.query.date);
+    const dateFrom = String(req.query.dateFrom || '').trim();
+    const dateTo = String(req.query.dateTo || '').trim();
+    const dateRange = getAdminJobDateRange(req.query.date, dateFrom, dateTo);
 
     const baseQuery = {
       isArchived: { $ne: true },

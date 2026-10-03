@@ -22,6 +22,7 @@ const DATE_FILTER_OPTIONS = [
   { value: 'thisMonth', label: 'This Month' },
   { value: 'lastMonth', label: 'Last Month' },
   { value: 'thisYear', label: 'This Year' },
+  { value: 'lastYear', label: 'Last Year' },
   { value: 'custom', label: 'Custom Range' },
 ];
 
@@ -455,6 +456,13 @@ const getPresetDateRange = (value) => {
     return {
       from: formatDateInput(new Date(today.getFullYear(), 0, 1)),
       to: formatDateInput(today),
+    };
+  }
+
+  if (value === 'lastYear') {
+    return {
+      from: formatDateInput(new Date(today.getFullYear() - 1, 0, 1)),
+      to: formatDateInput(new Date(today.getFullYear() - 1, 11, 31)),
     };
   }
 
@@ -1285,8 +1293,6 @@ const AdminJobApplicants = () => {
       if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
         return false;
       }
-
-      if (normalizedSearch) return true;
 
       if (statusFilter !== "all") {
         const status = String(application?.status || "").toLowerCase();

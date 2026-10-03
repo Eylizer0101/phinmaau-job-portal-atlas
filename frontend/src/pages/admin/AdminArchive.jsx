@@ -629,16 +629,15 @@ const AdminArchive = () => {
     setErrorMessage("");
 
     try {
-      const hasSearch = Boolean(filters.search.trim());
       const response = await api.get("/admin/archive", {
         params: {
           q: filters.search,
-          company: hasSearch ? "all" : filters.company,
-          industry: hasSearch ? "all" : filters.industry,
-          type: hasSearch ? "all" : filters.type,
-          date: hasSearch ? "all" : filters.date,
-          dateFrom: hasSearch ? "" : filters.dateFrom,
-          dateTo: hasSearch ? "" : filters.dateTo,
+          company: filters.company,
+          industry: filters.industry,
+          type: filters.type,
+          date: filters.date,
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
         },
       });
 

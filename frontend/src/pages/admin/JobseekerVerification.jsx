@@ -729,14 +729,13 @@ const JobseekerVerification = () => {
           includeMeta: filters.page === 1,
         };
 
-        const hasSearch = Boolean(filters.search);
-        if (hasSearch) params.search = filters.search;
-        if (!hasSearch && filters.campus !== "all") params.campus = filters.campus;
-        if (!hasSearch && filters.course !== "all") params.course = filters.course;
+        if (filters.search) params.search = filters.search;
+        if (filters.campus !== "all") params.campus = filters.campus;
+        if (filters.course !== "all") params.course = filters.course;
         if (archiveMode) params.status = "rejected";
-        else if (!hasSearch && filters.status !== "all") params.status = filters.status;
-        if (!hasSearch && filters.dateFrom) params.dateFrom = filters.dateFrom;
-        if (!hasSearch && filters.dateTo) params.dateTo = filters.dateTo;
+        else if (filters.status !== "all") params.status = filters.status;
+        if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+        if (filters.dateTo) params.dateTo = filters.dateTo;
 
         const cacheKey = JSON.stringify({ ...params, includeMeta: undefined });
         const cachedPage = pageCacheRef.current.get(cacheKey);

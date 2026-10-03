@@ -715,7 +715,7 @@ const AdminApplications = () => {
         status,
       ].join(' ').toLowerCase();
 
-      if (term) return haystack.includes(term);
+      if (term && !haystack.includes(term)) return false;
 
       if (
         campusFilter !== 'All Campus' &&

@@ -515,13 +515,12 @@ const AdminSystemLogs = () => {
   const loadLogs = useCallback(async () => {
     try {
       setLoading(true); setError('');
-      const hasSearch = Boolean(search);
       const params = {
         q: search,
-        role: hasSearch ? 'all' : filters.role,
-        date: hasSearch ? 'all' : filters.date,
-        dateFrom: hasSearch ? '' : filters.dateFrom,
-        dateTo: hasSearch ? '' : filters.dateTo,
+        role: filters.role,
+        date: filters.date,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
         page,
         limit: pageSize === 'all' ? 'all' : pageSize,
         includeMeta: false,

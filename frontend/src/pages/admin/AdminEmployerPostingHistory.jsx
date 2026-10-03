@@ -626,7 +626,7 @@ const AdminEmployerPostingHistory = () => {
         location.toLowerCase().includes(query) ||
         jobStatus.includes(query);
 
-      if (query) return matchesSearch;
+      if (!matchesSearch) return false;
 
       const matchesTitle = jobTitle === "all" || title === jobTitle;
       const matchesStatus = status === "all" || jobStatus === status;

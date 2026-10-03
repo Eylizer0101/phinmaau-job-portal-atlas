@@ -1169,18 +1169,17 @@ const UserManagement = () => {
   }, []);
 
   const fetchUsers = useCallback(async () => {
-    const hasSearch = Boolean(debouncedQuery);
     const baseParams = {
       limit: pageSize,
       search: debouncedQuery || undefined,
       sort,
-      role: !hasSearch && roleFilter !== 'all' ? roleFilter : undefined,
-      campus: !hasSearch && roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
-      course: !hasSearch && roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
-      company: !hasSearch && roleFilter === 'employer' && companyFilter !== 'all' ? companyFilter : undefined,
-      industry: !hasSearch && roleFilter === 'employer' && industryFilter !== 'all' ? industryFilter : undefined,
-      dateFrom: !hasSearch && dateFrom ? dateFrom : undefined,
-      dateTo: !hasSearch && dateTo ? dateTo : undefined
+      role: roleFilter !== 'all' ? roleFilter : undefined,
+      campus: roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
+      course: roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
+      company: roleFilter === 'employer' && companyFilter !== 'all' ? companyFilter : undefined,
+      industry: roleFilter === 'employer' && industryFilter !== 'all' ? industryFilter : undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined
     };
 
     const cacheKey = JSON.stringify({ ...baseParams, page: currentPage });
@@ -1442,9 +1441,9 @@ const UserManagement = () => {
       filtered = filtered.filter((user) => user.industry === industryFilter);
     }
 
-    if (!debouncedQuery && (dateFrom || dateTo)) {
+    if (dateFrom || dateTo) {
       const start = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
-      const end = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
+      const end = dateTo ? new Date(`${dateTo}T23:59:59.999`) : null;
 
       filtered = filtered.filter(user => {
         const registeredDate = user.createdAt ? new Date(user.createdAt) : null;
