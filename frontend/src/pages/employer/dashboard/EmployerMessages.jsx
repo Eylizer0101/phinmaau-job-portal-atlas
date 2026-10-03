@@ -2394,7 +2394,7 @@ const EmployerMessages = () => {
                                           <button
                                             type="button"
                                             onClick={() => downloadFile(f)}
-                                            className={`${barClass} max-w-[340px] text-left cursor-pointer hover:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
+                                            className={`${barClass} w-[280px] max-w-full text-left cursor-pointer transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2`}
                                             aria-label={`Download ${f.originalName || 'attachment'}`}
                                           >
                                             <div className={iconWrap}>
