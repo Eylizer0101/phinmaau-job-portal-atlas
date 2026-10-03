@@ -6303,12 +6303,36 @@ const addExportDataRows = (worksheet, startRow, rows) => {
 };
 
 
+const addApprovedBySection = (worksheet, startRow, columnCount = 3) => {
+  const mergeEnd = Math.max(3, Math.min(columnCount, 5));
+  worksheet.mergeCells(startRow, 1, startRow, mergeEnd);
+  worksheet.mergeCells(startRow + 1, 1, startRow + 1, mergeEnd);
+  worksheet.mergeCells(startRow + 2, 1, startRow + 2, mergeEnd);
+
+  const labelCell = worksheet.getCell(startRow, 1);
+  labelCell.value = 'APPROVED BY:';
+  labelCell.font = { name: 'Arial', size: 9, italic: true };
+  labelCell.alignment = { horizontal: 'center' };
+
+  const nameCell = worksheet.getCell(startRow + 1, 1);
+  nameCell.value = 'JAN KRISTINE A. INOCENCIO';
+  nameCell.font = { name: 'Arial', size: 9, bold: true };
+  nameCell.alignment = { horizontal: 'center' };
+
+  const roleCell = worksheet.getCell(startRow + 2, 1);
+  roleCell.value = 'LINKAGES MANAGER';
+  roleCell.font = { name: 'Arial', size: 9 };
+  roleCell.alignment = { horizontal: 'center' };
+};
+
 const normalizeAdminFilterRole = (value) => {
   const normalized = exportText(value).toLowerCase().replace(/[_-]+/g, ' ');
+  if (!normalized || ['all', 'all roles', 'users'].includes(normalized)) return 'all';
   if (['employer', 'employers'].includes(normalized)) return 'employer';
   if (['job offer', 'job offers', 'joboffer', 'joboffers', 'jobs'].includes(normalized)) return 'jobOffer';
   if (['application', 'applications'].includes(normalized)) return 'application';
-  return 'jobseeker';
+  if (['jobseeker', 'job seeker', 'job seekers'].includes(normalized)) return 'jobseeker';
+  return 'all';
 };
 
 const filterRecordMatches = (value, selected) => {
@@ -6349,7 +6373,28 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
 
   let records = [];
 
-  if (role === 'jobseeker') {
+  if (role === 'all') {
+    records = users
+      .filter((user) => ['jobseeker', 'employer'].includes(String(user.role || '').toLowerCase()))
+      .map((user) => {
+        const isEmployer = String(user.role || '').toLowerCase() === 'employer';
+        const profile = isEmployer ? (user.employerProfile || {}) : (user.jobSeekerProfile || {});
+        const address = exportAddressParts(profile, isEmployer);
+        return {
+          id: String(user._id),
+          role: isEmployer ? 'employer' : 'jobseeker',
+          roleLabel: isEmployer ? 'Employer' : 'Job Seeker',
+          date: exportDate(user.createdAt),
+          fullName: exportFullName(user),
+          email: user.email || (isEmployer ? profile.businessEmail || '' : ''),
+          contactNumber: isEmployer
+            ? (profile.mobileNumber || user.registrationContactNumber || '')
+            : (profile.phoneNumber || user.registrationContactNumber || ''),
+          region: address.region,
+          cityMunicipality: address.city,
+        };
+      });
+  } else if (role === 'jobseeker') {
     records = users
       .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
       .map((user) => {
@@ -6371,7 +6416,6 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
           region: address.region,
           province: address.province,
           cityMunicipality: address.city,
-          streetAddress: address.street,
         };
       });
   } else if (role === 'employer') {
@@ -6392,7 +6436,6 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
           region: address.region,
           province: address.province,
           cityMunicipality: address.city,
-          streetAddress: address.street,
         };
       });
   } else if (role === 'jobOffer') {
@@ -6436,7 +6479,6 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
         region: address.region,
         province: address.province,
         cityMunicipality: address.city,
-        streetAddress: address.street,
         companyName: job.companyName || employer?.employerProfile?.companyName || '',
         industry: employer?.employerProfile?.industry || job.category || '',
         jobTitle: job.title || '',
@@ -6459,12 +6501,11 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
     if (!filterRecordMatches(record.yearGraduated, filters.yearGraduated)) return false;
     if (!filterRecordMatches(record.gender, filters.gender)) return false;
     if (!filterRecordMatches(record.companyName, filters.companyName)) return false;
+    if (!filterRecordMatches(record.industry, filters.industry)) return false;
     if (!filterRecordMatches(record.jobTitle, filters.jobTitle)) return false;
     if (!filterRecordMatches(record.applicationStatus, filters.applicationStatus)) return false;
-    if (!filterRecordIncludes(record.fullName, filters.search) &&
-        !filterRecordIncludes(record.email, filters.search) &&
-        !filterRecordIncludes(record.companyName, filters.search) &&
-        !filterRecordIncludes(record.jobTitle, filters.search)) return false;
+    if (!filterRecordMatches(record.workMode, filters.workMode)) return false;
+    if (!filterRecordMatches(record.employmentType, filters.employmentType)) return false;
     return true;
   });
 
@@ -6477,22 +6518,30 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
       yearsGraduated: uniqueFilterValues(optionsSource, 'yearGraduated'),
       genders: uniqueFilterValues(optionsSource, 'gender'),
       companyNames: uniqueFilterValues(optionsSource, 'companyName'),
+      industries: uniqueFilterValues(optionsSource, 'industry'),
       jobTitles: uniqueFilterValues(optionsSource, 'jobTitle'),
-      applicationStatuses: uniqueFilterValues(optionsSource, 'applicationStatus'),
+      applicationStatuses: role === 'application' ? uniqueFilterValues(optionsSource, 'applicationStatus') : [],
+      jobStatuses: role === 'jobOffer' ? uniqueFilterValues(optionsSource, 'applicationStatus') : [],
+      workModes: uniqueFilterValues(optionsSource, 'workMode'),
+      employmentTypes: uniqueFilterValues(optionsSource, 'employmentType'),
     },
   };
 };
 
 const adminFilterRecordColumns = {
+  all: [
+    ['date', 'Date Registered'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'],
+    ['roleLabel', 'Role'], ['region', 'Region'], ['cityMunicipality', 'City / Municipality'],
+  ],
   jobseeker: [
     ['date', 'Date Registered'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'],
     ['age', 'Age'], ['civilStatus', 'Civil Status'], ['gender', 'Gender'], ['campus', 'Campus'], ['course', 'Course'],
-    ['yearGraduated', 'Year Graduated'], ['region', 'Region'], ['province', 'Province'], ['cityMunicipality', 'City / Municipality'], ['streetAddress', 'Street Address'],
+    ['yearGraduated', 'Year Graduated'], ['region', 'Region'], ['province', 'Province'], ['cityMunicipality', 'City / Municipality'],
   ],
   employer: [
     ['date', 'Date Registered'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'],
     ['companyName', 'Company Name'], ['industry', 'Industry'], ['region', 'Region'], ['province', 'Province'],
-    ['cityMunicipality', 'City / Municipality'], ['streetAddress', 'Street Address'],
+    ['cityMunicipality', 'City / Municipality'],
   ],
   jobOffer: [
     ['date', 'Date Posted'], ['companyName', 'Company Name'], ['industry', 'Industry'], ['jobTitle', 'Job Title'],
@@ -6502,9 +6551,9 @@ const adminFilterRecordColumns = {
   application: [
     ['date', 'Date Applied'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'], ['age', 'Age'],
     ['civilStatus', 'Civil Status'], ['gender', 'Gender'], ['campus', 'Campus'], ['course', 'Course'], ['yearGraduated', 'Year Graduated'],
-    ['region', 'Region'], ['province', 'Province'], ['cityMunicipality', 'City / Municipality'], ['streetAddress', 'Street Address'],
-    ['applicationStatus', 'Application Status'], ['companyName', 'Company Name'], ['jobTitle', 'Job Title'], ['workMode', 'Work Mode'],
-    ['employmentType', 'Employment Type'], ['processingTime', 'Processing Time'], ['timesApplied', 'Times Applied'], ['hiredDate', 'Hired Date'],
+    ['region', 'Region'], ['province', 'Province'], ['cityMunicipality', 'City / Municipality'], ['companyName', 'Company Name'],
+    ['jobTitle', 'Job Title'], ['workMode', 'Work Mode'], ['employmentType', 'Employment Type'], ['applicationStatus', 'Application Status'],
+    ['processingTime', 'Processing Time'], ['timesApplied', 'Times Applied'], ['hiredDate', 'Hired Date'],
   ],
 };
 
@@ -6521,13 +6570,13 @@ exports.getAdminFilterRecords = async (req, res) => {
 exports.exportAdminFilterRecordsExcel = async (req, res) => {
   try {
     const payload = await buildAdminFilterRecords(req.body?.filters || {});
-    const columns = adminFilterRecordColumns[payload.role] || adminFilterRecordColumns.jobseeker;
+    const columns = adminFilterRecordColumns[payload.role] || adminFilterRecordColumns.all;
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'AGAPAY';
     workbook.company = 'PHINMA Araullo University';
     workbook.created = new Date();
 
-    const roleLabel = payload.role === 'jobOffer' ? 'Job Offers' : payload.role === 'application' ? 'Applications' : payload.role === 'employer' ? 'Employer' : 'Job Seeker';
+    const roleLabel = payload.role === 'jobOffer' ? 'Job Offers' : payload.role === 'application' ? 'Applications' : payload.role === 'employer' ? 'Employer' : payload.role === 'jobseeker' ? 'Job Seeker' : 'All Roles';
     const sheet = workbook.addWorksheet(roleLabel.slice(0, 31));
     styleExportWorksheet(
       sheet,
@@ -6536,6 +6585,7 @@ exports.exportAdminFilterRecordsExcel = async (req, res) => {
       columns.map(([, label]) => Math.min(38, Math.max(14, label.length + 5))),
     );
     addExportDataRows(sheet, 5, payload.records.map((record) => columns.map(([key]) => record[key] ?? '')));
+    addApprovedBySection(sheet, 5 + payload.records.length + 2, columns.length);
 
     const safeRole = payload.role === 'jobOffer' ? 'job-offers' : payload.role;
     const filename = `agapay-filter-records-${safeRole}-${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -6562,8 +6612,8 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
   let browser = null;
   try {
     const payload = await buildAdminFilterRecords(req.body?.filters || {});
-    const columns = adminFilterRecordColumns[payload.role] || adminFilterRecordColumns.jobseeker;
-    const roleLabel = payload.role === 'jobOffer' ? 'Job Offers' : payload.role === 'application' ? 'Applications' : payload.role === 'employer' ? 'Employer' : 'Job Seeker';
+    const columns = adminFilterRecordColumns[payload.role] || adminFilterRecordColumns.all;
+    const roleLabel = payload.role === 'jobOffer' ? 'Job Offers' : payload.role === 'application' ? 'Applications' : payload.role === 'employer' ? 'Employer' : payload.role === 'jobseeker' ? 'Job Seeker' : 'All Roles';
 
     const tableHead = columns.map(([, label]) => `<th>${escapePdfHtml(label)}</th>`).join('');
     const tableBody = payload.records.length
@@ -6576,9 +6626,12 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
       table{width:100%;border-collapse:collapse;table-layout:auto} th{background:#2e66a6;color:#fff;padding:7px 6px;border:1px solid #dbe4ef;white-space:nowrap}
       td{padding:6px;border:1px solid #dbe4ef;vertical-align:top;word-break:break-word} tr:nth-child(even) td{background:#f8fafc}
       .meta{display:flex;justify-content:space-between;margin-bottom:10px;color:#64748b}
+      .approval{margin-top:24px;width:260px;text-align:center;page-break-inside:avoid}.approval .label{font-style:italic;margin-bottom:10px}.approval .name{font-weight:700}.approval .role{margin-top:4px}
     </style></head><body><h1>PHINMA Araullo University - ${escapePdfHtml(roleLabel)} Filter Records</h1>
     <div class="meta"><span>${payload.records.length} record(s)</span><span>Generated: ${escapePdfHtml(exportDate(new Date()))}</span></div>
-    <table><thead><tr>${tableHead}</tr></thead><tbody>${tableBody}</tbody></table></body></html>`;
+    <table><thead><tr>${tableHead}</tr></thead><tbody>${tableBody}</tbody></table>
+    <div class="approval"><div class="label">APPROVED BY:</div><div class="name">JAN KRISTINE A. INOCENCIO</div><div class="role">LINKAGES MANAGER</div></div>
+    </body></html>`;
 
     const puppeteer = require('puppeteer');
     browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
@@ -6959,26 +7012,28 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     workbook.company = 'PHINMA Araullo University';
     workbook.created = new Date();
 
-    const jobSeekerHeaders = ['Date Registered', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Region', 'Province', 'City / Municipality', 'Street Address'];
-    const employerHeaders = ['Date Registered', 'Full Name', 'Email', 'Contact Number', 'Company Name', 'Industry', 'Region', 'Province', 'City / Municipality', 'Street Address'];
+    const jobSeekerHeaders = ['Date Registered', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Region', 'Province', 'City / Municipality'];
+    const employerHeaders = ['Date Registered', 'Full Name', 'Email', 'Contact Number', 'Company Name', 'Industry', 'Region', 'Province', 'City / Municipality'];
     const jobOfferHeaders = ['Date Posted', 'Company Name', 'Industry', 'Job Title', 'Work Mode', 'Employment Type', 'Vacancy', 'Applicant', 'Status', 'Valid Until'];
-    const applicationHeaders = ['Date Applied', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Job Title', 'Work Mode', 'Employment Type', 'Company Name', 'Industry', 'Application Status', 'Processing Time', 'Times Applied', 'Hired Date'];
+    const applicationHeaders = ['Date Applied', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Region', 'Province', 'City / Municipality', 'Company Name', 'Job Title', 'Work Mode', 'Employment Type', 'Application Status', 'Processing Time', 'Times Applied', 'Hired Date'];
 
     const jobSeekerSheet = workbook.addWorksheet('Job Seeker');
-    styleExportWorksheet(jobSeekerSheet, 'Phinma Araullo University - Job Seeker List', jobSeekerHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24, 36]);
+    styleExportWorksheet(jobSeekerSheet, 'Phinma Araullo University - Job Seeker List', jobSeekerHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24]);
     addExportDataRows(jobSeekerSheet, 5, jobseekers.map((user) => {
       const profile = user.jobSeekerProfile || {};
       const address = exportAddressParts(profile, false);
-      return [exportDate(user.createdAt), exportFullName(user), user.email || '', profile.phoneNumber || user.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(user) === 'Unspecified' ? '' : getJobseekerCampus(user), exportProfileValues(user, 'course')[0] || '', exportProfileValues(user, 'yearGraduated')[0] || '', address.region, address.province, address.city, address.street];
+      return [exportDate(user.createdAt), exportFullName(user), user.email || '', profile.phoneNumber || user.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(user) === 'Unspecified' ? '' : getJobseekerCampus(user), exportProfileValues(user, 'course')[0] || '', exportProfileValues(user, 'yearGraduated')[0] || '', address.region, address.province, address.city];
     }));
+    addApprovedBySection(jobSeekerSheet, 5 + jobseekers.length + 2, jobSeekerHeaders.length);
 
     const employerSheet = workbook.addWorksheet('Employer');
-    styleExportWorksheet(employerSheet, 'Phinma Araullo University - Employer List', employerHeaders, [16, 28, 30, 17, 32, 24, 20, 20, 24, 38]);
+    styleExportWorksheet(employerSheet, 'Phinma Araullo University - Employer List', employerHeaders, [16, 28, 30, 17, 32, 24, 20, 20, 24]);
     addExportDataRows(employerSheet, 5, employers.map((user) => {
       const profile = user.employerProfile || {};
       const address = exportAddressParts(profile, true);
-      return [exportDate(user.createdAt), exportFullName(user), user.email || profile.businessEmail || '', profile.mobileNumber || user.registrationContactNumber || '', profile.companyName || '', profile.industry || '', address.region, address.province, address.city, address.street];
+      return [exportDate(user.createdAt), exportFullName(user), user.email || profile.businessEmail || '', profile.mobileNumber || user.registrationContactNumber || '', profile.companyName || '', profile.industry || '', address.region, address.province, address.city];
     }));
+    addApprovedBySection(employerSheet, 5 + employers.length + 2, employerHeaders.length);
 
     const jobOfferSheet = workbook.addWorksheet('Job Offers');
     styleExportWorksheet(jobOfferSheet, 'Phinma Araullo University - Job Offers List', jobOfferHeaders, [16, 30, 24, 32, 18, 22, 12, 12, 14, 16]);
@@ -6986,16 +7041,19 @@ exports.exportAdminRecordsExcel = async (req, res) => {
       const employer = userById.get(String(job.employer || ''));
       return [exportDate(job.publishedAt || job.createdAt), job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', job.title || '', job.workMode || '', job.jobType || '', Number(job.vacancies || 0), applicationsByJob.get(String(job._id)) || Number(job.applicationCount || 0), getAdminJobOfferStatus(job), exportDate(job.applicationDeadline)];
     }));
+    addApprovedBySection(jobOfferSheet, 5 + filteredJobs.length + 2, jobOfferHeaders.length);
 
     const applicationSheet = workbook.addWorksheet('Applications');
-    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 32, 18, 22, 30, 24, 20, 18, 15, 16]);
+    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24, 30, 32, 18, 22, 20, 18, 15, 16]);
     addExportDataRows(applicationSheet, 5, filteredApplications.map((application) => {
       const seeker = userById.get(String(application.jobseeker || '')) || {};
       const profile = seeker.jobSeekerProfile || {};
       const job = jobById.get(String(application.job || '')) || {};
       const employer = userById.get(String(application.employer || job.employer || '')) || {};
-      return [exportDate(application.appliedAt || application.createdAt), exportFullName(seeker), seeker.email || '', profile.phoneNumber || seeker.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(seeker) === 'Unspecified' ? '' : getJobseekerCampus(seeker), exportProfileValues(seeker, 'course')[0] || '', exportProfileValues(seeker, 'yearGraduated')[0] || '', job.title || '', job.workMode || '', job.jobType || '', job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', application.status || '', exportProcessingTime(application), applicationsByJobseeker.get(String(application.jobseeker || '')) || 0, exportDate(application.hiredAt)];
+      const address = exportAddressParts(profile, false);
+      return [exportDate(application.appliedAt || application.createdAt), exportFullName(seeker), seeker.email || '', profile.phoneNumber || seeker.registrationContactNumber || '', exportAge(profile.birthday), profile.civilStatus || '', profile.gender || '', getJobseekerCampus(seeker) === 'Unspecified' ? '' : getJobseekerCampus(seeker), exportProfileValues(seeker, 'course')[0] || '', exportProfileValues(seeker, 'yearGraduated')[0] || '', address.region, address.province, address.city, job.companyName || employer?.employerProfile?.companyName || '', job.title || '', job.workMode || '', job.jobType || '', application.status || '', exportProcessingTime(application), applicationsByJobseeker.get(String(application.jobseeker || '')) || 0, exportDate(application.hiredAt)];
     }));
+    addApprovedBySection(applicationSheet, 5 + filteredApplications.length + 2, applicationHeaders.length);
 
     const modeLabel = mode === 'all' ? 'all-records' : mode === 'filtered' ? 'filtered-records' : 'agapay-reports';
     const filename = `agapay-${modeLabel}-${new Date().toISOString().slice(0, 10)}.xlsx`;

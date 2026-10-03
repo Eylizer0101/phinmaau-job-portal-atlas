@@ -1,37 +1,41 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileSpreadsheet, FileText, Filter, RefreshCw, Search, X } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, FileText, Filter, RefreshCw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
 const ROLE_OPTIONS = [
   ["jobseeker", "Job Seeker"],
   ["employer", "Employer"],
-  ["jobOffer", "Job Offers"],
-  ["application", "Applications"],
 ];
 
 const INITIAL_FILTERS = {
-  role: "jobseeker",
+  role: "",
   campus: "",
   course: "",
   yearGraduated: "",
   gender: "",
   companyName: "",
+  industry: "",
   jobTitle: "",
   applicationStatus: "",
-  search: "",
+  workMode: "",
+  employmentType: "",
 };
 
 const columnSets = {
+  all: [
+    ["date", "Date Registered"], ["fullName", "Full Name"], ["email", "Email"], ["contactNumber", "Contact Number"],
+    ["roleLabel", "Role"], ["region", "Region"], ["cityMunicipality", "City / Municipality"],
+  ],
   jobseeker: [
     ["date", "Date Registered"], ["fullName", "Full Name"], ["email", "Email"], ["contactNumber", "Contact Number"],
     ["age", "Age"], ["civilStatus", "Civil Status"], ["gender", "Gender"], ["campus", "Campus"], ["course", "Course"],
-    ["yearGraduated", "Year Graduated"], ["region", "Region"], ["province", "Province"], ["cityMunicipality", "City / Municipality"], ["streetAddress", "Street Address"],
+    ["yearGraduated", "Year Graduated"], ["region", "Region"], ["province", "Province"], ["cityMunicipality", "City / Municipality"],
   ],
   employer: [
     ["date", "Date Registered"], ["fullName", "Full Name"], ["email", "Email"], ["contactNumber", "Contact Number"],
     ["companyName", "Company Name"], ["industry", "Industry"], ["region", "Region"], ["province", "Province"],
-    ["cityMunicipality", "City / Municipality"], ["streetAddress", "Street Address"],
+    ["cityMunicipality", "City / Municipality"],
   ],
   jobOffer: [
     ["date", "Date Posted"], ["companyName", "Company Name"], ["industry", "Industry"], ["jobTitle", "Job Title"],
@@ -41,13 +45,19 @@ const columnSets = {
   application: [
     ["date", "Date Applied"], ["fullName", "Full Name"], ["email", "Email"], ["contactNumber", "Contact Number"], ["age", "Age"],
     ["civilStatus", "Civil Status"], ["gender", "Gender"], ["campus", "Campus"], ["course", "Course"], ["yearGraduated", "Year Graduated"],
-    ["region", "Region"], ["province", "Province"], ["cityMunicipality", "City / Municipality"], ["streetAddress", "Street Address"],
-    ["applicationStatus", "Application Status"], ["companyName", "Company Name"], ["jobTitle", "Job Title"], ["workMode", "Work Mode"],
-    ["employmentType", "Employment Type"], ["processingTime", "Processing Time"], ["timesApplied", "Times Applied"], ["hiredDate", "Hired Date"],
+    ["region", "Region"], ["province", "Province"], ["cityMunicipality", "City / Municipality"], ["companyName", "Company Name"],
+    ["jobTitle", "Job Title"], ["workMode", "Work Mode"], ["employmentType", "Employment Type"], ["applicationStatus", "Application Status"],
+    ["processingTime", "Processing Time"], ["timesApplied", "Times Applied"], ["hiredDate", "Hired Date"],
   ],
 };
 
-const roleLabel = (value) => ROLE_OPTIONS.find(([key]) => key === value)?.[1] || "Job Seeker";
+const roleLabel = (value) => {
+  if (value === "all") return "All Roles";
+  if (value === "application") return "Applications";
+  if (value === "jobOffer") return "Job Offers";
+  return ROLE_OPTIONS.find(([key]) => key === value)?.[1] || "All Roles";
+};
+
 const optionItems = (values = []) => values.map((value) => [value, value]);
 
 const StatusBadge = ({ value }) => {
@@ -109,9 +119,12 @@ const PasswordModal = ({ open, title, password, setPassword, message, busy, onCl
 const AdminFilterRecords = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState({ ...INITIAL_FILTERS, role: "all" });
   const [records, setRecords] = useState([]);
-  const [options, setOptions] = useState({ campuses: [], courses: [], yearsGraduated: [], genders: [], companyNames: [], jobTitles: [], applicationStatuses: [] });
+  const [options, setOptions] = useState({
+    campuses: [], courses: [], yearsGraduated: [], genders: [], companyNames: [], industries: [], jobTitles: [],
+    applicationStatuses: [], jobStatuses: [], workModes: [], employmentTypes: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exportType, setExportType] = useState("");
@@ -119,8 +132,9 @@ const AdminFilterRecords = () => {
   const [exportMessage, setExportMessage] = useState("");
   const [exporting, setExporting] = useState(false);
 
-  const activeColumns = columnSets[appliedFilters.role] || columnSets.jobseeker;
+  const activeColumns = columnSets[appliedFilters.role] || columnSets.all;
   const pagedRecords = useMemo(() => records, [records]);
+  const baseRole = appliedFilters.role === "application" ? "jobseeker" : appliedFilters.role === "jobOffer" ? "employer" : appliedFilters.role;
 
   useEffect(() => {
     let cancelled = false;
@@ -150,18 +164,39 @@ const AdminFilterRecords = () => {
   };
 
   const changeRole = (value) => {
-    const next = { ...INITIAL_FILTERS, role: value };
-    setFilters(next);
-    setAppliedFilters(next);
+    setFilters({ ...INITIAL_FILTERS, role: value });
   };
 
-  const applyFilters = () => setAppliedFilters({ ...filters });
+  const applyFilters = () => {
+    let targetRole = filters.role || "all";
+    if (activeRole === "application" && filters.role === "jobseeker") targetRole = "application";
+    if (activeRole === "jobOffer" && filters.role === "employer") targetRole = "jobOffer";
+    setAppliedFilters({ ...filters, role: targetRole });
+  };
+
   const resetFilters = () => {
-    const next = { ...INITIAL_FILTERS, role: filters.role };
-    setFilters(next);
-    setAppliedFilters(next);
+    setFilters(INITIAL_FILTERS);
+    setAppliedFilters({ ...INITIAL_FILTERS, role: "all" });
   };
 
+  const switchTable = (tableRole) => {
+    const nextBaseRole = tableRole === "application" ? "jobseeker" : tableRole === "jobOffer" ? "employer" : tableRole;
+    const nextFilters = {
+      ...INITIAL_FILTERS,
+      role: nextBaseRole,
+      ...(nextBaseRole === "jobseeker" ? {
+        campus: filters.campus,
+        course: filters.course,
+        yearGraduated: filters.yearGraduated,
+        gender: filters.gender,
+      } : {
+        companyName: filters.companyName,
+        industry: filters.industry,
+      }),
+    };
+    setFilters(nextFilters);
+    setAppliedFilters({ ...nextFilters, role: tableRole });
+  };
 
   const openExport = (type) => {
     setExportType(type);
@@ -221,9 +256,11 @@ const AdminFilterRecords = () => {
     }
   };
 
-  const showJobseekerFilters = filters.role === "jobseeker" || filters.role === "application";
-  const showCompanyFilters = filters.role === "employer" || filters.role === "jobOffer" || filters.role === "application";
-  const showJobFilters = filters.role === "jobOffer" || filters.role === "application";
+  const activeRole = appliedFilters.role;
+  const showJobseekerFilters = baseRole === "jobseeker";
+  const showEmployerFilters = baseRole === "employer";
+  const showApplicationFilters = activeRole === "application";
+  const showJobOfferFilters = activeRole === "jobOffer";
 
   return (
     <div className="min-h-screen bg-white py-3">
@@ -249,7 +286,7 @@ const AdminFilterRecords = () => {
               <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold">Filter Records</h1>
-                  <p className="mt-1 text-sm text-white/80">{records.length} record(s) · {roleLabel(appliedFilters.role)}</p>
+                  <p className="mt-1 text-sm text-white/80">{records.length} record(s) · {roleLabel(activeRole)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => openExport("pdf")} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-[#245a93] shadow-sm hover:bg-slate-50">
@@ -262,48 +299,53 @@ const AdminFilterRecords = () => {
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2 px-1">
-              <span className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#2e66a6] px-3 text-xs font-semibold text-white"><Filter size={14} /> Active Table</span>
-              <span className="rounded-full bg-[#e8f4ff] px-3 py-1.5 text-xs font-semibold text-[#2e66a6]">{roleLabel(appliedFilters.role)}</span>
-              {appliedFilters.applicationStatus ? <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">{appliedFilters.applicationStatus}</span> : null}
-              {appliedFilters.companyName ? <span className="max-w-[220px] truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{appliedFilters.companyName}</span> : null}
-            </div>
+            {baseRole === "jobseeker" || baseRole === "employer" ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2 px-1">
+                <button
+                  type="button"
+                  onClick={() => switchTable(baseRole)}
+                  className={`inline-flex h-8 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${activeRole === baseRole ? "bg-[#2e66a6] text-white" : "bg-[#e8f4ff] text-[#2e66a6]"}`}
+                >
+                  <Filter size={14} /> {baseRole === "jobseeker" ? "Job Seeker" : "Employer"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchTable(baseRole === "jobseeker" ? "application" : "jobOffer")}
+                  className={`inline-flex h-8 items-center rounded-lg px-3 text-xs font-semibold ${activeRole === (baseRole === "jobseeker" ? "application" : "jobOffer") ? "bg-[#2e66a6] text-white" : "bg-[#e8f4ff] text-[#2e66a6]"}`}
+                >
+                  {baseRole === "jobseeker" ? "Applications" : "Job Offers"}
+                </button>
+              </div>
+            ) : null}
 
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-100 p-4 shadow-sm sm:p-5">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="relative w-full max-w-sm">
-                  <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={filters.search}
-                    onChange={(event) => setFilter("search", event.target.value)}
-                    onKeyDown={(event) => { if (event.key === "Enter") applyFilters(); }}
-                    placeholder="Search records..."
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
-                  />
-                </div>
-                <div className="text-xs font-medium text-slate-500">Showing {records.length ? 1 : 0}-{records.length} of {records.length}</div>
-              </div>
-
-              <div className="max-h-[620px] overflow-auto bg-white">
-                <table className="min-w-max border-separate border-spacing-0 text-left text-xs">
-                  <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_rgba(148,163,184,0.25)]">
+              <div className="max-h-[620px] overflow-auto rounded-xl bg-white p-1">
+                <table className="min-w-max border-separate border-spacing-x-0 border-spacing-y-1 text-left text-xs">
+                  <thead className="sticky top-0 z-10 bg-white">
                     <tr>
-                      {activeColumns.map(([key, label]) => (
-                        <th key={key} className="whitespace-nowrap border-r border-slate-100 bg-white px-3 py-3 font-bold text-slate-700">{label}</th>
+                      <th className="whitespace-nowrap rounded-l-xl bg-white px-3 py-3 text-center font-bold text-slate-700 shadow-sm">#</th>
+                      {activeColumns.map(([key, label], index) => (
+                        <th
+                          key={key}
+                          className={`whitespace-nowrap bg-white px-3 py-3 font-bold text-slate-700 shadow-sm ${index === activeColumns.length - 1 ? "rounded-r-xl" : ""}`}
+                        >
+                          {label}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
-                      <tr><td colSpan={activeColumns.length} className="px-4 py-16 text-center text-sm text-slate-500">Loading records...</td></tr>
+                      <tr><td colSpan={activeColumns.length + 1} className="px-4 py-16 text-center text-sm text-slate-500">Loading records...</td></tr>
                     ) : error ? (
-                      <tr><td colSpan={activeColumns.length} className="px-4 py-16 text-center text-sm text-rose-600">{error}</td></tr>
+                      <tr><td colSpan={activeColumns.length + 1} className="px-4 py-16 text-center text-sm text-rose-600">{error}</td></tr>
                     ) : pagedRecords.length === 0 ? (
-                      <tr><td colSpan={activeColumns.length} className="px-4 py-16 text-center text-sm text-slate-500">No records found for the selected filters.</td></tr>
+                      <tr><td colSpan={activeColumns.length + 1} className="px-4 py-16 text-center text-sm text-slate-500">No records found for the selected filters.</td></tr>
                     ) : pagedRecords.map((record, rowIndex) => (
-                      <tr key={record.id || rowIndex} className={rowIndex % 2 === 0 ? "bg-slate-50/80" : "bg-white"}>
+                      <tr key={record.id || rowIndex} className={rowIndex % 2 === 0 ? "bg-slate-50/90" : "bg-white"}>
+                        <td className="border-r border-slate-100 px-3 py-2.5 text-center font-medium text-slate-700">{rowIndex + 1}</td>
                         {activeColumns.map(([key]) => (
-                          <td key={`${record.id}-${key}`} className="max-w-[300px] border-r border-t border-slate-100 px-3 py-2.5 align-top text-slate-700">
+                          <td key={`${record.id}-${key}`} className="max-w-[300px] border-r border-slate-100 px-3 py-2.5 align-top text-slate-700">
                             {key === "applicationStatus" ? <StatusBadge value={record[key]} /> : <span className="whitespace-normal break-words">{record[key] === "" || record[key] === null || record[key] === undefined ? "—" : String(record[key])}</span>}
                           </td>
                         ))}
@@ -312,7 +354,6 @@ const AdminFilterRecords = () => {
                   </tbody>
                 </table>
               </div>
-
             </div>
           </main>
 
@@ -334,9 +375,16 @@ const AdminFilterRecords = () => {
                 </>
               ) : null}
 
-              {showCompanyFilters ? <div className="mt-3"><SelectField label="Company Name" value={filters.companyName} onChange={(value) => setFilter("companyName", value)} options={optionItems(options.companyNames)} placeholder="All Company Name" /></div> : null}
-              {showJobFilters ? <div className="mt-3"><SelectField label="Job Title" value={filters.jobTitle} onChange={(value) => setFilter("jobTitle", value)} options={optionItems(options.jobTitles)} placeholder="All Job Title" /></div> : null}
-              {showJobFilters ? <div className="mt-3"><SelectField label={filters.role === "jobOffer" ? "Job Status" : "Application Status"} value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={optionItems(options.applicationStatuses)} placeholder="All Status" /></div> : null}
+              {showEmployerFilters ? <div className="mt-3"><SelectField label="Company Name" value={filters.companyName} onChange={(value) => setFilter("companyName", value)} options={optionItems(options.companyNames)} placeholder="All Company Name" /></div> : null}
+              {showEmployerFilters ? <div className="mt-3"><SelectField label="Industry" value={filters.industry} onChange={(value) => setFilter("industry", value)} options={optionItems(options.industries)} placeholder="All Industry" /></div> : null}
+
+              {showApplicationFilters ? <div className="mt-3"><SelectField label="Company Name" value={filters.companyName} onChange={(value) => setFilter("companyName", value)} options={optionItems(options.companyNames)} placeholder="All Company Name" /></div> : null}
+              {showApplicationFilters ? <div className="mt-3"><SelectField label="Job Title" value={filters.jobTitle} onChange={(value) => setFilter("jobTitle", value)} options={optionItems(options.jobTitles)} placeholder="All Job Title" /></div> : null}
+              {showApplicationFilters ? <div className="mt-3"><SelectField label="Application Status" value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={optionItems(options.applicationStatuses)} placeholder="All Status" /></div> : null}
+
+              {showJobOfferFilters ? <div className="mt-3"><SelectField label="Job Status" value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={optionItems(options.jobStatuses)} placeholder="All Job Status" /></div> : null}
+              {showJobOfferFilters ? <div className="mt-3"><SelectField label="Work Mode" value={filters.workMode} onChange={(value) => setFilter("workMode", value)} options={optionItems(options.workModes)} placeholder="All Work Mode" /></div> : null}
+              {showJobOfferFilters ? <div className="mt-3"><SelectField label="Employment Type" value={filters.employmentType} onChange={(value) => setFilter("employmentType", value)} options={optionItems(options.employmentTypes)} placeholder="All Employment Type" /></div> : null}
             </div>
 
             <div className="relative z-10 px-3 pb-4 pt-3">
