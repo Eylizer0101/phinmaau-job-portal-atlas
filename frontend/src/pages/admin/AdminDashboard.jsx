@@ -1814,11 +1814,17 @@ const ExportPasswordModal = ({ open, actionLabel, password, onPasswordChange, on
 
   const modalTitle = actionLabel || "Export";
   const instruction =
-    modalTitle === "Export All Records"
-      ? "Enter your password to continue with Export All Records."
-      : modalTitle === "AGAPAY Reports"
-        ? "Enter your password to continue with AGAPAY Reports."
-        : "Enter your password to continue the export.";
+    modalTitle === "Export All Records" ? (
+      <>
+        Enter your password to continue with <strong>Export All Records</strong>.
+      </>
+    ) : modalTitle === "AGAPAY Reports" ? (
+      <>
+        Enter your password to continue with <strong>AGAPAY Reports</strong>.
+      </>
+    ) : (
+      "Enter your password to continue the export."
+    );
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/45 px-4 py-6">
