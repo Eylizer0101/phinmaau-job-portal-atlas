@@ -1511,7 +1511,7 @@ const EmployerVerificationDetails = () => {
                 </h3>
 
                 <p className="mt-2 text-center text-sm leading-6 text-black/65">
-                  Enter your admin password to{" "}
+                  Enter your password to{" "}
                   {pendingCredentialAction?.action === "download"
                     ? "download"
                     : pendingCredentialAction?.action === "view"

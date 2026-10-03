@@ -1203,7 +1203,7 @@ const UserManagementDetails = () => {
           </button>
         </div>
 
-        <div className="px-5 py-7 sm:px-8 lg:px-10">
+        <div className="relative max-h-[650px] overflow-hidden px-5 py-7 sm:px-8 lg:px-10">
           <article className="mx-auto w-full bg-white font-serif text-[12px] leading-[1.45] text-black sm:text-[13px]">
             <header className="relative flex min-h-[120px] flex-col items-center justify-center pb-6 pr-0 text-center sm:pr-[132px]">
               <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em] sm:text-[31px]">
@@ -1464,6 +1464,10 @@ const UserManagementDetails = () => {
               </div>
             ) : null}
           </article>
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent"
+            aria-hidden="true"
+          />
         </div>
       </section>
     );
@@ -2664,7 +2668,7 @@ const UserManagementDetails = () => {
                   <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
                     <div>
                       <h3 id="admin-credential-password-title" className="text-xl font-bold text-gray-900">Enter Password</h3>
-                      <p className="mt-1 text-sm leading-5 text-gray-500">Enter your admin password before viewing this credential.</p>
+                      <p className="mt-1 text-sm leading-5 text-gray-500">Enter your password before viewing this credential.</p>
                     </div>
                     <button type="button" onClick={closeCredentialAccess} disabled={credentialAccess.verifying} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-500 hover:bg-gray-50 disabled:opacity-60" aria-label="Close password modal">×</button>
                   </div>
@@ -2728,7 +2732,7 @@ const UserManagementDetails = () => {
                 <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
                   <div>
                     <h3 id="admin-jobseeker-credential-password-title" className="text-xl font-bold text-gray-900">Enter Password</h3>
-                    <p className="mt-1 text-sm leading-5 text-gray-500">Enter your admin password before viewing this credential.</p>
+                    <p className="mt-1 text-sm leading-5 text-gray-500">Enter your password before viewing this credential.</p>
                   </div>
                   <button type="button" onClick={closeCredentialAccess} disabled={credentialAccess.verifying} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-500 hover:bg-gray-50 disabled:opacity-60" aria-label="Close password modal">×</button>
                 </div>

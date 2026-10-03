@@ -2981,7 +2981,7 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     }
 
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
-      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
+      return res.status(401).json({ success: false, message: 'Incorrect password.' });
     }
 
     const valid = ['unverified', 'pending', 'hold', 'verified', 'rejected'];
@@ -3753,7 +3753,7 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     }
 
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, suppliedAdminPassword))) {
-      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
+      return res.status(401).json({ success: false, message: 'Incorrect password.' });
     }
     let adminId = null;
     if (req.user && req.user._id) {

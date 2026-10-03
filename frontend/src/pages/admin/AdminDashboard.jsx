@@ -7,6 +7,8 @@ import {
   Clock3,
   ChevronDown,
   Download,
+  Eye,
+  EyeOff,
   Filter,
   RefreshCw,
   Repeat2,
@@ -1802,17 +1804,29 @@ const AnalyticsSkeleton = () => (
 );
 
 const ExportPasswordModal = ({ open, actionLabel, password, onPasswordChange, onCancel, onConfirm, submitting, message }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (open) setShowPassword(false);
+  }, [open]);
+
   if (!open || typeof document === "undefined") return null;
+
+  const modalTitle = actionLabel || "Export";
+  const instruction =
+    modalTitle === "Export All Records"
+      ? "Enter your password to continue with Export All Records."
+      : modalTitle === "AGAPAY Reports"
+        ? "Enter your password to continue with AGAPAY Reports."
+        : "Enter your password to continue the export.";
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/45 px-4 py-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-extrabold text-slate-900">Confirm Export</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Enter your admin password before accessing {actionLabel || "this export"}.
-            </p>
+            <h2 className="text-base font-extrabold text-slate-900">{modalTitle}</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{instruction}</p>
           </div>
           <button
             type="button"
@@ -1826,20 +1840,31 @@ const ExportPasswordModal = ({ open, actionLabel, password, onPasswordChange, on
         </div>
 
         <label className="mt-5 block">
-          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Admin Password</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => onPasswordChange(event.target.value.slice(0, 25))}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && password && !submitting) onConfirm();
-            }}
-            autoFocus
-            maxLength={25}
-            autoComplete="current-password"
-            placeholder="Enter password"
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
-          />
+          <span className="mb-1.5 block text-xs font-bold text-slate-700">Password</span>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(event) => onPasswordChange(event.target.value.slice(0, 25))}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && password && !submitting) onConfirm();
+              }}
+              autoFocus
+              maxLength={25}
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-11 text-sm text-slate-800 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              disabled={submitting}
+              className="absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center text-slate-500 transition hover:text-[#2e66a6] disabled:opacity-50"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </div>
         </label>
 
         {message ? (
@@ -1859,9 +1884,9 @@ const ExportPasswordModal = ({ open, actionLabel, password, onPasswordChange, on
             type="button"
             onClick={onConfirm}
             disabled={!password || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Download size={14} /> {submitting ? "Preparing..." : "Continue Export"}
+            {submitting ? "Preparing..." : "Confirm Export"}
           </button>
         </div>
       </div>
@@ -2079,9 +2104,9 @@ const AdminDashboard = () => {
 
   const tabs = [
     ["overview", "Overview"],
-    ["recruitment", "Recruitment"],
-    ["users", "Users & Verification"],
-    ["operations", "Operations"],
+    ["recruitment", "Workforce Insights"],
+    ["users", "User Insights"],
+    ["operations", "Request & Approval"],
   ];
 
   return (
@@ -2484,14 +2509,7 @@ const AdminDashboard = () => {
           </div>
         ) : null}
 
-        {!loading ? (
-          <p className="text-right text-[10px] text-slate-400">
-            Timezone: Asia/Manila · Last updated:{" "}
-            {displayedAnalytics.generatedAt
-              ? new Date(displayedAnalytics.generatedAt).toLocaleString("en-PH")
-              : "—"}
-          </p>
-        ) : null}
+
 
         <SpecificDateModal
           open={showSpecificDateModal}

@@ -459,7 +459,7 @@ const resumeStyles = `
   }
 
   .resume-section {
-    margin-top: 10px;
+    margin-top: 14px;
     min-width: 0;
     max-width: 100%;
     overflow: hidden;

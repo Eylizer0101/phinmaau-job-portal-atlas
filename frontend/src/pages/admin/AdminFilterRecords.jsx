@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileSpreadsheet, FileText, Filter, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, FileSpreadsheet, FileText, Filter, RefreshCw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
@@ -86,6 +86,12 @@ const SelectField = ({ label, value, onChange, options, placeholder = "All" }) =
 );
 
 const PasswordModal = ({ open, title, password, setPassword, message, busy, onClose, onConfirm }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (open) setShowPassword(false);
+  }, [open]);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4">
@@ -93,23 +99,39 @@ const PasswordModal = ({ open, title, password, setPassword, message, busy, onCl
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-            <p className="mt-1 text-sm text-slate-500">Enter your admin password to continue the export.</p>
+            <p className="mt-1 text-sm text-slate-500">Enter your password to continue the export.</p>
           </div>
           <button type="button" onClick={onClose} disabled={busy} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"><X size={18} /></button>
         </div>
-        <input
-          autoFocus
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          onKeyDown={(event) => { if (event.key === "Enter") onConfirm(); }}
-          placeholder="Admin password"
-          className="mt-4 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
-        />
+
+        <label className="mt-4 block">
+          <span className="mb-1.5 block text-sm font-bold text-slate-700">Password</span>
+          <div className="relative">
+            <input
+              autoFocus
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              onKeyDown={(event) => { if (event.key === "Enter") onConfirm(); }}
+              placeholder="Enter your password"
+              className="h-11 w-full rounded-xl border border-slate-200 px-3 pr-11 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              disabled={busy}
+              className="absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center text-slate-500 hover:text-[#2e66a6] disabled:opacity-50"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </div>
+        </label>
+
         {message ? <p className="mt-2 text-sm text-rose-600">{message}</p> : null}
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={busy} className="h-10 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700">Cancel</button>
-          <button type="button" onClick={onConfirm} disabled={!password || busy} className="h-10 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Exporting..." : "Export"}</button>
+          <button type="button" onClick={onConfirm} disabled={!password || busy} className="h-10 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Exporting..." : "Confirm Export"}</button>
         </div>
       </div>
     </div>
