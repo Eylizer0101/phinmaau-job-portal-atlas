@@ -1884,7 +1884,7 @@ const AdminDashboard = () => {
               </button>
 
               <div className="ml-auto hidden h-9 w-px bg-slate-200 lg:block" />
-              <label className="inline-flex h-10 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 shadow-sm">
+              <label className="inline-flex h-10 cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-transparent px-3.5 text-xs font-bold text-slate-700 opacity-0 shadow-none transition-opacity duration-150 hover:opacity-[0.06] focus-within:opacity-[0.12]">
                 <span className="whitespace-nowrap">Dummy Data</span>
                 <button
                   type="button"
