@@ -935,9 +935,9 @@ const ResumePasswordModal = ({
             <div className="text-[20px] font-bold text-gray-900">Enter Password</div>
             <div className="text-sm text-gray-500 mt-1">
               {mode === 'preview'
-                ? 'For your security, please enter your account password before previewing your CV.'
+                ? 'For your security, please enter your password before previewing your CV.'
                 : mode === 'credential-export'
-                  ? `For your security, please enter your account password before securely previewing your ${resourceTitle}.`
+                  ? `For your security, please enter your password before securely previewing your ${resourceTitle}.`
                     : 'For your security, please enter your password to download your CV/Resume as PDF.'}
             </div>
           </div>
@@ -997,11 +997,7 @@ const ResumePasswordModal = ({
               className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70 inline-flex items-center gap-2"
               style={{ backgroundColor: COLORS.primary }}
             >
-              {verifying ? (
-                <Spinner size="small" />
-              ) : (
-                <FaEye className="text-xs" />
-              )}
+              {verifying ? <Spinner size="small" /> : null}
               {verifying
                 ? mode === 'download'
                   ? 'Preparing CV...'

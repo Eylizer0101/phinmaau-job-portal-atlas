@@ -804,6 +804,11 @@ const JobDetails = () => {
   const processedApplyReopenRef = useRef('');
 
   const sourcePage = location.state?.sourcePage || 'jobsearch';
+  const returnTo = location.state?.returnTo || '';
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [id]);
 
   const companyId = useMemo(() => {
     const employer = job?.employer;
@@ -830,9 +835,23 @@ const JobDetails = () => {
   }, []);
 
   const handleBackButton = useCallback(() => {
-    if (sourcePage === 'myapplications') navigate('/jobseeker/my-applications');
-    else navigate('/jobseeker/job-search');
-  }, [navigate, sourcePage]);
+    if (sourcePage === 'myapplications') {
+      navigate('/jobseeker/my-applications');
+      return;
+    }
+
+    if (sourcePage === 'notifications') {
+      navigate('/jobseeker/notifications');
+      return;
+    }
+
+    if (sourcePage === 'notification-dropdown' && returnTo) {
+      navigate(returnTo, { state: { reopenNotifications: true } });
+      return;
+    }
+
+    navigate('/jobseeker/job-search');
+  }, [navigate, returnTo, sourcePage]);
 
   const formatSalary = useCallback((min, max, hideSalary = false) => {
     if (hideSalary) return 'Salary Undisclosed';
@@ -1309,8 +1328,12 @@ const JobDetails = () => {
         <div className={UI.page}>
           <div className={UI.container}>
             <div className={`${UI.card} ${UI.pad} text-center`}>
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-black/5 border border-black/10 flex items-center justify-center mb-4 text-slate-500">
-                <SvgIcon name="exclamation" className="w-7 h-7" />
+              <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
+                <img
+                  src="/images/banners/WarningAlertIcon.png"
+                  alt="Warning"
+                  className="w-14 h-14 object-contain"
+                />
               </div>
 
               <h1 className={UI.h2}>{error}</h1>
@@ -1363,7 +1386,15 @@ const JobDetails = () => {
                 type="button"
               >
                 <SvgIcon name="arrowLeft" className="w-4 h-4" />
-                Back to {sourcePage === 'myapplications' ? 'My Applications' : 'Job Search'}
+                Back to {
+                  sourcePage === 'myapplications'
+                    ? 'My Applications'
+                    : sourcePage === 'notifications'
+                      ? 'Notifications'
+                      : sourcePage === 'notification-dropdown'
+                        ? 'Previous Page'
+                        : 'Job Search'
+                }
               </button>
             </div>
 

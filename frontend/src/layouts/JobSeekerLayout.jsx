@@ -439,6 +439,62 @@ const JobSeekerLayout = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    if (location.state?.reopenNotifications) {
+      setIsNotificationOpen(true);
+    }
+
+    try {
+      const returnPath = sessionStorage.getItem('agapay:notification-dropdown-return-path');
+      const currentPath = `${location.pathname}${location.search}${location.hash || ''}`;
+
+      if (returnPath && returnPath === currentPath) {
+        setIsNotificationOpen(true);
+        sessionStorage.removeItem('agapay:notification-dropdown-return-path');
+      }
+    } catch {
+      // Keep navigation working even when sessionStorage is unavailable.
+    }
+  }, [location.hash, location.pathname, location.search, location.state]);
+
+  const getCurrentJobseekerPath = () =>
+    `${location.pathname}${location.search}${location.hash || ''}`;
+
+  const openNotificationTarget = (notification, target) => {
+    if (!target) return;
+
+    const isJobDetailsTarget =
+      notification?.type === 'job_match' &&
+      String(target).startsWith('/jobseeker/job-details/');
+
+    navigate(
+      target,
+      isJobDetailsTarget
+        ? {
+            state: {
+              sourcePage: 'notification-dropdown',
+              returnTo: getCurrentJobseekerPath(),
+            },
+          }
+        : undefined
+    );
+
+    setIsNotificationOpen(false);
+  };
+
+  const rememberNotificationDropdownReturn = () => {
+    try {
+      sessionStorage.setItem(
+        'agapay:notification-dropdown-return-path',
+        getCurrentJobseekerPath()
+      );
+    } catch {
+      // Ignore storage errors and keep normal navigation working.
+    }
+
+    setIsNotificationOpen(false);
+  };
+
   const handleMarkAsRead = async (notificationId) => {
     try {
       await api.put(`/notifications/${notificationId}/read`);
@@ -1064,8 +1120,7 @@ const JobSeekerLayout = ({ children }) => {
                                       if (!n.isRead) await handleMarkAsRead(n._id);
                                       const target = buildJobseekerNotificationTarget(n);
                                       if (target) {
-                                        navigate(target);
-                                        setIsNotificationOpen(false);
+                                        openNotificationTarget(n, target);
                                       }
                                     }}
                                     onKeyDown={async (e) => {
@@ -1147,7 +1202,7 @@ const JobSeekerLayout = ({ children }) => {
                         <Link
                           to="/jobseeker/notifications"
                           className={`flex items-center justify-center w-full px-3 py-2 text-sm text-[#2e66a6] hover:text-[#2e66a6] font-medium rounded-lg ${focusRing}`}
-                          onClick={() => setIsNotificationOpen(false)}
+                          onClick={rememberNotificationDropdownReturn}
                         >
                           View all notifications
                           <FontAwesomeIcon icon={faChevronDown} className="w-3 h-3 ml-2 -rotate-90" />
@@ -1438,8 +1493,7 @@ const JobSeekerLayout = ({ children }) => {
                           if (!n.isRead) await handleMarkAsRead(n._id);
                           const target = buildJobseekerNotificationTarget(n);
                           if (target) {
-                            navigate(target);
-                            setIsNotificationOpen(false);
+                            openNotificationTarget(n, target);
                           }
                         }}
                       >
@@ -1534,7 +1588,7 @@ const JobSeekerLayout = ({ children }) => {
                   <Link
                     to="/jobseeker/notifications"
                     className={`flex items-center justify-center w-full px-3 py-2 text-sm text-[#2e66a6] hover:text-[#2e66a6] font-medium rounded-lg ${focusRing}`}
-                    onClick={() => setIsNotificationOpen(false)}
+                    onClick={rememberNotificationDropdownReturn}
                   >
                     View all notifications
                   </Link>

@@ -146,7 +146,14 @@ const NotificationsPage = () => {
       await handleMarkAsRead(notification._id);
     }
     const target = buildJobseekerNotificationTarget(notification);
-    if (target) navigate(target);
+    if (target) {
+      navigate(
+        target,
+        notification?.type === 'job_match'
+          ? { state: { sourcePage: 'notifications' } }
+          : undefined
+      );
+    }
   };
 
   const handleMarkAllAsRead = async () => {
@@ -580,6 +587,7 @@ const NotificationsPage = () => {
                         {buildJobseekerNotificationTarget(notification) && (
                           <Link
                             to={buildJobseekerNotificationTarget(notification)}
+                            state={notification?.type === 'job_match' ? { sourcePage: 'notifications' } : undefined}
                             className="text-[#2e66a6] hover:text-[#1f4a7a] font-semibold text-sm"
                             onClick={(e) => e.stopPropagation()}
                           >
