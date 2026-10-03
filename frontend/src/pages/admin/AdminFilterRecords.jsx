@@ -257,8 +257,8 @@ const AdminFilterRecords = () => {
   };
 
   const activeRole = appliedFilters.role;
-  const showJobseekerFilters = baseRole === "jobseeker";
-  const showEmployerFilters = baseRole === "employer";
+  const showJobseekerFilters = activeRole === "jobseeker";
+  const showEmployerFilters = activeRole === "employer";
   const showApplicationFilters = activeRole === "application";
   const showJobOfferFilters = activeRole === "jobOffer";
 
