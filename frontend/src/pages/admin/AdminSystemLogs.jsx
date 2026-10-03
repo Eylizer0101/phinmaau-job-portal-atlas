@@ -531,8 +531,9 @@ const AdminSystemLogs = () => {
   const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
   const [pagination, setPagination] = useState({ page: 1, pageCount: 1, total: 0 });
   const [filters, setFilters] = useState(() => ({
-    search: '', role: 'all', date: 'all', dateFrom: '', dateTo: '',
+    search: '', date: 'all', dateFrom: '', dateTo: '',
     ...(persistedFilterState.filters || {}),
+    role: 'all',
   }));
   const [search, setSearch] = useState(() => (persistedFilterState.filters?.search || '').trim());
   const pageCacheRef = useRef(new Map());
