@@ -25,7 +25,7 @@ const cleanText = (value, maxLength = MAX_TEXT) =>
 
 const normalizeRole = (value) => {
   const role = cleanText(value, 30).toLowerCase();
-  return ['admin', 'employer', 'jobseeker', 'system'].includes(role) ? role : 'unknown';
+  return ['admin', 'subadmin', 'employer', 'jobseeker', 'system'].includes(role) ? role : 'unknown';
 };
 
 const maskIpAddress = (value) => {
@@ -437,9 +437,17 @@ const systemAuditMiddleware = (req, res, next) => {
     const actorName = hasAuthenticatedActor
       ? getDisplayName(actorSource)
       : anonymousActorName || 'Unauthenticated user';
-    const actorEmail = firstText(actorSource?.email, req.body?.businessEmail, req.body?.email);
+    const actorEmail = firstText(
+      req.auditActorEmail,
+      actorSource?.email,
+      req.body?.businessEmail,
+      req.body?.email
+    );
+    const responseAdminIdentity = firstText(actorSource?.auditRole, actorSource?.adminIdentity);
     const actorRole = normalizeRole(
-      actorSource?.role ||
+      req.auditActorRole ||
+        (responseAdminIdentity === 'subadmin' ? 'subadmin' : '') ||
+        actorSource?.role ||
         req.body?.role ||
         (path.includes('/employer/') ? 'employer' : '') ||
         (definition.action === 'auth.register_jobseeker' ? 'jobseeker' : '') ||

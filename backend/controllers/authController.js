@@ -1279,8 +1279,14 @@ exports.register = async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
-        email: user.email,
+        email: user.role === 'admin' && adminIdentity === 'subadmin'
+          ? (user.adminProfile?.subAdminEmail || user.email)
+          : user.email,
         role: user.role,
+        ...(user.role === 'admin' ? {
+          adminIdentity: adminIdentity || 'admin',
+          auditRole: adminIdentity === 'subadmin' ? 'subadmin' : 'admin',
+        } : {}),
         firstName: user.firstName,
         middleName: user.middleName,
         lastName: user.lastName,
@@ -1834,10 +1840,12 @@ exports.login = async (req, res) => {
 
     if (looksLikeEmail) {
       const emailLower = normalizeEmail(raw);
-      user = await User.findOne({ email: emailLower }).select('+loginSecurity.failedAttempts +loginSecurity.lockedUntil +emailVerification.tokenHash');
+      user = await User.findOne({
+        $or: [{ email: emailLower }, { 'adminProfile.subAdminEmail': emailLower }],
+      }).select('+loginSecurity.failedAttempts +loginSecurity.lockedUntil +emailVerification.tokenHash +adminProfile.subAdminPasswordHash');
     } else {
       const usernameNorm = raw.toLowerCase();
-      user = await User.findOne({ username: usernameNorm }).select('+loginSecurity.failedAttempts +loginSecurity.lockedUntil +emailVerification.tokenHash');
+      user = await User.findOne({ username: usernameNorm }).select('+loginSecurity.failedAttempts +loginSecurity.lockedUntil +emailVerification.tokenHash +adminProfile.subAdminPasswordHash');
     }
 
     if (!user) {
@@ -1852,7 +1860,45 @@ exports.login = async (req, res) => {
       });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    let adminIdentity = '';
+    let isMatch = false;
+
+    if (user.role === 'admin') {
+      const loginEmail = looksLikeEmail ? normalizeEmail(raw) : '';
+      const defaultAdminEmail = normalizeEmail(process.env.DEFAULT_ADMIN_EMAIL || '');
+      const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
+      const subAdminEmail = normalizeEmail(user.adminProfile?.subAdminEmail || '');
+      const subAdminPasswordHash = String(user.adminProfile?.subAdminPasswordHash || '');
+
+      const matchesMainAdmin = Boolean(
+        looksLikeEmail &&
+        defaultAdminEmail &&
+        defaultAdminPassword &&
+        loginEmail === defaultAdminEmail &&
+        String(password) === defaultAdminPassword
+      );
+      const matchesSubAdmin = Boolean(
+        looksLikeEmail &&
+        subAdminEmail &&
+        loginEmail === subAdminEmail &&
+        subAdminPasswordHash &&
+        await bcrypt.compare(String(password), subAdminPasswordHash)
+      );
+
+      if (matchesMainAdmin) {
+        isMatch = true;
+        adminIdentity = 'admin';
+      } else if (matchesSubAdmin) {
+        isMatch = true;
+        adminIdentity = 'subadmin';
+      } else if (!defaultAdminPassword) {
+        isMatch = await bcrypt.compare(password, user.password);
+        if (isMatch) adminIdentity = 'admin';
+      }
+    } else {
+      isMatch = await bcrypt.compare(password, user.password);
+    }
+
     if (!isMatch) {
       res.locals.loginAttemptFailed = true;
       await recordFailedLogin(user);
@@ -1932,7 +1978,11 @@ exports.login = async (req, res) => {
     user.lastLogin = loginAt;
     clearFailedLogins(user);
 
-    const token = signToken({ userId: user._id, role: user.role });
+    const token = signToken({
+      userId: user._id,
+      role: user.role,
+      ...(user.role === 'admin' ? { adminIdentity: adminIdentity || 'admin' } : {}),
+    });
 
     return res.json({
       message: 'Login successful',
@@ -3915,19 +3965,43 @@ exports.requestEmailChangeVerification = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('+adminProfile.subAdminPasswordHash');
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
 
-    const isMatch = await bcrypt.compare(String(currentPassword), user.password);
+    let isMatch = false;
+    if (user.role === 'admin') {
+      const subAdminPasswordHash = String(user.adminProfile?.subAdminPasswordHash || '');
+      const defaultAdminEmail = normalizeEmail(process.env.DEFAULT_ADMIN_EMAIL || '');
+      const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
+      const matchesSubAdmin = Boolean(
+        subAdminPasswordHash && await bcrypt.compare(String(currentPassword), subAdminPasswordHash)
+      );
+      const matchesMainAdmin = Boolean(
+        defaultAdminEmail &&
+        defaultAdminPassword &&
+        normalizeEmail(user.email) === defaultAdminEmail &&
+        String(currentPassword) === defaultAdminPassword
+      );
+      const fallbackMatchesStoredPassword = Boolean(
+        !defaultAdminPassword && await bcrypt.compare(String(currentPassword), user.password)
+      );
+      isMatch = matchesSubAdmin || matchesMainAdmin || fallbackMatchesStoredPassword;
+    } else {
+      isMatch = await bcrypt.compare(String(currentPassword), user.password);
+    }
+
     if (!isMatch) return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
 
-    if (String(user.email || '').toLowerCase() === emailLower) {
+    const currentProfileEmail = user.role === 'admin'
+      ? normalizeEmail(user.adminProfile?.subAdminEmail || user.email)
+      : normalizeEmail(user.email);
+    if (currentProfileEmail === emailLower) {
       return res.status(400).json({ success: false, message: 'New email must be different from your current email.' });
     }
 
     const existing = await User.findOne({
       _id: { $ne: userId },
-      $or: [{ email: emailLower }, { username: emailLower }],
+      $or: [{ email: emailLower }, { username: emailLower }, { 'adminProfile.subAdminEmail': emailLower }],
     });
     if (existing) return res.status(400).json({ success: false, message: 'Email is already used by another account.' });
 
@@ -4021,20 +4095,32 @@ exports.verifyEmailChangeCode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid verification code.' });
     }
 
-    const nextEmail = normalizeEmail(verification.pendingEmail || user.email);
+    const nextEmail = normalizeEmail(
+      verification.pendingEmail ||
+      (user.role === 'admin' ? user.adminProfile?.subAdminEmail : '') ||
+      user.email
+    );
     if (verification.pendingEmail) {
-      const existing = await User.findOne({ email: nextEmail, _id: { $ne: user._id } });
+      const existing = await User.findOne({
+        _id: { $ne: user._id },
+        $or: [{ email: nextEmail }, { username: nextEmail }, { 'adminProfile.subAdminEmail': nextEmail }],
+      });
       if (existing) return res.status(400).json({ success: false, message: 'Email is already used by another account.' });
 
-      const previousEmail = normalizeEmail(user.email);
-      user.email = nextEmail;
-      if (normalizeEmail(user.username) === previousEmail) {
-        user.username = nextEmail;
-      }
+      if (user.role === 'admin') {
+        if (!user.adminProfile) user.adminProfile = {};
+        user.adminProfile.subAdminEmail = nextEmail;
+      } else {
+        const previousEmail = normalizeEmail(user.email);
+        user.email = nextEmail;
+        if (normalizeEmail(user.username) === previousEmail) {
+          user.username = nextEmail;
+        }
 
-      if (user.role === 'employer') {
-        if (!user.employerProfile) user.employerProfile = {};
-        user.employerProfile.businessEmail = nextEmail;
+        if (user.role === 'employer') {
+          if (!user.employerProfile) user.employerProfile = {};
+          user.employerProfile.businessEmail = nextEmail;
+        }
       }
     }
 
@@ -4057,7 +4143,12 @@ exports.verifyEmailChangeCode = async (req, res) => {
     await user.save();
 
     const updatedUser = await User.findById(user._id).select('-password');
-    return res.status(200).json({ success: true, message: 'Email verified successfully.', user: updatedUser });
+    return res.status(200).json({
+      success: true,
+      message: user.role === 'admin' ? 'Sub Admin email verified successfully.' : 'Email verified successfully.',
+      user: updatedUser,
+      ...(user.role === 'admin' ? { subAdminEmail: user.adminProfile?.subAdminEmail || '' } : {}),
+    });
   } catch (error) {
     console.error('Error verifying email code:', error);
     return res.status(500).json({ success: false, message: error.message || 'Error verifying email.' });

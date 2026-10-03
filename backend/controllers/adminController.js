@@ -45,10 +45,11 @@ const isValidAdminPassword = async (req, rawPassword) => {
   if (!password) return false;
 
   const adminId = req.user?._id || req.userId;
-  const admin = await User.findById(adminId).select('password role email');
+  const admin = await User.findById(adminId).select('password role email +adminProfile.subAdminPasswordHash');
   if (!admin || admin.role !== 'admin') return false;
 
-  if (admin.password && await bcrypt.compare(password, admin.password)) return true;
+  const subAdminPasswordHash = String(admin.adminProfile?.subAdminPasswordHash || '');
+  if (subAdminPasswordHash && await bcrypt.compare(password, subAdminPasswordHash)) return true;
 
   const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').trim().toLowerCase();
   const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
@@ -59,18 +60,16 @@ const isValidAdminPassword = async (req, rawPassword) => {
     password === defaultAdminPassword
   );
 
-  if (isDefaultAdmin) {
-    admin.password = await bcrypt.hash(defaultAdminPassword, 12);
-    await admin.save();
-    return true;
-  }
+  if (isDefaultAdmin) return true;
+
+  if (!defaultAdminPassword && admin.password && await bcrypt.compare(password, admin.password)) return true;
 
   return false;
 };
 
 const serializeAdminProfile = (admin) => ({
   id: admin._id,
-  email: admin.email,
+  email: admin.adminProfile?.subAdminEmail || admin.email,
   firstName: admin.firstName || '',
   middleName: admin.middleName || '',
   lastName: admin.lastName || '',
@@ -203,18 +202,39 @@ exports.updateAdminPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'The new password must start with an uppercase letter and meet all password requirements.' });
     }
 
-    const admin = await User.findOne({ _id: req.userId, role: 'admin' }).select('+password');
+    const admin = await User.findOne({ _id: req.userId, role: 'admin' }).select('+password +adminProfile.subAdminPasswordHash');
     if (!admin) return res.status(404).json({ success: false, message: 'Admin account not found.' });
-    const matches = await bcrypt.compare(currentPassword, admin.password);
-    if (!matches) return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
-    if (await bcrypt.compare(newPassword, admin.password)) {
-      return res.status(400).json({ success: false, message: 'New password must be different from the current password.' });
+
+    const currentSubAdminHash = String(admin.adminProfile?.subAdminPasswordHash || '');
+    const matchesSubAdmin = Boolean(
+      currentSubAdminHash && await bcrypt.compare(String(currentPassword), currentSubAdminHash)
+    );
+    const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').trim().toLowerCase();
+    const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
+    const matchesMainAdmin = Boolean(
+      defaultAdminEmail &&
+      defaultAdminPassword &&
+      String(admin.email || '').trim().toLowerCase() === defaultAdminEmail &&
+      String(currentPassword) === defaultAdminPassword
+    );
+    const fallbackMatchesStoredPassword = Boolean(
+      !defaultAdminPassword && admin.password && await bcrypt.compare(String(currentPassword), admin.password)
+    );
+
+    if (!matchesSubAdmin && !matchesMainAdmin && !fallbackMatchesStoredPassword) {
+      return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+    }
+    if (defaultAdminPassword && String(newPassword) === defaultAdminPassword) {
+      return res.status(400).json({ success: false, message: 'Sub Admin password must be different from the Main Admin password.' });
+    }
+    if (currentSubAdminHash && await bcrypt.compare(newPassword, currentSubAdminHash)) {
+      return res.status(400).json({ success: false, message: 'New password must be different from the current Sub Admin password.' });
     }
 
-    admin.password = await bcrypt.hash(newPassword, 12);
-    admin.mustChangePassword = false;
+    if (!admin.adminProfile) admin.adminProfile = {};
+    admin.adminProfile.subAdminPasswordHash = await bcrypt.hash(newPassword, 12);
     await admin.save();
-    return res.json({ success: true, message: 'Password updated successfully.' });
+    return res.json({ success: true, message: 'Sub Admin password updated successfully.' });
   } catch (error) {
     console.error('Update admin password error:', error);
     return res.status(500).json({ success: false, message: 'Unable to update the password.' });

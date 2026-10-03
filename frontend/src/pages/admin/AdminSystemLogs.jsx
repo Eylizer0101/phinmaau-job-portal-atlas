@@ -55,7 +55,23 @@ const ActorAvatar = ({ image, name }) => {
     </span>
   );
 };
-const ROLE_OPTIONS = [['all', 'All Roles'], ['jobseeker', 'Jobseeker'], ['employer', 'Employer']];
+const ROLE_OPTIONS = [
+  ['all', 'All Roles'],
+  ['admin', 'Admin'],
+  ['subadmin', 'Sub Admin'],
+  ['jobseeker', 'Jobseeker'],
+  ['employer', 'Employer'],
+];
+const formatActorRole = (role) => {
+  const value = String(role || '').toLowerCase();
+  if (value === 'subadmin') return 'Sub Admin';
+  if (value === 'admin') return 'Admin';
+  if (value === 'jobseeker') return 'Jobseeker';
+  if (value === 'employer') return 'Employer';
+  if (value === 'system') return 'System';
+  return role || 'Unknown';
+};
+
 const ACTION_CODES = {
   'auth.login': 'LOGIN', 'auth.register_jobseeker': 'REGISTER', 'auth.register_employer': 'REGISTER',
   'profile.updated': 'UPDATE_PROFILE', 'company.profile_updated': 'UPDATE_PROFILE',
@@ -619,7 +635,7 @@ const AdminSystemLogs = () => {
             return <div key={log.id} className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] items-center gap-5 px-5 py-4 transition-colors hover:bg-[#2e66a6]/[0.045]">
               <div><p className="text-sm font-bold text-slate-800">{created}</p></div>
               <div className="flex min-w-0 items-center gap-3"><ActorAvatar image={log.actorImage} name={log.actorName} /><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{log.actorEmail || 'No email recorded'}</p></div></div>
-              <span className="text-sm font-normal capitalize text-black">{log.actorRole}</span>
+              <span className="text-sm font-normal text-black">{formatActorRole(log.actorRole)}</span>
               <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900" title={getActionCode(log.action)}>{getActionLabel(log.action)}</p><p className="truncate text-[11px] font-medium text-[#212C61]/70">{log.module || 'Activity'}</p></div>
             </div>;
           })}</div>}

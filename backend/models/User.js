@@ -511,6 +511,8 @@ const userSchema = new mongoose.Schema(
       positionRole: { type: String, trim: true, maxlength: 100, default: 'System Administrator' },
       contactNumber: { type: String, trim: true, maxlength: 11, match: [/^\d{11}$/, 'Phone Number must contain exactly 11 digits.'], default: '' },
       departmentOffice: { type: String, trim: true, maxlength: 100, default: '' },
+      subAdminEmail: { type: String, trim: true, lowercase: true, maxlength: 100, default: '' },
+      subAdminPasswordHash: { type: String, default: '', select: false },
     },
 
     isActive: { type: Boolean, default: true },

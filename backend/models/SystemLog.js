@@ -31,7 +31,7 @@ const systemLogSchema = new mongoose.Schema(
     },
     actorRole: {
       type: String,
-      enum: ['admin', 'employer', 'jobseeker', 'system', 'unknown'],
+      enum: ['admin', 'subadmin', 'employer', 'jobseeker', 'system', 'unknown'],
       default: 'unknown',
       index: true,
     },

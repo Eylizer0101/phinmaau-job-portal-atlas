@@ -68,6 +68,17 @@ const protect = async (req, res, next) => {
             // ✅ ADDED: Store user ID for adminController
             req.userId = userId;
             
+
+            // Keep Main Admin and Sub Admin distinguishable in the audit trail
+            // while both retain the underlying admin authorization role.
+            if (req.user.role === 'admin') {
+                req.adminIdentity = decoded.adminIdentity === 'subadmin' ? 'subadmin' : 'admin';
+                req.auditActorRole = req.adminIdentity;
+                req.auditActorEmail = req.adminIdentity === 'subadmin'
+                    ? (req.user.adminProfile?.subAdminEmail || req.user.email)
+                    : req.user.email;
+            }
+
             next();
         } catch (error) {
             console.error('Auth middleware error:', error);
