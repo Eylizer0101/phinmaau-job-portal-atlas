@@ -357,7 +357,7 @@ const AdminFilterRecords = () => {
             </div>
           </main>
 
-          <aside className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#163f72] via-[#2e66a6] to-[#38a0c8] shadow-sm xl:sticky xl:top-5 xl:self-start">
+          <aside className="relative min-h-[660px] overflow-hidden rounded-xl bg-gradient-to-b from-[#163f72] via-[#2e66a6] to-[#38a0c8] shadow-sm xl:sticky xl:top-5 xl:self-start">
             <div className="relative z-10 flex items-center justify-between px-4 py-4 text-white">
               <div className="flex items-center gap-2"><Filter size={18} /><h2 className="text-lg font-bold">Filter Controls</h2></div>
               <button type="button" onClick={resetFilters} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-[#245a93]"><RefreshCw size={13} /> Reset</button>
