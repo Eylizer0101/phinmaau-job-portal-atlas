@@ -1190,7 +1190,7 @@ const HiringStageModal = ({
                     }
                   }}
                   maxLength={35}
-                  placeholder="Type a stage or choose Hired / Declined"
+                  placeholder="e.g. Assessment, Job Offer or Choose Hired / Declined"
                   className="h-11 w-full rounded-xl border border-gray-300 px-4 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                   aria-autocomplete="list"
                   aria-expanded={stageSuggestionsOpen}

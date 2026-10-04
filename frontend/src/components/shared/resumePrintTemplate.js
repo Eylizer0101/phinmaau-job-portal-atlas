@@ -298,7 +298,7 @@ const resumeStyles = `
     }
 
     .resume-inner {
-      padding: 16mm 12mm 12mm !important;
+      padding: 16mm 8mm 12mm !important;
       min-height: auto !important;
       display: block !important;
     }
@@ -359,7 +359,7 @@ const resumeStyles = `
   .resume-inner {
     width: 100%;
     max-width: 100%;
-    padding: 16mm 12mm 12mm;
+    padding: 16mm 8mm 12mm;
     position: relative;
     min-height: 297mm;
     box-sizing: border-box;

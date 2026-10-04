@@ -518,7 +518,7 @@ const AdminEmployerJobEditRequests = () => {
         <button
           type="button"
           onClick={() => navigate("/admin/dashboard")}
-          className="mb-4 inline-flex w-fit items-center gap-1 text-sm font-semibold text-[#2e66a6] transition hover:text-[#255487]"
+          className="mb-4 inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
         >
           <span aria-hidden="true">‹</span>
           Back
