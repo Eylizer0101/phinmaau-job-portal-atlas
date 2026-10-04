@@ -575,6 +575,7 @@ const resumeStyles = `
 
   .item-subtitle {
     font-style: italic;
+    margin-bottom: 2px;
   }
 
   .item-date {
@@ -629,7 +630,11 @@ const resumeStyles = `
     color: #111111;
     font-weight: 700;
   }
-  .resume-rich-text { margin-top: 2px; text-align: justify; }
+  .resume-rich-text {
+    margin-top: 3px;
+    text-align: justify;
+    line-height: 1.22;
+  }
   .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
   .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding-left: 14px; }
   .resume-rich-text ul { list-style-type: disc !important; list-style-position: outside !important; }
@@ -742,7 +747,11 @@ const resumeStyles = `
   .resume-paper.resume-fit-one-page .resume-rich-text p,
   .resume-paper.resume-fit-one-page .resume-rich-text div,
   .resume-paper.resume-fit-one-page .resume-bullets {
-    margin-top: 1px;
+    margin-top: 2px;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-rich-text {
+    line-height: 1.18;
   }
 
   .resume-paper.resume-fit-one-page .resume-declaration {
