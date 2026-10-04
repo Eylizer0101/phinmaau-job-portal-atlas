@@ -610,6 +610,44 @@ const DeclinedApplicants = () => {
   const [pageSize, setPageSize] = useState(10);
   const [highlightedApplicationId, setHighlightedApplicationId] = useState('');
 
+  const LIST_STATE_KEY = 'agapay:employer:declined:list-state';
+
+  const saveListState = () => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({
+          query,
+          selectedJob,
+          filterBy,
+          customDateFrom,
+          customDateTo,
+          sortBy,
+          currentPage,
+          pageSize,
+        })
+      );
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
+      if (saved) {
+        setQuery(saved.query || '');
+        setSelectedJob(saved.selectedJob || 'all');
+        setFilterBy(saved.filterBy || 'all');
+        setCustomDateFrom(saved.customDateFrom || '');
+        setCustomDateTo(saved.customDateTo || '');
+        setSortBy(saved.sortBy || '');
+        setPageSize(saved.pageSize ?? 10);
+        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+      }
+    } catch {}
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+  }, [location.pathname, location.search, location.state, navigate]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [query, selectedJob, filterBy, customDateFrom, customDateTo, sortBy]);
@@ -1205,13 +1243,19 @@ const DeclinedApplicants = () => {
                             aria-label={`View application of ${name}`}
                             onClick={(event) => {
                               if (event.target.closest?.('a, button, input, select, textarea, [role="button"]')) return;
-                              navigate(`/employer/application/${app._id}?from=declined`);
+                              saveListState();
+                              navigate(`/employer/application/${app._id}?from=declined`, {
+                                state: { listStateKey: LIST_STATE_KEY },
+                              });
                             }}
                             onKeyDown={(event) => {
                               if (event.target !== event.currentTarget) return;
                               if (event.key !== 'Enter' && event.key !== ' ') return;
                               event.preventDefault();
-                              navigate(`/employer/application/${app._id}?from=declined`);
+                              saveListState();
+                              navigate(`/employer/application/${app._id}?from=declined`, {
+                                state: { listStateKey: LIST_STATE_KEY },
+                              });
                             }}
                             className={cn(
                               'group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',

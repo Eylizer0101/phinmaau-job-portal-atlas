@@ -2428,6 +2428,7 @@ const ApplicationDetails = () => {
             highlightedApplicationId: applicationId,
             returnTo: backDestination,
             returnLabel: source === 'job-applicants' ? 'Back to Job Applicants' : 'Back to Applicants',
+            listStateKey: location.state?.listStateKey || '',
           },
         });
       }
@@ -2527,6 +2528,7 @@ const ApplicationDetails = () => {
     if (source === 'for-interview') return '/employer/for-interview';
     if (source === 'hired') return '/employer/hired';
     if (source === 'declined') return '/employer/declined';
+    if (source === 'archived-declined') return '/employer/declined/archived';
     if (source === 'applicants') return '/employer/applicants?status=pending';
     if (source === 'job-applicants' && sourceJobId) {
       return `/employer/job/${sourceJobId}/applicants`;
@@ -2536,7 +2538,11 @@ const ApplicationDetails = () => {
   }, [location.search]);
 
   if (loading) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="flex justify-center rounded-2xl border bg-white py-16 text-[#2e66a6]"><Spinner /></div></div></EmployerLayout>;
-  if (!application) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="rounded-2xl border bg-white p-10 text-center"><p>{error || 'Application not found.'}</p><Link to={backDestination} className="mt-5 inline-block text-[#2e66a6]">{isFromForInterviewPage ? 'Back to For Interview' : 'Back to Applicants'}</Link></div></div></EmployerLayout>;
+  if (!application) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="rounded-2xl border bg-white p-10 text-center"><p>{error || 'Application not found.'}</p><Link
+          to={backDestination}
+          state={location.state?.listStateKey ? { restoreListStateKey: location.state.listStateKey } : undefined}
+          className="mt-5 inline-block text-[#2e66a6]"
+        >{isFromForInterviewPage ? 'Back to For Interview' : 'Back to Applicants'}</Link></div></div></EmployerLayout>;
 
   const liveUser = application.jobseeker || {};
   const resumeSnapshot = application.resumeSnapshot || null;
@@ -2684,7 +2690,11 @@ const ApplicationDetails = () => {
 
   return <EmployerLayout>
     <div className="mx-auto max-w-7xl px-1 py-8">
-      <Link to={backDestination} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#174b91]"><SvgIcon name="back" className="h-4 w-4" /> {isFromForInterviewPage ? 'Back to For Interview' : 'Back to Applicants'}</Link>
+      <Link
+        to={backDestination}
+        state={location.state?.listStateKey ? { restoreListStateKey: location.state.listStateKey } : undefined}
+        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#174b91]"
+      ><SvgIcon name="back" className="h-4 w-4" /> {isFromForInterviewPage ? 'Back to For Interview' : 'Back to Applicants'}</Link>
       {error ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}{success ? <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">{success}</div> : null}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
         <main className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white">

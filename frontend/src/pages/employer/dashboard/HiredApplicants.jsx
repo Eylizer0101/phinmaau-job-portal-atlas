@@ -511,6 +511,46 @@ const HiredApplicants = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const LIST_STATE_KEY = 'agapay:employer:hired:list-state';
+
+  const saveListState = () => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({
+          query,
+          selectedJob,
+          employmentFilter,
+          dateFilter,
+          customDateFrom,
+          customDateTo,
+          sortBy,
+          currentPage,
+          pageSize,
+        })
+      );
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
+      if (saved) {
+        setQuery(saved.query || '');
+        setSelectedJob(saved.selectedJob || 'all');
+        setEmploymentFilter(saved.employmentFilter || 'active');
+        setDateFilter(saved.dateFilter || 'all');
+        setCustomDateFrom(saved.customDateFrom || '');
+        setCustomDateTo(saved.customDateTo || '');
+        setSortBy(saved.sortBy || 'recent');
+        setPageSize(saved.pageSize ?? 10);
+        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+      }
+    } catch {}
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+  }, [location.pathname, location.search, location.state, navigate]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [query, selectedJob, employmentFilter, dateFilter, customDateFrom, customDateTo, sortBy]);
@@ -1280,13 +1320,19 @@ const selectBase =
                           aria-label={`View application of ${name}`}
                           onClick={(event) => {
                             if (event.target.closest?.('a, button, input, select, textarea, [role="button"]')) return;
-                            navigate(`/employer/application/${app._id}?from=hired`);
+                            saveListState();
+                            navigate(`/employer/application/${app._id}?from=hired`, {
+                              state: { listStateKey: LIST_STATE_KEY },
+                            });
                           }}
                           onKeyDown={(event) => {
                             if (event.target !== event.currentTarget) return;
                             if (event.key !== 'Enter' && event.key !== ' ') return;
                             event.preventDefault();
-                            navigate(`/employer/application/${app._id}?from=hired`);
+                            saveListState();
+                            navigate(`/employer/application/${app._id}?from=hired`, {
+                              state: { listStateKey: LIST_STATE_KEY },
+                            });
                           }}
                           className={cn(
                             'border-b border-gray-200 last:border-b-0 group cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',

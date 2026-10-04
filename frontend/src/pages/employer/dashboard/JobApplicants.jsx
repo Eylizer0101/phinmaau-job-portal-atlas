@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
@@ -422,6 +422,7 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
 const JobApplicants = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [job, setJob] = useState(null);
@@ -436,6 +437,46 @@ const JobApplicants = () => {
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const LIST_STATE_KEY = `agapay:employer:job-applicants:${jobId}:list-state`;
+
+  const saveListState = () => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({
+          searchTerm,
+          statusFilter,
+          levelFilter,
+          sortBy,
+          dateFilter,
+          dateFrom,
+          dateTo,
+          currentPage,
+          pageSize,
+        })
+      );
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
+      if (saved) {
+        setSearchTerm(saved.searchTerm || '');
+        setStatusFilter(saved.statusFilter || 'all');
+        setLevelFilter(saved.levelFilter || 'all');
+        setSortBy(saved.sortBy || '');
+        setDateFilter(saved.dateFilter || 'all');
+        setDateFrom(saved.dateFrom || '');
+        setDateTo(saved.dateTo || '');
+        setPageSize(saved.pageSize ?? 10);
+        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+      }
+    } catch {}
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+  }, [LIST_STATE_KEY, location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -674,7 +715,12 @@ const JobApplicants = () => {
                       </div>
                       <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
                         <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#eaf0ff] px-5 py-2 text-sm font-bold text-[#2e66a6]"><SvgIcon name="sparkle" />{matchScore}% match</div>
-                        <button type="button" onClick={() => navigate(`/employer/application/${application._id}?from=job-applicants&jobId=${encodeURIComponent(jobId)}`)} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]">View profile <SvgIcon name="arrow" /></button>
+                        <button type="button" onClick={() => {
+                          saveListState();
+                          navigate(`/employer/application/${application._id}?from=job-applicants&jobId=${encodeURIComponent(jobId)}`, {
+                            state: { listStateKey: LIST_STATE_KEY },
+                          });
+                        }} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]">View profile <SvgIcon name="arrow" /></button>
                       </div>
                     </div>
                   </article>

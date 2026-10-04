@@ -630,8 +630,14 @@ const EmployerJobView = () => {
   const [highlightedJobId] = useState(() => String(location.state?.highlightedJobId || ''));
 
   const handleBack = () => {
+    const nextState = {};
+    if (highlightedJobId) nextState.highlightedJobId = highlightedJobId;
+    if (location.state?.listStateKey) {
+      nextState.restoreListStateKey = location.state.listStateKey;
+    }
+
     navigate(backPath, {
-      state: highlightedJobId ? { highlightedJobId } : undefined,
+      state: Object.keys(nextState).length ? nextState : undefined,
     });
   };
 

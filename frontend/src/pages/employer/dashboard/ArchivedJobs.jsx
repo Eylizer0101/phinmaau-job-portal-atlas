@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
@@ -536,6 +536,7 @@ const ArchivedCustomDateRangeModal = ({
 
 const ArchivedJobs = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [jobs, setJobs] = useState([]);
 
@@ -548,6 +549,42 @@ const ArchivedJobs = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const LIST_STATE_KEY = 'agapay:employer:archived-jobs:list-state';
+
+  const saveListState = () => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({
+          jobFilter,
+          q,
+          sortBy,
+          customDateFrom,
+          customDateTo,
+          currentPage,
+          pageSize,
+        })
+      );
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
+      if (saved) {
+        setJobFilter(saved.jobFilter || 'all');
+        setQ(saved.q || '');
+        setSortBy(saved.sortBy || 'all');
+        setCustomDateFrom(saved.customDateFrom || '');
+        setCustomDateTo(saved.customDateTo || '');
+        setPageSize(saved.pageSize ?? 10);
+        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+      }
+    } catch {}
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+  }, [location.pathname, location.search, location.state, navigate]);
 
   const [loading, setLoading] = useState(true);
 
@@ -1307,11 +1344,13 @@ const ArchivedJobs = () => {
                             onClick={(event) => {
                               if (event.target.closest?.('a, button, input, select, textarea')) return;
 
+                              saveListState();
                               navigate(`/employer/manage-jobs/${job._id}/view`, {
                                 state: {
                                   from: 'archivedJobs',
                                   backPath: '/employer/manage-jobs/archived',
                                   backLabel: 'Archived Jobs',
+                                  listStateKey: LIST_STATE_KEY,
                                 },
                               });
                             }}
@@ -1320,11 +1359,13 @@ const ArchivedJobs = () => {
                               if (event.key !== 'Enter' && event.key !== ' ') return;
 
                               event.preventDefault();
+                              saveListState();
                               navigate(`/employer/manage-jobs/${job._id}/view`, {
                                 state: {
                                   from: 'archivedJobs',
                                   backPath: '/employer/manage-jobs/archived',
                                   backLabel: 'Archived Jobs',
+                                  listStateKey: LIST_STATE_KEY,
                                 },
                               });
                             }}

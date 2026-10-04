@@ -1577,6 +1577,48 @@ const Applicants = () => {
   const [pageSize, setPageSize] = useState(10);
   const [highlightedApplicationId, setHighlightedApplicationId] = useState('');
 
+  const LIST_STATE_KEY = 'agapay:employer:applicants:list-state';
+
+  const saveListState = () => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({
+          selectedJob,
+          selectedLevel,
+          statusFilter,
+          query,
+          filterBy,
+          customDateStart,
+          customDateEnd,
+          sortBy,
+          currentPage,
+          pageSize,
+        })
+      );
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
+      if (saved) {
+        setSelectedJob(saved.selectedJob || jobId || 'all');
+        setSelectedLevel(saved.selectedLevel || 'all');
+        setStatusFilter(saved.statusFilter || 'pending');
+        setQuery(saved.query || '');
+        setFilterBy(saved.filterBy || 'all');
+        setCustomDateStart(saved.customDateStart || '');
+        setCustomDateEnd(saved.customDateEnd || '');
+        setSortBy(saved.sortBy || 'most_recent');
+        setPageSize(saved.pageSize ?? 10);
+        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+      }
+    } catch {}
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+  }, [jobId, location.pathname, location.search, location.state, navigate]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [query, selectedJob, selectedLevel, statusFilter, filterBy, customDateStart, customDateEnd, sortBy]);
@@ -2414,7 +2456,12 @@ const Applicants = () => {
 
                         <button
                           type="button"
-                          onClick={() => navigate(`/employer/application/${app._id}?from=applicants`)}
+                          onClick={() => {
+                            saveListState();
+                            navigate(`/employer/application/${app._id}?from=applicants`, {
+                              state: { listStateKey: LIST_STATE_KEY },
+                            });
+                          }}
                           className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]"
                         >
                           View profile

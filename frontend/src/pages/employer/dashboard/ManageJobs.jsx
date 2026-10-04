@@ -509,6 +509,52 @@ const ManageJobs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const LIST_STATE_KEY = 'agapay:employer:manage-jobs:list-state';
+
+  const saveListState = () => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({
+          q,
+          jobFilter,
+          statusFilter,
+          dateFilter,
+          customDateFrom,
+          customDateTo,
+          sortBy,
+          currentPage,
+          pageSize,
+        })
+      );
+    } catch {
+      // Navigation can continue even when browser storage is unavailable.
+    }
+  };
+
+  useEffect(() => {
+    if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
+
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
+      if (saved) {
+        setQ(saved.q || '');
+        setJobFilter(saved.jobFilter || 'all');
+        setStatusFilter(saved.statusFilter || 'all');
+        setDateFilter(saved.dateFilter || 'all');
+        setCustomDateFrom(saved.customDateFrom || '');
+        setCustomDateTo(saved.customDateTo || '');
+        setSortBy(saved.sortBy || '');
+        setPageSize(saved.pageSize ?? 10);
+        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+      }
+    } catch {
+      // Keep the existing defaults if saved state cannot be read.
+    }
+
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+  }, [location.pathname, location.search, location.state, navigate]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [q, jobFilter, statusFilter, dateFilter, customDateFrom, customDateTo, sortBy]);
@@ -1843,11 +1889,13 @@ const ManageJobs = () => {
                             onClick={(event) => {
                               if (event.target.closest?.('a, button, input, select, textarea')) return;
 
+                              saveListState();
                               navigate(`/employer/manage-jobs/${job._id}/view`, {
                                 state: {
                                   from: 'manageJobs',
                                   backPath: '/employer/manage-jobs',
                                   backLabel: 'Manage Jobs',
+                                  listStateKey: LIST_STATE_KEY,
                                 },
                               });
                             }}
@@ -1856,11 +1904,13 @@ const ManageJobs = () => {
                               if (event.key !== 'Enter' && event.key !== ' ') return;
 
                               event.preventDefault();
+                              saveListState();
                               navigate(`/employer/manage-jobs/${job._id}/view`, {
                                 state: {
                                   from: 'manageJobs',
                                   backPath: '/employer/manage-jobs',
                                   backLabel: 'Manage Jobs',
+                                  listStateKey: LIST_STATE_KEY,
                                 },
                               });
                             }}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
@@ -666,6 +666,7 @@ const useDebouncedValue = (value, delay = 250) => {
 
 const ArchivedDeclinedApplicants = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
@@ -687,6 +688,42 @@ const ArchivedDeclinedApplicants = () => {
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const LIST_STATE_KEY = 'agapay:employer:archived-declined:list-state';
+
+  const saveListState = () => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({
+          query,
+          selectedJob,
+          sort,
+          customDateFrom,
+          customDateTo,
+          currentPage,
+          pageSize,
+        })
+      );
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
+      if (saved) {
+        setQuery(saved.query || '');
+        setSelectedJob(saved.selectedJob || 'all');
+        setSort(saved.sort || 'all');
+        setCustomDateFrom(saved.customDateFrom || '');
+        setCustomDateTo(saved.customDateTo || '');
+        setPageSize(saved.pageSize ?? 10);
+        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+      }
+    } catch {}
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+  }, [location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1223,14 +1260,20 @@ const ArchivedDeclinedApplicants = () => {
                             className="cursor-pointer transition-colors hover:bg-gray-50 focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                             onClick={(event) => {
                               if (event.target.closest?.('a, button, input, select, textarea')) return;
-                              navigate(`/employer/application/${app._id}`);
+                              saveListState();
+                              navigate(`/employer/application/${app._id}?from=archived-declined`, {
+                                state: { listStateKey: LIST_STATE_KEY },
+                              });
                             }}
                             onKeyDown={(event) => {
                               if (event.target !== event.currentTarget) return;
                               if (event.key !== 'Enter' && event.key !== ' ') return;
 
                               event.preventDefault();
-                              navigate(`/employer/application/${app._id}`);
+                              saveListState();
+                              navigate(`/employer/application/${app._id}?from=archived-declined`, {
+                                state: { listStateKey: LIST_STATE_KEY },
+                              });
                             }}
                           >
                             <td className="px-6 py-4 text-sm text-gray-900">{formatDate(app.appliedAt)}</td>
