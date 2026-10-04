@@ -1797,9 +1797,53 @@ exports.getAdminAnalytics = async (req, res) => {
     const hiredApplications = applications.filter((item) => analyticsLower(item.status) === 'hired');
     const hiredCountableApplications = countableApplications.filter((item) => analyticsLower(item.status) === 'hired');
     const pendingVerification = users.filter((item) => ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
-    const totalJobseekers = verifiedActiveUsers.filter((item) => analyticsLower(item.role) === 'jobseeker').length;
-    const totalEmployers = verifiedActiveUsers.filter((item) => analyticsLower(item.role) === 'employer').length;
-    const totalRegisteredUsers = verifiedActiveUsers.length;
+
+    // Keep the default KPI totals in sync with Admin > User Management.
+    // User Management shows active, non-deleted verified Jobseekers/Employers plus the Admin account.
+    // When dashboard-specific user/date filters are active, keep using the filtered analytics totals.
+    const hasDashboardUserKpiFilters = Boolean(
+      range.start ||
+      personalFilterActive ||
+      !analyticsIsAll(filters.verificationStatus)
+    );
+
+    let totalJobseekers = verifiedActiveUsers.filter((item) => analyticsLower(item.role) === 'jobseeker').length;
+    let totalEmployers = verifiedActiveUsers.filter((item) => analyticsLower(item.role) === 'employer').length;
+    let totalRegisteredUsers = verifiedActiveUsers.length;
+
+    if (!hasDashboardUserKpiFilters) {
+      const userManagementVerifiedCondition = {
+        $or: [
+          { role: 'admin' },
+          {
+            role: 'employer',
+            'employerProfile.verificationDocs.overallStatus': 'verified',
+          },
+          {
+            role: 'jobseeker',
+            $or: [
+              { 'jobSeekerProfile.verificationDocs.overallStatus': 'verified' },
+              { 'jobSeekerProfile.verificationStatus': 'verified' },
+              { isVerified: true },
+            ],
+          },
+        ],
+      };
+
+      const userManagementBaseQuery = {
+        status: { $nin: ['deleted', 'inactive'] },
+        isActive: { $ne: false },
+        $nor: [{ role: 'employer', inactiveBySystem: true }],
+        $and: [userManagementVerifiedCondition],
+      };
+
+      [totalJobseekers, totalEmployers, totalRegisteredUsers] = await Promise.all([
+        User.countDocuments({ ...userManagementBaseQuery, role: 'jobseeker' }),
+        User.countDocuments({ ...userManagementBaseQuery, role: 'employer' }),
+        User.countDocuments(userManagementBaseQuery),
+      ]);
+    }
+
     const pendingJobseekers = usersAll.filter((item) => analyticsLower(item.role) === 'jobseeker' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
     const pendingEmployers = usersAll.filter((item) => analyticsLower(item.role) === 'employer' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
     const pendingEditRequests = editRequestsAll.filter((item) => analyticsLower(item.status) === 'pending').length;
