@@ -81,6 +81,15 @@ const roleLabel = (value) => {
 
 const optionItems = (values = []) => values.map((value) => [value, value]);
 
+const titleCaseStatus = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const statusOptionItems = (values = []) => values.map((value) => [value, titleCaseStatus(value)]);
+
 const StatusBadge = ({ value }) => {
   const text = String(value || "").trim();
   if (!text) return <span className="text-slate-400">—</span>;
@@ -89,7 +98,7 @@ const StatusBadge = ({ value }) => {
   if (["hired", "approved", "open", "published", "active"].includes(normalized)) cls = "bg-emerald-50 text-emerald-700";
   else if (["pending", "for interview", "screening"].includes(normalized)) cls = "bg-amber-50 text-amber-700";
   else if (["declined", "closed", "expired", "withdrawn", "cancelled"].includes(normalized)) cls = "bg-rose-50 text-rose-700";
-  return <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${cls}`}>{text}</span>;
+  return <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${cls}`}>{titleCaseStatus(text)}</span>;
 };
 
 const SelectField = ({ label, value, onChange, options, placeholder = "All" }) => (
@@ -428,9 +437,9 @@ const AdminFilterRecords = () => {
 
               {showApplicationFilters ? <div className="mt-3"><SelectField label="Company Name" value={filters.companyName} onChange={(value) => setFilter("companyName", value)} options={optionItems(options.companyNames)} placeholder="All Company Name" /></div> : null}
               {showApplicationFilters ? <div className="mt-3"><SelectField label="Job Title" value={filters.jobTitle} onChange={(value) => setFilter("jobTitle", value)} options={optionItems(options.jobTitles)} placeholder="All Job Title" /></div> : null}
-              {showApplicationFilters ? <div className="mt-3"><SelectField label="Application Status" value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={optionItems(options.applicationStatuses)} placeholder="All Status" /></div> : null}
+              {showApplicationFilters ? <div className="mt-3"><SelectField label="Application Status" value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={statusOptionItems(options.applicationStatuses)} placeholder="All Status" /></div> : null}
 
-              {showJobOfferFilters ? <div className="mt-3"><SelectField label="Job Status" value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={optionItems(options.jobStatuses)} placeholder="All Job Status" /></div> : null}
+              {showJobOfferFilters ? <div className="mt-3"><SelectField label="Job Status" value={filters.applicationStatus} onChange={(value) => setFilter("applicationStatus", value)} options={statusOptionItems(options.jobStatuses)} placeholder="All Job Status" /></div> : null}
               {showJobOfferFilters ? <div className="mt-3"><SelectField label="Work Mode" value={filters.workMode} onChange={(value) => setFilter("workMode", value)} options={optionItems(options.workModes)} placeholder="All Work Mode" /></div> : null}
               {showJobOfferFilters ? <div className="mt-3"><SelectField label="Employment Type" value={filters.employmentType} onChange={(value) => setFilter("employmentType", value)} options={optionItems(options.employmentTypes)} placeholder="All Employment Type" /></div> : null}
             </div>
