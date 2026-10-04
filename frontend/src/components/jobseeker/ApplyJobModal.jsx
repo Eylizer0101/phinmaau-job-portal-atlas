@@ -704,7 +704,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
               step === 4
                 ? 'px-8 sm:px-10 py-14 sm:py-16'
                 : step === 3
-                ? 'px-5 sm:px-9 lg:px-12 pt-7 sm:pt-8 pb-6 sm:pb-7'
+                ? 'px-5 sm:px-8 lg:px-10 pt-4 sm:pt-5 pb-4 sm:pb-5'
                 : 'px-6 sm:px-10 pt-8 sm:pt-10 pb-8'
             }`}>
               {profileLoading ? (
@@ -782,8 +782,8 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                       <div className="pointer-events-none absolute -top-24 left-1/2 h-52 w-52 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.06] blur-3xl" aria-hidden="true" />
 
                       <div className="relative">
-                        <div className="-mt-2 flex justify-center sm:-mt-3">
-                          <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                        <div className="-mt-1 flex justify-center sm:-mt-2">
+                          <div className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20" aria-hidden="true">
                             <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
                             <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
                             <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
@@ -792,17 +792,17 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                             <img
                               src="/images/lock.png"
                               alt="Lock"
-                              className="relative h-16 w-16 object-contain sm:h-20 sm:w-20"
+                              className="relative h-12 w-12 object-contain sm:h-16 sm:w-16"
                               draggable="false"
                             />
                           </div>
                         </div>
 
-                        <h3 className="mt-0 text-center text-[25px] sm:text-[32px] lg:text-[36px] font-extrabold tracking-[0.08em] text-[#071b3a] leading-tight">
+                        <h3 className="mt-0 text-center text-[22px] sm:text-[27px] lg:text-[30px] font-extrabold tracking-[0.08em] text-[#071b3a] leading-tight">
                           PRIVACY NOTICE
                         </h3>
 
-                        <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                        <div className="mx-auto mt-2 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
                           <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
                           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
@@ -811,33 +811,33 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
                         </div>
 
-                        <div className="mt-4 sm:mt-5 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 sm:px-7 py-4 sm:py-5 text-black/80 leading-[1.65] text-[14px] sm:text-[15px] text-left shadow-[0_10px_30px_rgba(30,75,160,0.08)]">
+                        <div className="mt-3 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 sm:px-6 py-3 sm:py-3.5 text-black/80 leading-[1.5] text-[13px] sm:text-[14px] text-left shadow-[0_10px_30px_rgba(30,75,160,0.08)]">
                           <p>
                             Before submitting your application, please review how your information will be used.
                           </p>
 
-                          <p className="mt-3">
+                          <p className="mt-2">
                             By applying for this job, you acknowledge that <strong>AGAPAY will collect and process your personal information</strong> for recruitment and hiring purposes.
                           </p>
 
-                          <p className="mt-3">
+                          <p className="mt-2">
                             The information in your profile and application, including your <strong>name, contact information, educational background, work experience, skills, and other relevant details</strong>, will be shared with the employer to <strong>evaluate your qualifications, review your application, and contact you regarding the position.</strong>
                           </p>
 
-                          <p className="mt-3">
+                          <p className="mt-2">
                             Your information will be <strong>handled securely, kept confidential, and accessed only for legitimate recruitment and employment-related purposes</strong>, consistent with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173).</strong>
                           </p>
 
-                          <p className="mt-3">
+                          <p className="mt-2">
                             Please make sure that the information you provide is <strong>complete and accurate</strong> before submitting your application.
                           </p>
 
-                          <p className="mt-3">
+                          <p className="mt-2">
                             By clicking <strong>“Submit Application,”</strong> you confirm that you have reviewed this notice and <strong>consent to the collection, processing, and sharing of your information for the purposes stated above.</strong>
                           </p>
                         </div>
 
-                        <label className="mt-3 sm:mt-4 flex cursor-pointer items-center gap-3 px-1 py-1 text-[15px] text-black/80">
+                        <label className="mt-2 sm:mt-3 flex cursor-pointer items-center gap-3 px-1 py-1 text-[14px] text-black/80">
                           <input
                             type="checkbox"
                             checked={privacyAccepted}
@@ -856,7 +856,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           </div>
                         )}
 
-                        <div className="mt-5 sm:mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <div className="mt-3 sm:mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                           <button
                             type="button"
                             onClick={() => {
@@ -865,7 +865,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                               setStep(1);
                             }}
                             disabled={submitLoading}
-                            className="h-[46px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-[15px] font-bold text-black/70 hover:bg-gray-50 transition disabled:opacity-70"
+                            className="h-[42px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-[14px] font-bold text-black/70 hover:bg-gray-50 transition disabled:opacity-70"
                           >
                             Back
                           </button>
@@ -873,7 +873,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                             type="button"
                             onClick={handleSubmit}
                             disabled={submitLoading || !privacyAccepted}
-                            className="w-full sm:w-[240px] h-[46px] rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white text-[15px] font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] hover:bg-[#25578f] active:bg-[#1f4b7c] transition disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full sm:w-[220px] h-[42px] rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white text-[14px] font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] hover:bg-[#25578f] active:bg-[#1f4b7c] transition disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {submitLoading ? 'Submitting...' : 'Submit Application'}
                           </button>

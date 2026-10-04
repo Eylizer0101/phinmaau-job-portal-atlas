@@ -3622,11 +3622,13 @@ const EditJob = () => {
                   </div>
 
                   <div className="mx-auto mt-3 max-w-[760px] rounded-[16px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-6 sm:py-4">
-                    <div className="space-y-2.5 text-justify text-[13px] font-bold leading-6 text-[#0f2442] sm:text-sm">
-                      <p>By publishing this job post, you confirm that the information provided is accurate, complete, and intended for legitimate hiring purposes.</p>
-                      <p>Once published, your job post will be visible to eligible job seekers. Applicants may view the information you provide, including the job title, job description, qualifications, work location, salary (if disclosed), and other hiring details.</p>
-                      <p>Any applicant information you receive through AGAPAY must be used only for recruitment purposes and handled with appropriate confidentiality. You are responsible for protecting applicants&apos; personal information and must keep it confidential and use it only for legitimate recruitment purposes.</p>
-                      <p>To maintain the integrity of job listings, this post cannot be edited after one (1) hour from publication. After this period, any changes require an edit request for administrator review and approval before you can edit the job post again.</p>
+                    <div className="space-y-2.5 text-justify text-[13px] leading-6 text-[#0f2442] sm:text-sm">
+                      <p>Before publishing this job post, please review the following notice.</p>
+                      <p>By publishing this job post, you confirm that the information provided is <strong>accurate, complete, and intended for legitimate recruitment and hiring purposes.</strong></p>
+                      <p>Once published, the job post may be <strong>viewed by eligible AGAPAY job seekers.</strong> This may include the job title, job description, qualifications, work location, salary or deadline and other information provided in the job post.</p>
+                      <p>Any personal information received from applicants through AGAPAY must be <strong>handled securely, confidentially, and accessed only for legitimate recruitment and employment-related purposes.</strong> Applicant information must not be disclosed, shared, or used for unrelated purposes without proper authorization.</p>
+                      <p>By using AGAPAY to receive and process applicant information, you agree to handle such information responsibly and in accordance with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173).</strong></p>
+                      <p>To maintain the accuracy and integrity of published job listings, your job post can be <strong>edited within one (1) hour after publication.</strong> After this period, changes require an <strong>Edit Request</strong> for administrator review and approval before the job post can be modified. By clicking <strong>“Publish Job,”</strong> you confirm that you have reviewed the information provided and agree to the terms stated above.</p>
                     </div>
                   </div>
 
