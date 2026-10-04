@@ -298,7 +298,7 @@ const resumeStyles = `
     }
 
     .resume-inner {
-      padding: 16mm 8mm 12mm !important;
+      padding: 13mm 8mm 9mm !important;
       min-height: auto !important;
       display: block !important;
     }
@@ -359,7 +359,7 @@ const resumeStyles = `
   .resume-inner {
     width: 100%;
     max-width: 100%;
-    padding: 16mm 8mm 12mm;
+    padding: 13mm 8mm 9mm;
     position: relative;
     min-height: 297mm;
     box-sizing: border-box;
@@ -375,8 +375,8 @@ const resumeStyles = `
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 12px;
-    min-height: 62px;
+    gap: 10px;
+    min-height: 0;
     padding-right: 0;
     text-align: center;
   }
@@ -398,13 +398,13 @@ const resumeStyles = `
     letter-spacing: 0.55px;
     text-transform: uppercase;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-wrap: break-word;
-    word-break: break-word;
+    word-break: normal;
   }
 
   .resume-contact {
-    margin-top: 5px;
+    margin-top: 3px;
     color: #222222;
     font-size: 8.7px;
     line-height: 1.4;
@@ -425,7 +425,7 @@ const resumeStyles = `
   }
 
   .resume-education-summary {
-    margin-top: 3px;
+    margin-top: 2px;
     color: #222222;
     font-size: 9.2px;
     line-height: 1.35;
@@ -459,7 +459,7 @@ const resumeStyles = `
   }
 
   .resume-section {
-    margin-top: 10px;
+    margin-top: 7px;
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
@@ -659,8 +659,8 @@ const resumeStyles = `
   }
 
   .resume-declaration {
-    margin-top: auto;
-    padding-top: 11px;
+    margin-top: 8px;
+    padding-top: 0;
     width: 100%;
     break-inside: avoid;
   }
@@ -674,9 +674,9 @@ const resumeStyles = `
     max-width: 100%;
     font-weight: 700;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-wrap: break-word;
-    word-break: break-word;
+    word-break: normal;
   }
 
   .declaration-signature {
@@ -689,13 +689,64 @@ const resumeStyles = `
     padding-left: 0;
     box-sizing: border-box;
     text-align: center;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-wrap: break-word;
-    word-break: break-word;
+    word-break: normal;
   }
 
   .declaration-role {
     margin-top: 2px;
+  }
+
+  .resume-paper.resume-fit-one-page {
+    font-size: 8.7px;
+    line-height: 1.13;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-inner {
+    padding-top: 10mm;
+    padding-bottom: 7mm;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-header {
+    gap: 8px;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-name {
+    padding-top: 2px;
+    font-size: 17px;
+    line-height: 1.04;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-contact {
+    margin-top: 2px;
+    font-size: 8.3px;
+    line-height: 1.24;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-education-summary {
+    margin-top: 1px;
+    font-size: 8.7px;
+    line-height: 1.2;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-section {
+    margin-top: 5px;
+  }
+
+  .resume-paper.resume-fit-one-page .dated-item {
+    margin-top: 2px;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-rich-text,
+  .resume-paper.resume-fit-one-page .resume-rich-text p,
+  .resume-paper.resume-fit-one-page .resume-rich-text div,
+  .resume-paper.resume-fit-one-page .resume-bullets {
+    margin-top: 1px;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-declaration {
+    margin-top: 5px;
   }
 
   @media screen and (max-width: 900px) {
@@ -965,6 +1016,26 @@ const loadHtml2Pdf = () =>
     document.body.appendChild(script);
   });
 
+const compactResumeToOnePageIfPossible = (paper) => {
+  const inner = paper?.querySelector('.resume-inner');
+  if (!paper || !inner) return false;
+
+  const paperRect = paper.getBoundingClientRect();
+  if (!paperRect.width) return false;
+
+  const pageHeight = paperRect.width * (297 / 210);
+  const currentHeight = Math.max(paper.scrollHeight, inner.scrollHeight);
+  if (currentHeight <= pageHeight + 2) return true;
+
+  // Only compact resumes that are reasonably close to one page. Very long
+  // resumes keep their natural multi-page layout so text stays readable.
+  const overflowRatio = currentHeight / pageHeight;
+  if (overflowRatio > 1.18) return false;
+
+  paper.classList.add('resume-fit-one-page');
+  return Math.max(paper.scrollHeight, inner.scrollHeight) <= pageHeight + 2;
+};
+
 const alignDeclarationToLastPageBottom = (paper) => {
   const inner = paper?.querySelector('.resume-inner');
   const declaration = paper?.querySelector('.resume-declaration');
@@ -1045,6 +1116,7 @@ export const openResumePrintWindow = async (resumeData = {}) => {
       })
     );
 
+    compactResumeToOnePageIfPossible(paper);
     alignDeclarationToLastPageBottom(paper);
 
     const pdfWorker = html2pdf()

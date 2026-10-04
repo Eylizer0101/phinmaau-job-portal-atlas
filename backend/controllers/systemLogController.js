@@ -135,19 +135,51 @@ const getSort = (sortValue) => {
 
 const getActorImage = (log = {}) => {
   const actor = log.actor && typeof log.actor === 'object' ? log.actor : null;
-  if (!actor) return '';
-
-  const role = String(log.actorRole || actor.role || '').toLowerCase();
+  const role = String(log.actorRole || actor?.role || '').toLowerCase();
 
   if (role === 'employer') {
-    return actor.employerProfile?.companyLogo || actor.profileImage || '';
+    return actor?.employerProfile?.companyLogo || actor?.profileImage || '';
   }
 
   if (role === 'jobseeker') {
-    return actor.profileImage || '';
+    return actor?.profileImage || '';
   }
 
-  return actor.profileImage || '';
+  if (role === 'admin' || role === 'subadmin') {
+    // Prefer the saved admin profile image. If none exists, keep a visible
+    // AGAPAY admin identity instead of falling back to a blank avatar.
+    return actor?.profileImage || '/logo192.png';
+  }
+
+  return actor?.profileImage || '';
+};
+
+const getActorDisplayName = (log = {}) => {
+  const actor = log.actor && typeof log.actor === 'object' ? log.actor : null;
+  const storedName = String(log.actorName || '').trim();
+  if (storedName && storedName !== 'Unknown user') return storedName;
+  if (!actor) return storedName || 'Unknown user';
+
+  const role = String(log.actorRole || actor.role || '').toLowerCase();
+  if (role === 'employer' && actor.employerProfile?.companyName) {
+    return actor.employerProfile.companyName;
+  }
+
+  const personName = [actor.firstName, actor.middleName, actor.lastName, actor.extensionName]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join(' ');
+
+  if (personName) return personName;
+  if (role === 'admin' || role === 'subadmin') return 'System Admin';
+  return actor.username || actor.email || storedName || 'Unknown user';
+};
+
+const getActorEmail = (log = {}) => {
+  const storedEmail = String(log.actorEmail || '').trim();
+  if (storedEmail) return storedEmail;
+  const actor = log.actor && typeof log.actor === 'object' ? log.actor : null;
+  return actor?.email || '';
 };
 
 const normalizeLog = (log = {}) => ({
@@ -155,8 +187,8 @@ const normalizeLog = (log = {}) => ({
   requestId: log.requestId || '',
   actor: log.actor?._id || log.actor || null,
   actorImage: getActorImage(log),
-  actorName: log.actorName || 'Unknown user',
-  actorEmail: log.actorEmail || '',
+  actorName: getActorDisplayName(log),
+  actorEmail: getActorEmail(log),
   actorRole: String(log.actorRole || '').toLowerCase() === 'subadmin'
     ? 'admin'
     : (log.actorRole || 'unknown'),
@@ -195,7 +227,7 @@ exports.getSystemLogs = async (req, res) => {
     let logsQuery = SystemLog.find(query)
       .populate({
         path: 'actor',
-        select: 'role profileImage employerProfile.companyLogo',
+        select: 'role email username firstName middleName lastName extensionName profileImage employerProfile.companyLogo employerProfile.companyName',
       })
       .sort(sort);
     if (!showAll) logsQuery = logsQuery.skip(skip).limit(limit);
@@ -301,7 +333,7 @@ exports.getSystemLogById = async (req, res) => {
     const log = await SystemLog.findById(req.params.id)
       .populate({
         path: 'actor',
-        select: 'role profileImage employerProfile.companyLogo',
+        select: 'role email username firstName middleName lastName extensionName profileImage employerProfile.companyLogo employerProfile.companyName',
       })
       .lean();
     if (!log) {
