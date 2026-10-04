@@ -1793,7 +1793,40 @@ exports.getAdminAnalytics = async (req, res) => {
     const availabilityDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'availability')), (item) => item);
     const relocationDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'relocation')), (item) => item);
     const experienceDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'experience')), (item) => item);
-    const educationDistribution = analyticsCountRows(filteredJobseekers.flatMap((item) => profileValues(item, 'educationLevel')), (item) => item);
+
+    const normalizeEducationChartCategory = (value) => {
+      const normalized = analyticsLower(value)
+        .replace(/[’']/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
+      if (!normalized) return '';
+      if (/\b(doctorate|doctoral|phd|doctor of)\b/.test(normalized)) return 'Doctorate';
+      if (/\b(master|masters|masteral)\b/.test(normalized)) return 'Master';
+
+      const excludedCollegeValues =
+        /\b(undergraduate|undergrad|associate|high school|senior high|junior high)\b/.test(normalized);
+      if (!excludedCollegeValues && (
+        /\bbachelor\b/.test(normalized) ||
+        (/\bcollege\b/.test(normalized) && /\b(degree|graduate|graduated)\b/.test(normalized))
+      )) {
+        return 'College';
+      }
+
+      return '';
+    };
+
+    const educationRank = { College: 1, Master: 2, Doctorate: 3 };
+    const highestEducationCategory = (user) =>
+      profileValues(user, 'educationLevel')
+        .map(normalizeEducationChartCategory)
+        .filter(Boolean)
+        .sort((a, b) => educationRank[b] - educationRank[a])[0] || '';
+
+    const educationDistribution = ['College', 'Master', 'Doctorate'].map((name) => ({
+      name,
+      value: filteredJobseekers.filter((item) => highestEducationCategory(item) === name).length,
+    }));
 
     const industryRows = analyticsCountRows(
       jobs,

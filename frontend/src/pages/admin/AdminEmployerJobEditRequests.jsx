@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Eye, RefreshCw, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
 
@@ -288,6 +288,8 @@ const rowDetailsPath = (item = {}) => {
 
 const AdminEmployerJobEditRequests = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const showDashboardBack = location.state?.fromAdminDashboard === true;
   const persistedFilterState = readAgapayAdminEditRequestsFiltersState();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -512,6 +514,16 @@ const AdminEmployerJobEditRequests = () => {
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
     <header>
+      {showDashboardBack ? (
+        <button
+          type="button"
+          onClick={() => navigate("/admin/dashboard")}
+          className="mb-4 inline-flex w-fit items-center gap-1 text-sm font-semibold text-[#2e66a6] transition hover:text-[#255487]"
+        >
+          <span aria-hidden="true">‹</span>
+          Back
+        </button>
+      ) : null}
       <h1 className="text-[33px] font-semibold leading-[40px] text-slate-950">Edit Requests</h1>
       <p className="mt-1 text-sm text-[#526d91]">Manage employer requests and job seeker status approvals.</p>
     </header>

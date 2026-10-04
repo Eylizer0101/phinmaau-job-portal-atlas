@@ -676,7 +676,7 @@ const DEFAULT_FILTERS = {
   limit: 10,
 };
 
-const JobseekerVerification = () => {
+const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashboardBack = false }) => {
   const navigate = useNavigate();
 
   const [rows, setRows] = useState([]);
@@ -906,9 +906,20 @@ const JobseekerVerification = () => {
   return (
     <AdminLayout>
       <div className="mx-auto flex w-full max-w-7xl flex-col px-1 py-8 md:min-h-0 md:pb-2">
+        {showDashboardBack ? (
+          <button
+            type="button"
+            onClick={() => navigate("/admin/dashboard")}
+            className="mb-4 inline-flex w-fit items-center gap-1 text-sm font-semibold text-[#2e66a6] transition hover:text-[#255487]"
+          >
+            <Icon name="chevronLeft" className="h-4 w-4" />
+            Back
+          </button>
+        ) : null}
+
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Jobseeker Verification</h1>
+            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">{pageTitle}</h1>
             <p className="mt-1 text-sm text-gray-600">Review, filter, and manage jobseeker verification requests</p>
           </div>
           <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">

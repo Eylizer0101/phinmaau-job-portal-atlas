@@ -408,7 +408,7 @@ const AdminEmployerJobEditRequestReview = () => {
             <img
               src={assetUrl(job.companyLogo || employerProfile.companyLogo || employerProfile.logo)}
               alt={`${companyName} logo`}
-              className="h-14 w-14 shrink-0 rounded-full border border-[#e6edf5] bg-white object-contain p-1"
+              className="h-14 w-14 shrink-0 rounded-full bg-white object-contain p-1"
               onError={(event) => {
                 event.currentTarget.onerror = null;
                 event.currentTarget.src = '/images/default-company-logo.png';

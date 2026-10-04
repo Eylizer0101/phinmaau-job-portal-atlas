@@ -1873,19 +1873,19 @@ const AdminDashboard = () => {
                   label="Pending Jobseeker"
                   value={kpis.pendingJobseekers}
                   icon={UserRoundMinus}
-                  onClick={() => navigate("/admin/dashboard/pending-seekers")}
+                  onClick={() => navigate("/admin/dashboard/pending-seekers", { state: { fromAdminDashboard: true } })}
                 />
                 <HeaderStatusCard
                   label="Pending Employers"
                   value={kpis.pendingEmployers}
                   icon={Building2}
-                  onClick={() => navigate("/admin/dashboard/pending-employers")}
+                  onClick={() => navigate("/admin/dashboard/pending-employers", { state: { fromAdminDashboard: true } })}
                 />
                 <HeaderStatusCard
                   label="Request Edit"
                   value={kpis.pendingEditRequests}
                   icon={FaFileAlt}
-                  onClick={() => navigate("/admin/employer-job-edit-requests")}
+                  onClick={() => navigate("/admin/employer-job-edit-requests", { state: { fromAdminDashboard: true } })}
                 />
               </div>
             </div>
@@ -2160,7 +2160,7 @@ const AdminDashboard = () => {
               className="xl:col-span-12"
               icon={FaGraduationCap}
             >
-              <HorizontalBars data={sections.users?.educationLevels} maxItems={6} />
+              <HorizontalBars data={sections.users?.educationLevels} maxItems={3} />
               <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 text-xs font-medium text-slate-600">
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">🎓</span>
                 <span>Most applicants are college graduates.</span>
