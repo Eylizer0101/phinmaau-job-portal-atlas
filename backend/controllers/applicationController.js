@@ -2207,15 +2207,28 @@ exports.archiveDeclinedApplication = async (req, res) => {
       });
     }
 
-    application.isDeclinedArchived = true;
-    application.declinedArchivedAt = new Date();
-
-    await application.save();
+    // Archive only the declined archive flags directly in MongoDB.
+    // This avoids re-validating unrelated legacy fields on older application
+    // records, which can make one declined record fail to archive even though
+    // other records archive successfully.
+    const archivedApplication = await Application.findByIdAndUpdate(
+      applicationId,
+      {
+        $set: {
+          isDeclinedArchived: true,
+          declinedArchivedAt: new Date()
+        }
+      },
+      {
+        new: true,
+        runValidators: false
+      }
+    );
 
     return res.status(200).json({
       success: true,
       message: 'Declined application archived successfully',
-      application
+      application: archivedApplication
     });
   } catch (error) {
     console.error('Error archiving declined application:', error);
