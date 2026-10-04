@@ -357,30 +357,51 @@ const JobseekerMessages = () => {
     return faFile;
   };
 
-  const URL_PATTERN = /(https?:\/\/[^\s]+)/gi;
+  const URL_PATTERN = /((?:https?:\/\/|www\.)[^\s]+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?)/gi;
+
+const normalizeLinkHref = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const trailingMatch = raw.match(/[),.!?;:]+$/);
+  const trailing = trailingMatch ? trailingMatch[0] : '';
+  const clean = trailing ? raw.slice(0, -trailing.length) : raw;
+
+  const href = /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
+  return { href, clean, trailing };
+};
 
   const renderLinkedText = (content, isMine = false) => {
     const text = String(content || '');
     if (!text) return null;
 
     return text.split(URL_PATTERN).map((part, index) => {
-      if (!/^https?:\/\//i.test(part)) {
+      if (!URL_PATTERN.test(part)) {
+        URL_PATTERN.lastIndex = 0;
+        return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+      }
+      URL_PATTERN.lastIndex = 0;
+
+      const normalized = normalizeLinkHref(part);
+      if (!normalized?.href) {
         return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
       }
 
       return (
-        <a
-          key={`url-${index}`}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`font-semibold underline underline-offset-2 break-all ${
-            isMine ? 'text-white hover:text-blue-100' : 'text-[#2e66a6] hover:text-[#25578f]'
-          }`}
-          onClick={(event) => event.stopPropagation()}
-        >
-          {part}
-        </a>
+        <React.Fragment key={`url-${index}`}>
+          <a
+            href={normalized.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`font-semibold underline underline-offset-2 break-all ${
+              isMine ? 'text-white hover:text-blue-100' : 'text-[#2e66a6] hover:text-[#25578f]'
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {normalized.clean}
+          </a>
+          {normalized.trailing}
+        </React.Fragment>
       );
     });
   };
