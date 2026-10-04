@@ -1179,7 +1179,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     const requestedRole = String(location.state?.roleFilter || '').toLowerCase();
-    if (!['jobseeker', 'employer'].includes(requestedRole)) return;
+    if (!['jobseeker', 'employer', 'admin'].includes(requestedRole)) return;
 
     setRoleFilter(requestedRole);
     setCampusFilter('all');
@@ -1252,7 +1252,6 @@ const UserManagement = () => {
 
       if (response.data?.success) {
         const formattedUsers = (response.data.users || [])
-          .filter((user) => user.role !== 'admin')
           .map(formatUserForTable);
 
         const nextTotalUsers =
@@ -1302,7 +1301,6 @@ const UserManagement = () => {
               if (!prefetchResponse.data?.success) return;
 
               const prefetchedUsers = (prefetchResponse.data.users || [])
-                .filter((user) => user.role !== 'admin')
                 .map(formatUserForTable);
 
               pageCacheRef.current.set(nextCacheKey, {
@@ -1715,6 +1713,7 @@ const UserManagement = () => {
                 aria-label="Filter by role"
               >
                 <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
                 <option value="jobseeker">Jobseeker</option>
                 <option value="employer">Employer</option>
               </select>

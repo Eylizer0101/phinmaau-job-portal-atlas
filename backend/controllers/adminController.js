@@ -2098,6 +2098,7 @@ exports.getAllUsers = async (req, res) => {
 
     const verifiedUserCondition = {
       $or: [
+        { role: 'admin' },
         {
           role: 'employer',
           'employerProfile.verificationDocs.overallStatus': 'verified',
