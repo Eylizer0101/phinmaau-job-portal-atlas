@@ -368,7 +368,7 @@ const resumeStyles = `
   }
 
   .resume-header {
-    width: fit-content;
+    width: 100%;
     max-width: 100%;
     min-width: 0;
     margin: 0 auto;
@@ -382,14 +382,15 @@ const resumeStyles = `
   }
 
   .resume-header-main {
-    flex: 0 1 auto;
-    width: fit-content;
+    flex: 1 1 auto;
+    width: auto;
     min-width: 0;
-    max-width: calc(100% - 73px);
+    max-width: calc(100% - 71px);
   }
 
   .resume-name {
     margin: 0;
+    width: 100%;
     max-width: 100%;
     padding-top: 5px;
     font-size: 18px;
@@ -397,9 +398,10 @@ const resumeStyles = `
     font-weight: 700;
     letter-spacing: 0.55px;
     text-transform: uppercase;
-    white-space: normal;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
+    white-space: nowrap;
+    overflow: visible;
+    overflow-wrap: normal;
+    word-wrap: normal;
     word-break: normal;
   }
 
@@ -439,6 +441,7 @@ const resumeStyles = `
     flex: 0 0 61px;
     width: 61px;
     height: 61px;
+    margin-left: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -714,7 +717,6 @@ const resumeStyles = `
 
   .resume-paper.resume-fit-one-page .resume-name {
     padding-top: 2px;
-    font-size: 17px;
     line-height: 1.04;
   }
 
@@ -793,6 +795,13 @@ const resumeStyles = `
 export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences = [], autoDownload = false, viewerMode = 'jobseeker' } = {}) => {
   const profileImage = userData?.profileImage || formData?.profileImage || '';
   const fullName = buildName(formData) || 'Your Name';
+  const nameLength = fullName.length;
+  const resumeNameFontSize =
+    nameLength > 44 ? 12.5 :
+    nameLength > 38 ? 13.5 :
+    nameLength > 32 ? 14.5 :
+    nameLength > 27 ? 16 :
+    18;
   const initials = buildInitials(fullName);
   const educationEntries = Array.isArray(formData.educationEntries) ? formData.educationEntries : [];
   const technicalSkills = toArray(formData.technicalSkills);
@@ -925,7 +934,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
         <div class="resume-inner">
           <header class="resume-header">
             <div class="resume-header-main">
-              <h1 class="resume-name">${escapeHtml(fullName)}</h1>
+              <h1 class="resume-name" style="font-size: ${resumeNameFontSize}px;">${escapeHtml(fullName)}</h1>
               <div class="resume-contact">
                 ${formData.address ? `<div class="resume-contact-address">${escapeHtml(formData.address)}</div>` : ''}
                 ${
