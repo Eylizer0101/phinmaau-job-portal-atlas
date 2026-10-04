@@ -6892,7 +6892,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
       User.find({ status: { $ne: 'deleted' } })
         .select('role createdAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.gender jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated')
         .lean(),
-      Job.find({}).select('createdAt publishedAt').lean(),
+      Job.find({}).select('createdAt publishedAt status isArchived isPublished').lean(),
       Application.find({}).select('jobseeker status appliedAt createdAt').lean(),
     ]);
 
