@@ -51,6 +51,42 @@ const SHORT_MONTH_NAMES = { January: 'Jan', February: 'Feb', March: 'Mar', April
 
 const formatShortResumeDate = (value = '') => String(value || '').replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/g, (month) => SHORT_MONTH_NAMES[month] || month).replace(/\s+(?:-|–|—|to)\s+/gi, ' – ').replace(/\s+/g, ' ').trim();
 
+const normalizeResumeDescription = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (typeof window !== 'undefined' && typeof window.DOMParser !== 'undefined' && /<\/?[a-z][\s\S]*>/i.test(raw)) {
+    const parser = new window.DOMParser();
+    const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
+    const root = doc.body.firstElementChild;
+
+    if (root) {
+      root.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+      root.querySelectorAll('p, div, li, h1, h2, blockquote').forEach((node) => {
+        node.insertAdjacentText('beforeend', '\n');
+      });
+
+      return String(root.textContent || '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/ *\n */g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+  }
+
+  return raw
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>|<\/div>|<\/li>|<\/h1>|<\/h2>|<\/blockquote>/gi, '\n')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 const sanitizeResumeRichText = (value = '') => {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -214,8 +250,12 @@ const threeColumnRowsHtml = (columns = []) =>
 
 const datedItemHtml = ({ title, subtitle, date, description, details, meta }) => {
   const detailItems = Array.isArray(details) ? details.filter(isMeaningfulResumeValue) : [];
-  const descriptionHtml = sanitizeResumeRichText(description);
-  return `<div class="dated-item"><div class="dated-header"><div class="dated-main">${getText(title) ? `<div class="item-title">${escapeHtml(title)}</div>` : ''}${getText(subtitle) ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}${getText(meta) ? `<div class="item-meta">${escapeHtml(meta)}</div>` : ''}</div>${getText(date) ? `<div class="item-date">${escapeHtml(formatShortResumeDate(date))}</div>` : ''}</div>${detailItems.length ? `<ul class="resume-bullets">${detailItems.map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}</ul>` : descriptionHtml ? `<div class="resume-rich-text">${descriptionHtml}</div>` : ''}</div>`;
+  const descriptionText = normalizeResumeDescription(description);
+  const descriptionHtml = descriptionText
+    ? escapeHtml(descriptionText).replace(/\n/g, '<br>')
+    : '';
+
+  return `<div class="dated-item"><div class="dated-header"><div class="dated-main">${getText(title) ? `<div class="item-title">${escapeHtml(title)}</div>` : ''}${getText(subtitle) ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}${getText(meta) ? `<div class="item-meta">${escapeHtml(meta)}</div>` : ''}</div>${getText(date) ? `<div class="item-date">${escapeHtml(formatShortResumeDate(date))}</div>` : ''}</div>${detailItems.length ? `<ul class="resume-bullets">${detailItems.map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}</ul>` : descriptionHtml ? `<div class="resume-rich-text resume-description-text">${descriptionHtml}</div>` : ''}</div>`;
 };
 
 const profileListSectionHtml = ({ title, items = [], type = 'default' }) => {
@@ -539,8 +579,8 @@ const resumeStyles = `
     overflow-wrap: normal !important;
     word-wrap: normal !important;
     word-break: normal !important;
-    -webkit-hyphens: auto;
-    hyphens: auto;
+    -webkit-hyphens: none;
+    hyphens: none;
   }
 
   .objective-text,
@@ -619,8 +659,8 @@ const resumeStyles = `
     overflow-wrap: normal !important;
     word-wrap: normal !important;
     word-break: normal !important;
-    -webkit-hyphens: auto;
-    hyphens: auto;
+    -webkit-hyphens: none;
+    hyphens: none;
   }
   .skill-item::before {
     content: '•';
@@ -633,7 +673,21 @@ const resumeStyles = `
   .resume-rich-text {
     margin-top: 3px;
     text-align: justify;
-    line-height: 1.22;
+    line-height: 1.24;
+  }
+
+  .resume-description-text {
+    display: block;
+    white-space: normal !important;
+    word-spacing: normal;
+    letter-spacing: normal;
+    overflow: visible;
+    line-height: 1.28;
+    text-align: left;
+  }
+
+  .resume-description-text br {
+    line-height: 1.28;
   }
   .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
   .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding-left: 14px; }
@@ -751,7 +805,11 @@ const resumeStyles = `
   }
 
   .resume-paper.resume-fit-one-page .resume-rich-text {
-    line-height: 1.18;
+    line-height: 1.2;
+  }
+
+  .resume-paper.resume-fit-one-page .resume-description-text {
+    line-height: 1.24;
   }
 
   .resume-paper.resume-fit-one-page .resume-declaration {
