@@ -4,11 +4,67 @@ import { NavLink, useLocation, useMatch, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import ChatbotWidget from "../components/shared/ChatbotWidget";
 
+const EMPLOYER_LIST_STATE_PREFIX = "agapay:employer:";
+const EMPLOYER_LIST_STATE_SUFFIX = ":list-state";
+
+const isAgapayEmployerListStateKey = (key) =>
+  typeof key === "string" &&
+  key.startsWith(EMPLOYER_LIST_STATE_PREFIX) &&
+  key.endsWith(EMPLOYER_LIST_STATE_SUFFIX);
+
+const collectEmployerListStateKeysFromLocation = (location) => {
+  const preservedKeys = new Set();
+  const state = location?.state || {};
+
+  [
+    state.listStateKey,
+    state.restoreListStateKey,
+    state.backState?.listStateKey,
+    state.backState?.restoreListStateKey,
+  ]
+    .filter(isAgapayEmployerListStateKey)
+    .forEach((key) => preservedKeys.add(key));
+
+  return preservedKeys;
+};
+
+const clearAgapayEmployerListStateExcept = (preservedKeys = new Set()) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    const keysToRemove = [];
+
+    for (let index = 0; index < window.sessionStorage.length; index += 1) {
+      const key = window.sessionStorage.key(index);
+
+      if (
+        isAgapayEmployerListStateKey(key) &&
+        !preservedKeys.has(key)
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+  } catch {
+    // Keep Employer navigation usable even when session storage is unavailable.
+  }
+};
+
+const clearAllAgapayEmployerListState = () => {
+  clearAgapayEmployerListStateExcept(new Set());
+};
+
 const VERIFY_MODAL_SEEN_KEY = "employerVerifyModalSeen"; // session flag
 
 const EmployerLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const preservedKeys = collectEmployerListStateKeysFromLocation(location);
+    clearAgapayEmployerListStateExcept(preservedKeys);
+  }, [location.pathname, location.search, location.state]);
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -66,6 +122,7 @@ const EmployerLayout = ({ children }) => {
     }
 
     if (!token || !user) {
+      clearAllAgapayEmployerListState();
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/employer/login", { replace: true });
@@ -78,6 +135,7 @@ const EmployerLayout = ({ children }) => {
     }
 
     if (user.role !== "employer") {
+      clearAllAgapayEmployerListState();
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/employer/login", { replace: true });
@@ -615,6 +673,7 @@ const EmployerLayout = ({ children }) => {
         setShowLogoutModal(false);
 
         // ✅ logout actions
+        clearAllAgapayEmployerListState();
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         sessionStorage.removeItem(VERIFY_MODAL_SEEN_KEY);
