@@ -1790,7 +1790,7 @@ exports.getAdminAnalytics = async (req, res) => {
       const status = analyticsLower(user?.status);
 
       if (user?.isActive === false || ['deleted', 'inactive'].includes(status)) return false;
-      if (role === 'admin') return true;
+      if (role === 'admin') return false;
       return isVerifiedActiveDashboardUser(user);
     });
     const countableJobs = jobs.filter((job) => {
@@ -1807,7 +1807,8 @@ exports.getAdminAnalytics = async (req, res) => {
     const pendingVerification = users.filter((item) => ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
 
     // Keep the default KPI totals in sync with Admin > User Management.
-    // User Management shows active, non-deleted verified Jobseekers/Employers plus the Admin account.
+    // Jobseeker and Employer cards keep their existing verified-user counts.
+    // Registered Users is Jobseekers + Employers only; Admin/System Admin is excluded.
     // When dashboard-specific user/date filters are active, keep using the filtered analytics totals.
     const hasDashboardUserKpiFilters = Boolean(
       range.start ||
@@ -1845,11 +1846,14 @@ exports.getAdminAnalytics = async (req, res) => {
         $and: [userManagementVerifiedCondition],
       };
 
-      [totalJobseekers, totalEmployers, totalRegisteredUsers] = await Promise.all([
+      [totalJobseekers, totalEmployers] = await Promise.all([
         User.countDocuments({ ...userManagementBaseQuery, role: 'jobseeker' }),
         User.countDocuments({ ...userManagementBaseQuery, role: 'employer' }),
-        User.countDocuments(userManagementBaseQuery),
       ]);
+
+      // Registered Users must contain only Jobseekers + Employers.
+      // Do not let the Admin/System Admin affect the Jobseeker or Employer card totals.
+      totalRegisteredUsers = totalJobseekers + totalEmployers;
     }
 
     const pendingJobseekers = usersAll.filter((item) => analyticsLower(item.role) === 'jobseeker' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
@@ -7001,8 +7005,8 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     const employers = users.filter((user) => String(user.role || '').toLowerCase() === 'employer');
 
     // Keep AGAPAY Records Report totals consistent with the Admin Dashboard / User Management rules.
-    // On the default Overall view, Jobseekers and Employers count only active, non-deleted,
-    // verified accounts, while Registered Users also includes the Admin account.
+    // On the default Overall view, Jobseekers and Employers keep their existing active,
+    // non-deleted verified-account counts. Registered Users is their sum only; Admin is excluded.
     const hasReportUserFilters = Boolean(range.start || personalFilterActive);
     let totalJobseekers = jobseekers.length;
     let totalEmployers = employers.length;
@@ -7034,11 +7038,14 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
         $and: [userManagementVerifiedCondition],
       };
 
-      [totalJobseekers, totalEmployers, totalRegisteredUsers] = await Promise.all([
+      [totalJobseekers, totalEmployers] = await Promise.all([
         User.countDocuments({ ...userManagementBaseQuery, role: 'jobseeker' }),
         User.countDocuments({ ...userManagementBaseQuery, role: 'employer' }),
-        User.countDocuments(userManagementBaseQuery),
       ]);
+
+      // Registered Users must contain only Jobseekers + Employers.
+      // Do not let the Admin/System Admin affect the Jobseeker or Employer card totals.
+      totalRegisteredUsers = totalJobseekers + totalEmployers;
     }
 
     const jobs = jobsAll.filter((job) => {
