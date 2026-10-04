@@ -7113,7 +7113,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               display: flex;
               justify-content: space-between;
               align-items: flex-start;
-              min-height: 27mm;
+              min-height: 20mm;
             }
             .left-logo { width: 68mm; height: 20mm; object-fit: contain; object-position: left top; }
             .right-logo { width: 76mm; height: 20mm; object-fit: contain; object-position: right top; }
@@ -7123,10 +7123,10 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               width: 100%;
               height: 0;
               border-top: 0.45mm solid #9eb2aa;
-              margin: 3.5mm 0 0;
+              margin: 0;
             }
             h1 {
-              margin: 8mm 0 1.5mm;
+              margin: 5mm 0 1.5mm;
               text-align: center;
               color: #123f35;
               font-size: 28pt;
