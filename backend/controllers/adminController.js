@@ -6914,11 +6914,58 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
 
     const jobseekers = users.filter((user) => String(user.role || '').toLowerCase() === 'jobseeker');
     const employers = users.filter((user) => String(user.role || '').toLowerCase() === 'employer');
-    const registeredUsers = [...jobseekers, ...employers];
 
-    const jobs = jobsAll.filter((job) => exportInRange(job.publishedAt || job.createdAt, range));
+    // Keep AGAPAY Records Report totals consistent with the Admin Dashboard / User Management rules.
+    // On the default Overall view, Jobseekers and Employers count only active, non-deleted,
+    // verified accounts, while Registered Users also includes the Admin account.
+    const hasReportUserFilters = Boolean(range.start || personalFilterActive);
+    let totalJobseekers = jobseekers.length;
+    let totalEmployers = employers.length;
+    let totalRegisteredUsers = jobseekers.length + employers.length;
+
+    if (!hasReportUserFilters) {
+      const userManagementVerifiedCondition = {
+        $or: [
+          { role: 'admin' },
+          {
+            role: 'employer',
+            'employerProfile.verificationDocs.overallStatus': 'verified',
+          },
+          {
+            role: 'jobseeker',
+            $or: [
+              { 'jobSeekerProfile.verificationDocs.overallStatus': 'verified' },
+              { 'jobSeekerProfile.verificationStatus': 'verified' },
+              { isVerified: true },
+            ],
+          },
+        ],
+      };
+
+      const userManagementBaseQuery = {
+        status: { $nin: ['deleted', 'inactive'] },
+        isActive: { $ne: false },
+        $nor: [{ role: 'employer', inactiveBySystem: true }],
+        $and: [userManagementVerifiedCondition],
+      };
+
+      [totalJobseekers, totalEmployers, totalRegisteredUsers] = await Promise.all([
+        User.countDocuments({ ...userManagementBaseQuery, role: 'jobseeker' }),
+        User.countDocuments({ ...userManagementBaseQuery, role: 'employer' }),
+        User.countDocuments(userManagementBaseQuery),
+      ]);
+    }
+
+    const jobs = jobsAll.filter((job) => {
+      if (!exportInRange(job.publishedAt || job.createdAt, range)) return false;
+      const status = analyticsLower(job?.status);
+      return job?.isArchived !== true && job?.isPublished !== false && status !== 'draft';
+    });
+
     const applications = applicationsAll.filter((application) => {
       if (!exportInRange(application.appliedAt || application.createdAt, range)) return false;
+      if (!['pending', 'for interview', 'hired', 'declined'].includes(analyticsLower(application?.status))) return false;
+      if (application?.isDeclinedArchived === true) return false;
       const seeker = userById.get(String(application.jobseeker || ''));
       if (personalFilterActive && !jobseekerMatchesProfile(seeker)) return false;
       return true;
@@ -7098,9 +7145,9 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
 
               <div class="summary">
                 <div>
-                  <p>Total Jobseekers: ${formatInteger(jobseekers.length)}</p>
-                  <p>Total Employers: ${formatInteger(employers.length)}</p>
-                  <p>Total Registered Users: ${formatInteger(registeredUsers.length)}</p>
+                  <p>Total Jobseekers: ${formatInteger(totalJobseekers)}</p>
+                  <p>Total Employers: ${formatInteger(totalEmployers)}</p>
+                  <p>Total Registered Users: ${formatInteger(totalRegisteredUsers)}</p>
                 </div>
                 <div>
                   <p>Total Job Posts: ${formatInteger(jobs.length)}</p>
