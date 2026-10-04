@@ -116,6 +116,32 @@ import EmployerVerificationDetails from './pages/admin/EmployerVerificationDetai
 // CSS
 import './index.css';
 
+const clearAgapayAdminFilterStorageOnAppLoad = () => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const keysToRemove = [];
+
+    for (let index = 0; index < window.sessionStorage.length; index += 1) {
+      const key = window.sessionStorage.key(index);
+
+      if (
+        key &&
+        key.startsWith('agapay:admin:') &&
+        key.endsWith(':filters')
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+  } catch {
+    // Keep the app usable even when session storage is unavailable.
+  }
+};
+
+clearAgapayAdminFilterStorageOnAppLoad();
+
 // ✅ Helper: safe get user
 const getStoredUser = () => {
   try {

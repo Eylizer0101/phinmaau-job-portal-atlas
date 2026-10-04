@@ -2,9 +2,190 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useMatch, useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+const AGAPAY_ADMIN_FILTER_PREFIX = "agapay:admin:";
+const AGAPAY_ADMIN_FILTER_SUFFIX = ":filters";
+
+const ADMIN_FILTER_KEYS = {
+  dashboard: "agapay:admin:dashboard:filters",
+  filterRecords: "agapay:admin:filter-records:filters",
+  notifications: "agapay:admin:notifications:filters",
+  jobOffers: "agapay:admin:job-offers:filters",
+  jobApplicants: "agapay:admin:job-applicants:filters",
+  applications: "agapay:admin:applications:filters",
+  userManagement: "agapay:admin:user-management:filters",
+  userApplicationHistory: "agapay:admin:user-application-history:filters",
+  employerPostingHistory: "agapay:admin:employer-posting-history:filters",
+  employerReviews: "agapay:admin:employer-reviews:filters",
+  jobseekerVerification: "agapay:admin:jobseeker-verification:filters",
+  employerVerification: "agapay:admin:employer-verification:filters",
+  editRequests: "agapay:admin:edit-requests:filters",
+  editRequestReview: "agapay:admin:edit-request-review:filters",
+  archive: "agapay:admin:archive:filters",
+  archiveDetails: "agapay:admin:archive-details:filters",
+  archiveDeclined: "agapay:admin:archive-declined:filters",
+  systemLogs: "agapay:admin:system-logs:filters",
+};
+
+const getAgapayAdminFilterKeysForPath = (value = "") => {
+  const pathname = String(value || "").split("?")[0].replace(/\/+$/, "") || "/";
+  const keys = new Set();
+
+  if (pathname === "/admin/dashboard") {
+    keys.add(ADMIN_FILTER_KEYS.dashboard);
+  }
+
+  if (pathname === "/admin/filter-records") {
+    keys.add(ADMIN_FILTER_KEYS.filterRecords);
+  }
+
+  if (pathname === "/admin/notifications") {
+    keys.add(ADMIN_FILTER_KEYS.notifications);
+  }
+
+  if (
+    pathname === "/admin/job-offers" ||
+    pathname === "/admin/dashboard/jobs" ||
+    pathname.startsWith("/admin/jobs/")
+  ) {
+    keys.add(ADMIN_FILTER_KEYS.jobOffers);
+  }
+
+  if (pathname.includes("/applicants")) {
+    keys.add(ADMIN_FILTER_KEYS.jobApplicants);
+  }
+
+  if (
+    pathname === "/admin/applications" ||
+    pathname.startsWith("/admin/applications/")
+  ) {
+    keys.add(ADMIN_FILTER_KEYS.applications);
+  }
+
+  if (
+    pathname === "/admin/users" ||
+    pathname.startsWith("/admin/users/")
+  ) {
+    keys.add(ADMIN_FILTER_KEYS.userManagement);
+
+    if (pathname.includes("/application-history")) {
+      keys.add(ADMIN_FILTER_KEYS.userApplicationHistory);
+    }
+
+    if (pathname.includes("/posting-history")) {
+      keys.add(ADMIN_FILTER_KEYS.employerPostingHistory);
+    }
+
+    if (pathname.includes("/reviews")) {
+      keys.add(ADMIN_FILTER_KEYS.employerReviews);
+    }
+  }
+
+  if (
+    pathname === "/admin/jobseeker-verification" ||
+    pathname.startsWith("/admin/jobseeker-verification/") ||
+    pathname === "/admin/dashboard/job-seekers" ||
+    pathname === "/admin/dashboard/pending-seekers"
+  ) {
+    keys.add(ADMIN_FILTER_KEYS.jobseekerVerification);
+  }
+
+  if (
+    pathname === "/admin/employer-verification" ||
+    pathname.startsWith("/admin/employer-verification/") ||
+    pathname === "/admin/dashboard/employers" ||
+    pathname === "/admin/dashboard/pending-employers"
+  ) {
+    keys.add(ADMIN_FILTER_KEYS.employerVerification);
+  }
+
+  if (
+    pathname === "/admin/employer-job-edit-requests" ||
+    pathname.startsWith("/admin/employer-job-edit-requests/")
+  ) {
+    keys.add(ADMIN_FILTER_KEYS.editRequests);
+
+    if (pathname.endsWith("/review")) {
+      keys.add(ADMIN_FILTER_KEYS.editRequestReview);
+    }
+  }
+
+  if (
+    pathname === "/admin/archive" ||
+    pathname.startsWith("/admin/archive/")
+  ) {
+    keys.add(ADMIN_FILTER_KEYS.archive);
+
+    if (pathname.includes("/declined-applicants")) {
+      keys.add(ADMIN_FILTER_KEYS.archiveDeclined);
+    } else if (pathname !== "/admin/archive") {
+      keys.add(ADMIN_FILTER_KEYS.archiveDetails);
+    }
+  }
+
+  if (pathname === "/admin/system-logs") {
+    keys.add(ADMIN_FILTER_KEYS.systemLogs);
+  }
+
+  return keys;
+};
+
+const collectAgapayAdminPreservedFilterKeys = (location) => {
+  const keys = new Set(getAgapayAdminFilterKeysForPath(location?.pathname));
+  const state = location?.state || {};
+
+  [
+    state.backPath,
+    state.archiveBackPath,
+    state.returnTo,
+    state.fromPath,
+    state.backState?.backPath,
+    state.backState?.archiveBackPath,
+  ]
+    .filter(Boolean)
+    .forEach((path) => {
+      getAgapayAdminFilterKeysForPath(path).forEach((key) => keys.add(key));
+    });
+
+  return keys;
+};
+
+const clearAgapayAdminFilterStorageExcept = (preservedKeys = new Set()) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    const keysToRemove = [];
+
+    for (let index = 0; index < window.sessionStorage.length; index += 1) {
+      const key = window.sessionStorage.key(index);
+
+      if (
+        key &&
+        key.startsWith(AGAPAY_ADMIN_FILTER_PREFIX) &&
+        key.endsWith(AGAPAY_ADMIN_FILTER_SUFFIX) &&
+        !preservedKeys.has(key)
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+  } catch {
+    // Keep navigation usable even when session storage is unavailable.
+  }
+};
+
+const clearAllAgapayAdminFilterStorage = () => {
+  clearAgapayAdminFilterStorageExcept(new Set());
+};
+
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const preservedKeys = collectAgapayAdminPreservedFilterKeys(location);
+    clearAgapayAdminFilterStorageExcept(preservedKeys);
+  }, [location.pathname, location.state]);
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -456,6 +637,7 @@ const AdminLayout = ({ children }) => {
       logoutTimerRef.current = setTimeout(() => {
         setShowLogoutModal(false);
 
+        clearAllAgapayAdminFilterStorage();
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         navigate("/login");
