@@ -535,9 +535,11 @@ const resumeStyles = `
     min-width: 0;
     max-width: 100%;
     white-space: normal !important;
-    overflow-wrap: anywhere !important;
-    word-wrap: break-word !important;
-    word-break: break-all !important;
+    overflow-wrap: normal !important;
+    word-wrap: normal !important;
+    word-break: normal !important;
+    -webkit-hyphens: auto;
+    hyphens: auto;
   }
 
   .objective-text,
@@ -612,9 +614,11 @@ const resumeStyles = `
     min-width: 0;
     max-width: 100%;
     white-space: normal !important;
-    overflow-wrap: anywhere !important;
-    word-wrap: break-word !important;
-    word-break: break-all !important;
+    overflow-wrap: normal !important;
+    word-wrap: normal !important;
+    word-break: normal !important;
+    -webkit-hyphens: auto;
+    hyphens: auto;
   }
   .skill-item::before {
     content: '•';
@@ -853,7 +857,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
   );
 
   return `<!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>${escapeHtml(fullName)} CV</title>
