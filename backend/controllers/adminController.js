@@ -6867,6 +6867,33 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
       : `<tr><td colspan="${columns.length}" style="text-align:center;padding:24px;">No matching records.</td></tr>`;
 
     const isApplicationPdf = payload.role === 'application';
+    const applicationPdfColumnWidths = {
+      date: '4.71%',
+      fullName: '7.69%',
+      email: '9.05%',
+      contactNumber: '5.43%',
+      age: '1.99%',
+      civilStatus: '4.07%',
+      gender: '2.99%',
+      campus: '3.62%',
+      course: '6.33%',
+      yearGraduated: '3.62%',
+      region: '6.33%',
+      province: '4.34%',
+      cityMunicipality: '4.52%',
+      companyName: '5.88%',
+      jobTitle: '6.33%',
+      workMode: '3.62%',
+      employmentType: '4.07%',
+      applicationStatus: '4.07%',
+      processingTime: '3.62%',
+      timesApplied: '2.71%',
+      hiredDate: '5.01%',
+    };
+    const applicationPdfColGroup = isApplicationPdf
+      ? `<colgroup>${columns.map(([key]) => `<col style="width:${applicationPdfColumnWidths[key] || '4.75%'}">`).join('')}</colgroup>`
+      : '';
+
     const html = `<!doctype html><html><head><meta charset="utf-8"><style>
       @page{size:${isApplicationPdf ? 'A3 landscape' : 'A4 landscape'};margin:${isApplicationPdf ? '8mm' : '12mm'}}
       body{font-family:Arial,sans-serif;color:#172033;font-size:${isApplicationPdf ? '7px' : '9px'};margin:0}
@@ -6876,7 +6903,7 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
       th{
         background:#2e66a6;
         color:#fff;
-        padding:${isApplicationPdf ? '5px 3px' : '7px 6px'};
+        padding:${isApplicationPdf ? '5px 2px' : '7px 6px'};
         border:1px solid #dbe4ef;
         white-space:${isApplicationPdf ? 'normal' : 'nowrap'};
         overflow-wrap:anywhere;
@@ -6884,7 +6911,7 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
         line-height:1.15;
       }
       td{
-        padding:${isApplicationPdf ? '4px 3px' : '6px'};
+        padding:${isApplicationPdf ? '4px 2px' : '6px'};
         border:1px solid #dbe4ef;
         vertical-align:top;
         overflow-wrap:anywhere;
@@ -6895,7 +6922,7 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
       .meta{display:flex;justify-content:space-between;margin-bottom:10px;color:#64748b}
     </style></head><body><h1>PHINMA Araullo University - ${escapePdfHtml(roleLabel)} Records</h1>
     <div class="meta"><span>${payload.records.length} record(s)</span><span>Generated: ${escapePdfHtml(exportDate(new Date()))}</span></div>
-    <table><thead><tr>${tableHead}</tr></thead><tbody>${tableBody}</tbody></table>
+    <table>${applicationPdfColGroup}<thead><tr>${tableHead}</tr></thead><tbody>${tableBody}</tbody></table>
     </body></html>`;
 
     const browser = await getAdminReportBrowser();
@@ -7129,7 +7156,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               margin: 5mm 0 1.5mm;
               text-align: center;
               color: #123f35;
-              font-size: 28pt;
+              font-size: 34pt;
               line-height: 1;
               font-weight: 800;
               letter-spacing: 0.2px;
