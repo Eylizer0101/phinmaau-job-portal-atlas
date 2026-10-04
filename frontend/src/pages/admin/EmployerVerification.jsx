@@ -1090,7 +1090,7 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
           <button
             type="button"
             onClick={() => navigate("/admin/dashboard")}
-            className="mb-4 inline-flex w-fit items-center gap-1 text-sm font-semibold text-[#2e66a6] transition hover:text-[#255487]"
+            className="mb-4 inline-flex h-11 w-fit items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
           >
             <Icon name="chevronLeft" className="h-4 w-4" />
             Back
