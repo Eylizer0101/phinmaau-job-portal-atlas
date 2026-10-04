@@ -381,7 +381,7 @@ const SalaryDropdown = ({
 
             <button
               type="button"
-              className="w-full h-[50px] rounded-xl text-sm font-semibold text-black bg-[#FFD000] hover:bg-[#FFD000]/90 transition"
+              className="w-full h-[50px] rounded-xl text-sm font-semibold text-white bg-[#3472b9] hover:bg-[#2e66a6] transition"
               onClick={() => setOpenDropdown(null)}
             >
               Add Filter
@@ -1545,7 +1545,7 @@ const JobOffers = () => {
                 {hasActiveFilters && (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-[#d8e2ee] bg-white text-[15px] font-medium text-black/60 hover:bg-[#2e66a6]/5 transition"
+                    className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-white/30 bg-white/95 text-[15px] font-medium text-[#6B7280] hover:bg-white transition"
                     onClick={clearFilters}
                   >
                     <svg

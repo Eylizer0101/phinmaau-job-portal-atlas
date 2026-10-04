@@ -209,7 +209,7 @@ const CheckboxDropdown = ({
         <span className="whitespace-nowrap">{label}</span>
 
         {count > 0 && (
-          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#2e66a6] border border-blue-200">
+          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[#FFD000] text-black border border-[#FFD000]">
             {count}
           </span>
         )}
@@ -334,7 +334,7 @@ const SalaryDropdown = ({ id, label, value, setValue, openDropdown, setOpenDropd
         <span className="whitespace-nowrap">{label}</span>
 
         {value ? (
-          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#2e66a6] border border-blue-200">
+          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[#FFD000] text-black border border-[#FFD000]">
             1
           </span>
         ) : null}
@@ -422,7 +422,7 @@ const SortDropdown = ({
         <span className="whitespace-nowrap">{label}</span>
 
         {value ? (
-          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#2e66a6] border border-blue-200">
+          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[#FFD000] text-black border border-[#FFD000]">
             1
           </span>
         ) : null}
@@ -1355,6 +1355,12 @@ const JobSearch = () => {
   const hasActiveFilters =
     searchTerm.trim() ||
     location.trim() ||
+    selectedLocations.length ||
+    selectedJobTitles.length ||
+    selectedEmploymentTypes.length ||
+    selectedEducationLevels.length ||
+    selectedCompanies.length ||
+    salaryMinInput.trim() ||
     filters.jobType ||
     filters.industry ||
     filters.workMode ||
@@ -1919,37 +1925,37 @@ const JobSearch = () => {
                         <div className="mt-4 flex flex-wrap items-center gap-2">
 
                           {experienceBadgeLabel && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-[#FFD000] text-black border border-[#FFD000]">
                               {experienceBadgeLabel}
                             </span>
                           )}
 
                           {tagBlended && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-[#FFD000] text-black border border-[#FFD000]">
                               Blended
                             </span>
                           )}
 
                           {tagOnsite && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-[#FFD000] text-black border border-[#FFD000]">
                               On-site
                             </span>
                           )}
 
                           {tagRemote && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-[#FFD000] text-black border border-[#FFD000]">
                               Remote
                             </span>
                           )}
 
                           {tagWFH && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-[#FFD000] text-black border border-[#FFD000]">
                               Work from Home
                             </span>
                           )}
 
                           {tagFreshGrad && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-[#FFD000] text-black border border-[#FFD000]">
                               Open fresh grad
                             </span>
                           )}

@@ -740,6 +740,10 @@ const JobOfferDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [id]);
+
   const [job, setJob] = useState(null);
   const [companyInfo, setCompanyInfo] = useState(null);
   const [similarJobs, setSimilarJobs] = useState([]);
