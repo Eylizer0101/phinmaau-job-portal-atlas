@@ -2,45 +2,10 @@ const Message = require('../models/Message');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 // ✅ IDINAGDAG: Import notification controller
 const notificationController = require('./notificationController');
-
-// Configure storage for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = 'uploads/messages';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-// File filter
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error('Only images, PDFs and documents are allowed!'));
-  }
-};
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: fileFilter
-});
 
 // ✅ DAGDAG: helper to compute full name safely (backend fallback)
 const computeFullName = (u) => {
@@ -287,15 +252,23 @@ exports.sendMessage = async (req, res) => {
         fileType = 'document';
       }
 
-      // Add file data to message
+      // Add file data to message.
+      // Cloudinary storage returns an absolute secure URL so the attachment
+      // remains available even after the Render instance restarts/redeploys.
+      const persistentFileUrl =
+        req.file.secure_url ||
+        req.file.url ||
+        (req.file.path && /^https?:\/\//i.test(req.file.path) ? req.file.path : '') ||
+        `/uploads/messages/${req.file.filename}`;
+
       messageData.messageType = 'file';
       messageData.content = content || `Sent a ${fileType} file: ${req.file.originalname}`;
       messageData.file = {
         filename: req.file.filename,
         originalName: req.file.originalname,
         fileType: fileType,
-        fileUrl: `/uploads/messages/${req.file.filename}`,
-        fileSize: req.file.size
+        fileUrl: persistentFileUrl,
+        fileSize: req.file.size || req.file.bytes || 0
       };
     }
 
@@ -341,8 +314,12 @@ exports.sendMessage = async (req, res) => {
   } catch (error) {
     console.error('Error sending message:', error);
 
-    // Delete uploaded file if error occurred
-    if (req.file && fs.existsSync(req.file.path)) {
+    // Legacy local-file cleanup only. Cloudinary URLs are persistent remote assets.
+    if (
+      req.file?.path &&
+      !/^https?:\/\//i.test(req.file.path) &&
+      fs.existsSync(req.file.path)
+    ) {
       fs.unlinkSync(req.file.path);
     }
 
@@ -354,17 +331,8 @@ exports.sendMessage = async (req, res) => {
 };
 
 // ✅ UPLOAD FILE
-exports.uploadFile = (req, res) => {
-  const uploadSingle = upload.single('file');
-
-  uploadSingle(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({
-        success: false,
-        message: err.message
-      });
-    }
-
+exports.uploadFile = async (req, res) => {
+  try {
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -372,40 +340,41 @@ exports.uploadFile = (req, res) => {
       });
     }
 
-    try {
-      const fileExt = path.extname(req.file.originalname).toLowerCase();
-      let fileType = 'other';
+    const fileExt = path.extname(req.file.originalname).toLowerCase();
+    let fileType = 'other';
 
-      if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
-        fileType = 'image';
-      } else if (fileExt === '.pdf') {
-        fileType = 'pdf';
-      } else if (['.doc', '.docx', '.txt'].includes(fileExt)) {
-        fileType = 'document';
-      }
-
-      res.status(200).json({
-        success: true,
-        message: 'File uploaded successfully',
-        data: {
-          filename: req.file.filename,
-          originalName: req.file.originalname,
-          fileType: fileType,
-          fileUrl: `/uploads/messages/${req.file.filename}`,
-          fileSize: req.file.size
-        }
-      });
-    } catch (error) {
-      console.error('Error processing file upload:', error);
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      res.status(500).json({
-        success: false,
-        message: 'Error processing file upload'
-      });
+    if (['.jpg', '.jpeg', '.png', '.gif'].includes(fileExt)) {
+      fileType = 'image';
+    } else if (fileExt === '.pdf') {
+      fileType = 'pdf';
+    } else if (['.doc', '.docx', '.txt'].includes(fileExt)) {
+      fileType = 'document';
     }
-  });
+
+    const persistentFileUrl =
+      req.file.secure_url ||
+      req.file.url ||
+      (req.file.path && /^https?:\/\//i.test(req.file.path) ? req.file.path : '') ||
+      `/uploads/messages/${req.file.filename}`;
+
+    return res.status(200).json({
+      success: true,
+      message: 'File uploaded successfully',
+      data: {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        fileType,
+        fileUrl: persistentFileUrl,
+        fileSize: req.file.size || req.file.bytes || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error processing file upload:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error processing file upload'
+    });
+  }
 };
 
 // ✅ GET FILE

@@ -367,6 +367,12 @@ const communityMediaStorage = createStreamingCloudinaryStorage({
     createUniquePublicId(`${getOwnerId(req)}-community-${file.fieldname}`, file),
 });
 
+const messageAttachmentStorage = createStreamingCloudinaryStorage({
+  folderResolver: () => 'messages',
+  publicIdResolver: (req, file) =>
+    createUniquePublicId(`${getOwnerId(req)}-message`, file),
+});
+
 const alumniVerificationStorage = createCloudinaryStorage({
   resourceType: 'raw',
   folderResolver: (req) => {
@@ -533,6 +539,42 @@ const communityMediaFileFilter = (req, file, cb) => {
   return cb(new Error('Unsupported Community attachment type.'));
 };
 
+const MESSAGE_ATTACHMENT_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+]);
+
+const MESSAGE_ATTACHMENT_EXTENSIONS = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.txt',
+]);
+
+const messageAttachmentFileFilter = (req, file, cb) => {
+  const mimeType = String(file.mimetype || '').toLowerCase();
+  const extension = path.extname(String(file.originalname || '')).toLowerCase();
+
+  if (
+    MESSAGE_ATTACHMENT_MIME_TYPES.has(mimeType)
+    && MESSAGE_ATTACHMENT_EXTENSIONS.has(extension)
+  ) {
+    return cb(null, true);
+  }
+
+  return cb(new Error('Only images, PDFs and documents are allowed!'), false);
+};
+
 const uploadResume = multer({
   storage: resumeStorage,
   fileFilter: resumeFileFilter,
@@ -576,6 +618,12 @@ const uploadCommunityMedia = multer({
     fileSize: 5 * 1024 * 1024 * 1024,
     files: 16,
   },
+});
+
+const uploadMessageAttachment = multer({
+  storage: messageAttachmentStorage,
+  fileFilter: messageAttachmentFileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 const uploadAlumniVerification = multer({
@@ -715,6 +763,7 @@ module.exports = {
   uploadJobLocationImage,
   uploadCommunityImage,
   uploadCommunityMedia,
+  uploadMessageAttachment,
   uploadAlumniVerification,
   uploadAlumniResubmit,
   handleResubmitDocumentUploads,
