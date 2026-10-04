@@ -6698,7 +6698,7 @@ exports.exportAdminFilterRecordsExcel = async (req, res) => {
     const sheet = workbook.addWorksheet(roleLabel.slice(0, 31));
     styleExportWorksheet(
       sheet,
-      `Phinma Araullo University - ${roleLabel} Filter Records`,
+      `Phinma Araullo University - ${roleLabel} Records`,
       columns.map(([, label]) => label),
       columns.map(([, label]) => Math.min(38, Math.max(14, label.length + 5))),
     );
@@ -6745,7 +6745,7 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
       td{padding:6px;border:1px solid #dbe4ef;vertical-align:top;word-break:break-word} tr:nth-child(even) td{background:#f8fafc}
       .meta{display:flex;justify-content:space-between;margin-bottom:10px;color:#64748b}
       .approval{margin-top:24px;width:260px;text-align:center;page-break-inside:avoid}.approval .label{font-style:italic;margin-bottom:10px}.approval .name{font-weight:700}.approval .role{margin-top:4px}
-    </style></head><body><h1>PHINMA Araullo University - ${escapePdfHtml(roleLabel)} Filter Records</h1>
+    </style></head><body><h1>PHINMA Araullo University - ${escapePdfHtml(roleLabel)} Records</h1>
     <div class="meta"><span>${payload.records.length} record(s)</span><span>Generated: ${escapePdfHtml(exportDate(new Date()))}</span></div>
     <table><thead><tr>${tableHead}</tr></thead><tbody>${tableBody}</tbody></table>
     <div class="approval"><div class="label">APPROVED BY:</div><div class="name">JAN KRISTINE A. INOCENCIO</div><div class="role">LINKAGES MANAGER</div></div>
