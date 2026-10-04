@@ -550,6 +550,26 @@ const AdminSystemLogs = () => {
   }, [search]);
 
   const updateFilter = (key, value) => { setFilters((old) => ({ ...old, [key]: value })); setPage(1); };
+
+  const hasActiveFilters =
+    Boolean(filters.search.trim()) ||
+    filters.role !== 'all' ||
+    filters.date !== 'all' ||
+    Boolean(filters.dateFrom) ||
+    Boolean(filters.dateTo);
+
+  const clearAllFilters = () => {
+    setFilters({
+      search: '',
+      role: 'all',
+      date: 'all',
+      dateFrom: '',
+      dateTo: '',
+    });
+    setSearch('');
+    setPage(1);
+  };
+
   const loadLogs = useCallback(async () => {
     try {
       setLoading(true); setError('');
@@ -604,7 +624,12 @@ const AdminSystemLogs = () => {
     <header className="mb-5"><h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Activity Logs</h1>
       <p className="mt-1.5 text-sm text-slate-500">Monitor the important activities performed by Jobseekers and Employers.</p></header>
     <section className="relative z-30 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-      <div className="grid gap-3 md:grid-cols-[minmax(320px,1fr)_220px_220px]">
+      <div className={cn(
+        'grid gap-3',
+        hasActiveFilters
+          ? 'md:grid-cols-[minmax(320px,1fr)_220px_220px_110px]'
+          : 'md:grid-cols-[minmax(320px,1fr)_220px_220px]'
+      )}>
         <label className="relative"><span className="sr-only">Search activity logs</span><Icon name="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input type="search" value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Search user or activity..."
             className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10" /></label>
@@ -618,6 +643,15 @@ const AdminSystemLogs = () => {
             setPage(1);
           }}
         />
+        {hasActiveFilters ? (
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="h-11 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[#2e66a6] shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+          >
+            Clear All
+          </button>
+        ) : null}
       </div>
     </section>
     <section className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
