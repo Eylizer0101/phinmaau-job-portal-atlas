@@ -1010,7 +1010,7 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
     const range = getDashboardDateRange(dateFilter, req.query.startDate, req.query.endDate);
 
     const [users, jobs, applications, editRequests] = await Promise.all([
-      User.find({ status: { $ne: 'deleted' } }).select('-password').lean(),
+      User.find({ status: { $nin: ['deleted', 'inactive'] }, isActive: { $ne: false }, inactiveBySystem: { $ne: true } }).select('-password').lean(),
       Job.find({ isArchived: { $ne: true } }).populate('employer', 'employerProfile companyName firstName lastName').lean(),
       Application.find({}).populate('job').populate('jobseeker', 'jobSeekerProfile').lean(),
       JobEditRequest.find({}).lean(),
@@ -6553,7 +6553,17 @@ const uniqueFilterValues = (records, key) =>
   [...new Set(records.map((record) => exportText(record?.[key])).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
+const isActiveExportUser = (user = {}) => {
+  const status = String(user.status || '').trim().toLowerCase();
+  if (['deleted', 'inactive'].includes(status)) return false;
+  if (user.isActive === false) return false;
+  if (user.inactiveBySystem === true) return false;
+  return true;
+};
+
 const isVerifiedExportUser = (user = {}) => {
+  if (!isActiveExportUser(user)) return false;
+
   const role = String(user.role || '').toLowerCase();
   if (!['jobseeker', 'employer'].includes(role)) return false;
   if (role === 'jobseeker') {
@@ -6571,7 +6581,7 @@ const isVerifiedExportUser = (user = {}) => {
 const buildAdminFilterRecords = async (rawFilters = {}) => {
   const role = normalizeAdminFilterRole(rawFilters.role);
   const [users, jobs, applications] = await Promise.all([
-    User.find({ status: { $ne: 'deleted' } }).select('-password').lean(),
+    User.find({ status: { $nin: ['deleted', 'inactive'] }, isActive: { $ne: false }, inactiveBySystem: { $ne: true } }).select('-password').lean(),
     Job.find({}).lean(),
     Application.find({}).lean(),
   ]);
@@ -6889,14 +6899,15 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     });
 
     const [usersAll, jobsAll, applicationsAll] = await Promise.all([
-      User.find({ status: { $ne: 'deleted' } })
-        .select('role createdAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.gender jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated')
+      User.find({ status: { $nin: ['deleted', 'inactive'] }, isActive: { $ne: false }, inactiveBySystem: { $ne: true } })
+        .select('role status isActive inactiveBySystem createdAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.gender jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated')
         .lean(),
-      Job.find({}).select('createdAt publishedAt status isArchived isPublished').lean(),
-      Application.find({}).select('jobseeker status appliedAt createdAt').lean(),
+      Job.find({}).select('employer createdAt publishedAt status isArchived isPublished').lean(),
+      Application.find({}).select('job jobseeker employer status isDeclinedArchived appliedAt createdAt').lean(),
     ]);
 
     const userById = new Map(usersAll.map((user) => [String(user._id), user]));
+    const jobById = new Map(jobsAll.map((job) => [String(job._id), job]));
     const selectedCampus = String(filters.campus || 'all').trim();
     const selectedYear = String(filters.yearGraduated || 'all').trim();
     const selectedCourse = String(filters.course || 'all').trim();
@@ -6966,6 +6977,8 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
 
     const jobs = jobsAll.filter((job) => {
       if (!exportInRange(job.publishedAt || job.createdAt, range)) return false;
+      const employer = userById.get(String(job.employer || ''));
+      if (!isActiveExportUser(employer)) return false;
       const status = analyticsLower(job?.status);
       return job?.isArchived !== true && job?.isPublished !== false && status !== 'draft';
     });
@@ -6975,6 +6988,9 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
       if (!['pending', 'for interview', 'hired', 'declined'].includes(analyticsLower(application?.status))) return false;
       if (application?.isDeclinedArchived === true) return false;
       const seeker = userById.get(String(application.jobseeker || ''));
+      const job = jobById.get(String(application.job || '')) || {};
+      const employer = userById.get(String(application.employer || job.employer || ''));
+      if (!isActiveExportUser(seeker) || !isActiveExportUser(employer)) return false;
       if (personalFilterActive && !jobseekerMatchesProfile(seeker)) return false;
       return true;
     });
@@ -7238,7 +7254,7 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     });
 
     const [users, jobs, applications] = await Promise.all([
-      User.find({ status: { $ne: 'deleted' } }).select('-password').lean(),
+      User.find({ status: { $nin: ['deleted', 'inactive'] }, isActive: { $ne: false }, inactiveBySystem: { $ne: true } }).select('-password').lean(),
       Job.find({}).lean(),
       Application.find({}).lean(),
     ]);
