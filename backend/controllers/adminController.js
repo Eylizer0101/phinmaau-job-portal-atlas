@@ -6866,23 +6866,49 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
       ? payload.records.map((record) => `<tr>${columns.map(([key]) => `<td>${escapePdfHtml(record[key])}</td>`).join('')}</tr>`).join('')
       : `<tr><td colspan="${columns.length}" style="text-align:center;padding:24px;">No matching records.</td></tr>`;
 
+    const isApplicationPdf = payload.role === 'application';
     const html = `<!doctype html><html><head><meta charset="utf-8"><style>
-      @page{size:A4 landscape;margin:12mm} body{font-family:Arial,sans-serif;color:#172033;font-size:9px}
-      h1{font-size:18px;margin:0;color:#153f73} .sub{margin:5px 0 14px;color:#64748b}
-      table{width:100%;border-collapse:collapse;table-layout:auto} th{background:#2e66a6;color:#fff;padding:7px 6px;border:1px solid #dbe4ef;white-space:nowrap}
-      td{padding:6px;border:1px solid #dbe4ef;vertical-align:top;word-break:break-word} tr:nth-child(even) td{background:#f8fafc}
+      @page{size:${isApplicationPdf ? 'A3 landscape' : 'A4 landscape'};margin:${isApplicationPdf ? '8mm' : '12mm'}}
+      body{font-family:Arial,sans-serif;color:#172033;font-size:${isApplicationPdf ? '7px' : '9px'};margin:0}
+      h1{font-size:${isApplicationPdf ? '16px' : '18px'};margin:0;color:#153f73}
+      .sub{margin:5px 0 14px;color:#64748b}
+      table{width:100%;border-collapse:collapse;table-layout:${isApplicationPdf ? 'fixed' : 'auto'}}
+      th{
+        background:#2e66a6;
+        color:#fff;
+        padding:${isApplicationPdf ? '5px 3px' : '7px 6px'};
+        border:1px solid #dbe4ef;
+        white-space:${isApplicationPdf ? 'normal' : 'nowrap'};
+        overflow-wrap:anywhere;
+        word-break:normal;
+        line-height:1.15;
+      }
+      td{
+        padding:${isApplicationPdf ? '4px 3px' : '6px'};
+        border:1px solid #dbe4ef;
+        vertical-align:top;
+        overflow-wrap:anywhere;
+        word-break:normal;
+        line-height:${isApplicationPdf ? '1.15' : '1.25'};
+      }
+      tr:nth-child(even) td{background:#f8fafc}
       .meta{display:flex;justify-content:space-between;margin-bottom:10px;color:#64748b}
-      .approval{margin-top:24px;width:260px;text-align:center;page-break-inside:avoid}.approval .label{font-style:italic;margin-bottom:10px}.approval .name{font-weight:700}.approval .role{margin-top:4px}
     </style></head><body><h1>PHINMA Araullo University - ${escapePdfHtml(roleLabel)} Records</h1>
     <div class="meta"><span>${payload.records.length} record(s)</span><span>Generated: ${escapePdfHtml(exportDate(new Date()))}</span></div>
     <table><thead><tr>${tableHead}</tr></thead><tbody>${tableBody}</tbody></table>
-    <div class="approval"><div class="label">APPROVED BY:</div><div class="name">JAN KRISTINE A. INOCENCIO</div><div class="role">LINKAGES MANAGER</div></div>
     </body></html>`;
 
     const browser = await getAdminReportBrowser();
     page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
-    const pdf = await page.pdf({ format: 'A4', landscape: true, printBackground: true, margin: { top: '12mm', right: '10mm', bottom: '12mm', left: '10mm' } });
+    const pdf = await page.pdf({
+      format: isApplicationPdf ? 'A3' : 'A4',
+      landscape: true,
+      printBackground: true,
+      margin: isApplicationPdf
+        ? { top: '8mm', right: '7mm', bottom: '8mm', left: '7mm' }
+        : { top: '12mm', right: '10mm', bottom: '12mm', left: '10mm' },
+    });
 
     const safeRole = payload.role === 'jobOffer' ? 'job-offers' : payload.role;
     const filename = `agapay-filter-records-${safeRole}-${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -7093,17 +7119,17 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
             .right-logo { width: 76mm; height: 20mm; object-fit: contain; object-position: right top; }
             .header-divider {
               position: relative;
-              top: -5mm;
+              top: 0;
               width: 100%;
               height: 0;
               border-top: 0.45mm solid #9eb2aa;
-              margin: 1.5mm 0 0;
+              margin: 3.5mm 0 0;
             }
             h1 {
               margin: 8mm 0 1.5mm;
               text-align: center;
               color: #123f35;
-              font-size: 23pt;
+              font-size: 28pt;
               line-height: 1;
               font-weight: 800;
               letter-spacing: 0.2px;

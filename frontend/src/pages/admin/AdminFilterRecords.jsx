@@ -412,7 +412,7 @@ const AdminFilterRecords = () => {
             </div>
 
             <div className="relative z-10 mx-3 rounded-xl bg-white p-4 shadow-sm">
-              <SelectField label="Role" value={filters.role} onChange={changeRole} options={ROLE_OPTIONS} placeholder="Select Role" />
+              <SelectField label="Role" value={filters.role} onChange={changeRole} options={ROLE_OPTIONS} placeholder="All Roles" />
 
               {(showJobseekerFilters || showApplicationFilters) ? (
                 <>
