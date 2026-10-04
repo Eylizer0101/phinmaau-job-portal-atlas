@@ -6408,7 +6408,7 @@ const addExportDataRows = (worksheet, startRow, rows) => {
       const cell = row.getCell(columnIndex + 1);
       cell.value = value === undefined || value === null ? '' : value;
       cell.font = { name: 'Arial', size: 9 };
-      cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
+      cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: false };
       cell.border = {
         top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
         left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
@@ -6416,7 +6416,7 @@ const addExportDataRows = (worksheet, startRow, rows) => {
         right: { style: 'thin', color: { argb: 'FFD0D0D0' } },
       };
     });
-    row.height = 30;
+    row.height = 18;
   });
 };
 
