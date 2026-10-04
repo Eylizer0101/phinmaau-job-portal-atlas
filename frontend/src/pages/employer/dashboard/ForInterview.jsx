@@ -1350,6 +1350,8 @@ const ActionMenu = ({
   onDecline,
   openMenuId,
   setOpenMenuId,
+  onBeforeView,
+  listStateKey,
 }) => {
   const isOpen = openMenuId === app._id;
   const wrapperRef = useRef(null);
@@ -1493,6 +1495,8 @@ const ActionMenu = ({
   return (
     <Link
       to={`/employer/application/${app._id}?from=for-interview`}
+      onClick={onBeforeView}
+      state={listStateKey ? { listStateKey } : undefined}
       className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
       aria-label={`View application of ${name}`}
       title="View application"
@@ -2546,6 +2550,8 @@ const selectBase =
                                 setOpenMenuId={setOpenMenuId}
                                 onHire={() => handleStatusUpdate(app._id, 'hired')}
                                 onDecline={() => openDeclineModal(app)}
+                                onBeforeView={saveListState}
+                                listStateKey={LIST_STATE_KEY}
                               />
                             </td>
                           </tr>
@@ -2612,6 +2618,8 @@ const selectBase =
                             setOpenMenuId={setOpenMenuId}
                             onHire={() => handleStatusUpdate(app._id, 'hired')}
                             onDecline={() => openDeclineModal(app)}
+                            onBeforeView={saveListState}
+                            listStateKey={LIST_STATE_KEY}
                           />
                         </div>
                       </div>

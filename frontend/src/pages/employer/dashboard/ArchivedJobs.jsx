@@ -551,6 +551,7 @@ const ArchivedJobs = () => {
   const [pageSize, setPageSize] = useState(10);
 
   const LIST_STATE_KEY = 'agapay:employer:archived-jobs:list-state';
+  const restoringListStateRef = useRef(false);
 
   const saveListState = () => {
     try {
@@ -1258,10 +1259,12 @@ const ArchivedJobs = () => {
                         <div className="mt-4 grid grid-cols-2 gap-2">
                           <Link
                             to={`/employer/manage-jobs/${job._id}/view`}
+                            onClick={saveListState}
                             state={{
                               from: 'archivedJobs',
                               backPath: '/employer/manage-jobs/archived',
                               backLabel: 'Archived Jobs',
+                              listStateKey: LIST_STATE_KEY,
                             }}
                             className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                             aria-label={`View ${title}`}
@@ -1432,10 +1435,12 @@ const ArchivedJobs = () => {
                               <div className="flex items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/manage-jobs/${job._id}/view`}
+                                  onClick={saveListState}
                                   state={{
                                     from: 'archivedJobs',
                                     backPath: '/employer/manage-jobs/archived',
                                     backLabel: 'Archived Jobs',
+                                    listStateKey: LIST_STATE_KEY,
                                   }}
                                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`View ${title}`}

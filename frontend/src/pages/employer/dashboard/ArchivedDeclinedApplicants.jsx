@@ -1315,7 +1315,9 @@ const ArchivedDeclinedApplicants = () => {
                             <td className="px-6 py-4 text-center">
                               <div className="flex items-center justify-center gap-2">
                                 <Link
-                                  to={`/employer/application/${app._id}`}
+                                  to={`/employer/application/${app._id}?from=archived-declined`}
+                                  onClick={saveListState}
+                                  state={{ listStateKey: LIST_STATE_KEY }}
                                   title="View"
                                   aria-label={`View application of ${name}`}
                                   className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
@@ -1391,7 +1393,9 @@ const ArchivedDeclinedApplicants = () => {
 
                         <div className="mt-3 flex items-center justify-center gap-3">
                           <Link
-                            to={`/employer/application/${app._id}`}
+                            to={`/employer/application/${app._id}?from=archived-declined`}
+                            onClick={saveListState}
+                            state={{ listStateKey: LIST_STATE_KEY }}
                             title="View"
                             aria-label={`View application of ${name}`}
                             className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"

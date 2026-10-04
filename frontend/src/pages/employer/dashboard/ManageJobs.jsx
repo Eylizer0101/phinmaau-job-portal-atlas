@@ -510,6 +510,7 @@ const ManageJobs = () => {
   const [pageSize, setPageSize] = useState(10);
 
   const LIST_STATE_KEY = 'agapay:employer:manage-jobs:list-state';
+  const restoringListStateRef = useRef(false);
 
   const saveListState = () => {
     try {
@@ -535,6 +536,8 @@ const ManageJobs = () => {
   useEffect(() => {
     if (location.state?.restoreListStateKey !== LIST_STATE_KEY) return;
 
+    restoringListStateRef.current = true;
+
     try {
       const saved = JSON.parse(sessionStorage.getItem(LIST_STATE_KEY) || 'null');
       if (saved) {
@@ -546,7 +549,7 @@ const ManageJobs = () => {
         setCustomDateTo(saved.customDateTo || '');
         setSortBy(saved.sortBy || '');
         setPageSize(saved.pageSize ?? 10);
-        window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
+        setCurrentPage(Number(saved.currentPage) || 1);
       }
     } catch {
       // Keep the existing defaults if saved state cannot be read.
@@ -556,6 +559,10 @@ const ManageJobs = () => {
   }, [location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
+    if (restoringListStateRef.current) {
+      restoringListStateRef.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [q, jobFilter, statusFilter, dateFilter, customDateFrom, customDateTo, sortBy]);
 
@@ -1671,7 +1678,13 @@ const ManageJobs = () => {
                           <div className="min-w-0 flex-1">
                             <Link
                               to={`/employer/manage-jobs/${job._id}/view`}
-                              state={{ from: 'manageJobs', backPath: '/employer/manage-jobs', backLabel: 'Manage Jobs' }}
+                              onClick={saveListState}
+                              state={{
+                                from: 'manageJobs',
+                                backPath: '/employer/manage-jobs',
+                                backLabel: 'Manage Jobs',
+                                listStateKey: LIST_STATE_KEY,
+                              }}
                               className="block w-full truncate text-left text-sm font-semibold text-gray-900 hover:underline"
                               title={title}
                             >
@@ -1716,10 +1729,12 @@ const ManageJobs = () => {
                         <div className="mt-4 grid grid-cols-2 gap-2">
                           <Link
                             to={`/employer/manage-jobs/${job._id}/view`}
+                            onClick={saveListState}
                             state={{
                               from: 'manageJobs',
                               backPath: '/employer/manage-jobs',
                               backLabel: 'Manage Jobs',
+                              listStateKey: LIST_STATE_KEY,
                             }}
                             className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                             aria-label={`View ${title}`}
@@ -1941,7 +1956,13 @@ const ManageJobs = () => {
                                 <div className="min-w-0">
                                   <Link
                                     to={`/employer/manage-jobs/${job._id}/view`}
-                                    state={{ from: 'manageJobs', backPath: '/employer/manage-jobs', backLabel: 'Manage Jobs' }}
+                                    onClick={saveListState}
+                                    state={{
+                                      from: 'manageJobs',
+                                      backPath: '/employer/manage-jobs',
+                                      backLabel: 'Manage Jobs',
+                                      listStateKey: LIST_STATE_KEY,
+                                    }}
                                     className="block truncate text-sm font-semibold text-gray-900 hover:underline"
                                     title={title}
                                   >
@@ -1985,10 +2006,12 @@ const ManageJobs = () => {
                               <div className="flex flex-nowrap items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/manage-jobs/${job._id}/view`}
+                                  onClick={saveListState}
                                   state={{
                                     from: 'manageJobs',
                                     backPath: '/employer/manage-jobs',
                                     backLabel: 'Manage Jobs',
+                                    listStateKey: LIST_STATE_KEY,
                                   }}
                                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-0 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`View ${title}`}
