@@ -889,10 +889,6 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
         <div ref={mapElRef} className="h-[310px] w-full" />
       </div>
 
-      <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-900">
-        Search a Philippine location, choose a result, or click/drag the pin within the Philippines to set the exact work location.
-      </div>
-
     </div>
   );
 };
