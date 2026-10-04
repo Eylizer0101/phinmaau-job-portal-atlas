@@ -146,9 +146,8 @@ const getActorImage = (log = {}) => {
   }
 
   if (role === 'admin' || role === 'subadmin') {
-    // Prefer the saved admin profile image. If none exists, keep a visible
-    // AGAPAY admin identity instead of falling back to a blank avatar.
-    return actor?.profileImage || '/logo192.png';
+    // Use the same saved image/logo shown on the Admin Profile page first.
+    return actor?.adminProfile?.organizationLogo || actor?.profileImage || '/images/phinma-logo.png';
   }
 
   return actor?.profileImage || '';
@@ -157,10 +156,30 @@ const getActorImage = (log = {}) => {
 const getActorDisplayName = (log = {}) => {
   const actor = log.actor && typeof log.actor === 'object' ? log.actor : null;
   const storedName = String(log.actorName || '').trim();
+  const role = String(log.actorRole || actor?.role || '').toLowerCase();
+
+  if (actor && (role === 'admin' || role === 'subadmin')) {
+    const adminProfileName = [
+      actor?.adminProfile?.firstName,
+      actor?.adminProfile?.middleName,
+      actor?.adminProfile?.lastName,
+      actor?.adminProfile?.extensionName,
+    ]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+      .join(' ');
+
+    const rootAdminName = [actor.firstName, actor.middleName, actor.lastName, actor.extensionName]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+      .join(' ');
+
+    return adminProfileName || rootAdminName || 'System Admin';
+  }
+
   if (storedName && storedName !== 'Unknown user') return storedName;
   if (!actor) return storedName || 'Unknown user';
 
-  const role = String(log.actorRole || actor.role || '').toLowerCase();
   if (role === 'employer' && actor.employerProfile?.companyName) {
     return actor.employerProfile.companyName;
   }
@@ -171,14 +190,25 @@ const getActorDisplayName = (log = {}) => {
     .join(' ');
 
   if (personName) return personName;
-  if (role === 'admin' || role === 'subadmin') return 'System Admin';
   return actor.username || actor.email || storedName || 'Unknown user';
 };
 
 const getActorEmail = (log = {}) => {
+  const actor = log.actor && typeof log.actor === 'object' ? log.actor : null;
+  const role = String(log.actorRole || actor?.role || '').toLowerCase();
+
+  if (actor && (role === 'admin' || role === 'subadmin')) {
+    return String(
+      actor?.adminProfile?.email ||
+      actor?.adminProfile?.subAdminEmail ||
+      actor?.email ||
+      log.actorEmail ||
+      ''
+    ).trim();
+  }
+
   const storedEmail = String(log.actorEmail || '').trim();
   if (storedEmail) return storedEmail;
-  const actor = log.actor && typeof log.actor === 'object' ? log.actor : null;
   return actor?.email || '';
 };
 
