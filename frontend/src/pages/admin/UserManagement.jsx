@@ -1665,7 +1665,6 @@ const UserManagement = () => {
                   }}
                   className={inputBase}
                   placeholder="Search name, company, email..."
-                  disabled={loading}
                   autoComplete="off"
                 />
                 {query && (

@@ -1141,7 +1141,6 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                     onChange={(e) => setSearchDraft(e.target.value)}
                     className={cn(inputBase, "pl-11 pr-10")}
                     placeholder="Search company, email..."
-                    disabled={loading}
                   />
 
                   {searchDraft ? (
