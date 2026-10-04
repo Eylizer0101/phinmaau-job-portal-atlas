@@ -2003,7 +2003,10 @@ exports.getAdminAnalytics = async (req, res) => {
     ];
 
     const campusHireRate = DASHBOARD_CAMPUSES.map((campus) => {
-      const campusApplications = applications.filter((item) => {
+      // Use the same countable application set as the Applications KPI/report:
+      // pending, for interview, hired, and declined only, excluding archived declined records.
+      // This keeps Hire Rate by Campus consistent with the AGAPAY Records Report.
+      const campusApplications = countableApplications.filter((item) => {
         const seeker = userById.get(analyticsId(item.jobseeker));
         return getJobseekerCampus(seeker) === campus;
       });
