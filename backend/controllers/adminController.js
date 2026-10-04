@@ -1767,9 +1767,21 @@ exports.getAdminAnalytics = async (req, res) => {
 
     const isVerifiedActiveDashboardUser = (user) => {
       const role = analyticsLower(user?.role);
+      const status = analyticsLower(user?.status);
+
       if (!['jobseeker', 'employer'].includes(role)) return false;
-      if (user?.isActive === false || analyticsLower(user?.status) === 'inactive') return false;
-      return analyticsVerificationStatus(user) === 'verified';
+      if (user?.isActive === false || ['deleted', 'inactive'].includes(status)) return false;
+      if (role === 'employer' && user?.inactiveBySystem === true) return false;
+
+      if (role === 'jobseeker') {
+        return (
+          analyticsLower(user?.jobSeekerProfile?.verificationDocs?.overallStatus) === 'verified' ||
+          analyticsLower(user?.jobSeekerProfile?.verificationStatus) === 'verified' ||
+          user?.isVerified === true
+        );
+      }
+
+      return analyticsLower(user?.employerProfile?.verificationDocs?.overallStatus) === 'verified';
     };
 
     const verifiedActiveUsers = users.filter(isVerifiedActiveDashboardUser);
