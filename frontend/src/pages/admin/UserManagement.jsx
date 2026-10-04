@@ -1156,7 +1156,10 @@ const UserManagement = () => {
 
   const persistedFilterState = readAgapayAdminUserManagementFiltersState();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [roleFilter, setRoleFilter] = useState(() => location.state?.roleFilter || persistedFilterState.roleFilter || 'all');
+  const [roleFilter, setRoleFilter] = useState(() => {
+    const savedRole = location.state?.roleFilter || persistedFilterState.roleFilter || 'all';
+    return ['jobseeker', 'employer'].includes(savedRole) ? savedRole : 'all';
+  });
   const [campusFilter, setCampusFilter] = useState(() => persistedFilterState.campusFilter || 'all');
   const [courseFilter, setCourseFilter] = useState(() => persistedFilterState.courseFilter || 'all');
   const [companyFilter, setCompanyFilter] = useState(() => persistedFilterState.companyFilter || 'all');
@@ -1713,7 +1716,6 @@ const UserManagement = () => {
                 aria-label="Filter by role"
               >
                 <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
                 <option value="jobseeker">Jobseeker</option>
                 <option value="employer">Employer</option>
               </select>

@@ -2176,7 +2176,11 @@ exports.getAllUsers = async (req, res) => {
       // System-archived inactive employers belong in Admin Archive, not User Management.
       $nor: [{ role: 'employer', inactiveBySystem: true }],
     };
-    const andConditions = [verifiedUserCondition];
+    const andConditions = [
+      verifiedUserCondition,
+      // System Admin must still count in dashboard totals, but must not appear in User Management.
+      { role: { $ne: 'admin' } },
+    ];
 
     if (role && role !== 'all') {
       baseQuery.role = role;
@@ -2299,7 +2303,11 @@ exports.getAllUsers = async (req, res) => {
     const metadataQuery = {
       status: { $ne: 'deleted' },
       $nor: [{ role: 'employer', inactiveBySystem: true }],
-      $and: [verifiedUserCondition],
+      $and: [
+        verifiedUserCondition,
+        // Keep User Management metadata/options aligned with the visible non-admin user list.
+        { role: { $ne: 'admin' } },
+      ],
     };
 
     const metadataPromise = includeMeta
