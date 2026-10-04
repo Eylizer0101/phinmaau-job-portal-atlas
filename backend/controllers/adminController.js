@@ -6408,7 +6408,7 @@ const addExportDataRows = (worksheet, startRow, rows) => {
       const cell = row.getCell(columnIndex + 1);
       cell.value = value === undefined || value === null ? '' : value;
       cell.font = { name: 'Arial', size: 9 };
-      cell.alignment = { vertical: 'top', wrapText: true };
+      cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
       cell.border = {
         top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
         left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
@@ -6922,7 +6922,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               margin: 8mm 0 1.5mm;
               text-align: center;
               color: #123f35;
-              font-size: 21pt;
+              font-size: 23pt;
               line-height: 1;
               font-weight: 800;
               letter-spacing: 0.2px;
@@ -6996,7 +6996,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
               </div>
               <div class="header-divider"></div>
 
-              <h1>AGAPAY RECORDS REPORTS</h1>
+              <h1>AGAPAY RECORDS REPORT</h1>
               <div class="date">Date: ${escapePdfHtml(reportDate)}</div>
 
               <div class="summary">
@@ -7016,8 +7016,8 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
                   <thead>
                     <tr>
                       <th>Campus</th>
-                      <th>Total Applications</th>
-                      <th>Total Hired</th>
+                      <th>Applications</th>
+                      <th>Hired</th>
                       <th>Hired Rate</th>
                     </tr>
                   </thead>
@@ -7135,7 +7135,7 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     const applicationHeaders = ['Date Applied', 'Full Name', 'Email', 'Contact Number', 'Age', 'Civil Status', 'Gender', 'Campus', 'Course', 'Year Graduated', 'Region', 'Province', 'City / Municipality', 'Company Name', 'Job Title', 'Work Mode', 'Employment Type', 'Application Status', 'Processing Time', 'Times Applied', 'Hired Date'];
 
     const jobSeekerSheet = workbook.addWorksheet('Job Seeker');
-    styleExportWorksheet(jobSeekerSheet, 'Phinma Araullo University - Job Seeker List', jobSeekerHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24]);
+    styleExportWorksheet(jobSeekerSheet, 'Phinma Araullo University - Job Seeker', jobSeekerHeaders, [14, 24, 26, 16, 7, 14, 12, 14, 24, 14, 18, 18, 20]);
     addExportDataRows(jobSeekerSheet, 5, jobseekers.map((user) => {
       const profile = user.jobSeekerProfile || {};
       const address = exportAddressParts(profile, false);
@@ -7144,7 +7144,7 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     addApprovedBySection(jobSeekerSheet, 5 + jobseekers.length + 2, jobSeekerHeaders.length);
 
     const employerSheet = workbook.addWorksheet('Employer');
-    styleExportWorksheet(employerSheet, 'Phinma Araullo University - Employer List', employerHeaders, [16, 28, 30, 17, 32, 24, 20, 20, 24]);
+    styleExportWorksheet(employerSheet, 'Phinma Araullo University - Employer', employerHeaders, [14, 24, 26, 16, 26, 22, 18, 18, 20]);
     addExportDataRows(employerSheet, 5, employers.map((user) => {
       const profile = user.employerProfile || {};
       const address = exportAddressParts(profile, true);
@@ -7153,7 +7153,7 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     addApprovedBySection(employerSheet, 5 + employers.length + 2, employerHeaders.length);
 
     const jobOfferSheet = workbook.addWorksheet('Job Offers');
-    styleExportWorksheet(jobOfferSheet, 'Phinma Araullo University - Job Offers List', jobOfferHeaders, [16, 30, 24, 32, 18, 22, 12, 12, 14, 16]);
+    styleExportWorksheet(jobOfferSheet, 'Phinma Araullo University - Job Offers', jobOfferHeaders, [14, 26, 22, 28, 16, 18, 10, 10, 12, 14]);
     addExportDataRows(jobOfferSheet, 5, filteredJobs.map((job) => {
       const employer = userById.get(String(job.employer || ''));
       return [exportDate(job.publishedAt || job.createdAt), job.companyName || employer?.employerProfile?.companyName || '', employer?.employerProfile?.industry || job.category || '', job.title || '', job.workMode || '', job.jobType || '', Number(job.vacancies || 0), applicationsByJob.get(String(job._id)) || Number(job.applicationCount || 0), getAdminJobOfferStatus(job), exportDate(job.applicationDeadline)];
@@ -7161,7 +7161,7 @@ exports.exportAdminRecordsExcel = async (req, res) => {
     addApprovedBySection(jobOfferSheet, 5 + filteredJobs.length + 2, jobOfferHeaders.length);
 
     const applicationSheet = workbook.addWorksheet('Applications');
-    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications List', applicationHeaders, [16, 28, 30, 17, 8, 16, 13, 16, 34, 16, 20, 20, 24, 30, 32, 18, 22, 20, 18, 15, 16]);
+    styleExportWorksheet(applicationSheet, 'Phinma Araullo University - Applications', applicationHeaders, [14, 24, 26, 16, 7, 14, 12, 14, 24, 14, 18, 18, 20, 26, 28, 16, 18, 16, 16, 12, 14]);
     addExportDataRows(applicationSheet, 5, filteredApplications.map((application) => {
       const seeker = userById.get(String(application.jobseeker || '')) || {};
       const profile = seeker.jobSeekerProfile || {};

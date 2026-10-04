@@ -414,7 +414,7 @@ const AdminFilterRecords = () => {
             <div className="relative z-10 mx-3 rounded-xl bg-white p-4 shadow-sm">
               <SelectField label="Role" value={filters.role} onChange={changeRole} options={ROLE_OPTIONS} placeholder="Select Role" />
 
-              {showJobseekerFilters ? (
+              {(showJobseekerFilters || showApplicationFilters) ? (
                 <>
                   <div className="mt-3"><SelectField label="Campus" value={filters.campus} onChange={(value) => setFilter("campus", value)} options={optionItems(options.campuses)} placeholder="All Campus" /></div>
                   <div className="mt-3"><SelectField label="Course" value={filters.course} onChange={(value) => setFilter("course", value)} options={optionItems(options.courses)} placeholder="All Course" /></div>
@@ -423,8 +423,8 @@ const AdminFilterRecords = () => {
                 </>
               ) : null}
 
-              {showEmployerFilters ? <div className="mt-3"><SelectField label="Company Name" value={filters.companyName} onChange={(value) => setFilter("companyName", value)} options={optionItems(options.companyNames)} placeholder="All Company Name" /></div> : null}
-              {showEmployerFilters ? <div className="mt-3"><SelectField label="Industry" value={filters.industry} onChange={(value) => setFilter("industry", value)} options={optionItems(options.industries)} placeholder="All Industry" /></div> : null}
+              {(showEmployerFilters || showJobOfferFilters) ? <div className="mt-3"><SelectField label="Company Name" value={filters.companyName} onChange={(value) => setFilter("companyName", value)} options={optionItems(options.companyNames)} placeholder="All Company Name" /></div> : null}
+              {(showEmployerFilters || showJobOfferFilters) ? <div className="mt-3"><SelectField label="Industry" value={filters.industry} onChange={(value) => setFilter("industry", value)} options={optionItems(options.industries)} placeholder="All Industry" /></div> : null}
 
               {showApplicationFilters ? <div className="mt-3"><SelectField label="Company Name" value={filters.companyName} onChange={(value) => setFilter("companyName", value)} options={optionItems(options.companyNames)} placeholder="All Company Name" /></div> : null}
               {showApplicationFilters ? <div className="mt-3"><SelectField label="Job Title" value={filters.jobTitle} onChange={(value) => setFilter("jobTitle", value)} options={optionItems(options.jobTitles)} placeholder="All Job Title" /></div> : null}
