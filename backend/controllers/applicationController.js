@@ -2268,15 +2268,28 @@ exports.restoreDeclinedApplication = async (req, res) => {
       });
     }
 
-    application.isDeclinedArchived = false;
-    application.declinedArchivedAt = null;
-
-    await application.save();
+    // Restore only the archive flags directly in MongoDB.
+    // This avoids re-validating unrelated legacy fields on older application
+    // records, which can make one archived record fail to restore even though
+    // other newer records restore successfully.
+    const restoredApplication = await Application.findByIdAndUpdate(
+      applicationId,
+      {
+        $set: {
+          isDeclinedArchived: false,
+          declinedArchivedAt: null
+        }
+      },
+      {
+        new: true,
+        runValidators: false
+      }
+    );
 
     return res.status(200).json({
       success: true,
       message: 'Declined application restored successfully',
-      application
+      application: restoredApplication
     });
   } catch (error) {
     console.error('Error restoring declined application:', error);
