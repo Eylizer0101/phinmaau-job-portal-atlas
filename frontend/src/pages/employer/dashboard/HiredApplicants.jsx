@@ -1733,7 +1733,7 @@ const selectBase =
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setReviewStep('actions')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={() => setReviewStep('actions')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Cancel</button>
               <button type="button" onClick={() => handleReviewStatusRequest('approved')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-60">{reviewLoading ? 'Processing...' : 'Approve Request'}</button>
             </div>
           </div>
@@ -1785,7 +1785,7 @@ const selectBase =
             </label>
             {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={() => { setError(''); setReviewStep('actions'); }} disabled={reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Cancel</button>
               <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={!declineReason || !declineExplanation.trim() || reviewLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{reviewLoading ? 'Processing...' : 'Decline Request'}</button>
             </div>
           </div>

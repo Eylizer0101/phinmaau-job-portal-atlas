@@ -2298,7 +2298,7 @@ const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, 
           </label>
 
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <button type="button" onClick={() => onModeChange('review')} disabled={loading} className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+            <button type="button" onClick={() => onModeChange('review')} disabled={loading} className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Cancel</button>
             <button type="button" onClick={() => onReview('declined')} disabled={!declineReason || !declineComment.trim() || loading} className="inline-flex h-10 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300">{loading ? 'Processing...' : 'Decline Request'}</button>
           </div>
         </div>

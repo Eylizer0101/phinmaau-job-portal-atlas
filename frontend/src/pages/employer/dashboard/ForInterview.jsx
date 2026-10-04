@@ -1086,12 +1086,14 @@ const HiringStageModal = ({
   const [customStage, setCustomStage] = useState('');
   const [localError, setLocalError] = useState('');
   const [selectedStage, setSelectedStage] = useState('');
+  const [stageSuggestionsOpen, setStageSuggestionsOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
       setCustomStage('');
       setLocalError('');
       setSelectedStage(String(application?.hiringStage || '').trim());
+      setStageSuggestionsOpen(false);
     }
   }, [open, application?._id]);
 
@@ -1123,10 +1125,12 @@ const HiringStageModal = ({
     const added = await onAddCustom(value);
     if (added === true) {
       setCustomStage('');
+      setStageSuggestionsOpen(false);
       setSelectedStage(value);
       await onSelect(value);
     } else if (added === 'handled') {
       setCustomStage('');
+      setStageSuggestionsOpen(false);
     }
   };
 
@@ -1161,21 +1165,78 @@ const HiringStageModal = ({
               Type the stage this applicant is currently in
             </label>
             <div className="mt-2 flex gap-2">
-              <input
-                id="customHiringStage"
-                value={customStage}
-                disabled={busy || isFinalized}
-                onChange={(event) => setCustomStage(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    addCustomStage();
-                  }
-                }}
-                maxLength={35}
-                placeholder="e.g. Initial Interview, Assessment, Job Offer"
-                className="h-11 min-w-0 flex-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-              />
+              <div className="relative min-w-0 flex-1">
+                <input
+                  id="customHiringStage"
+                  value={customStage}
+                  disabled={busy || isFinalized}
+                  autoComplete="off"
+                  onFocus={() => setStageSuggestionsOpen(true)}
+                  onBlur={() => {
+                    window.setTimeout(() => setStageSuggestionsOpen(false), 120);
+                  }}
+                  onChange={(event) => {
+                    setCustomStage(event.target.value);
+                    setStageSuggestionsOpen(true);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      setStageSuggestionsOpen(false);
+                      return;
+                    }
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addCustomStage();
+                    }
+                  }}
+                  maxLength={35}
+                  placeholder="Type a stage or choose Hired / Declined"
+                  className="h-11 w-full rounded-xl border border-gray-300 px-4 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                  aria-autocomplete="list"
+                  aria-expanded={stageSuggestionsOpen}
+                  aria-controls="hiring-stage-suggestions"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  disabled={busy || isFinalized}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => setStageSuggestionsOpen((previous) => !previous)}
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 hover:text-[#2e66a6] disabled:opacity-50"
+                  aria-label="Show hiring stage suggestions"
+                >
+                  <Icon name="chevron-down" className="h-4 w-4" />
+                </button>
+
+                {stageSuggestionsOpen && !busy && !isFinalized ? (
+                  <div
+                    id="hiring-stage-suggestions"
+                    role="listbox"
+                    className="absolute left-0 right-0 top-[46px] z-30 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+                  >
+                    {['Hired', 'Declined'].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        role="option"
+                        aria-selected={isSameHiringStage(customStage, option)}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setCustomStage(option);
+                          setLocalError('');
+                          setStageSuggestionsOpen(false);
+                        }}
+                        className={cn(
+                          'flex w-full items-center px-4 py-2.5 text-left text-sm font-semibold transition hover:bg-[#f4f8fd]',
+                          option === 'Hired' ? 'text-green-700' : 'text-red-600'
+                        )}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <button
                 type="button"
                 disabled={busy || isFinalized || !customStage.trim()}
@@ -2321,9 +2382,9 @@ const selectBase =
                       <col className="w-[12%]" />
                       <col className="w-[25%]" />
                       <col className="w-[15%]" />
+                      <col className="w-[19%]" />
                       <col className="w-[16%]" />
-                      <col className="w-[17%]" />
-                      <col className="w-[15%]" />
+                      <col className="w-[13%]" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-gray-50 [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
