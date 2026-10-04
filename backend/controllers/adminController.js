@@ -1560,7 +1560,7 @@ exports.getAdminAnalytics = async (req, res) => {
     const [usersAll, jobsAll, applicationsAll, editRequestsAll, messagesAll, conversationPreferencesAll,
       notificationsAll, verificationRequestsAll, systemLogsAll] = await Promise.all([
       User.find({ status: { $ne: 'deleted' } })
-        .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.howSoonCanYouStart jobSeekerProfile.willingToRelocate jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.experience jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated jobSeekerProfile.educationEntries.educationalAttainment jobSeekerProfile.educationEntries.level jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
+        .select('role status isActive inactiveBySystem isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.howSoonCanYouStart jobSeekerProfile.willingToRelocate jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.experience jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated jobSeekerProfile.educationEntries.educationalAttainment jobSeekerProfile.educationEntries.level jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
       Job.find({}).select('employer companyName status statusBeforeArchive isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount applicationDeadline publishedAt filledAt closedAt archivedAt createdAt updatedAt').lean(),
       Application.find({}).select('job jobseeker employer status lastActiveStatus isDeclinedArchived withdrawalCount withdrawnAt appliedAt reviewedAt viewedAt hiredAt employmentStatus employmentStatusRequest.reason employmentStatusRequest.status employmentStatusRequest.requestedAt interviewSchedule activityHistory createdAt updatedAt').lean(),
@@ -1785,6 +1785,14 @@ exports.getAdminAnalytics = async (req, res) => {
     };
 
     const verifiedActiveUsers = users.filter(isVerifiedActiveDashboardUser);
+    const countableTrendUsers = users.filter((user) => {
+      const role = analyticsLower(user?.role);
+      const status = analyticsLower(user?.status);
+
+      if (user?.isActive === false || ['deleted', 'inactive'].includes(status)) return false;
+      if (role === 'admin') return true;
+      return isVerifiedActiveDashboardUser(user);
+    });
     const countableJobs = jobs.filter((job) => {
       const status = analyticsLower(job?.status);
       return job?.isArchived !== true && job?.isPublished !== false && status !== 'draft';
@@ -2045,7 +2053,12 @@ exports.getAdminAnalytics = async (req, res) => {
         unreadMessages: messages.filter((item) => !item.isRead).length,
         systemFailures: failedLogs,
       },
-      trends: analyticsTrendRows({ users, jobs, applications, dateField: 'primary' }),
+      trends: analyticsTrendRows({
+        users: countableTrendUsers,
+        jobs: countableJobs,
+        applications: countableApplications,
+        dateField: 'primary',
+      }),
       sections: {
         users: {
           roles: analyticsCountRows(users, (item) => item.role),
