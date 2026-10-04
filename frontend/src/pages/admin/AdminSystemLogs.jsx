@@ -58,14 +58,12 @@ const ActorAvatar = ({ image, name }) => {
 const ROLE_OPTIONS = [
   ['all', 'All Roles'],
   ['admin', 'Admin'],
-  ['subadmin', 'Sub Admin'],
   ['jobseeker', 'Jobseeker'],
   ['employer', 'Employer'],
 ];
 const formatActorRole = (role) => {
   const value = String(role || '').toLowerCase();
-  if (value === 'subadmin') return 'Sub Admin';
-  if (value === 'admin') return 'Admin';
+  if (value === 'subadmin' || value === 'admin') return 'Admin';
   if (value === 'jobseeker') return 'Jobseeker';
   if (value === 'employer') return 'Employer';
   if (value === 'system') return 'System';

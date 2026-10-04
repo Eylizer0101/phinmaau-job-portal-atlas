@@ -25,7 +25,8 @@ const cleanText = (value, maxLength = MAX_TEXT) =>
 
 const normalizeRole = (value) => {
   const role = cleanText(value, 30).toLowerCase();
-  return ['admin', 'subadmin', 'employer', 'jobseeker', 'system'].includes(role) ? role : 'unknown';
+  if (role === 'subadmin') return 'admin';
+  return ['admin', 'employer', 'jobseeker', 'system'].includes(role) ? role : 'unknown';
 };
 
 const maskIpAddress = (value) => {

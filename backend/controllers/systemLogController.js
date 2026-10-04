@@ -102,7 +102,10 @@ const buildQuery = (queryParams = {}) => {
 
   const visibleRoles = ['admin', 'subadmin', 'jobseeker', 'employer'];
 
-  if (visibleRoles.includes(role)) {
+  if (role === 'admin') {
+    // Keep legacy Sub Admin audit records visible under the single Admin role.
+    query.actorRole = { $in: ['admin', 'subadmin'] };
+  } else if (['jobseeker', 'employer'].includes(role)) {
     query.actorRole = role;
   } else {
     query.actorRole = { $in: visibleRoles };
@@ -154,7 +157,9 @@ const normalizeLog = (log = {}) => ({
   actorImage: getActorImage(log),
   actorName: log.actorName || 'Unknown user',
   actorEmail: log.actorEmail || '',
-  actorRole: log.actorRole || 'unknown',
+  actorRole: String(log.actorRole || '').toLowerCase() === 'subadmin'
+    ? 'admin'
+    : (log.actorRole || 'unknown'),
   action: log.action || '',
   actionLabel: log.actionLabel || log.action || 'System action',
   module: log.module || 'System',
