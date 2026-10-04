@@ -731,13 +731,13 @@ exports.createJob = async (req, res) => {
     if (!isDraft && !provinceValue) {
       return res.status(400).json({
         success: false,
-        message: 'Province is required.'
+        message: 'Complete work address must include a valid Philippine province.'
       });
     }
     if (!isDraft && !cityValue) {
       return res.status(400).json({
         success: false,
-        message: 'City / Municipality is required.'
+        message: 'Complete work address must include a valid city / municipality.'
       });
     }
 
@@ -1565,6 +1565,29 @@ exports.updateJob = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: 'Complete work address is required.'
+        });
+      }
+    }
+
+    if (req.body.location !== undefined) {
+      const provinceValue = String(
+        req.body.locationProvince !== undefined ? req.body.locationProvince : job.locationProvince || ''
+      ).trim();
+      const cityValue = String(
+        req.body.locationCity !== undefined ? req.body.locationCity : job.locationCity || ''
+      ).trim();
+
+      if (!provinceValue) {
+        return res.status(400).json({
+          success: false,
+          message: 'Complete work address must include a valid Philippine province.'
+        });
+      }
+
+      if (!cityValue) {
+        return res.status(400).json({
+          success: false,
+          message: 'Complete work address must include a valid city / municipality.'
         });
       }
     }

@@ -785,8 +785,15 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
           disabled={disabled}
           onChange={(e) => {
             const nextValue = e.target.value;
+            const { province, city } = extractStructuredLocation({}, nextValue);
             setQuery(nextValue);
-            onChange({ address: nextValue, lat: latitude || '', lng: longitude || '', province: '', city: '' });
+            onChange({
+              address: nextValue,
+              lat: latitude || '',
+              lng: longitude || '',
+              province,
+              city,
+            });
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -1591,9 +1598,9 @@ const PostJob = () => {
     } else if ((touched.location || submitted) && formData.location.trim().length > 150) {
       errors.location = 'Complete work address must not exceed 150 characters.';
     } else if (submitted && !String(formData.locationProvince || '').trim()) {
-      errors.location = 'Province is required. Please choose a Philippine address from the map results.';
+      errors.location = 'Complete work address must include a valid Philippine province.';
     } else if (submitted && !String(formData.locationCity || '').trim()) {
-      errors.location = 'City / Municipality is required. Please choose a Philippine address from the map results.';
+      errors.location = 'Complete work address must include a valid city / municipality.';
     }
 
     if ((touched.jobType || submitted) && !String(formData.jobType || '').trim()) {
@@ -1669,8 +1676,8 @@ const PostJob = () => {
     if (!requirementsText) return 'Job requirements are required';
     if (requirementsText.length < JOB_REQUIREMENTS_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 500 to 2,000 characters';
     if (!formData.location.trim()) return 'Complete work address is required';
-    if (!String(formData.locationProvince || '').trim()) return 'Province is required';
-    if (!String(formData.locationCity || '').trim()) return 'City / Municipality is required';
+    if (!String(formData.locationProvince || '').trim()) return 'Complete work address must include a valid Philippine province';
+    if (!String(formData.locationCity || '').trim()) return 'Complete work address must include a valid city / municipality';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be from today through 6 months from today';
     if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
@@ -2610,27 +2617,7 @@ const PostJob = () => {
                           />
                         </Field>
 
-                        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                          <Field id="locationProvince" label="Province" required>
-                            <input
-                              id="locationProvince"
-                              value={formData.locationProvince}
-                              readOnly
-                              className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900"
-                              placeholder="Select an address above"
-                            />
-                          </Field>
 
-                          <Field id="locationCity" label="City / Municipality" required>
-                            <input
-                              id="locationCity"
-                              value={formData.locationCity}
-                              readOnly
-                              className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900"
-                              placeholder="Select an address above"
-                            />
-                          </Field>
-                        </div>
                         </div>
                       </div>
                     </section>

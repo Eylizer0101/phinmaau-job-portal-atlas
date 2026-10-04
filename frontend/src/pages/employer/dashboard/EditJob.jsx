@@ -12,6 +12,7 @@ import {
   WILLING_TO_RELOCATE_OPTIONS,
   PERKS_AND_BENEFITS_OPTIONS
 } from '../../../constants/postJobDropdownOptions';
+import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 import {
   FaBold,
   FaItalic,
@@ -499,6 +500,60 @@ const toCoordinate = (value) => {
   return Number.isFinite(n) ? n : null;
 };
 
+const ALL_PH_PROVINCES = Array.from(
+  new Set(Object.values(PH_PROVINCES_BY_REGION).flat().filter(Boolean))
+);
+
+const ALL_PH_CITIES = Array.from(
+  new Set(Object.values(PH_CITIES_BY_PROVINCE).flat().filter(Boolean))
+);
+
+const normalizeLocationLookup = (value = '') =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/\bcity of\b/g, '')
+    .replace(/\bcity\b/g, '')
+    .replace(/[^a-z0-9ñ\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const findKnownLocation = (value, options = []) => {
+  const normalized = normalizeLocationLookup(value);
+  if (!normalized) return '';
+
+  return (
+    options.find((option) => normalizeLocationLookup(option) === normalized) ||
+    options.find((option) => normalized.includes(normalizeLocationLookup(option))) ||
+    ''
+  );
+};
+
+const extractStructuredLocation = (addressDetails = {}, displayName = '') => {
+  const rawProvince =
+    addressDetails.province ||
+    addressDetails.state_district ||
+    addressDetails.state ||
+    '';
+
+  const rawCity =
+    addressDetails.city ||
+    addressDetails.municipality ||
+    addressDetails.town ||
+    addressDetails.village ||
+    addressDetails.city_district ||
+    '';
+
+  const province =
+    findKnownLocation(rawProvince, ALL_PH_PROVINCES) ||
+    findKnownLocation(displayName, ALL_PH_PROVINCES);
+
+  const city =
+    findKnownLocation(rawCity, ALL_PH_CITIES) ||
+    findKnownLocation(displayName, ALL_PH_CITIES);
+
+  return { province, city };
+};
+
 const createPinIcon = () => {
   return L.divIcon({
     className: 'agapay-leaflet-pin',
@@ -575,18 +630,19 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       }
 
       const address = data?.display_name || `${roundedLat}, ${roundedLng}`;
+      const { province, city } = extractStructuredLocation(data?.address || {}, address);
 
       setQuery(address);
       setResults([]);
       setStatus('Exact map location selected.');
-      onChange({ address, lat: roundedLat, lng: roundedLng });
+      onChange({ address, lat: roundedLat, lng: roundedLng, province, city });
       updateMarker(roundedLat, roundedLng, false);
     } catch (err) {
       const fallbackAddress = `${roundedLat}, ${roundedLng}`;
       setQuery(fallbackAddress);
       setResults([]);
       setStatus('Location selected. Address lookup failed, but coordinates are saved.');
-      onChange({ address: fallbackAddress, lat: roundedLat, lng: roundedLng });
+      onChange({ address: fallbackAddress, lat: roundedLat, lng: roundedLng, province: '', city: '' });
       updateMarker(roundedLat, roundedLng, false);
     }
   }, [onChange, updateMarker]);
@@ -602,7 +658,7 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
     setStatus('Searching location...');
 
     try {
-      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=ph&accept-language=en&q=${encodeURIComponent(clean)}`;
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=ph&accept-language=en&q=${encodeURIComponent(clean)}`;
       const response = await fetch(url);
       const data = await response.json();
       const philippinesResults = (Array.isArray(data) ? data : []).filter((item) =>
@@ -633,11 +689,12 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
     const address = item.display_name || `${nextLat}, ${nextLng}`;
     const roundedLat = Number(nextLat.toFixed(6));
     const roundedLng = Number(nextLng.toFixed(6));
+    const { province, city } = extractStructuredLocation(item?.address || {}, address);
 
     setQuery(address);
     setResults([]);
     setStatus('Exact map location selected.');
-    onChange({ address, lat: roundedLat, lng: roundedLng });
+    onChange({ address, lat: roundedLat, lng: roundedLng, province, city });
     updateMarker(roundedLat, roundedLng, true);
   }, [onChange, updateMarker]);
 
@@ -789,8 +846,15 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
           disabled={disabled}
           onChange={(e) => {
             const nextValue = e.target.value;
+            const { province, city } = extractStructuredLocation({}, nextValue);
             setQuery(nextValue);
-            onChange({ address: nextValue, lat: latitude || '', lng: longitude || '' });
+            onChange({
+              address: nextValue,
+              lat: latitude || '',
+              lng: longitude || '',
+              province,
+              city,
+            });
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -1538,6 +1602,8 @@ const EditJob = () => {
       String(formData.jobType || '').trim() &&
       String(formData.workMode || '').trim() &&
       String(formData.location || '').trim() &&
+      String(formData.locationProvince || '').trim() &&
+      String(formData.locationCity || '').trim() &&
       getRichTextPlainText(formData.description).length >= JOB_DESCRIPTION_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
       getRichTextPlainText(formData.requirements).length >= JOB_REQUIREMENTS_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
       EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
@@ -1569,6 +1635,8 @@ const EditJob = () => {
     3: Boolean(skillsCountValid),
     4: Boolean(
       String(formData.location || '').trim() &&
+      String(formData.locationProvince || '').trim() &&
+      String(formData.locationCity || '').trim() &&
       WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())
     ),
   }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
@@ -1641,6 +1709,10 @@ const EditJob = () => {
       errors.location = 'Complete work address is required.';
     } else if ((touched.location || submitted) && String(formData.location || '').trim().length > 150) {
       errors.location = 'Complete work address must not exceed 150 characters.';
+    } else if (submitted && canEditSection('Work Locations') && !String(formData.locationProvince || '').trim()) {
+      errors.location = 'Complete work address must include a valid Philippine province.';
+    } else if (submitted && canEditSection('Work Locations') && !String(formData.locationCity || '').trim()) {
+      errors.location = 'Complete work address must include a valid city / municipality.';
     }
 
     if ((touched.jobType || submitted) && !String(formData.jobType || '').trim()) {
@@ -1779,6 +1851,8 @@ const EditJob = () => {
     if (canEditSection('Work Locations')) {
       if (!String(formData.location || '').trim()) return 'Complete work address is required';
       if (String(formData.location || '').trim().length > 150) return 'Complete work address must not exceed 150 characters';
+      if (!String(formData.locationProvince || '').trim()) return 'Complete work address must include a valid Philippine province';
+      if (!String(formData.locationCity || '').trim()) return 'Complete work address must include a valid city / municipality';
 
       const relocate = String(formData.willingToRelocate || '').trim();
       if (!relocate) return 'Willing to relocate option is required';
@@ -1876,8 +1950,8 @@ const EditJob = () => {
     appendSectionField('Skills & Benefits', 'perksAndBenefits', JSON.stringify(formData.perksAndBenefits || []));
 
     appendSectionField('Work Locations', 'location', String(formData.location || '').trim());
-    appendSectionField('Work Locations', 'locationProvince', '');
-    appendSectionField('Work Locations', 'locationCity', '');
+    appendSectionField('Work Locations', 'locationProvince', String(formData.locationProvince || '').trim());
+    appendSectionField('Work Locations', 'locationCity', String(formData.locationCity || '').trim());
     appendSectionField('Work Locations', 'willingToRelocate', String(formData.willingToRelocate || '').trim());
     appendSectionField('Work Locations', 'locationLatitude', String(formData.locationLatitude || ''));
     appendSectionField('Work Locations', 'locationLongitude', String(formData.locationLongitude || ''));
@@ -3068,10 +3142,12 @@ const EditJob = () => {
                             disabled={isSectionFieldDisabled('Work Locations')}
                             error={fieldErrors.location}
                             placeholder="e.g., Unit 201, ABC Building, 123 Rizal St., Brgy. San Roque, Cabanatuan City, Nueva Ecija."
-                            onChange={({ address, lat, lng }) => {
+                            onChange={({ address, lat, lng, province = '', city = '' }) => {
                               setFormData((prev) => ({
                                 ...prev,
                                 location: address,
+                                locationProvince: province,
+                                locationCity: city,
                                 locationLatitude: lat,
                                 locationLongitude: lng,
                               }));
