@@ -298,7 +298,7 @@ const resumeStyles = `
     }
 
     .resume-inner {
-      padding: 13mm 8mm 9mm !important;
+      padding: 7mm 8mm 9mm !important;
       min-height: auto !important;
       display: block !important;
     }
@@ -359,7 +359,7 @@ const resumeStyles = `
   .resume-inner {
     width: 100%;
     max-width: 100%;
-    padding: 13mm 8mm 9mm;
+    padding: 7mm 8mm 9mm;
     position: relative;
     min-height: 297mm;
     box-sizing: border-box;
@@ -704,7 +704,7 @@ const resumeStyles = `
   }
 
   .resume-paper.resume-fit-one-page .resume-inner {
-    padding-top: 10mm;
+    padding-top: 6mm;
     padding-bottom: 7mm;
   }
 
