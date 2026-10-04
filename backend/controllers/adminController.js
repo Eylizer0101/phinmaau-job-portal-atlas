@@ -6727,7 +6727,7 @@ const escapePdfHtml = (value) => exportText(value)
   .replace(/'/g, '&#039;');
 
 exports.exportAdminFilterRecordsPdf = async (req, res) => {
-  let browser = null;
+  let page = null;
   try {
     const payload = await buildAdminFilterRecords(req.body?.filters || {});
     const columns = adminFilterRecordColumns[payload.role] || adminFilterRecordColumns.all;
@@ -6751,10 +6751,9 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
     <div class="approval"><div class="label">APPROVED BY:</div><div class="name">JAN KRISTINE A. INOCENCIO</div><div class="role">LINKAGES MANAGER</div></div>
     </body></html>`;
 
-    const puppeteer = require('puppeteer');
-    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const browser = await getAdminReportBrowser();
+    page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
     const pdf = await page.pdf({ format: 'A4', landscape: true, printBackground: true, margin: { top: '12mm', right: '10mm', bottom: '12mm', left: '10mm' } });
 
     const safeRole = payload.role === 'jobOffer' ? 'job-offers' : payload.role;
@@ -6767,7 +6766,7 @@ exports.exportAdminFilterRecordsPdf = async (req, res) => {
     console.error('Admin filter records PDF export error:', error);
     return res.status(500).json({ success: false, message: 'Unable to generate the PDF export.' });
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    if (page) await page.close().catch(() => {});
   }
 };
 
