@@ -5012,7 +5012,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
           * { box-sizing: border-box; }
           body { margin: 0; background: #ffffff; color: #111111; font-family: Georgia, 'Times New Roman', serif; font-size: 8.7px; line-height: 1.18; }
           .resume-paper { width: 210mm; background: #ffffff; }
-          .resume-inner { padding: 16mm 16mm 12mm; position: relative; }
+          .resume-inner { padding: 16mm 12mm 12mm; position: relative; }
           .resume-header { position: relative; min-height: 62px; padding-right: 98px; text-align: center; }
           .resume-name { margin: 0; padding-top: 5px; font-size: 17px; line-height: 1; font-weight: 700; letter-spacing: 0.55px; text-transform: uppercase; }
           .resume-contact { margin-top: 5px; color: #222222; font-size: 6.7px; line-height: 1.35; }

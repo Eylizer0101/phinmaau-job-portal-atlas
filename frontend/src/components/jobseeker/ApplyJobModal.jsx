@@ -811,25 +811,29 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
                         </div>
 
-                        <div className="mt-4 sm:mt-5 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 sm:px-7 py-4 sm:py-5 font-bold text-black/80 leading-[1.65] text-[14px] sm:text-[15px] text-left shadow-[0_10px_30px_rgba(30,75,160,0.08)]">
-                          <p className="font-bold text-black/80">
-                            After updating your profile and applying to this job, your personal information
-                            will be collected and processed for recruitment and hiring purposes.
+                        <div className="mt-4 sm:mt-5 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 sm:px-7 py-4 sm:py-5 text-black/80 leading-[1.65] text-[14px] sm:text-[15px] text-left shadow-[0_10px_30px_rgba(30,75,160,0.08)]">
+                          <p>
+                            Before submitting your application, please review how your information will be used.
                           </p>
 
                           <p className="mt-3">
-                            The Personal Information you provide, including your name, contact details,
-                            educational background, work experience, will be used to evaluate your
-                            qualifications, match you with job requirements, and allow employers to review
-                            and contact you regarding your application.
+                            By applying for this job, you acknowledge that <strong>AGAPAY will collect and process your personal information</strong> for recruitment and hiring purposes.
                           </p>
 
                           <p className="mt-3">
-                            All information will be handled securely and kept confidential.{' '}
-                            <strong className="text-black/80">
-                              By clicking “Submit Application”, you confirm your information is accurate and
-                              you consent to its use for recruitment purposes.
-                            </strong>
+                            The information in your profile and application, including your <strong>name, contact information, educational background, work experience, skills, and other relevant details</strong>, will be shared with the employer to <strong>evaluate your qualifications, review your application, and contact you regarding the position.</strong>
+                          </p>
+
+                          <p className="mt-3">
+                            Your information will be <strong>handled securely, kept confidential, and accessed only for legitimate recruitment and employment-related purposes</strong>, consistent with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173).</strong>
+                          </p>
+
+                          <p className="mt-3">
+                            Please make sure that the information you provide is <strong>complete and accurate</strong> before submitting your application.
+                          </p>
+
+                          <p className="mt-3">
+                            By clicking <strong>“Submit Application,”</strong> you confirm that you have reviewed this notice and <strong>consent to the collection, processing, and sharing of your information for the purposes stated above.</strong>
                           </p>
                         </div>
 

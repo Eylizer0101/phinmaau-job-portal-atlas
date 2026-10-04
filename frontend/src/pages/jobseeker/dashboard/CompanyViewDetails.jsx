@@ -2642,7 +2642,7 @@ const CompanyViewDetails = () => {
                       <div className="text-[12px] sm:text-[13px] text-[#0f2442] leading-5 sm:leading-[1.45rem]">
                         <p className="font-semibold">Before submitting your rating, please review the following:</p>
                         <p className="mt-2">Your rating and review will help other jobseekers understand what to expect from a company’s hiring process. By submitting, you confirm that the information you provide is <strong>based on your personal experience and is accurate to the best of your knowledge.</strong></p>
-                        <p className="mt-2">Your <strong>company, role applied for, hiring timeline, application rating, outcome, and review</strong> may be displayed to other AGAPAY users. Your name may also be displayed with your review if you choose to provide it.</p>
+                        <p className="mt-2">Your <strong>company, role applied for, hiring timeline, application rating, outcome, and review</strong> may be displayed to other AGAPAY users. Your name will be displayed alongside your review.</p>
                         <p className="mt-2">Please do not include <strong>personal, confidential, or sensitive information</strong> about yourself, the company, employees, recruiters, or other applicants in your review.</p>
                         <p className="mt-2">Your rating is intended to share your <strong>hiring experience</strong>, not to disclose confidential company information or personally identify individuals.</p>
                         <p className="mt-2">By continuing, you acknowledge that your submission may be reviewed by <strong>AGAPAY</strong> and displayed on the platform in accordance with these guidelines.</p>

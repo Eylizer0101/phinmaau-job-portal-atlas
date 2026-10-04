@@ -942,15 +942,6 @@ const ResumePasswordModal = ({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={verifying}
-            className="w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-70"
-            aria-label="Close modal"
-          >
-            ×
-          </button>
         </div>
 
         <form onSubmit={onSubmit} className="px-6 py-6 space-y-4">

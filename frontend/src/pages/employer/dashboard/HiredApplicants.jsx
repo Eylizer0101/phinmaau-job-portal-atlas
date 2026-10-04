@@ -1601,10 +1601,10 @@ const selectBase =
               <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
             </div>
             <div className="mx-auto mt-4 max-w-[760px] space-y-2 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 text-[12px] leading-5 text-[#0f2442] shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:mt-5 sm:px-7 sm:py-5 sm:text-[13px] sm:leading-[1.45rem]">
-              <p>Before continuing with this Employment Status Update, please carefully review this notice.</p>
-              <p>This request allows you, as the employer or authorized company representative, to update the employment status of a job seeker who was previously hired through the platform. You may initiate this update when the job seeker's contract has ended or when they are no longer employed in the role.</p>
-              <p>By continuing, you confirm that the selected reason accurately reflects the job seeker's current employment relationship with your company.</p>
-              <p>The selected reason and relevant employment information will be used to process and maintain the job seeker's employment record within the platform.</p>
+              <p><strong>Before continuing with this Employment Status Update, please carefully review this notice.</strong></p>
+              <p>This request allows you, as the employer or authorized company representative, to update the employment status of a job seeker who was previously hired through the platform. You may initiate this update when the job seeker's <strong>contract has ended or when they are no longer employed in the role.</strong></p>
+              <p>By continuing, you confirm that the selected reason <strong>accurately reflects the job seeker's current employment relationship</strong> with your company.</p>
+              <p>The selected reason and relevant employment information will be used to <strong>process and maintain the job seeker's employment record</strong> within the platform.</p>
               <p>By continuing, you acknowledge that you understand how the employment status update will be processed, how the job seeker will be notified, and how the updated employment information will be maintained within the platform.</p>
             </div>
             <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer select-none items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] sm:mt-4">
