@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import AdminLayout from '../../layouts/AdminLayout';
 import Pagination from '../../components/shared/Pagination';
@@ -1133,6 +1133,7 @@ const formatUserForTable = (user) => ({
 
 const UserManagement = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1155,7 +1156,7 @@ const UserManagement = () => {
 
   const persistedFilterState = readAgapayAdminUserManagementFiltersState();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [roleFilter, setRoleFilter] = useState(() => persistedFilterState.roleFilter || 'all');
+  const [roleFilter, setRoleFilter] = useState(() => location.state?.roleFilter || persistedFilterState.roleFilter || 'all');
   const [campusFilter, setCampusFilter] = useState(() => persistedFilterState.campusFilter || 'all');
   const [courseFilter, setCourseFilter] = useState(() => persistedFilterState.courseFilter || 'all');
   const [companyFilter, setCompanyFilter] = useState(() => persistedFilterState.companyFilter || 'all');
@@ -1175,6 +1176,19 @@ const UserManagement = () => {
   useEffect(() => {
     saveAgapayAdminUserManagementFiltersState({ roleFilter, campusFilter, courseFilter, companyFilter, industryFilter, query, sort, dateFilter, dateFrom, dateTo, pageSize });
   }, [roleFilter, campusFilter, courseFilter, companyFilter, industryFilter, query, sort, dateFilter, dateFrom, dateTo, pageSize]);
+
+  useEffect(() => {
+    const requestedRole = String(location.state?.roleFilter || '').toLowerCase();
+    if (!['jobseeker', 'employer'].includes(requestedRole)) return;
+
+    setRoleFilter(requestedRole);
+    setCampusFilter('all');
+    setCourseFilter('all');
+    setCompanyFilter('all');
+    setIndustryFilter('all');
+    setQuery('');
+    setCurrentPage(1);
+  }, [location.state]);
   const [totalUsers, setTotalUsers] = useState(0);
 
   const pageCacheRef = useRef(new Map());

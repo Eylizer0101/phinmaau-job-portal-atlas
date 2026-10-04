@@ -339,8 +339,8 @@ const getJobseekerCredentialReviewStatus = (docs = {}) => {
 
   const statuses = JOBSEEKER_DOC_TYPES.map(getStatus);
   const requiredStatuses = JOBSEEKER_REQUIRED_DOC_TYPES.map(getStatus);
-  if (statuses.some((status) => ['pending', 'submitted'].includes(status))) return 'pending';
   if (statuses.some((status) => ['hold', 'rejected'].includes(status))) return 'hold';
+  if (statuses.some((status) => ['pending', 'submitted'].includes(status))) return 'pending';
   if (requiredStatuses.every((status) => status === 'approved')) return 'verified';
   if (requiredStatuses.some((status) => status === 'approved')) return 'pending';
   return 'not_submitted';
@@ -1563,7 +1563,7 @@ exports.getAdminAnalytics = async (req, res) => {
         .select('role status isActive isVerified createdAt updatedAt jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated jobSeekerProfile.howSoonCanYouStart jobSeekerProfile.willingToRelocate jobSeekerProfile.gender jobSeekerProfile.educationalAttainment jobSeekerProfile.experience jobSeekerProfile.educationEntries.campus jobSeekerProfile.educationEntries.course jobSeekerProfile.educationEntries.yearGraduated jobSeekerProfile.educationEntries.educationalAttainment jobSeekerProfile.educationEntries.level jobSeekerProfile.verificationStatus jobSeekerProfile.verificationDocs.overallStatus employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.verificationDocs.overallStatus')
         .lean(),
       Job.find({}).select('employer companyName status statusBeforeArchive isActive isPublished isArchived category jobType workMode locationProvince locationCity vacancies views applicationCount applicationDeadline publishedAt filledAt closedAt archivedAt createdAt updatedAt').lean(),
-      Application.find({}).select('job jobseeker employer status lastActiveStatus withdrawalCount withdrawnAt appliedAt reviewedAt viewedAt hiredAt employmentStatus employmentStatusRequest.reason employmentStatusRequest.status employmentStatusRequest.requestedAt interviewSchedule activityHistory createdAt updatedAt').lean(),
+      Application.find({}).select('job jobseeker employer status lastActiveStatus isDeclinedArchived withdrawalCount withdrawnAt appliedAt reviewedAt viewedAt hiredAt employmentStatus employmentStatusRequest.reason employmentStatusRequest.status employmentStatusRequest.requestedAt interviewSchedule activityHistory createdAt updatedAt').lean(),
       JobEditRequest.find({}).select('job employer requestedSections status reviewedAt unlockUntil createdAt updatedAt').lean(),
       Message.find({}).select('conversationId sender receiver messageType isRead readAt job application createdAt updatedAt').lean(),
       ConversationPreference.find({}).select('user conversationId otherUser archived hiddenCompany deleted createdAt updatedAt').lean(),
@@ -1765,11 +1765,29 @@ exports.getAdminAnalytics = async (req, res) => {
     const systemLogs = systemLogsAll.filter((item) => dateMatches('log', item));
     const conversationPreferences = conversationPreferencesAll.filter((item) => dateMatches('conversationPreference', item));
 
+    const isVerifiedActiveDashboardUser = (user) => {
+      const role = analyticsLower(user?.role);
+      if (!['jobseeker', 'employer'].includes(role)) return false;
+      if (user?.isActive === false || analyticsLower(user?.status) === 'inactive') return false;
+      return analyticsVerificationStatus(user) === 'verified';
+    };
+
+    const verifiedActiveUsers = users.filter(isVerifiedActiveDashboardUser);
+    const countableJobs = jobs.filter((job) => {
+      const status = analyticsLower(job?.status);
+      return job?.isArchived !== true && job?.isPublished !== false && status !== 'draft';
+    });
+    const countableApplications = applications.filter((item) =>
+      ['pending', 'for interview', 'hired', 'declined'].includes(analyticsLower(item?.status)) &&
+      item?.isDeclinedArchived !== true
+    );
+
     const hiredApplications = applications.filter((item) => analyticsLower(item.status) === 'hired');
+    const hiredCountableApplications = countableApplications.filter((item) => analyticsLower(item.status) === 'hired');
     const pendingVerification = users.filter((item) => ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
-    const totalJobseekers = users.filter((item) => analyticsLower(item.role) === 'jobseeker').length;
-    const totalEmployers = users.filter((item) => analyticsLower(item.role) === 'employer').length;
-    const totalRegisteredUsers = users.filter((item) => analyticsLower(item.role) !== 'admin').length;
+    const totalJobseekers = verifiedActiveUsers.filter((item) => analyticsLower(item.role) === 'jobseeker').length;
+    const totalEmployers = verifiedActiveUsers.filter((item) => analyticsLower(item.role) === 'employer').length;
+    const totalRegisteredUsers = verifiedActiveUsers.length;
     const pendingJobseekers = usersAll.filter((item) => analyticsLower(item.role) === 'jobseeker' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
     const pendingEmployers = usersAll.filter((item) => analyticsLower(item.role) === 'employer' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length;
     const pendingEditRequests = editRequestsAll.filter((item) => analyticsLower(item.status) === 'pending').length;
@@ -1959,11 +1977,11 @@ exports.getAdminAnalytics = async (req, res) => {
         totalJobseekers,
         totalEmployers,
         totalRegisteredUsers,
-        totalJobPosts: jobs.length,
+        totalJobPosts: countableJobs.length,
         activeJobs,
-        applications: applications.length,
+        applications: countableApplications.length,
         hired: hiredApplications.length,
-        hireRate: applications.length ? Number(((hiredApplications.length / applications.length) * 100).toFixed(1)) : 0,
+        hireRate: countableApplications.length ? Number(((hiredCountableApplications.length / countableApplications.length) * 100).toFixed(1)) : 0,
         pendingVerification,
         pendingJobseekers,
         pendingEmployers,
@@ -2096,7 +2114,8 @@ exports.getAllUsers = async (req, res) => {
     };
 
     const baseQuery = {
-      status: { $ne: 'deleted' },
+      status: { $nin: ['deleted', 'inactive'] },
+      isActive: { $ne: false },
       // System-archived inactive employers belong in Admin Archive, not User Management.
       $nor: [{ role: 'employer', inactiveBySystem: true }],
     };
@@ -6469,6 +6488,21 @@ const uniqueFilterValues = (records, key) =>
   [...new Set(records.map((record) => exportText(record?.[key])).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
+const isVerifiedExportUser = (user = {}) => {
+  const role = String(user.role || '').toLowerCase();
+  if (!['jobseeker', 'employer'].includes(role)) return false;
+  if (role === 'jobseeker') {
+    const status = String(
+      user.jobSeekerProfile?.verificationDocs?.overallStatus ||
+      user.jobSeekerProfile?.verificationStatus ||
+      (user.isVerified ? 'verified' : '')
+    ).toLowerCase();
+    return status === 'verified';
+  }
+
+  return String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
+};
+
 const buildAdminFilterRecords = async (rawFilters = {}) => {
   const role = normalizeAdminFilterRole(rawFilters.role);
   const [users, jobs, applications] = await Promise.all([
@@ -6493,7 +6527,7 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
 
   if (role === 'all') {
     records = users
-      .filter((user) => ['jobseeker', 'employer'].includes(String(user.role || '').toLowerCase()))
+      .filter((user) => isVerifiedExportUser(user))
       .map((user) => {
         const isEmployer = String(user.role || '').toLowerCase() === 'employer';
         const profile = isEmployer ? (user.employerProfile || {}) : (user.jobSeekerProfile || {});
@@ -6509,12 +6543,13 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
             ? (profile.mobileNumber || user.registrationContactNumber || '')
             : (profile.phoneNumber || user.registrationContactNumber || ''),
           region: address.region,
+          province: address.province,
           cityMunicipality: address.city,
         };
       });
   } else if (role === 'jobseeker') {
     records = users
-      .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
+      .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker' && isVerifiedExportUser(user))
       .map((user) => {
         const profile = user.jobSeekerProfile || {};
         const address = exportAddressParts(profile, false);
@@ -6538,7 +6573,7 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
       });
   } else if (role === 'employer') {
     records = users
-      .filter((user) => String(user.role || '').toLowerCase() === 'employer')
+      .filter((user) => String(user.role || '').toLowerCase() === 'employer' && isVerifiedExportUser(user))
       .map((user) => {
         const profile = user.employerProfile || {};
         const address = exportAddressParts(profile, true);
@@ -6557,7 +6592,7 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
         };
       });
   } else if (role === 'jobOffer') {
-    records = jobs.map((job) => {
+    records = jobs.filter((job) => isVerifiedExportUser(userById.get(String(job.employer || '')) || {})).map((job) => {
       const employer = userById.get(String(job.employer || '')) || {};
       return {
         id: String(job._id),
@@ -6575,7 +6610,12 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
       };
     });
   } else {
-    records = applications.map((application) => {
+    records = applications.filter((application) => {
+      const seeker = userById.get(String(application.jobseeker || '')) || {};
+      const job = jobById.get(String(application.job || '')) || {};
+      const employer = userById.get(String(application.employer || job.employer || '')) || {};
+      return isVerifiedExportUser(seeker) && isVerifiedExportUser(employer);
+    }).map((application) => {
       const seeker = userById.get(String(application.jobseeker || '')) || {};
       const profile = seeker.jobSeekerProfile || {};
       const job = jobById.get(String(application.job || '')) || {};
@@ -6649,7 +6689,7 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
 const adminFilterRecordColumns = {
   all: [
     ['date', 'Date Registered'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'],
-    ['roleLabel', 'Role'], ['region', 'Region'], ['cityMunicipality', 'City / Municipality'],
+    ['roleLabel', 'Role'], ['region', 'Region'], ['province', 'Province'], ['cityMunicipality', 'City / Municipality'],
   ],
   jobseeker: [
     ['date', 'Date Registered'], ['fullName', 'Full Name'], ['email', 'Email'], ['contactNumber', 'Contact Number'],
@@ -7093,6 +7133,7 @@ exports.exportAdminRecordsExcel = async (req, res) => {
 
     const userById = new Map(users.map((user) => [String(user._id), user]));
     const jobById = new Map(jobs.map((job) => [String(job._id), job]));
+    const verifiedUsers = users.filter(isVerifiedExportUser);
     const applicationsByJob = new Map();
     const applicationsByJobseeker = new Map();
 
@@ -7113,15 +7154,21 @@ exports.exportAdminRecordsExcel = async (req, res) => {
       return true;
     };
 
-    const jobseekers = users.filter((user) => jobseekerMatches(user, true));
-    const employers = users.filter((user) =>
+    const jobseekers = verifiedUsers.filter((user) => jobseekerMatches(user, true));
+    const employers = verifiedUsers.filter((user) =>
       String(user.role || '').toLowerCase() === 'employer' && exportInRange(user.createdAt, range)
     );
-    const filteredJobs = jobs.filter((job) => exportInRange(job.publishedAt || job.createdAt, range));
+    const filteredJobs = jobs.filter((job) => {
+      if (!exportInRange(job.publishedAt || job.createdAt, range)) return false;
+      const employer = userById.get(String(job.employer || ''));
+      return isVerifiedExportUser(employer);
+    });
     const filteredApplications = applications.filter((application) => {
       if (!exportInRange(application.appliedAt || application.createdAt, range)) return false;
       const seeker = userById.get(String(application.jobseeker || ''));
-      return jobseekerMatches(seeker, false);
+      const job = jobById.get(String(application.job || '')) || {};
+      const employer = userById.get(String(application.employer || job.employer || ''));
+      return jobseekerMatches(seeker, false) && isVerifiedExportUser(seeker) && isVerifiedExportUser(employer);
     });
 
     const workbook = new ExcelJS.Workbook();

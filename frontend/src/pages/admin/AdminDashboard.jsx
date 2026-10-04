@@ -1916,13 +1916,13 @@ const AdminDashboard = () => {
             label="Jobseekers"
             value={kpis.totalJobseekers}
             imageSrc={statCardImages.users}
-            onClick={() => navigate("/admin/dashboard/job-seekers")}
+            onClick={() => navigate("/admin/users", { state: { roleFilter: "jobseeker", fromAdminDashboard: true } })}
           />
           <StatCard
             label="Employers"
             value={kpis.totalEmployers}
             imageSrc={statCardImages.verification}
-            onClick={() => navigate("/admin/dashboard/employers")}
+            onClick={() => navigate("/admin/users", { state: { roleFilter: "employer", fromAdminDashboard: true } })}
           />
           <StatCard
             label="Registered Users"

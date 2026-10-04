@@ -46,7 +46,7 @@ const INITIAL_FILTERS = {
 const columnSets = {
   all: [
     ["date", "Date Registered"], ["fullName", "Full Name"], ["email", "Email"], ["contactNumber", "Contact Number"],
-    ["roleLabel", "Role"], ["region", "Region"], ["cityMunicipality", "City / Municipality"],
+    ["roleLabel", "Role"], ["region", "Region"], ["province", "Province"], ["cityMunicipality", "City / Municipality"],
   ],
   jobseeker: [
     ["date", "Date Registered"], ["fullName", "Full Name"], ["email", "Email"], ["contactNumber", "Contact Number"],
