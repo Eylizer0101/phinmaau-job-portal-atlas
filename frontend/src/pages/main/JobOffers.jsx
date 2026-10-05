@@ -1,6 +1,6 @@
 // src/pages/main/JobOffers.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
 import AboutUsModal from "../../components/shared/AboutUsModal";
 import api from "../../services/api";
@@ -671,17 +671,15 @@ const MainFooter = () => {
 
 const JobOffers = () => {
   const navigate = useNavigate();
-  const savedFilterState = useMemo(() => {
-    try {
-      return JSON.parse(sessionStorage.getItem('agapay:public:job-offers-filters') || '{}');
-    } catch {
-      return {};
-    }
-  }, []);
+  const location = useLocation();
+  const restoredFilterState = useMemo(() => {
+    const state = location.state?.restoreJobOffersFilters;
+    return state && typeof state === "object" ? state : {};
+  }, [location.state]);
 
   const [allJobs, setAllJobs] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [visibleJobCount, setVisibleJobCount] = useState(() => Number(savedFilterState.visibleJobCount) || 16);
+  const [visibleJobCount, setVisibleJobCount] = useState(() => Number(restoredFilterState.visibleJobCount) || 16);
   const [loadingMoreJobs, setLoadingMoreJobs] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -692,58 +690,37 @@ const JobOffers = () => {
 
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const [search, setSearch] = useState(() => String(savedFilterState.search || ""));
+  const [search, setSearch] = useState(() => String(restoredFilterState.search || ""));
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [selectedLocations, setSelectedLocations] = useState(() => Array.isArray(savedFilterState.selectedLocations) ? savedFilterState.selectedLocations : []);
-  const [selectedJobTitles, setSelectedJobTitles] = useState(() => Array.isArray(savedFilterState.selectedJobTitles) ? savedFilterState.selectedJobTitles : []);
-  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState(() => Array.isArray(savedFilterState.selectedEmploymentTypes) ? savedFilterState.selectedEmploymentTypes : []);
-  const [selectedEducationLevels, setSelectedEducationLevels] = useState(() => Array.isArray(savedFilterState.selectedEducationLevels) ? savedFilterState.selectedEducationLevels : []);
-  const [selectedCompanies, setSelectedCompanies] = useState(() => Array.isArray(savedFilterState.selectedCompanies) ? savedFilterState.selectedCompanies : []);
-  const [selectedWorkModes, setSelectedWorkModes] = useState(() => Array.isArray(savedFilterState.selectedWorkModes) ? savedFilterState.selectedWorkModes : []);
+  const [selectedLocations, setSelectedLocations] = useState(() => Array.isArray(restoredFilterState.selectedLocations) ? restoredFilterState.selectedLocations : []);
+  const [selectedJobTitles, setSelectedJobTitles] = useState(() => Array.isArray(restoredFilterState.selectedJobTitles) ? restoredFilterState.selectedJobTitles : []);
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState(() => Array.isArray(restoredFilterState.selectedEmploymentTypes) ? restoredFilterState.selectedEmploymentTypes : []);
+  const [selectedEducationLevels, setSelectedEducationLevels] = useState(() => Array.isArray(restoredFilterState.selectedEducationLevels) ? restoredFilterState.selectedEducationLevels : []);
+  const [selectedCompanies, setSelectedCompanies] = useState(() => Array.isArray(restoredFilterState.selectedCompanies) ? restoredFilterState.selectedCompanies : []);
+  const [selectedWorkModes, setSelectedWorkModes] = useState(() => Array.isArray(restoredFilterState.selectedWorkModes) ? restoredFilterState.selectedWorkModes : []);
 
-  const [salaryMinInput, setSalaryMinInput] = useState(() => String(savedFilterState.salaryMinInput || ""));
+  const [salaryMinInput, setSalaryMinInput] = useState(() => String(restoredFilterState.salaryMinInput || ""));
 
-  const [sortBy, setSortBy] = useState(() => String(savedFilterState.sortBy || ""));
+  const [sortBy, setSortBy] = useState(() => String(restoredFilterState.sortBy || ""));
 
-  const [freshGraduate, setFreshGraduate] = useState(() => Boolean(savedFilterState.freshGraduate));
-  const [noExperience, setNoExperience] = useState(() => Boolean(savedFilterState.noExperience));
+  const [freshGraduate, setFreshGraduate] = useState(() => Boolean(restoredFilterState.freshGraduate));
+  const [noExperience, setNoExperience] = useState(() => Boolean(restoredFilterState.noExperience));
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const filterBoxRef = useRef(null);
 
   useEffect(() => {
-    sessionStorage.setItem(
-      'agapay:public:job-offers-filters',
-      JSON.stringify({
-        search,
-        selectedLocations,
-        selectedJobTitles,
-        selectedEmploymentTypes,
-        selectedEducationLevels,
-        selectedCompanies,
-        selectedWorkModes,
-        salaryMinInput,
-        sortBy,
-        freshGraduate,
-        noExperience,
-        visibleJobCount,
-      })
-    );
-  }, [
-    search,
-    selectedLocations,
-    selectedJobTitles,
-    selectedEmploymentTypes,
-    selectedEducationLevels,
-    selectedCompanies,
-    selectedWorkModes,
-    salaryMinInput,
-    sortBy,
-    freshGraduate,
-    noExperience,
-    visibleJobCount,
-  ]);
+    try {
+      sessionStorage.removeItem('agapay:public:job-offers-filters');
+    } catch {
+      // Keep the public job offers page usable when session storage is unavailable.
+    }
+
+    if (location.state?.restoreJobOffersFilters) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const getStoredUser = () => {
     try {
@@ -1254,7 +1231,26 @@ const JobOffers = () => {
   const handleLearnMore = (job) => {
     const jobId = job?._id || job?.id;
     if (!jobId) return;
-    navigate(`/jobs/${jobId}`);
+
+    navigate(`/jobs/${jobId}`, {
+      state: {
+        fromJobOffers: true,
+        jobOffersFilters: {
+          search,
+          selectedLocations,
+          selectedJobTitles,
+          selectedEmploymentTypes,
+          selectedEducationLevels,
+          selectedCompanies,
+          selectedWorkModes,
+          salaryMinInput,
+          sortBy,
+          freshGraduate,
+          noExperience,
+          visibleJobCount,
+        },
+      },
+    });
   };
 
   const handleApply = (job) => {

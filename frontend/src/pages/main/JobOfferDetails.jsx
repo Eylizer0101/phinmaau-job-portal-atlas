@@ -1,7 +1,7 @@
 // src/pages/main/JobOfferDetails.jsx
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import MainNavbar from '../../components/shared/MainNavbar';
 import api from '../../services/api';
 import { formatJobLifecycleText, isOpenJobListing } from '../../utils/jobVisibility';
@@ -739,6 +739,7 @@ const Skeleton = () => (
 const JobOfferDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -1058,8 +1059,17 @@ const JobOfferDetails = () => {
   }, [showGuestApplyModal, closeGuestApplyModal]);
 
   const handleBackButton = useCallback(() => {
-    navigate('/jobs');
-  }, [navigate]);
+    const restoreFilters =
+      location.state?.fromJobOffers && location.state?.jobOffersFilters
+        ? location.state.jobOffersFilters
+        : null;
+
+    navigate('/jobs', {
+      state: restoreFilters
+        ? { restoreJobOffersFilters: restoreFilters }
+        : null,
+    });
+  }, [location.state, navigate]);
 
   const handleApplyClick = useCallback(() => {
     setModalMode('apply');
@@ -1125,7 +1135,7 @@ const JobOfferDetails = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/jobs')}
+                    onClick={handleBackButton}
                     className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
                     type="button"
                   >
