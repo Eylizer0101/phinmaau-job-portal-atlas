@@ -1785,6 +1785,41 @@ exports.getAdminAnalytics = async (req, res) => {
     };
 
     const verifiedActiveUsers = users.filter(isVerifiedActiveDashboardUser);
+
+    // Dashboard chart populations:
+    // - User-based charts count only active, verified Jobseekers/Employers.
+    // - Admin remains visible in User Roles as long as the Admin account itself is active.
+    // - Work Mode excludes Draft and Archived jobs.
+    // - Employment Type and Top Industries exclude Draft, Archived, and inactive jobs.
+    const activeAdminUsers = users.filter((user) => {
+      const role = analyticsLower(user?.role);
+      const status = analyticsLower(user?.status);
+      return (
+        role === 'admin' &&
+        user?.isActive !== false &&
+        !['deleted', 'inactive'].includes(status)
+      );
+    });
+
+    const userRoleChartUsers = [...verifiedActiveUsers, ...activeAdminUsers];
+    const verifiedActiveJobseekers = verifiedActiveUsers.filter(
+      (user) => analyticsLower(user?.role) === 'jobseeker'
+    );
+
+    const workModeChartJobs = jobs.filter((job) => {
+      const status = analyticsLower(job?.status);
+      return job?.isArchived !== true && status !== 'draft';
+    });
+
+    const activePublishedChartJobs = jobs.filter((job) => {
+      const status = analyticsLower(job?.status);
+      return (
+        job?.isArchived !== true &&
+        job?.isActive !== false &&
+        status !== 'draft'
+      );
+    });
+
     const countableTrendUsers = users.filter((user) => {
       const role = analyticsLower(user?.role);
       const status = analyticsLower(user?.status);
@@ -1915,7 +1950,7 @@ exports.getAdminAnalytics = async (req, res) => {
     }));
 
     const industryRows = analyticsCountRows(
-      jobs,
+      activePublishedChartJobs,
       (job) => userById.get(analyticsId(job.employer))?.employerProfile?.industry || job.category || 'Others',
       10,
     );
@@ -2068,7 +2103,7 @@ exports.getAdminAnalytics = async (req, res) => {
       }),
       sections: {
         users: {
-          roles: analyticsCountRows(users, (item) => item.role),
+          roles: analyticsCountRows(userRoleChartUsers, (item) => item.role),
           statuses: analyticsCountRows(users, (item) => item.status),
           verification: [
             { name: 'verified', value: users.filter((item) => item.role !== 'admin' && analyticsVerificationStatus(item) === 'verified').length },
@@ -2076,7 +2111,7 @@ exports.getAdminAnalytics = async (req, res) => {
             { name: 'on hold', value: users.filter((item) => item.role !== 'admin' && analyticsVerificationStatus(item) === 'hold').length },
             { name: 'declined', value: users.filter((item) => item.role !== 'admin' && analyticsVerificationStatus(item) === 'rejected').length },
           ],
-          campuses: analyticsCountRows(users.filter((item) => item.role === 'jobseeker'), getJobseekerCampus),
+          campuses: analyticsCountRows(verifiedActiveJobseekers, getJobseekerCampus),
           genders: genderDistribution,
           availabilities: availabilityDistribution,
           relocation: relocationDistribution,
@@ -2090,8 +2125,11 @@ exports.getAdminAnalytics = async (req, res) => {
           })),
           categories: analyticsCountRows(jobs, (item) => item.category, 10),
           industries: industryRows,
-          employmentTypes: analyticsCountRows(jobs.filter((item) => analyticsText(item.jobType)), (item) => item.jobType),
-          workModes: analyticsCountRows(jobs, (item) => item.workMode),
+          employmentTypes: analyticsCountRows(
+            activePublishedChartJobs.filter((item) => analyticsText(item.jobType)),
+            (item) => item.jobType
+          ),
+          workModes: analyticsCountRows(workModeChartJobs, (item) => item.workMode),
           totalVacancies: jobs.reduce((sum, item) => sum + Number(item.vacancies || 0), 0),
           totalViews: jobs.reduce((sum, item) => sum + Number(item.views || 0), 0),
         },
