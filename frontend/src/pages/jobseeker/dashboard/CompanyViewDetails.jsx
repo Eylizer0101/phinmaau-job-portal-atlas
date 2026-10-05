@@ -736,7 +736,7 @@ const CompanyViewDetails = () => {
       location.state?.sourcePage === 'jobdetails' &&
       returnTo.startsWith('/jobseeker/job-details/')
     ) {
-      navigate(returnTo);
+      navigate(returnTo, { state: location.state?.returnState || null });
       return;
     }
 
@@ -745,7 +745,17 @@ const CompanyViewDetails = () => {
       return;
     }
 
-    navigate('/jobseeker/companies');
+    const restoreFilters =
+      location.state?.sourcePage === 'jobseeker-companies' &&
+      location.state?.jobseekerCompaniesFilters
+        ? location.state.jobseekerCompaniesFilters
+        : null;
+
+    navigate('/jobseeker/companies', {
+      state: restoreFilters
+        ? { restoreJobseekerCompaniesFilters: restoreFilters }
+        : null,
+    });
   }, [location.state, navigate]);
 
   const backDestinationLabel =

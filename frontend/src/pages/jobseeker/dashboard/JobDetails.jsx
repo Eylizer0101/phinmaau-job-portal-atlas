@@ -850,8 +850,17 @@ const JobDetails = () => {
       return;
     }
 
-    navigate('/jobseeker/job-search');
-  }, [navigate, returnTo, sourcePage]);
+    const restoreFilters =
+      sourcePage === 'jobsearch' && location.state?.jobSearchFilters
+        ? location.state.jobSearchFilters
+        : null;
+
+    navigate('/jobseeker/job-search', {
+      state: restoreFilters
+        ? { restoreJobSearchFilters: restoreFilters }
+        : null,
+    });
+  }, [location.state, navigate, returnTo, sourcePage]);
 
   const formatSalary = useCallback((min, max, hideSalary = false) => {
     if (hideSalary) return 'Salary Undisclosed';

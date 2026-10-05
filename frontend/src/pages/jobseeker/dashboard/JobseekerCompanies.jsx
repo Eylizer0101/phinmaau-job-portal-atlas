@@ -1,6 +1,6 @@
 // src/pages/jobseeker/dashboard/JobseekerCompanies.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 import { getProvinceFromLocation } from "../../../constants/phLocations";
 
@@ -62,38 +62,36 @@ const buildCompanyLocationGroups = (companies, formatLocation, fallbackLocations
 
 const JobseekerCompanies = () => {
   const navigate = useNavigate();
-  const savedFilterState = useMemo(() => {
-    try {
-      return JSON.parse(sessionStorage.getItem('agapay:jobseeker:companies-filters') || '{}');
-    } catch {
-      return {};
-    }
-  }, []);
+  const locationState = useLocation();
+  const restoredFilterState = useMemo(() => {
+    const state = locationState.state?.restoreJobseekerCompaniesFilters;
+    return state && typeof state === "object" ? state : {};
+  }, [locationState.state]);
 
   const [companies, setCompanies] = useState([]);
   const [allCompaniesForFilters, setAllCompaniesForFilters] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [visibleCompanyCount, setVisibleCompanyCount] = useState(() => Number(savedFilterState.visibleCompanyCount) || 16);
+  const [visibleCompanyCount, setVisibleCompanyCount] = useState(() => Number(restoredFilterState.visibleCompanyCount) || 16);
   const [loadingMoreCompanies, setLoadingMoreCompanies] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const [jobCountByEmployerId, setJobCountByEmployerId] = useState({});
 
-  const [search, setSearch] = useState(() => String(savedFilterState.search || ""));
-  const [selectedLocation, setSelectedLocation] = useState(() => String(savedFilterState.selectedLocation || ""));
-  const [selectedIndustry, setSelectedIndustry] = useState(() => String(savedFilterState.selectedIndustry || ""));
+  const [search, setSearch] = useState(() => String(restoredFilterState.search || ""));
+  const [selectedLocation, setSelectedLocation] = useState(() => String(restoredFilterState.selectedLocation || ""));
+  const [selectedIndustry, setSelectedIndustry] = useState(() => String(restoredFilterState.selectedIndustry || ""));
 
   useEffect(() => {
-    sessionStorage.setItem(
-      'agapay:jobseeker:companies-filters',
-      JSON.stringify({
-        search,
-        selectedLocation,
-        selectedIndustry,
-        visibleCompanyCount,
-      })
-    );
-  }, [search, selectedLocation, selectedIndustry, visibleCompanyCount]);
+    try {
+      sessionStorage.removeItem('agapay:jobseeker:companies-filters');
+    } catch {
+      // Keep Companies usable even when session storage is unavailable.
+    }
+
+    if (locationState.state?.restoreJobseekerCompaniesFilters) {
+      navigate(locationState.pathname, { replace: true, state: null });
+    }
+  }, [locationState.pathname, locationState.state, navigate]);
 
   const [locations, setLocations] = useState([]);
   const [industries, setIndustries] = useState([]);
@@ -409,7 +407,18 @@ const JobseekerCompanies = () => {
   const handleViewCompanyDetails = (company) => {
     const companyId = company?._id || company?.id;
     if (!companyId) return;
-    navigate(`/jobseeker/company-details/${companyId}`);
+
+    navigate(`/jobseeker/company-details/${companyId}`, {
+      state: {
+        sourcePage: 'jobseeker-companies',
+        jobseekerCompaniesFilters: {
+          search,
+          selectedLocation,
+          selectedIndustry,
+          visibleCompanyCount,
+        },
+      },
+    });
   };
 
   const LocationDropdown = () => {
