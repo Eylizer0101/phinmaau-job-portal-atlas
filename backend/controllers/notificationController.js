@@ -78,6 +78,22 @@ const buildNotificationJobseekerKeywords = (user = {}) => {
     return [...new Set(expanded)].filter(Boolean);
 };
 
+const getMessageNotificationSenderName = (sender = {}) => {
+    const role = String(sender?.role || '').trim().toLowerCase();
+
+    if (role === 'employer') {
+        const companyName = String(sender?.employerProfile?.companyName || '').trim();
+        if (companyName) return companyName;
+    }
+
+    return String(
+        sender?.fullName ||
+        [sender?.firstName, sender?.middleName, sender?.lastName].filter(Boolean).join(' ') ||
+        sender?.email ||
+        'User'
+    ).trim() || 'User';
+};
+
 const calculateNotificationJobMatch = (job = {}, user = {}) => {
     const keywords = buildNotificationJobseekerKeywords(user);
     const jobText = normalizeNotificationKeyword([
@@ -163,11 +179,59 @@ exports.getNotifications = async (req, res) => {
             }
         }
 
-        const notifications = await Notification.find({
+        const notificationDocs = await Notification.find({
             user: userId,
             isArchived: false
         })
         .sort({ createdAt: -1 });
+
+        const messageSenderIds = [
+            ...new Set(
+                notificationDocs
+                    .filter((notification) => notification?.type === 'new_message')
+                    .map((notification) => String(notification?.metadata?.senderId || '').trim())
+                    .filter(Boolean)
+            )
+        ];
+
+        const messageSenders = messageSenderIds.length
+            ? await User.find({ _id: { $in: messageSenderIds } })
+                .select('role fullName firstName middleName lastName email employerProfile.companyName')
+            : [];
+
+        const messageSenderById = new Map(
+            messageSenders.map((sender) => [String(sender._id), sender])
+        );
+
+        const notifications = notificationDocs.map((notification) => {
+            const plainNotification = notification.toObject();
+
+            if (plainNotification?.type !== 'new_message') {
+                return plainNotification;
+            }
+
+            const senderId = String(plainNotification?.metadata?.senderId || '').trim();
+            const sender = messageSenderById.get(senderId);
+            if (!sender) return plainNotification;
+
+            const senderName = getMessageNotificationSenderName(sender);
+            const lastMessage = String(plainNotification?.metadata?.lastMessage || '').trim();
+
+            plainNotification.metadata = {
+                ...(plainNotification.metadata || {}),
+                senderName,
+                companyName:
+                    String(sender?.role || '').toLowerCase() === 'employer'
+                        ? String(sender?.employerProfile?.companyName || '').trim()
+                        : '',
+            };
+
+            if (lastMessage) {
+                plainNotification.message = `New message from ${senderName}: ${lastMessage}`;
+            }
+
+            return plainNotification;
+        });
 
         const unreadCount = await Notification.countDocuments({
             user: userId,
@@ -751,9 +815,22 @@ exports.createMessageNotification = async (senderId, receiverId, message) => {
             createdAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) }
         });
 
+        const senderName = getMessageNotificationSenderName(sender);
+        const senderCompanyName =
+            String(sender?.role || '').trim().toLowerCase() === 'employer'
+                ? String(sender?.employerProfile?.companyName || '').trim()
+                : '';
+
         if (existingNotification) {
-            existingNotification.message = `New message from ${sender.fullName || sender.companyName || 'User'}: ${String(message.content || '').trim()}`;
-            existingNotification.metadata.lastMessage = message.content;
+            existingNotification.message = `New message from ${senderName}: ${String(message.content || '').trim()}`;
+            existingNotification.metadata = {
+                ...(existingNotification.metadata || {}),
+                senderId: sender._id,
+                senderName,
+                companyName: senderCompanyName,
+                conversationId: message.conversationId,
+                lastMessage: message.content
+            };
             existingNotification.link = conversationLink;
             await existingNotification.save();
             return existingNotification;
@@ -763,13 +840,14 @@ exports.createMessageNotification = async (senderId, receiverId, message) => {
             user: receiverId,
             type: 'new_message',
             title: 'New Message',
-            message: `New message from ${sender.fullName || sender.companyName || 'User'}: ${String(message.content || '').trim()}`,
+            message: `New message from ${senderName}: ${String(message.content || '').trim()}`,
             relatedId: message._id,
             relatedModel: 'Message',
             link: conversationLink,
             metadata: {
                 senderId: sender._id,
-                senderName: sender.fullName || sender.companyName,
+                senderName,
+                companyName: senderCompanyName,
                 conversationId: message.conversationId,
                 lastMessage: message.content
             }
