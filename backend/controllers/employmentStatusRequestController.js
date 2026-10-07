@@ -17,7 +17,9 @@ const fullName = (user = {}) => String(user.fullName || [user.firstName, user.mi
 
 exports.getAllStatusRequests = async (req, res) => {
   try {
-    const requests = await populateRequest(Application.find(requestQuery)).sort({ 'employmentStatusRequest.requestedAt': -1 });
+    const requests = await populateRequest(Application.find(requestQuery))
+      .sort({ 'employmentStatusRequest.requestedAt': -1 })
+      .lean();
     return res.json({ success: true, requests });
   } catch (error) {
     console.error('Admin status request list error:', error);
@@ -31,7 +33,8 @@ exports.getJobseekerStatusRequestHistory = async (req, res) => {
       .select('fullName firstName middleName lastName email profileImage jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.yearGraduated');
     if (!jobseeker) return res.status(404).json({ success: false, message: 'Jobseeker not found.' });
     const requests = await populateRequest(Application.find({ ...requestQuery, jobseeker: jobseeker._id }))
-      .sort({ 'employmentStatusRequest.requestedAt': -1 });
+      .sort({ 'employmentStatusRequest.requestedAt': -1 })
+      .lean();
     return res.json({ success: true, jobseeker, requests });
   } catch (error) {
     console.error('Jobseeker status request history error:', error);
@@ -45,7 +48,7 @@ exports.getStatusRequestDetails = async (req, res) => {
       _id: req.params.requestId,
       jobseeker: req.params.jobseekerId,
       ...requestQuery
-    }));
+    })).lean();
     if (!application) return res.status(404).json({ success: false, message: 'Employment status request not found.' });
     return res.json({ success: true, request: application });
   } catch (error) {

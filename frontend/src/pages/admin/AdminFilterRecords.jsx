@@ -5,6 +5,43 @@ import api from "../../services/api";
 
 
 const AGAPAY_ADMIN_FILTER_RECORDS_FILTERS_KEY = "agapay:admin:filter-records:filters";
+const AGAPAY_ADMIN_FILTER_RECORDS_CACHE_PREFIX = "agapay:admin:filter-records:cache:";
+const AGAPAY_ADMIN_FILTER_RECORDS_CACHE_TTL_MS = 30 * 1000;
+
+const getAgapayAdminFilterRecordsCacheKey = (filters = {}) =>
+  `${AGAPAY_ADMIN_FILTER_RECORDS_CACHE_PREFIX}${JSON.stringify(filters)}`;
+
+const readAgapayAdminFilterRecordsCache = (filters = {}) => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const cached = JSON.parse(
+      window.sessionStorage.getItem(getAgapayAdminFilterRecordsCacheKey(filters)) || "null"
+    );
+
+    if (!cached?.data) return null;
+    if (Date.now() - Number(cached.savedAt || 0) > AGAPAY_ADMIN_FILTER_RECORDS_CACHE_TTL_MS) {
+      return null;
+    }
+
+    return cached.data;
+  } catch {
+    return null;
+  }
+};
+
+const writeAgapayAdminFilterRecordsCache = (filters = {}, data = null) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.setItem(
+      getAgapayAdminFilterRecordsCacheKey(filters),
+      JSON.stringify({ savedAt: Date.now(), data })
+    );
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
 
 const readAgapayAdminFilterRecordsFiltersState = () => {
   if (typeof window === "undefined") return {};
@@ -198,18 +235,40 @@ const AdminFilterRecords = () => {
   useEffect(() => {
     let cancelled = false;
     const loadRecords = async () => {
+      const params = Object.fromEntries(
+        Object.entries(appliedFilters).filter(([, value]) => String(value || "").trim() !== "")
+      );
+      const cachedData = readAgapayAdminFilterRecordsCache(params);
+
       try {
-        setLoading(true);
         setError("");
-        const params = Object.fromEntries(Object.entries(appliedFilters).filter(([, value]) => String(value || "").trim() !== ""));
+
+        if (cachedData) {
+          setRecords(Array.isArray(cachedData.records) ? cachedData.records : []);
+          setOptions(cachedData.options || {});
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+
         const response = await api.get("/admin/filter-records", { params });
         if (cancelled) return;
-        setRecords(Array.isArray(response.data?.records) ? response.data.records : []);
-        setOptions(response.data?.options || {});
+
+        const nextData = {
+          records: Array.isArray(response.data?.records) ? response.data.records : [],
+          options: response.data?.options || {},
+        };
+
+        setRecords(nextData.records);
+        setOptions(nextData.options);
+        writeAgapayAdminFilterRecordsCache(params, nextData);
       } catch (err) {
         if (cancelled) return;
-        setRecords([]);
-        setError(err?.response?.data?.message || "Unable to load filter records.");
+
+        if (!cachedData) {
+          setRecords([]);
+          setError(err?.response?.data?.message || "Unable to load filter records.");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
