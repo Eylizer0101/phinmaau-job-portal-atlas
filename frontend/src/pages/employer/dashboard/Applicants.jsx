@@ -2405,11 +2405,6 @@ const Applicants = () => {
                             <span className="rounded-full border border-[#f1d37a] bg-[#fff7df] px-3 py-1 text-xs font-semibold text-[#b36b00]">
                               {'Pending'}
                             </span>
-                            {app.alreadyEmployed ? (
-                              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
-                                Already Employed
-                              </span>
-                            ) : null}
                           </div>
 
                           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]">
