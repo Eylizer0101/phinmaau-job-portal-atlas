@@ -2331,7 +2331,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 items-center gap-2.5">
+                <div className="mt-2 grid grid-cols-3 items-center gap-2.5">
                   <HeaderStatusCard
                     label="Pending Jobseeker"
                     value={kpis.pendingJobseekers}
