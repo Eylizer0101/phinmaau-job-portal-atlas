@@ -694,7 +694,7 @@ const JobApplicants = () => {
                           }}
                         />
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(application.status)}`}>{statusLabel(application.status, application.isViewedByEmployer)}</span>{application.alreadyEmployed ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Already Employed</span> : null}</div>
+                          <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(application.status)}`}>{statusLabel(application.status, application.isViewedByEmployer)}</span></div>
                           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]"><span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span><span className="hidden text-[#c2c5ce] sm:inline">|</span><span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span></div>
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>
