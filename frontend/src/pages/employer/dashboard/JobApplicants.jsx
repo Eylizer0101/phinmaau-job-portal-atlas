@@ -523,13 +523,8 @@ const JobApplicants = () => {
       if (query) return true;
       if (levelFilter !== 'all' && level !== levelFilter) return false;
 
-      if (statusFilter === 'already_employed') {
-        if (!application.alreadyEmployed) return false;
-      } else if (statusFilter !== 'all') {
-        if (
-          String(application.status || '').toLowerCase() !== statusFilter ||
-          application.alreadyEmployed
-        ) {
+      if (statusFilter !== 'all') {
+        if (String(application.status || '').toLowerCase() !== statusFilter) {
           return false;
         }
       }
@@ -637,7 +632,6 @@ const JobApplicants = () => {
               <option value="withdrawn">Withdrawn</option>
               <option value="hired">Hired</option>
               <option value="declined">Declined</option>
-              <option value="already_employed">Already Employed</option>
             </select>
             <select value={levelFilter} onChange={(event) => { setLevelFilter(event.target.value); setCurrentPage(1); }} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
               <option value="all">All Job Seeker Level</option>
@@ -700,7 +694,7 @@ const JobApplicants = () => {
                           }}
                         />
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${application.alreadyEmployed ? 'bg-amber-100 text-amber-800' : statusStyle(application.status)}`}>{application.alreadyEmployed ? 'Already Employed' : statusLabel(application.status, application.isViewedByEmployer)}</span></div>
+                          <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(application.status)}`}>{statusLabel(application.status, application.isViewedByEmployer)}</span>{application.alreadyEmployed ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Already Employed</span> : null}</div>
                           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]"><span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span><span className="hidden text-[#c2c5ce] sm:inline">|</span><span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span></div>
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>

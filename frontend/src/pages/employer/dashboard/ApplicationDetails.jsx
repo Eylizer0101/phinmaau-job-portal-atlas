@@ -2577,11 +2577,9 @@ const ApplicationDetails = () => {
     isActiveHiredEmployment &&
     (employmentRequestStatus !== 'pending' || employerRequestDecision === 'declined');
   const isAlreadyEmployed = Boolean(application.alreadyEmployed);
-  const visibleStatusLabel = isAlreadyEmployed
-    ? 'Already Employed'
-    : currentStatus === 'withdrawn'
-      ? 'Withdrawn'
-      : currentStatus;
+  const visibleStatusLabel = currentStatus === 'withdrawn'
+    ? 'Withdrawn'
+    : currentStatus;
   const image = user.profileImage ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`) : '';
   const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
   const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
@@ -2711,11 +2709,7 @@ const ApplicationDetails = () => {
                 <div className="flex min-w-0 items-center gap-3 whitespace-nowrap">
                   <AutoFitApplicationHeaderName>{name}</AutoFitApplicationHeaderName>
                   <span
-                    className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${
-                      isAlreadyEmployed
-                        ? 'bg-amber-100 text-amber-800'
-                        : getApplicationStatusBadgeClass(currentStatus)
-                    }`}
+                    className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${getApplicationStatusBadgeClass(currentStatus)}`}
                   >
                     {visibleStatusLabel}
                   </span>
@@ -3020,9 +3014,9 @@ const ApplicationDetails = () => {
                 </div>
               ) : (
                 <>
-              {!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
-              {!isAlreadyEmployed && isFromForInterviewPage && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
-              {!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}
+              {currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
+              {isFromForInterviewPage && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
+              {<button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button>}
               {canReviewEmploymentRequest ? (
                 <button onClick={() => { setEmploymentDeclineReason(''); setEmploymentCustomDeclineReason(''); setEmploymentDeclineComment(''); setEmploymentModal('review'); }} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
                   <SvgIcon name="check" /> Approve Request
@@ -3033,7 +3027,7 @@ const ApplicationDetails = () => {
                   <SvgIcon name="edit" /> Update Status
                 </button>
               ) : null}
-              {(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}
+              {(['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}
                 </>
               )}
             </div>

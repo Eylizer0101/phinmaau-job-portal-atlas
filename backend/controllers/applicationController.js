@@ -3011,22 +3011,6 @@ exports.updateApplicationHiringStage = async (req, res) => {
       const finalStatus = normalizedFinalStage;
 
       if (finalStatus === 'hired') {
-        const otherHiredApplication = await Application.findOne({
-          _id: { $ne: application._id },
-          jobseeker: application.jobseeker?._id || application.jobseeker,
-          job: { $ne: application.job?._id || application.job },
-          status: 'hired',
-          employmentStatus: { $ne: 'inactive' }
-        }).select('_id');
-
-        if (otherHiredApplication) {
-          return res.status(409).json({
-            success: false,
-            code: 'APPLICANT_ALREADY_EMPLOYED',
-            message: 'This applicant is already employed through another job application.'
-          });
-        }
-
         const jobRecord = await Job.findById(application.job?._id || application.job);
         const vacancyLimit = Number(jobRecord?.vacancies || 0);
         if (Number.isFinite(vacancyLimit) && vacancyLimit > 0) {
@@ -3156,24 +3140,6 @@ exports.updateApplicationStatus = async (req, res) => {
         success: false,
         message: 'Invalid application status'
       });
-    }
-
-    if (nextStatus !== 'declined') {
-      const otherHiredApplication = await Application.findOne({
-        _id: { $ne: application._id },
-        jobseeker: application.jobseeker,
-        job: { $ne: application.job?._id || application.job },
-        status: 'hired',
-        employmentStatus: { $ne: 'inactive' }
-      }).select('_id job employer');
-
-      if (otherHiredApplication) {
-        return res.status(409).json({
-          success: false,
-          code: 'APPLICANT_ALREADY_EMPLOYED',
-          message: 'This applicant is already employed through another job application. You may only decline this application.'
-        });
-      }
     }
 
     if (nextStatus === 'declined') {

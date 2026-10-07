@@ -1467,8 +1467,7 @@ const ActionMenu = ({
               type="button"
               onMouseDown={(event) => event.stopPropagation()}
               onClick={(event) => runAction(event, onHire)}
-              disabled={rowBusy || app.alreadyEmployed}
-              title={app.alreadyEmployed ? 'This applicant is already employed by another company.' : ''}
+              disabled={rowBusy}
               className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
               role="menuitem"
             >
