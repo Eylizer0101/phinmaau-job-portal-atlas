@@ -1558,9 +1558,17 @@ const RegisterPage = () => {
                 <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">READY TO GO?</h3>
 
                 <div className="mt-5 rounded-xl bg-[#eaf1fb] px-6 py-4 text-center">
-                  <p className="text-sm text-gray-800">
-                    Before submitting your registration, please carefully review all the information you have provided to ensure it is accurate, complete, and valid. By clicking Submit Registration, you confirm that all details entered are true and correct. You also authorize AGAPAY to use your information for career matching purposes and to share your professional profile, credentials, and relevant details with verified employers to help connect you with suitable job opportunities.
-                  </p>
+                  <div className="space-y-3 text-sm text-gray-800">
+                    <p>
+                      Before submitting your registration, please carefully review all the information you have provided to ensure it is <strong>accurate, complete, and valid.</strong>
+                    </p>
+                    <p>
+                      You also authorize AGAPAY to use your information for <strong>career matching purposes</strong> and share your professional profile, credentials, and relevant details with <strong>verified employers</strong> to help connect you with suitable job opportunities.
+                    </p>
+                    <p>
+                      By clicking <strong>Submit Registration</strong>, you confirm that all information you provided is <strong>true and correct.</strong>
+                    </p>
+                  </div>
                 </div>
 
                 <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
@@ -1616,18 +1624,22 @@ const RegisterPage = () => {
                 <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">Thank you for signing up!</h3>
 
                 <div className="mt-5 rounded-xl bg-[#eaf1fb] px-6 py-5 text-center">
-                  <p className="text-sm font-semibold text-gray-900">Your account is awaiting review</p>
+                  <p className="text-sm font-semibold text-gray-900">Your account is awaiting review.</p>
 
                   <p className="mt-3 text-sm text-gray-800">
-                 Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. 
-                 This verification process usually takes 24 to 48 hours.
+                    The information and credentials you submitted are being reviewed to ensure they are <strong>complete and accurate.</strong> This verification process usually takes <strong>24–48 hours.</strong>
                   </p>
 
                   <p className="mt-4 text-sm text-gray-800">
-                    Once your account is approved, you’ll receive a confirmation email with your login details. 
-Keep an eye on your inbox—if we require any additional information, our team will contact you directly.
-After verification, you’ll gain full access as a job seeker, allowing you to explore career opportunities, connect with potential employers, and manage your professional profile efficiently.
-If you don’t receive a confirmation email within 48 hours or have any questions during this process, please contact us at agapay@gmail.com
+                    Once your account is approved, you will receive a confirmation notification/email with the appropriate account status or login instructions.
+                  </p>
+
+                  <p className="mt-4 text-sm text-gray-800">
+                    If additional information is required, AGAPAY may contact you directly.
+                  </p>
+
+                  <p className="mt-4 text-sm text-gray-800">
+                    After verification, you will have <strong>full access to AGAPAY as a job seeker</strong>, allowing you to explore career opportunities, connect with potential employers, and manage your professional profile.
                   </p>
                 </div>
 

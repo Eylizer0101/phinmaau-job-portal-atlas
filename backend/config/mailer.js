@@ -589,8 +589,12 @@ const sendJobseekerRegistrationSummaryEmail = async ({
           <p style="margin-top:25px; font-size:15px; color:#111827;">
             Hello <strong>${escapeHtml(fullName || 'Jobseeker')}</strong>,
           </p>
+          <h3 style="margin:20px 0 0; font-size:18px; color:#111827;">AGAPAY Jobseeker Registration Summary</h3>
           <p style="font-size:14px; color:#374151; line-height:1.6;">
-            Your jobseeker registration was submitted successfully. Below is a safe summary of the information you provided.
+            Your jobseeker registration was submitted successfully and your account is awaiting review. This email is a registration summary only and does not mean that your account has already been approved.
+          </p>
+          <p style="font-size:14px; color:#374151; line-height:1.6;">
+            AGAPAY will review the information and credentials you submitted. This verification process usually takes 24–48 hours. If additional information is required, AGAPAY may contact you directly.
           </p>
           <table role="presentation" style="width:100%; margin-top:20px; border-collapse:collapse; font-size:14px;">
             <tbody>
