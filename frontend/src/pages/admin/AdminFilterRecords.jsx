@@ -96,8 +96,10 @@ const StatusBadge = ({ value }) => {
   const normalized = text.toLowerCase();
   let cls = "bg-slate-100 text-slate-700";
   if (["hired", "approved", "open", "published", "active"].includes(normalized)) cls = "bg-emerald-50 text-emerald-700";
-  else if (["pending", "for interview", "screening"].includes(normalized)) cls = "bg-amber-50 text-amber-700";
-  else if (["declined", "closed", "expired", "withdrawn", "cancelled"].includes(normalized)) cls = "bg-rose-50 text-rose-700";
+  else if (normalized === "for interview") cls = "bg-blue-50 text-blue-700";
+  else if (normalized === "withdrawn") cls = "bg-violet-50 text-violet-700";
+  else if (["pending", "screening"].includes(normalized)) cls = "bg-amber-50 text-amber-700";
+  else if (["declined", "closed", "expired", "cancelled"].includes(normalized)) cls = "bg-rose-50 text-rose-700";
   return <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${cls}`}>{titleCaseStatus(text)}</span>;
 };
 

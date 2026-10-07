@@ -1,6 +1,6 @@
 // src/pages/admin/JobseekerVerification.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
 import Pagination from "../../components/shared/Pagination";
@@ -678,6 +678,16 @@ const DEFAULT_FILTERS = {
 
 const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashboardBack = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const openJobseekerDetails = (jobseekerId, archived = false) => {
+    navigate(`/admin/jobseeker-verification/${jobseekerId}${archived ? "?archived=1" : ""}`, {
+      state: {
+        backPath: `${location.pathname}${location.search || ""}`,
+        backLabel: pageTitle,
+      },
+    });
+  };
 
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({
@@ -1097,13 +1107,13 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                             tabIndex={0}
                             onClick={(event) => {
                               if (event.target.closest("button, a, input, select, textarea, label")) return;
-                              navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`);
+                              openJobseekerDetails(item._id, archiveMode);
                             }}
                             onKeyDown={(event) => {
                               if (event.target !== event.currentTarget) return;
                               if (event.key === "Enter" || event.key === " ") {
                                 event.preventDefault();
-                                navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`);
+                                openJobseekerDetails(item._id, archiveMode);
                               }
                             }}
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
@@ -1143,7 +1153,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                               <div className="flex items-center justify-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
+                                  onClick={() => openJobseekerDetails(item._id, archiveMode)}
                                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   title="View"
                                   aria-label={`View ${fullName}`}
@@ -1223,7 +1233,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                             <div className="mt-4 flex justify-end gap-2">
                               <button
                                 type="button"
-                                onClick={() => navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
+                                onClick={() => openJobseekerDetails(item._id, archiveMode)}
                                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                 title="View"
                                 aria-label={`View ${fullName}`}

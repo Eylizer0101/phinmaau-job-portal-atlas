@@ -1,6 +1,6 @@
 // src/pages/admin/EmployerVerificationDetails.jsx
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useLocation, useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
 import CenteredIndicator from "../../components/shared/CenteredIndicator";
@@ -627,8 +627,11 @@ const DocumentCard = ({
 // ======================= MAIN PAGE =======================
 const EmployerVerificationDetails = () => {
   const { employerId } = useParams();
+  const location = useLocation();
   const fromArchived = new URLSearchParams(window.location.search).get("archived") === "1";
-  const verificationListPath = `/admin/employer-verification${fromArchived ? "?archived=1" : ""}`;
+  const verificationListPath =
+    location.state?.backPath ||
+    `/admin/employer-verification${fromArchived ? "?archived=1" : ""}`;
 
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState(null);
@@ -1261,7 +1264,7 @@ const EmployerVerificationDetails = () => {
           <section className="rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
             <div className="mb-6 flex items-center gap-2 text-[#2e66a6]">
               <SvgIcon name="building" className="h-5 w-5" />
-              <h2 className="text-base font-bold">Employer Information</h2>
+              <h2 className="text-base font-bold">Company Information</h2>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
@@ -1296,9 +1299,9 @@ const EmployerVerificationDetails = () => {
                     />
                   ) : (
                     <img
-                      src="/images/profile.png"
-                      alt="Default profile placeholder"
-                      className="h-full w-full object-cover bg-white"
+                      src="/images/default-company-logo.png"
+                      alt="Default company placeholder"
+                      className="h-full w-full object-contain bg-white p-2"
                     />
                   )}
                 </div>

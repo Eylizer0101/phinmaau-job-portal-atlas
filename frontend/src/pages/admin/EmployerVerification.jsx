@@ -1,6 +1,6 @@
 // src/pages/admin/EmployerVerification.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
 import Pagination from "../../components/shared/Pagination";
@@ -815,6 +815,16 @@ const RestoreConfirmationModal = ({ open, name, loading, onCancel, onConfirm }) 
 
 const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboardBack = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const openEmployerDetails = (employerId, archived = false) => {
+    navigate(`/admin/employer-verification/${employerId}${archived ? "?archived=1" : ""}`, {
+      state: {
+        backPath: `${location.pathname}${location.search || ""}`,
+        backLabel: pageTitle,
+      },
+    });
+  };
 
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({
@@ -1282,13 +1292,13 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                             tabIndex={0}
                             onClick={(event) => {
                               if (event.target.closest("button, a, input, select, textarea, label")) return;
-                              navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`);
+                              openEmployerDetails(item._id, archiveMode);
                             }}
                             onKeyDown={(event) => {
                               if (event.target !== event.currentTarget) return;
                               if (event.key === "Enter" || event.key === " ") {
                                 event.preventDefault();
-                                navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`);
+                                openEmployerDetails(item._id, archiveMode);
                               }
                             }}
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
@@ -1334,7 +1344,7 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                               <div className="flex items-center justify-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
+                                  onClick={() => openEmployerDetails(item._id, archiveMode)}
                                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   title="View"
                                   aria-label={`View ${companyName}`}
@@ -1417,7 +1427,7 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                             </div>
 
                             <div className="mt-4 flex justify-end gap-2">
-                              <IconButton label={`View ${companyName}`} onClick={() => navigate(`/admin/employer-verification/${item._id}`)} className="h-10 w-10 rounded-xl border-slate-200 text-slate-600 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white">
+                              <IconButton label={`View ${companyName}`} onClick={() => openEmployerDetails(item._id, false)} className="h-10 w-10 rounded-xl border-slate-200 text-slate-600 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white">
                                 <Icon name="eye" className="h-4 w-4" />
                               </IconButton>
 

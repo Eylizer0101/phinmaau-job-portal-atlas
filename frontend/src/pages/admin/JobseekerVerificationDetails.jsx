@@ -1,6 +1,6 @@
 // src/pages/admin/JobseekerVerificationDetails.jsx
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useLocation, useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
 import CenteredIndicator from "../../components/shared/CenteredIndicator";
@@ -640,8 +640,11 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
 // ======================= MAIN PAGE =======================
 const JobseekerVerificationDetails = () => {
   const { id } = useParams();
+  const location = useLocation();
   const fromArchived = new URLSearchParams(window.location.search).get("archived") === "1";
-  const verificationListPath = `/admin/jobseeker-verification${fromArchived ? "?archived=1" : ""}`;
+  const verificationListPath =
+    location.state?.backPath ||
+    `/admin/jobseeker-verification${fromArchived ? "?archived=1" : ""}`;
 
   const [jobseeker, setJobseeker] = useState(null);
   const [loading, setLoading] = useState(true);
