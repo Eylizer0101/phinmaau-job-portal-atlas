@@ -14,6 +14,9 @@ import {
   Repeat2,
   Building2,
   Bell,
+  Mail,
+  FileText,
+  Briefcase,
   UserRoundMinus,
   X,
 } from "lucide-react";
@@ -274,6 +277,44 @@ const formatAdminNotificationTime = (value) => {
     day: "numeric",
     year: "numeric",
   });
+};
+
+const getAdminNotificationGroup = (dateString) => {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "Last Week";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const notificationDay = new Date(date);
+  notificationDay.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.floor(
+    (today.getTime() - notificationDay.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return "Last Week";
+};
+
+const getAdminNotificationIcon = (notification = {}) => {
+  switch (String(notification?.type || "").trim().toLowerCase()) {
+    case "new_application":
+    case "application_update":
+      return FileText;
+    case "new_message":
+      return Mail;
+    case "job_expiring":
+      return Clock3;
+    case "interview":
+      return CalendarDays;
+    case "job_match":
+    case "job_edit_request":
+      return Briefcase;
+    default:
+      return Bell;
+  }
 };
 
 const getAdminNotificationId = (value) => {
@@ -1704,6 +1745,7 @@ const AdminDashboard = () => {
   const [dummyLoading, setDummyLoading] = useState(false);
   const [adminNotifications, setAdminNotifications] = useState([]);
   const [adminUnreadCount, setAdminUnreadCount] = useState(0);
+  const [adminNotificationsLoading, setAdminNotificationsLoading] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const notificationDropdownRef = useRef(null);
 
@@ -1711,27 +1753,36 @@ const AdminDashboard = () => {
     saveAgapayAdminDashboardFiltersState({ filters, activeTab });
   }, [filters, activeTab]);
 
-  const fetchAdminNotifications = async () => {
+  const fetchAdminNotifications = async ({ silent = false } = {}) => {
     try {
+      if (!silent) setAdminNotificationsLoading(true);
+
       const response = await api.get("/notifications", {
         params: {
           page: 1,
-          limit: 5,
+          limit: 10,
           filter: "all",
         },
       });
+
       const data = response.data || {};
-      setAdminNotifications(Array.isArray(data.notifications) ? data.notifications : []);
+      const list = Array.isArray(data.notifications) ? data.notifications : [];
+      setAdminNotifications(list.slice(0, 10));
       setAdminUnreadCount(Number(data.unreadCount || 0));
     } catch (notificationError) {
       console.error("Error fetching admin dashboard notifications:", notificationError);
+    } finally {
+      setAdminNotificationsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAdminNotifications();
+    fetchAdminNotifications({ silent: true });
 
-    const refreshTimer = window.setInterval(fetchAdminNotifications, 30000);
+    const refreshTimer = window.setInterval(
+      () => fetchAdminNotifications({ silent: true }),
+      30000
+    );
     return () => window.clearInterval(refreshTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1751,6 +1802,18 @@ const AdminDashboard = () => {
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [showNotificationDropdown]);
+
+  const markAllAdminNotificationsAsRead = async () => {
+    try {
+      await api.put("/notifications/mark-all-read");
+      setAdminNotifications((items) =>
+        items.map((notification) => ({ ...notification, isRead: true }))
+      );
+      setAdminUnreadCount(0);
+    } catch (notificationError) {
+      console.error("Error marking all admin notifications as read:", notificationError);
+    }
+  };
 
   const handleOpenAdminNotification = async (notification) => {
     if (!notification) return;
@@ -1791,6 +1854,17 @@ const AdminDashboard = () => {
 
     navigate("/admin/notifications");
   };
+
+  const groupedAdminNotifications = ["Today", "Yesterday", "Last Week"]
+    .map((label) => ({
+      label,
+      items: adminNotifications
+        .slice(0, 10)
+        .filter(
+          (notification) => getAdminNotificationGroup(notification.createdAt) === label
+        ),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const displayedAnalytics = analytics;
   const options = displayedAnalytics?.filters?.options || {};
@@ -2112,72 +2186,146 @@ const AdminDashboard = () => {
                     </button>
 
                     {showNotificationDropdown ? (
-                      <div className="absolute right-0 top-12 z-[80] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
-                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                          <div>
-                            <p className="text-sm font-extrabold text-slate-900">Notifications</p>
-                            <p className="text-[11px] text-slate-500">
-                              {adminUnreadCount > 0
-                                ? `${adminUnreadCount} unread notification${adminUnreadCount === 1 ? "" : "s"}`
-                                : "No unread notifications"}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowNotificationDropdown(false);
-                              navigate("/admin/notifications");
-                            }}
-                            className="text-xs font-bold text-[#2e66a6] hover:text-[#244f80]"
-                          >
-                            View all
-                          </button>
-                        </div>
+                      <div
+                        id="admin-notifications-menu"
+                        className={[
+                          "fixed left-1/2 top-[76px] z-[80] w-[calc(100vw-1.5rem)] max-w-sm -translate-x-1/2",
+                          "md:absolute md:left-auto md:right-0 md:top-auto md:mt-2 md:w-96 md:max-w-[calc(100vw-1.5rem)] md:translate-x-0 md:z-50",
+                          "max-h-[520px] overflow-y-auto rounded-xl border border-gray-200 bg-white py-2 shadow-xl",
+                        ].join(" ")}
+                        role="menu"
+                        aria-label="Notifications panel"
+                      >
+                        <div className="border-b border-gray-100 px-4 py-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-lg bg-[#2e66a6]/10 p-2">
+                                <Bell className="h-4 w-4 text-[#2e66a6]" />
+                              </div>
+                              <h3 className="font-semibold text-gray-900">Notifications</h3>
+                            </div>
 
-                        <div className="max-h-[330px] overflow-y-auto">
-                          {adminNotifications.length ? (
-                            adminNotifications.map((notification) => (
+                            {adminUnreadCount > 0 ? (
                               <button
                                 type="button"
-                                key={notification._id}
-                                onClick={() => handleOpenAdminNotification(notification)}
-                                className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50 ${
-                                  notification.isRead ? "bg-white" : "bg-blue-50/60"
-                                }`}
+                                onClick={markAllAdminNotificationsAsRead}
+                                className="rounded-md px-2 py-1 text-sm font-medium text-[#2e66a6] transition hover:text-[#25558c] focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2"
                               >
-                                <span
-                                  className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                                    notification.isRead
-                                      ? "bg-slate-100 text-slate-500"
-                                      : "bg-[#2e66a6]/10 text-[#2e66a6]"
-                                  }`}
-                                >
-                                  <Bell size={16} />
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                  <span className="flex items-start justify-between gap-3">
-                                    <span className="truncate text-xs font-bold text-slate-900">
-                                      {notification.title || "Notification"}
-                                    </span>
-                                    <span className="shrink-0 whitespace-nowrap text-[10px] text-slate-400">
-                                      {formatAdminNotificationTime(notification.createdAt)}
-                                    </span>
-                                  </span>
-                                  <span className="mt-1 block line-clamp-2 text-[11px] leading-4 text-slate-600">
-                                    {notification.message || "Open this notification to view the details."}
-                                  </span>
-                                </span>
+                                Mark all as read
                               </button>
-                            ))
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div className="px-1 py-2">
+                          {adminNotificationsLoading ? (
+                            <div className="space-y-3 p-4">
+                              {[...Array(4)].map((_, index) => (
+                                <div key={index} className="flex items-start gap-3">
+                                  <div className="h-9 w-9 animate-pulse rounded-xl bg-gray-100" />
+                                  <div className="flex-1">
+                                    <div className="h-4 w-40 animate-pulse rounded bg-gray-100" />
+                                    <div className="mt-2 h-3 w-64 animate-pulse rounded bg-gray-100" />
+                                    <div className="mt-2 h-3 w-36 animate-pulse rounded bg-gray-100" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : adminNotifications.length === 0 ? (
+                            <div className="px-4 py-8 text-center">
+                              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                                <Bell className="h-6 w-6 text-gray-400" />
+                              </div>
+                              <p className="text-sm text-gray-600">No new notifications</p>
+                              <p className="mt-1 text-xs text-gray-400">You're all caught up!</p>
+                            </div>
                           ) : (
-                            <div className="flex min-h-32 flex-col items-center justify-center px-5 py-6 text-center">
-                              <Bell size={22} className="text-slate-300" />
-                              <p className="mt-2 text-xs font-semibold text-slate-500">
-                                No notifications yet.
-                              </p>
+                            <div className="space-y-3 px-1">
+                              {groupedAdminNotifications.map((group) => (
+                                <div key={group.label}>
+                                  <div className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                                    {group.label}
+                                  </div>
+
+                                  {group.items.map((notification) => {
+                                    const isUnread = notification?.isRead === false;
+                                    const NotificationIcon = getAdminNotificationIcon(notification);
+
+                                    return (
+                                      <button
+                                        key={notification._id}
+                                        type="button"
+                                        onClick={() => handleOpenAdminNotification(notification)}
+                                        role="menuitem"
+                                        className={[
+                                          "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors",
+                                          "focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-inset",
+                                          "hover:bg-gray-50",
+                                          isUnread ? "bg-blue-50" : "bg-white",
+                                        ].join(" ")}
+                                      >
+                                        <div
+                                          className={[
+                                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                                            isUnread
+                                              ? "bg-blue-100 text-blue-600"
+                                              : "bg-gray-100 text-gray-600",
+                                          ].join(" ")}
+                                          aria-hidden="true"
+                                        >
+                                          <NotificationIcon className="h-4 w-4" />
+                                        </div>
+
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0 flex-1">
+                                              <p
+                                                className={[
+                                                  "min-w-0 flex-1 break-words text-sm font-semibold leading-5",
+                                                  isUnread ? "text-gray-900" : "text-gray-800",
+                                                ].join(" ")}
+                                              >
+                                                {notification.title || "Notification"}
+                                              </p>
+
+                                              {notification.message ? (
+                                                <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-gray-700">
+                                                  {notification.message}
+                                                </p>
+                                              ) : null}
+                                            </div>
+
+                                            <span className="shrink-0 pt-0.5 text-xs font-medium text-gray-400">
+                                              {notification.createdAt
+                                                ? formatAdminNotificationTime(notification.createdAt)
+                                                : ""}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
+
+                        {adminNotifications.length > 0 && !adminNotificationsLoading ? (
+                          <div className="border-t border-gray-100 px-4 py-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowNotificationDropdown(false);
+                                navigate("/admin/notifications");
+                              }}
+                              className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#2e66a6] transition hover:text-[#25558c]"
+                            >
+                              View all notifications
+                              <span className="text-base leading-none text-[#2e66a6]">→</span>
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
