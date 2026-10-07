@@ -1926,15 +1926,15 @@ const Bookmarks = () => {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
 
-      const uniqueJobs = Array.from(
-        new Map(
+      const jobIds = Array.from(
+        new Set(
           (Array.isArray(jobs) ? jobs : [])
-            .filter((job) => job?._id || job?.id)
-            .map((job) => [String(job._id || job.id), job])
-        ).values()
+            .map((job) => String(job?._id || job?.id || '').trim())
+            .filter(Boolean)
+        )
       );
 
-      if (!token || !userStr || uniqueJobs.length === 0) {
+      if (!token || !userStr || jobIds.length === 0) {
         setAppliedMap({});
         setCheckingApplied(false);
         return;
@@ -1949,36 +1949,38 @@ const Bookmarks = () => {
 
       setCheckingApplied(true);
 
-      const results = await Promise.all(
-        uniqueJobs.map(async (job) => {
-          const jobId = job._id || job.id;
+      const chunks = [];
+      for (let index = 0; index < jobIds.length; index += 100) {
+        chunks.push(jobIds.slice(index, index + 100));
+      }
 
-          try {
-            const response = await api.get(`/applications/job/${jobId}/check`);
-
-            if (response.data?.success) {
-              return [
-                jobId,
-                {
-                  hasApplied: Boolean(response.data.hasApplied),
-                  applicationStatus: normalizeApplicationStatus(response.data.application?.status || ''),
-                  isClosed: Boolean(response.data.jobAvailability?.isClosed),
-                  isFullyFilled: Boolean(response.data.jobAvailability?.isFullyFilled),
-                  vacancyCount: Number(response.data.jobAvailability?.vacancyCount || 0),
-                  filledCount: Number(response.data.jobAvailability?.filledCount || 0),
-                  isResolved: true,
-                },
-              ];
-            }
-
-            return [jobId, { hasApplied: false, applicationStatus: '', isResolved: true }];
-          } catch {
-            return [jobId, { hasApplied: false, applicationStatus: '', isResolved: true }];
-          }
-        })
+      const responses = await Promise.all(
+        chunks.map((chunk) =>
+          api.get('/applications/my-job-statuses', {
+            params: { jobIds: chunk.join(',') },
+          })
+        )
       );
 
-      setAppliedMap(Object.fromEntries(results));
+      const statusMap = {};
+      responses.forEach((response) => {
+        if (!response.data?.success || !response.data?.statuses) return;
+        Object.entries(response.data.statuses).forEach(([jobId, status]) => {
+          statusMap[jobId] = {
+            hasApplied: Boolean(status?.hasApplied),
+            applicationStatus: normalizeApplicationStatus(status?.applicationStatus || ''),
+            isClosed: Boolean(status?.isClosed),
+            isFullyFilled: Boolean(status?.isFullyFilled),
+            vacancyCount: Number(status?.vacancyCount || 0),
+            filledCount: Number(status?.filledCount || 0),
+            isResolved: true,
+          };
+        });
+      });
+
+      setAppliedMap(statusMap);
+    } catch {
+      setAppliedMap({});
     } finally {
       setCheckingApplied(false);
     }

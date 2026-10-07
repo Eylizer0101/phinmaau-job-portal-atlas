@@ -20,6 +20,7 @@ const {
   downloadApplicationResume,
   getMyApplications,
   getMyAppliedJobIds,
+  getMyJobStatuses,
   checkIfApplied,
   getJobseekerStatus,
   withdrawMyApplication,
@@ -49,6 +50,7 @@ router.post(
 
 router.get('/my-applications', protect, authorize('jobseeker'), getMyApplications);
 router.get('/my-applied-job-ids', protect, authorize('jobseeker'), getMyAppliedJobIds);
+router.get('/my-job-statuses', protect, authorize('jobseeker'), getMyJobStatuses);
 router.get('/jobseeker/all', protect, authorize('jobseeker'), getJobseekerApplications);
 router.get('/job/:jobId/check', protect, authorize('jobseeker'), checkIfApplied);
 router.put('/:applicationId/withdraw', protect, authorize('jobseeker'), withdrawMyApplication);

@@ -13,6 +13,35 @@ const normalizeJobsResponse = (response) => {
   if (Array.isArray(data?.data)) return data.data;
   return [];
 };
+
+const getAppliedIdsCacheKey = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return `agapay:jobseeker:applied-job-ids:${user?._id || user?.id || "current"}`;
+  } catch {
+    return "agapay:jobseeker:applied-job-ids:current";
+  }
+};
+
+const readAppliedIdsCache = () => {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(getAppliedIdsCacheKey()) || "[]");
+    return Array.isArray(cached) ? cached.map(String).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeAppliedIdsCache = (ids) => {
+  try {
+    sessionStorage.setItem(
+      getAppliedIdsCacheKey(),
+      JSON.stringify(Array.from(new Set((Array.isArray(ids) ? ids : []).map(String).filter(Boolean))))
+    );
+  } catch {
+    // Keep the page usable if storage is unavailable.
+  }
+};
 const formatSalary = (min, max, hidden) => hidden ? "Salary not disclosed" : (min || max) ? `${Number(min || 0).toLocaleString("en-PH")} - ${Number(max || min || 0).toLocaleString("en-PH")}` : "Salary not specified";
 const shortLocation = (value) => String(value || "Location not specified").split(",").slice(0, 3).join(", ");
 
@@ -69,7 +98,7 @@ const CompanyAllJobs = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
-  const [appliedIds, setAppliedIds] = useState([]);
+  const [appliedIds, setAppliedIds] = useState(() => readAppliedIdsCache());
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [savingJobId, setSavingJobId] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
@@ -101,7 +130,7 @@ const CompanyAllJobs = () => {
         setError("");
         const [companyResponse, jobsResponse] = await Promise.all([
           api.get(`/companies/verified/${id}`),
-          api.get("/jobs"),
+          api.get("/jobs", { params: { employer: id } }),
         ]);
         if (!mounted) return;
         const companyData = companyResponse?.data?.company || null;
@@ -119,20 +148,33 @@ const CompanyAllJobs = () => {
 
   useEffect(() => {
     let mounted = true;
-    const checkApplications = async () => {
+
+    const fetchAppliedJobs = async () => {
       const token = localStorage.getItem("token");
-      if (!token || !jobs.length) return;
-      const results = await Promise.all(jobs.map(async (job) => {
-        try {
-          const response = await api.get(`/applications/job/${job._id}/check`);
-          return response?.data?.hasApplied || response?.data?.applied ? job._id : null;
-        } catch { return null; }
-      }));
-      if (mounted) setAppliedIds(results.filter(Boolean));
+      const userStr = localStorage.getItem("user");
+      if (!token || !userStr) return;
+
+      try {
+        const parsedUser = JSON.parse(userStr);
+        if (parsedUser.role !== "jobseeker") return;
+
+        const response = await api.get("/applications/my-applied-job-ids");
+        if (!mounted || !response.data?.success || !Array.isArray(response.data.appliedJobIds)) return;
+
+        const ids = Array.from(
+          new Set(response.data.appliedJobIds.map((jobId) => String(jobId || "")).filter(Boolean))
+        );
+        setAppliedIds(ids);
+        writeAppliedIdsCache(ids);
+      } catch {
+        // Keep cached values so buttons do not flash back to Apply Now.
+      }
     };
-    checkApplications();
+
+    fetchAppliedJobs();
     return () => { mounted = false; };
-  }, [jobs]);
+  }, []);
+
 
   useEffect(() => {
     let mounted = true;
@@ -153,11 +195,11 @@ const CompanyAllJobs = () => {
           return;
         }
 
-        const response = await api.get("/jobs/saved");
+        const response = await api.get("/jobs/saved", { params: { idsOnly: true } });
         if (!mounted) return;
 
-        if (response.data?.success && Array.isArray(response.data.jobs)) {
-          setSavedJobIds(response.data.jobs.map((job) => job._id || job.id).filter(Boolean));
+        if (response.data?.success && Array.isArray(response.data.savedJobIds)) {
+          setSavedJobIds(response.data.savedJobIds.map(String).filter(Boolean));
         } else {
           setSavedJobIds([]);
         }
@@ -574,7 +616,13 @@ const CompanyAllJobs = () => {
           job={selectedJob}
           isOpen={showApplyModal}
           onClose={() => { setShowApplyModal(false); setSelectedJob(null); }}
-          onApplicationSubmitted={() => { setAppliedIds((current) => [...new Set([...current, selectedJob._id])]); }}
+          onApplicationSubmitted={() => {
+            setAppliedIds((current) => {
+              const next = [...new Set([...current, String(selectedJob._id)])];
+              writeAppliedIdsCache(next);
+              return next;
+            });
+          }}
         />
       ) : null}
     </main>

@@ -120,6 +120,35 @@ const UI = {
 
 const MAX_FILE_MB = 10;
 const CONVERSATIONS_PER_PAGE = 7;
+const MESSAGE_CACHE_TTL_MS = 60 * 1000;
+
+const getMessageCacheUserKey = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return String(user?._id || user?.id || 'current');
+  } catch {
+    return 'current';
+  }
+};
+
+const readSessionCache = (key, fallback) => {
+  try {
+    const payload = JSON.parse(sessionStorage.getItem(key) || 'null');
+    if (!payload || Date.now() - Number(payload.savedAt || 0) > MESSAGE_CACHE_TTL_MS) return fallback;
+    return payload.value ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeSessionCache = (key, value) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), value }));
+  } catch {
+    // Messaging stays functional if session storage is unavailable.
+  }
+};
+
 
 const makeClientId = () => `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
@@ -137,7 +166,7 @@ const ALLOWED_MIMES = [
 const JobseekerMessages = () => {
   const navigate = useNavigate();
 
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState(() => readSessionCache(`agapay:messages:conversations:${getMessageCacheUserKey()}`, []));
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -539,7 +568,11 @@ const normalizeLinkHref = (value = '') => {
         params: { view },
       });
 
-      if (response.data?.success) setConversations(response.data.data || []);
+      if (response.data?.success) {
+        const nextConversations = response.data.data || [];
+        setConversations(nextConversations);
+        writeSessionCache(`agapay:messages:conversations:${getMessageCacheUserKey()}`, nextConversations);
+      }
     } catch (error) {
       console.error('Error fetching conversations:', error);
     }
@@ -548,13 +581,25 @@ const normalizeLinkHref = (value = '') => {
   const fetchMessages = useCallback(
     async (conversationId) => {
       try {
+        const cacheKey = `agapay:messages:thread:${getMessageCacheUserKey()}:${conversationId}`;
+        const cachedMessages = readSessionCache(cacheKey, null);
+        if (Array.isArray(cachedMessages)) {
+          setMessages(cachedMessages);
+          setTimeout(() => scrollToBottom(false), 0);
+        }
+
         const token = getToken();
         const response = await axios.get(`${API_BASE_URL}/messages/conversation/${conversationId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.data?.success) {
-          setMessages(response.data.data || []);
+          const nextMessages = response.data.data || [];
+          setMessages(nextMessages);
+          writeSessionCache(
+            `agapay:messages:thread:${getMessageCacheUserKey()}:${conversationId}`,
+            nextMessages
+          );
           setConversations((previous) =>
             previous.map((conversation) =>
               conversation._id === conversationId
@@ -579,7 +624,7 @@ const normalizeLinkHref = (value = '') => {
 
   useEffect(() => {
     const boot = async () => {
-      setLoading(true);
+      setLoading(conversations.length === 0);
       await fetchConversations('active');
       setLoading(false);
     };

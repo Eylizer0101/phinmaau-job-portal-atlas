@@ -1001,8 +1001,8 @@ const CompanyViewDetails = () => {
       setError("");
 
       const [companyRes, jobsRes] = await Promise.all([
-        api.get(`/companies/verified/${id}`),
-        api.get("/jobs"),
+        api.get(`/companies/verified/${id}`, { params: { reviewLimit: 6 } }),
+        api.get("/jobs", { params: { employer: id } }),
       ]);
 
       const companyData = companyRes?.data?.company || null;
@@ -1123,13 +1123,10 @@ const CompanyViewDetails = () => {
         return;
       }
 
-      const response = await api.get("/applications/my-applications");
+      const response = await api.get("/applications/my-applied-job-ids");
 
-      if (response.data?.success && Array.isArray(response.data.applications)) {
-        const ids = response.data.applications
-          .map((application) => application?.job?._id || application?.job?.id)
-          .filter(Boolean);
-
+      if (response.data?.success && Array.isArray(response.data.appliedJobIds)) {
+        const ids = response.data.appliedJobIds.map((jobId) => String(jobId || "")).filter(Boolean);
         setAppliedJobIds(Array.from(new Set(ids)));
       } else {
         setAppliedJobIds([]);
@@ -1159,10 +1156,10 @@ const CompanyViewDetails = () => {
         return;
       }
 
-      const response = await api.get("/jobs/saved");
+      const response = await api.get("/jobs/saved", { params: { idsOnly: true } });
 
-      if (response.data?.success && Array.isArray(response.data.jobs)) {
-        setSavedJobIds(response.data.jobs.map((job) => job._id || job.id).filter(Boolean));
+      if (response.data?.success && Array.isArray(response.data.savedJobIds)) {
+        setSavedJobIds(response.data.savedJobIds.map(String).filter(Boolean));
       } else {
         setSavedJobIds([]);
       }

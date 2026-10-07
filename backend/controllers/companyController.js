@@ -510,19 +510,140 @@ exports.getVerifiedCompanyDetails = async (req, res) => {
       });
     }
 
-    const reviewerProfileImageMap = await getReviewerProfileImageMap(
-      company?.employerProfile?.reviews
-    );
+    const allReviews = Array.isArray(company?.employerProfile?.reviews)
+      ? company.employerProfile.reviews
+      : [];
+    const requestedReviewLimit = Number(req.query.reviewLimit || 0);
+    const reviewLimit = Number.isFinite(requestedReviewLimit) && requestedReviewLimit > 0
+      ? Math.min(Math.floor(requestedReviewLimit), 20)
+      : 0;
+    const includeReviews = String(req.query.includeReviews || 'true').toLowerCase() !== 'false';
+    const reviewsForResponse = includeReviews
+      ? (reviewLimit ? allReviews.slice(-reviewLimit) : allReviews)
+      : [];
+
+    const reviewerProfileImageMap = await getReviewerProfileImageMap(reviewsForResponse);
+    const mappedCompany = mapCompanyFromUser(company, reviewerProfileImageMap);
+
+    // Preserve the overall rating/count calculated from every stored review, but
+    // only send the review records this screen actually needs.
+    mappedCompany.reviews = includeReviews
+      ? mappedCompany.reviews.slice(0, reviewLimit || mappedCompany.reviews.length)
+      : [];
 
     return res.status(200).json({
       success: true,
-      company: mapCompanyFromUser(company, reviewerProfileImageMap),
+      company: mappedCompany,
     });
   } catch (error) {
     console.error('Error fetching verified company details:', error);
     return res.status(500).json({
       success: false,
       message: 'Server error fetching company details',
+    });
+  }
+};
+
+// GET /api/companies/verified/:id/reviews
+// Server-side pagination keeps large review histories out of the initial payload.
+exports.getVerifiedCompanyReviews = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const rawLimit = String(req.query.limit || '10').trim().toLowerCase();
+    const isAll = rawLimit === 'all';
+    const limit = isAll ? null : Math.min(Math.max(parseInt(rawLimit, 10) || 10, 1), 100);
+    const search = String(req.query.search || '').trim().toLowerCase();
+
+    const company = await User.findOne({
+      _id: id,
+      role: 'employer',
+      status: { $ne: 'deleted' },
+      'employerProfile.verificationDocs.overallStatus': 'verified',
+      'employerProfile.profileVisible': true,
+    })
+      .select('_id employerProfile.companyName employerProfile.reviews')
+      .lean();
+
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: 'Verified company not found',
+      });
+    }
+
+    const allReviews = Array.isArray(company?.employerProfile?.reviews)
+      ? [...company.employerProfile.reviews].sort(
+          (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)
+        )
+      : [];
+
+    const filteredReviews = search
+      ? allReviews.filter((review) => {
+          const values = [
+            review?.reviewerName,
+            review?.roleAppliedFor,
+            review?.message,
+            review?.outcome,
+          ];
+          return values.some((value) => String(value || '').toLowerCase().includes(search));
+        })
+      : allReviews;
+
+    const total = filteredReviews.length;
+    const pageReviews = isAll
+      ? filteredReviews
+      : filteredReviews.slice((page - 1) * limit, page * limit);
+
+    const reviewerProfileImageMap = await getReviewerProfileImageMap(pageReviews);
+
+    const reviews = pageReviews.map((review) => ({
+      _id: review._id,
+      reviewer: review.reviewer,
+      reviewerName: review.reviewerName || 'Anonymous User',
+      reviewerProfileImage:
+        reviewerProfileImageMap.get(String(review.reviewer || '')) || '',
+      applicationId: review.application || null,
+      jobId: review.job || null,
+      roleAppliedFor: String(review.roleAppliedFor || '').trim() || null,
+      rating: Number(review.processRating ?? review.rating) || 0,
+      processRating: Number(review.processRating ?? review.rating) || 0,
+      daysToFirstResponse:
+        review.daysToFirstResponse === undefined || review.daysToFirstResponse === null
+          ? null
+          : Number(review.daysToFirstResponse),
+      totalProcessDays:
+        review.totalProcessDays === undefined || review.totalProcessDays === null
+          ? null
+          : Number(review.totalProcessDays),
+      outcome: review.outcome || null,
+      wouldApplyAgain:
+        typeof review.wouldApplyAgain === 'boolean' ? review.wouldApplyAgain : null,
+      message: review.message || '',
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
+    }));
+
+    const summary = computeReviewSummary(allReviews);
+    const ratingBreakdown = computeRatingBreakdown(allReviews);
+
+    return res.status(200).json({
+      success: true,
+      companyName: company?.employerProfile?.companyName || '',
+      reviews,
+      total,
+      page,
+      limit: isAll ? total : limit,
+      totalPages: isAll ? 1 : Math.max(1, Math.ceil(total / limit)),
+      rating: summary.rating,
+      reviewCount: summary.reviewCount,
+      ratingBreakdown,
+    });
+  } catch (error) {
+    console.error('Error fetching verified company reviews:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching company reviews',
     });
   }
 };
@@ -930,7 +1051,46 @@ exports.getSavedCompanies = async (req, res) => {
     }
 
     const savedCompaniesRaw = Array.isArray(user.savedCompanies) ? user.savedCompanies : [];
-    const companies = await Promise.all(savedCompaniesRaw.map((companyUser) => mapSavedCompanyWithJobs(companyUser)));
+    const companyIds = savedCompaniesRaw.map((companyUser) => companyUser?._id).filter(Boolean);
+    const allReviews = savedCompaniesRaw.flatMap((companyUser) =>
+      Array.isArray(companyUser?.employerProfile?.reviews)
+        ? companyUser.employerProfile.reviews
+        : []
+    );
+
+    const [reviewerProfileImageMap, allJobs] = await Promise.all([
+      getReviewerProfileImageMap(allReviews),
+      companyIds.length
+        ? Job.find({
+            employer: { $in: companyIds },
+            isPublished: true,
+            isActive: true,
+            status: 'published',
+            $or: [
+              { isArchived: false },
+              { isArchived: { $exists: false } },
+            ],
+          })
+            .sort({ createdAt: -1 })
+            .select(
+              'title description requirements jobType educationLevel category salaryMin salaryMax location workMode applicationDeadline vacancies skillsRequired experienceLevel openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage employer companyName companyLogo isUrgent isActive isPublished isArchived status createdAt updatedAt'
+            )
+            .lean()
+        : [],
+    ]);
+
+    const jobsByEmployer = new Map();
+    (allJobs || []).forEach((job) => {
+      if (!isPublicJobOpen(job)) return;
+      const key = String(job.employer || '');
+      if (!jobsByEmployer.has(key)) jobsByEmployer.set(key, []);
+      jobsByEmployer.get(key).push(job);
+    });
+
+    const companies = savedCompaniesRaw.map((companyUser) => ({
+      ...mapCompanyFromUser(companyUser, reviewerProfileImageMap),
+      jobs: jobsByEmployer.get(String(companyUser?._id || '')) || [],
+    }));
 
     return res.status(200).json({
       success: true,

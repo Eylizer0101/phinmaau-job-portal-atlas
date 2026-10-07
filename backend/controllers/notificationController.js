@@ -179,27 +179,57 @@ exports.getNotifications = async (req, res) => {
             }
         }
 
-        const requestedLimit = Number(req.query.limit || 0);
-        const safeLimit = Number.isFinite(requestedLimit) && requestedLimit > 0
-            ? Math.min(Math.floor(requestedLimit), 100)
-            : 0;
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const rawLimit = String(req.query.limit || '').trim().toLowerCase();
+        const isAll = rawLimit === 'all';
+        const requestedLimit = Number(rawLimit || 0);
+        const safeLimit = isAll
+            ? 0
+            : Number.isFinite(requestedLimit) && requestedLimit > 0
+                ? Math.min(Math.floor(requestedLimit), 100)
+                : 0;
+        const filter = String(req.query.filter || 'all').trim().toLowerCase();
+        const search = String(req.query.search || '').trim();
 
-        let notificationQuery = Notification.find({
+        const notificationFilter = {
             user: userId,
             isArchived: false
-        })
-        .sort({ createdAt: -1 })
-        .lean();
+        };
 
-        if (safeLimit) notificationQuery = notificationQuery.limit(safeLimit);
+        if (filter === 'unread') notificationFilter.isRead = false;
+        if (filter === 'read') notificationFilter.isRead = true;
 
-        const [notificationDocs, unreadCount] = await Promise.all([
+        if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const searchRegex = new RegExp(escapedSearch, 'i');
+            notificationFilter.$or = [
+                { title: searchRegex },
+                { message: searchRegex },
+                { type: searchRegex },
+                { 'metadata.companyName': searchRegex },
+                { 'metadata.jobTitle': searchRegex },
+                { 'metadata.newStatus': searchRegex },
+            ];
+        }
+
+        let notificationQuery = Notification.find(notificationFilter)
+            .sort({ createdAt: -1 })
+            .lean();
+
+        if (safeLimit) {
+            notificationQuery = notificationQuery
+                .skip((page - 1) * safeLimit)
+                .limit(safeLimit);
+        }
+
+        const [notificationDocs, unreadCount, total] = await Promise.all([
             notificationQuery,
             Notification.countDocuments({
                 user: userId,
                 isRead: false,
                 isArchived: false
-            })
+            }),
+            Notification.countDocuments(notificationFilter)
         ]);
 
         const messageSenderIds = [
@@ -214,6 +244,7 @@ exports.getNotifications = async (req, res) => {
         const messageSenders = messageSenderIds.length
             ? await User.find({ _id: { $in: messageSenderIds } })
                 .select('role fullName firstName middleName lastName email employerProfile.companyName')
+                .lean()
             : [];
 
         const messageSenderById = new Map(
@@ -251,7 +282,11 @@ exports.getNotifications = async (req, res) => {
         res.json({
             success: true,
             notifications,
-            unreadCount
+            unreadCount,
+            total,
+            page,
+            limit: safeLimit || total,
+            totalPages: safeLimit ? Math.max(1, Math.ceil(total / safeLimit)) : 1
         });
     } catch (error) {
         console.error('Error getting notifications:', error);

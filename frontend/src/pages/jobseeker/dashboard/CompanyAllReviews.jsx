@@ -39,6 +39,10 @@ const CompanyAllReviews = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [reviews, setReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState({ rating: 0, count: 0, breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } });
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const apiOrigin = useMemo(() => {
     const base = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
     return String(base).replace(/\/api\/?$/, "");
@@ -54,63 +58,70 @@ const CompanyAllReviews = () => {
   };
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, pageSize]);
+
+  useEffect(() => {
     let mounted = true;
+
     const load = async () => {
       try {
         setLoading(true);
         setError("");
-        const response = await api.get(`/companies/verified/${id}`);
-        if (mounted) setCompany(response?.data?.company || null);
+
+        const [companyResponse, reviewsResponse] = await Promise.all([
+          api.get(`/companies/verified/${id}`, { params: { includeReviews: false } }),
+          api.get(`/companies/verified/${id}/reviews`, {
+            params: {
+              page,
+              limit: pageSize === "all" ? "all" : pageSize,
+              search: debouncedSearch || undefined,
+            },
+          }),
+        ]);
+
+        if (!mounted) return;
+
+        const companyData = companyResponse?.data?.company || null;
+        const reviewData = reviewsResponse?.data || {};
+
+        setCompany(companyData);
+        setReviews(Array.isArray(reviewData.reviews) ? reviewData.reviews : []);
+        setTotalReviews(Number(reviewData.total || 0));
+        setReviewSummary({
+          rating: Number(reviewData.rating || 0),
+          count: Number(reviewData.reviewCount || 0),
+          breakdown: reviewData.ratingBreakdown || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        });
       } catch (err) {
         if (mounted) setError(err?.response?.data?.message || "Unable to load company reviews.");
       } finally {
         if (mounted) setLoading(false);
       }
     };
+
     load();
     return () => { mounted = false; };
-  }, [id]);
+  }, [id, page, pageSize, debouncedSearch]);
 
-  const reviews = useMemo(() => Array.isArray(company?.reviews) ? company.reviews : [], [company]);
-  const reviewSummary = useMemo(() => {
-    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    let total = 0;
-
-    reviews.forEach((review) => {
-      const rating = Number(review?.processRating ?? review?.rating);
-      if (!Number.isFinite(rating) || rating < 1 || rating > 5) return;
-      const star = Math.max(1, Math.min(5, Math.round(rating)));
-      breakdown[star] += 1;
-      total += rating;
-    });
-
-    const count = Object.values(breakdown).reduce((sum, value) => sum + value, 0);
-    return {
-      rating: count > 0 ? total / count : 0,
-      count,
-      breakdown,
-    };
-  }, [reviews]);
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return reviews;
-    return reviews.filter((review) => [
-      review?.reviewerName,
-      review?.roleAppliedFor,
-      review?.message,
-      getOutcomeLabel(review?.outcome),
-    ].some((value) => String(value || "").toLowerCase().includes(query)));
-  }, [reviews, search]);
-
-  const numericPageSize = pageSize === "all" ? Math.max(filtered.length, 1) : Number(pageSize);
-  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filtered.length / numericPageSize));
+  const filtered = reviews;
+  const totalPages = pageSize === "all"
+    ? 1
+    : Math.max(1, Math.ceil(totalReviews / Number(pageSize)));
   const safePage = Math.min(page, totalPages);
-  const visibleReviews = pageSize === "all"
-    ? filtered
-    : filtered.slice((safePage - 1) * numericPageSize, safePage * numericPageSize);
+  const visibleReviews = reviews;
 
-  useEffect(() => { setPage(1); }, [search, pageSize]);
-  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   if (loading) return <div className="min-h-[70vh] flex items-center justify-center text-black/60">Loading reviews...</div>;
   if (error || !company) return <div className="min-h-[70vh] flex items-center justify-center text-red-600">{error || "Company not found."}</div>;
@@ -139,7 +150,7 @@ const CompanyAllReviews = () => {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_390px_360px] lg:items-center">
             <div>
               <h1 className="text-xl font-bold text-black sm:text-[22px] xl:whitespace-nowrap">All Reviews for {company.companyName || "Company"}</h1>
-              <p className="mt-1 text-black/60">{filtered.length} review{filtered.length === 1 ? "" : "s"}</p>
+              <p className="mt-1 text-black/60">{totalReviews} review{totalReviews === 1 ? "" : "s"}</p>
             </div>
 
             <div className="w-full max-w-[390px] lg:justify-self-center">
@@ -240,10 +251,10 @@ const CompanyAllReviews = () => {
             ))}
           </div>
 
-          {filtered.length >= 10 ? (
+          {totalReviews >= 10 ? (
             <Pagination
               currentPage={safePage}
-              totalItems={filtered.length}
+              totalItems={totalReviews}
               pageSize={pageSize}
               onPageChange={setPage}
               onPageSizeChange={setPageSize}

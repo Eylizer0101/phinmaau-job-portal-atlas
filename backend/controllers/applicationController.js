@@ -3612,6 +3612,124 @@ exports.getMyAppliedJobIds = async (req, res) => {
   }
 };
 
+// Lightweight bulk status helper for pages that render several jobs at once.
+// It replaces one request per job with one request for the whole visible/saved set.
+exports.getMyJobStatuses = async (req, res) => {
+  try {
+    if (req.user.role !== 'jobseeker') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only jobseekers can check application statuses'
+      });
+    }
+
+    const jobIds = String(req.query.jobIds || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 100);
+
+    if (!jobIds.length) {
+      return res.status(200).json({
+        success: true,
+        statuses: {}
+      });
+    }
+
+    const [applications, jobs, hiredCounts] = await Promise.all([
+      Application.find({
+        jobseeker: req.user._id,
+        job: { $in: jobIds }
+      })
+        .select('_id job status updatedAt')
+        .sort({ updatedAt: -1 })
+        .lean(),
+      Job.find({ _id: { $in: jobIds } })
+        .select('_id status isActive isPublished applicationDeadline vacancies')
+        .lean(),
+      Application.aggregate([
+        {
+          $match: {
+            job: { $in: jobIds.map((jobId) => new require('mongoose').Types.ObjectId(jobId)) },
+            status: 'hired'
+          }
+        },
+        {
+          $group: {
+            _id: '$job',
+            count: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    const applicationByJob = new Map();
+    applications.forEach((application) => {
+      const key = String(application.job || '');
+      if (key && !applicationByJob.has(key)) applicationByJob.set(key, application);
+    });
+
+    const hiredByJob = new Map(
+      hiredCounts.map((item) => [String(item._id), Number(item.count) || 0])
+    );
+
+    const statuses = {};
+    jobs.forEach((job) => {
+      const jobId = String(job._id);
+      const application = applicationByJob.get(jobId) || null;
+      const filledCount = hiredByJob.get(jobId) || 0;
+      const vacancyCount = Number(job.vacancies || 0);
+      const normalizedStatus = normalizeJobStatus(job.status);
+      const isFullyFilled =
+        normalizedStatus === 'filled' ||
+        (Number.isFinite(vacancyCount) && vacancyCount > 0 && filledCount >= vacancyCount);
+      const deadline = job.applicationDeadline ? new Date(job.applicationDeadline) : null;
+      const deadlinePassed = deadline && !Number.isNaN(deadline.getTime()) && deadline < new Date();
+      const isClosed =
+        isFullyFilled ||
+        normalizedStatus === 'closed' ||
+        job.isActive === false ||
+        job.isPublished === false ||
+        Boolean(deadlinePassed);
+
+      statuses[jobId] = {
+        hasApplied: Boolean(application),
+        applicationStatus: String(application?.status || ''),
+        isClosed,
+        isFullyFilled,
+        vacancyCount: Number.isFinite(vacancyCount) && vacancyCount > 0 ? vacancyCount : 0,
+        filledCount,
+        isResolved: true
+      };
+    });
+
+    jobIds.forEach((jobId) => {
+      if (!statuses[jobId]) {
+        statuses[jobId] = {
+          hasApplied: false,
+          applicationStatus: '',
+          isClosed: true,
+          isFullyFilled: false,
+          vacancyCount: 0,
+          filledCount: 0,
+          isResolved: true
+        };
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      statuses
+    });
+  } catch (error) {
+    console.error('Error fetching bulk job statuses:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error fetching application statuses'
+    });
+  }
+};
+
 // ✅ IDINAGDAG: CHECK IF APPLIED TO JOB FUNCTION
 exports.checkIfApplied = async (req, res) => {
   try {

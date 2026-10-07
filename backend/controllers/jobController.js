@@ -941,6 +941,10 @@ exports.getAllJobs = async (req, res) => {
       query.companyName = { $regex: `^${String(req.query.company).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' };
     }
 
+    if (req.query.employer) {
+      query.employer = req.query.employer;
+    }
+
     if (req.query.jobType) query.jobType = req.query.jobType;
     if (req.query.educationLevel) query.educationLevel = req.query.educationLevel;
 
@@ -2130,6 +2134,27 @@ exports.getSavedJobs = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: 'Only job seekers can view saved jobs'
+      });
+    }
+
+    const idsOnly = String(req.query.idsOnly || '').trim().toLowerCase() === 'true';
+
+    if (idsOnly) {
+      const userWithIds = await User.findById(req.user._id).select('savedJobs').lean();
+
+      if (!userWithIds) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      const savedJobIds = (userWithIds.savedJobs || []).map((jobId) => String(jobId));
+
+      return res.status(200).json({
+        success: true,
+        count: savedJobIds.length,
+        savedJobIds
       });
     }
 

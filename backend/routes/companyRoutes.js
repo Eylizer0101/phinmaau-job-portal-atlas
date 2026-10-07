@@ -15,6 +15,12 @@ router.get(
   companyController.getCompanyReviewEligibility
 );
 
+// Paginated public reviews for one verified company
+router.get(
+  '/verified/:id/reviews',
+  companyController.getVerifiedCompanyReviews
+);
+
 // Job seeker review route
 router.post(
   '/verified/:id/reviews',
