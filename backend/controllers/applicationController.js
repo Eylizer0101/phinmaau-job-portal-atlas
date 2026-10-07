@@ -1269,33 +1269,80 @@ exports.getMyApplications = async (req, res) => {
       });
     }
 
-    const applications = await Application.find({ jobseeker: req.user._id })
+    const isDashboardMode = String(req.query.mode || '').trim().toLowerCase() === 'dashboard';
+    const baseFilter = { jobseeker: req.user._id };
+
+    if (isDashboardMode) {
+      const [statusRows, recentApplications] = await Promise.all([
+        Application.aggregate([
+          { $match: { jobseeker: req.user._id } },
+          { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]),
+        Application.find(baseFilter)
+          .select('_id job employer status appliedAt reviewedAt updatedAt declineReason declineComment notes employmentStatus employmentStatusRequest hiringStage')
+          .populate({
+            path: 'job',
+            select: 'title companyName location jobType workMode salaryMin salaryMax hideSalary applicationDeadline companyLogo experienceLevel openToFreshGraduates status isActive isPublished isArchived'
+          })
+          .populate({
+            path: 'employer',
+            select: 'fullName employerProfile.companyName employerProfile.companyLogo employerProfile.companyAddress employerProfile.industry employerProfile.country employerProfile.regionCity'
+          })
+          .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 })
+          .limit(2)
+          .lean()
+      ]);
+
+      const counts = {
+        pending: 0,
+        forInterview: 0,
+        hired: 0,
+        declined: 0,
+        total: 0,
+      };
+
+      (statusRows || []).forEach((row) => {
+        const status = String(row?._id || '').toLowerCase();
+        const count = Number(row?.count || 0);
+        counts.total += count;
+        if (status === 'pending') counts.pending += count;
+        else if (status === 'for interview') counts.forInterview += count;
+        else if (status === 'hired') counts.hired += count;
+        else if (status === 'declined') counts.declined += count;
+      });
+
+      recentApplications.forEach((app) => {
+        const loc = String(app?.job?.location || '').trim();
+        if (!loc || loc === 'Not specified') {
+          const fallback = buildCompanyLocation(app?.employer?.employerProfile);
+          if (app.job) app.job.location = fallback;
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        count: counts.total,
+        applications: recentApplications,
+        summary: counts,
+      });
+    }
+
+    const applications = await Application.find(baseFilter)
+      .select('_id job jobseeker employer status lastActiveStatus withdrawalCount withdrawnAt withdrawnBy appliedAt reviewedAt notes employmentStatus hiredAt employmentStatusCheckedAt employmentEndReason employmentEndedAt employmentUpdatedBy employmentStatusRequest declineReason declineComment declinedFrom isDeclinedArchived declinedArchivedAt interviewSchedule hiringStage hiringStages customHiringStages hiddenDefaultHiringStages activityHistory createdAt updatedAt')
       .populate({
         path: 'job',
-        select: 'title companyName location jobType workMode salaryMin salaryMax hideSalary applicationDeadline companyLogo experienceLevel openToFreshGraduates'
+        select: 'title companyName location jobType workMode salaryMin salaryMax hideSalary applicationDeadline companyLogo experienceLevel openToFreshGraduates status isActive isPublished isArchived'
       })
       .populate({
         path: 'jobseeker',
-        select: [
-          'fullName',
-          'firstName',
-          'middleName',
-          'lastName',
-          'extensionName',
-          'email',
-          'profileImage',
-          'jobSeekerProfile'
-        ].join(' ')
+        select: 'jobSeekerProfile.resumeUrl'
       })
       .populate({
         path: 'employer',
         select: 'fullName employerProfile.companyName employerProfile.companyLogo employerProfile.companyAddress employerProfile.industry employerProfile.country employerProfile.regionCity'
       })
-      .populate({
-        path: 'interviewSchedule.interviewer',
-        select: 'fullName firstName middleName lastName email'
-      })
-      .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 });
+      .sort({ updatedAt: -1, reviewedAt: -1, appliedAt: -1 })
+      .lean();
 
     applications.forEach((app) => {
       const loc = String(app?.job?.location || '').trim();
@@ -1305,7 +1352,7 @@ exports.getMyApplications = async (req, res) => {
       }
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: applications.length,
       applications
@@ -1313,7 +1360,7 @@ exports.getMyApplications = async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching applications:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Error fetching applications'
     });

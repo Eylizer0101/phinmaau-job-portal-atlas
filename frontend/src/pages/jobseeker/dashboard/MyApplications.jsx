@@ -49,6 +49,41 @@ const UI = {
 const ACTIVE_STATUSES = ['pending', 'for interview', 'hired', 'declined', 'vacancy full'];
 const INACTIVE_STATUSES = ['withdrawn', 'cancelled'];
 
+const getApplicationsCacheKey = () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userKey = String(storedUser?._id || storedUser?.id || storedUser?.email || 'jobseeker').trim();
+    return `agapay:my-applications:${userKey}`;
+  } catch {
+    return 'agapay:my-applications:jobseeker';
+  }
+};
+
+const readApplicationsCache = () => {
+  try {
+    const raw = sessionStorage.getItem(getApplicationsCacheKey());
+    if (!raw) return { hasCache: false, applications: [] };
+    const parsed = JSON.parse(raw);
+    return {
+      hasCache: Array.isArray(parsed?.applications),
+      applications: Array.isArray(parsed?.applications) ? parsed.applications : [],
+    };
+  } catch {
+    return { hasCache: false, applications: [] };
+  }
+};
+
+const writeApplicationsCache = (applications) => {
+  try {
+    sessionStorage.setItem(
+      getApplicationsCacheKey(),
+      JSON.stringify({ applications: Array.isArray(applications) ? applications : [], cachedAt: Date.now() })
+    );
+  } catch {
+    // Keep the page usable when session storage is unavailable.
+  }
+};
+
 const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
   switch (name) {
     case 'search':
@@ -345,8 +380,9 @@ const LoadingSkeleton = () => (
 );
 
 const MyApplications = () => {
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const initialApplicationsCache = useMemo(() => readApplicationsCache(), []);
+  const [applications, setApplications] = useState(initialApplicationsCache.applications);
+  const [loading, setLoading] = useState(!initialApplicationsCache.hasCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -375,6 +411,7 @@ const MyApplications = () => {
   );
 
   const inFlightRef = useRef(false);
+  const hasDisplayedApplicationsRef = useRef(initialApplicationsCache.hasCache);
   const employmentReminderShownRef = useRef(false);
   const tabRefs = useRef({});
   const subTabRefs = useRef({});
@@ -605,7 +642,7 @@ const MyApplications = () => {
       inFlightRef.current = true;
 
       setRefreshing(true);
-      setLoading(true);
+      if (!hasDisplayedApplicationsRef.current) setLoading(true);
       setError('');
       setNeedsLogin(false);
 
@@ -620,7 +657,10 @@ const MyApplications = () => {
       const response = await api.get('/applications/my-applications');
 
       if (response.data.success) {
-        setApplications(response.data.applications || []);
+        const nextApplications = response.data.applications || [];
+        setApplications(nextApplications);
+        writeApplicationsCache(nextApplications);
+        hasDisplayedApplicationsRef.current = true;
         setLastUpdated(new Date());
       } else {
         setError(response.data.message || 'Failed to fetch applications.');

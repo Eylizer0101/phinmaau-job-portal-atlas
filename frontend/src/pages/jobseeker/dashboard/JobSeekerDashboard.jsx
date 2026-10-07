@@ -18,6 +18,19 @@ const TOP_CARD_HEIGHT = '';
 const PROFILE_REMINDER_ICON = '/images/clock.png';
 const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
 
+const cacheEmptyMyApplicationsResult = () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userKey = String(storedUser?._id || storedUser?.id || storedUser?.email || 'jobseeker').trim();
+    sessionStorage.setItem(
+      `agapay:my-applications:${userKey}`,
+      JSON.stringify({ applications: [], cachedAt: Date.now() })
+    );
+  } catch {
+    // Dashboard remains usable when session storage is unavailable.
+  }
+};
+
 const ApplicationStatusIcon = ({ name, className = 'h-4 w-4' }) => {
   if (name === 'forInterview') {
     return (
@@ -854,51 +867,51 @@ const JobSeekerDashboard = () => {
   };
 
   const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      const [appsResponse, notifResponse] = await Promise.all([
-        api.get('/applications/my-applications'),
-        api.get('/notifications'),
-      ]);
+    try {
+      const appsResponse = await api.get('/applications/my-applications', {
+        params: { mode: 'dashboard' },
+      });
 
       if (appsResponse.data.success) {
-        const allApplications = appsResponse.data.applications || [];
-        setApplications(allApplications);
+        const recentApplications = appsResponse.data.applications || [];
+        const summary = appsResponse.data.summary || {};
 
-        const pending = allApplications.filter(
-          (app) => getEffectiveApplicationStatus(app) === 'pending'
-        ).length;
-
-        const forInterview = allApplications.filter(
-          (app) => getEffectiveApplicationStatus(app) === 'for interview'
-        ).length;
-
-        const hired = allApplications.filter(
-          (app) => getEffectiveApplicationStatus(app) === 'hired'
-        ).length;
-
-        const declined = allApplications.filter(
-          (app) => getEffectiveApplicationStatus(app) === 'declined'
-        ).length;
+        setApplications(recentApplications);
+        const totalApplications = Number(
+          summary.total ?? appsResponse.data.count ?? recentApplications.length
+        );
 
         setStats({
-          pending,
-          forInterview,
-          hired,
-          declined,
-          total: allApplications.length,
+          pending: Number(summary.pending || 0),
+          forInterview: Number(summary.forInterview || 0),
+          hired: Number(summary.hired || 0),
+          declined: Number(summary.declined || 0),
+          total: totalApplications,
         });
-      }
 
-      if (notifResponse.data.success) {
-        setNotifications(notifResponse.data.notifications.slice(0, 3) || []);
+        if (totalApplications === 0) {
+          cacheEmptyMyApplicationsResult();
+        }
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching dashboard applications:', error);
       setMockData();
     } finally {
+      // The main dashboard can render as soon as the lightweight application
+      // summary is ready. Notifications continue loading independently.
       setLoading(false);
+    }
+
+    try {
+      const notifResponse = await api.get('/notifications', { params: { limit: 3 } });
+      if (notifResponse.data.success) {
+        setNotifications(notifResponse.data.notifications || []);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard notifications:', error);
+      setNotifications([]);
     }
   };
 

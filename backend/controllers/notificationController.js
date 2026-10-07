@@ -179,11 +179,28 @@ exports.getNotifications = async (req, res) => {
             }
         }
 
-        const notificationDocs = await Notification.find({
+        const requestedLimit = Number(req.query.limit || 0);
+        const safeLimit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? Math.min(Math.floor(requestedLimit), 100)
+            : 0;
+
+        let notificationQuery = Notification.find({
             user: userId,
             isArchived: false
         })
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
+
+        if (safeLimit) notificationQuery = notificationQuery.limit(safeLimit);
+
+        const [notificationDocs, unreadCount] = await Promise.all([
+            notificationQuery,
+            Notification.countDocuments({
+                user: userId,
+                isRead: false,
+                isArchived: false
+            })
+        ]);
 
         const messageSenderIds = [
             ...new Set(
@@ -203,9 +220,7 @@ exports.getNotifications = async (req, res) => {
             messageSenders.map((sender) => [String(sender._id), sender])
         );
 
-        const notifications = notificationDocs.map((notification) => {
-            const plainNotification = notification.toObject();
-
+        const notifications = notificationDocs.map((plainNotification) => {
             if (plainNotification?.type !== 'new_message') {
                 return plainNotification;
             }
@@ -231,12 +246,6 @@ exports.getNotifications = async (req, res) => {
             }
 
             return plainNotification;
-        });
-
-        const unreadCount = await Notification.countDocuments({
-            user: userId,
-            isRead: false,
-            isArchived: false
         });
 
         res.json({
