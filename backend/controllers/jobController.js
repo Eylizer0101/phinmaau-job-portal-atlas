@@ -1383,11 +1383,15 @@ exports.getEmployerJobs = async (req, res) => {
           isActive: true,
           applicationDeadline: { $gte: now, $lte: expiringUntil }
         }),
-        Job.find(nonArchivedQuery)
+        Job.find({
+          ...nonArchivedQuery,
+          status: { $ne: 'draft' },
+          isPublished: { $ne: false }
+        })
           .select(
-            'title location jobType workMode category isActive isPublished status createdAt updatedAt publishedAt companyLogo companyName applicationCount applicationDeadline vacancies isUrgent isArchived'
+            'title location jobType workMode category isActive isPublished status createdAt updatedAt publishedAt companyLogo companyName applicationCount applicationDeadline vacancies salaryMin salaryMax hideSalary experienceLevel educationLevel openToFreshGraduates isUrgent isArchived'
           )
-          .sort({ updatedAt: -1, createdAt: -1 })
+          .sort({ createdAt: -1 })
           .limit(3)
           .lean(),
       ]);
