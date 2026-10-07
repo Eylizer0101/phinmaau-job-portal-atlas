@@ -1948,7 +1948,7 @@ const EmployerRegisterPage = () => {
                           </span>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <FileRow k="secRegistration" title="SEC Registration" />
                           <FileRow k="birRegistration" title="BIR Registration" />
                           <FileRow k="dtiRegistration" title="DTI Registration" />
