@@ -601,25 +601,24 @@ const EmployerDashboard = () => {
 
       const token = localStorage.getItem('token');
 
-      const jobsResponse = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const appsResponse = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/all', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const conversationsResponse = await axios
-        .get('https://phinmaau-job-portal-atlas.onrender.com/api/messages/conversations', {
+      const [jobsResponse, appsResponse, conversationsResponse, unreadCountResponse] = await Promise.all([
+        axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs', {
           headers: { Authorization: `Bearer ${token}` },
-        })
-        .catch(() => ({ data: { success: false, data: [] } }));
-
-      const unreadCountResponse = await axios
-        .get('https://phinmaau-job-portal-atlas.onrender.com/api/messages/unread-count', {
+        }),
+        axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/all?summary=true', {
           headers: { Authorization: `Bearer ${token}` },
-        })
-        .catch(() => ({ data: { success: false, data: { unreadCount: 0 } } }));
+        }),
+        axios
+          .get('https://phinmaau-job-portal-atlas.onrender.com/api/messages/conversations', {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .catch(() => ({ data: { success: false, data: [] } })),
+        axios
+          .get('https://phinmaau-job-portal-atlas.onrender.com/api/messages/unread-count', {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .catch(() => ({ data: { success: false, data: { unreadCount: 0 } } })),
+      ]);
 
       const conversations = conversationsResponse?.data?.data || [];
       const unreadFromUnreadCount = unreadCountResponse?.data?.data?.unreadCount ?? 0;
@@ -716,7 +715,10 @@ const EmployerDashboard = () => {
             },
             applications: {
               total: typeof appStats.total === 'number' ? appStats.total : allApplications.length,
-              pending: pendingApplications.length,
+              pending:
+                typeof appStats.pending === 'number'
+                  ? appStats.pending
+                  : pendingApplications.length,
               forInterview:
                 typeof appStats.forInterview === 'number'
                   ? appStats.forInterview

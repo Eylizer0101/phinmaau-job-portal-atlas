@@ -39,6 +39,37 @@ import {
 
 const AGAPAY_ADMIN_DASHBOARD_FILTERS_KEY = "agapay:admin:dashboard:filters";
 
+const AGAPAY_ADMIN_ANALYTICS_CACHE_PREFIX = "agapay:admin:analytics-cache:";
+const AGAPAY_ADMIN_ANALYTICS_CACHE_TTL_MS = 30 * 1000;
+
+const getAdminAnalyticsCacheKey = (params = {}) =>
+  `${AGAPAY_ADMIN_ANALYTICS_CACHE_PREFIX}${JSON.stringify(params)}`;
+
+const readAdminAnalyticsCache = (params = {}) => {
+  try {
+    const cached = JSON.parse(
+      window.sessionStorage.getItem(getAdminAnalyticsCacheKey(params)) || "null"
+    );
+    if (!cached?.data) return null;
+    if (Date.now() - Number(cached.savedAt || 0) > AGAPAY_ADMIN_ANALYTICS_CACHE_TTL_MS) return null;
+    return cached.data;
+  } catch {
+    return null;
+  }
+};
+
+const writeAdminAnalyticsCache = (params = {}, data = null) => {
+  try {
+    window.sessionStorage.setItem(
+      getAdminAnalyticsCacheKey(params),
+      JSON.stringify({ savedAt: Date.now(), data })
+    );
+  } catch {
+    // Keep the dashboard usable even when session storage is unavailable.
+  }
+};
+
+
 const readAgapayAdminDashboardFiltersState = () => {
   if (typeof window === "undefined") return {};
   try {
@@ -1606,25 +1637,44 @@ const AdminDashboard = () => {
   }, [filters]);
 
   const fetchAnalytics = async () => {
+    const cachedAnalytics = readAdminAnalyticsCache(requestParams);
+
     try {
-      setLoading(true);
       setError("");
+      if (cachedAnalytics) {
+        setAnalytics({
+          ...emptyAnalytics,
+          ...cachedAnalytics,
+          sections: {
+            ...emptyAnalytics.sections,
+            ...(cachedAnalytics?.sections || {}),
+          },
+        });
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
       const response = await api.get("/admin/analytics", {
         params: requestParams,
       });
+      const nextAnalytics = response.data || {};
       setAnalytics({
         ...emptyAnalytics,
-        ...(response.data || {}),
+        ...nextAnalytics,
         sections: {
           ...emptyAnalytics.sections,
-          ...(response.data?.sections || {}),
+          ...(nextAnalytics?.sections || {}),
         },
       });
+      writeAdminAnalyticsCache(requestParams, nextAnalytics);
     } catch (err) {
       console.error("Admin analytics error:", err);
-      setError(
-        err?.response?.data?.message || "Unable to load analytics data.",
-      );
+      if (!cachedAnalytics) {
+        setError(
+          err?.userMessage || err?.response?.data?.message || "Unable to load analytics data.",
+        );
+      }
     } finally {
       setLoading(false);
     }

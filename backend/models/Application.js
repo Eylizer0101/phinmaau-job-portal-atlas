@@ -350,5 +350,8 @@ applicationSchema.index({ employer: 1, 'interviewSchedule.scheduledAt': 1 });
 applicationSchema.index({ employer: 1, hiringStage: 1 });
 applicationSchema.index({ employer: 1, status: 1, isDeclinedArchived: 1 });
 applicationSchema.index({ employer: 1, 'employmentStatusRequest.status': 1 });
+applicationSchema.index({ employer: 1, status: 1, appliedAt: -1 });
+applicationSchema.index({ jobseeker: 1, appliedAt: -1 });
+applicationSchema.index({ status: 1, appliedAt: -1 });
 
 module.exports = mongoose.model('Application', applicationSchema);

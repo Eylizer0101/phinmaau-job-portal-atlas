@@ -6,6 +6,33 @@ const demoDataController = require('../controllers/demoDataController');
 const authMiddleware = require('../middleware/authMiddleware');
 const uploadMiddleware = require('../middleware/uploadMiddleware');
 
+const ADMIN_ANALYTICS_CACHE_TTL_MS = 20 * 1000;
+const adminAnalyticsCache = new Map();
+
+const cacheAdminAnalytics = (req, res, next) => {
+  const adminId = String(req.user?._id || req.userId || 'admin');
+  const cacheKey = `${adminId}:${req.originalUrl}`;
+  const cached = adminAnalyticsCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.savedAt < ADMIN_ANALYTICS_CACHE_TTL_MS) {
+    res.set('X-AGAPAY-Cache', 'HIT');
+    return res.status(200).json(cached.payload);
+  }
+
+  if (cached) adminAnalyticsCache.delete(cacheKey);
+
+  const originalJson = res.json.bind(res);
+  res.json = (payload) => {
+    if (res.statusCode >= 200 && res.statusCode < 300 && payload?.success !== false) {
+      adminAnalyticsCache.set(cacheKey, { savedAt: Date.now(), payload });
+      res.set('X-AGAPAY-Cache', 'MISS');
+    }
+    return originalJson(payload);
+  };
+
+  return next();
+};
+
 // Protect all admin routes
 router.use(authMiddleware.verifyToken);
 router.use(authMiddleware.isAdmin);
@@ -17,7 +44,7 @@ router.delete('/profile/logo', adminController.removeAdminProfileLogo);
 router.put('/profile/password', adminController.updateAdminPassword);
 
 // Dashboard analytics route
-router.get('/dashboard', adminController.getAdminDashboardAnalytics);
+router.get('/dashboard', cacheAdminAnalytics, adminController.getAdminDashboardAnalytics);
 
 // Presentation demo data (single admin-only endpoint for status / enable / disable)
 router.post('/demo-data', demoDataController.manageDemoData);
@@ -32,7 +59,7 @@ router.post('/exports/excel', adminController.requireAdminPasswordForCredential,
 router.post('/exports/report/pdf', adminController.requireAdminPasswordForCredential, adminController.exportAdminAgapayReportPdf);
 
 // Dedicated Admin Analytics page data
-router.get('/analytics', adminController.getAdminAnalytics);
+router.get('/analytics', cacheAdminAnalytics, adminController.getAdminAnalytics);
 
 // Admin job offers route
 router.get('/job-offers', adminController.getAdminJobOffers);

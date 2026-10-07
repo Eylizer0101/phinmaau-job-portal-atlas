@@ -342,6 +342,10 @@ exports.getVerifiedCompanies = async (req, res) => {
     const search = String(req.query.search || '').trim();
     const location = String(req.query.location || '').trim();
     const industry = String(req.query.industry || '').trim();
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const rawLimit = String(req.query.limit || '').trim().toLowerCase();
+    const hasLimit = rawLimit !== '' && rawLimit !== 'all';
+    const limit = hasLimit ? Math.min(Math.max(parseInt(rawLimit, 10) || 20, 1), 100) : null;
 
     const baseQuery = {
       role: 'employer',
@@ -383,7 +387,17 @@ exports.getVerifiedCompanies = async (req, res) => {
 
     if (!query.$and.length) delete query.$and;
 
-    const employers = await User.find(query).select('-password').sort({ createdAt: -1 });
+    const total = await User.countDocuments(query);
+    let employersQuery = User.find(query)
+      .select('_id employerProfile.companyName employerProfile.industry employerProfile.regionCity employerProfile.businessEmail employerProfile.mobileNumber employerProfile.companyLogo employerProfile.companyWebsiteUrl employerProfile.companyDescription employerProfile.reviews createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (limit) {
+      employersQuery = employersQuery.skip((page - 1) * limit).limit(limit);
+    }
+
+    const employers = await employersQuery;
     const employerIds = employers.map((employer) => employer._id);
 
     const openingsByEmployer = new Map();
@@ -452,10 +466,15 @@ exports.getVerifiedCompanies = async (req, res) => {
     const locations = normalizeList(locationsRaw);
     const industries = normalizeList(industriesRaw);
 
+    res.set('Cache-Control', 'public, max-age=20, stale-while-revalidate=60');
     return res.status(200).json({
       success: true,
       companies,
       count: companies.length,
+      total,
+      page,
+      limit: limit || total,
+      totalPages: limit ? Math.max(1, Math.ceil(total / limit)) : 1,
       filters: {
         locations,
         industries,

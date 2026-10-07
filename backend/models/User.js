@@ -779,4 +779,20 @@ userSchema.set('toObject', { virtuals: true });
 userSchema.statics.hashToken = (token) =>
   crypto.createHash('sha256').update(String(token)).digest('hex');
 
+// Common list/dashboard lookups. These compound indexes keep verified-company
+// and role/status queries from scanning the full users collection as data grows.
+userSchema.index({ role: 1, status: 1, createdAt: -1 });
+userSchema.index({
+  role: 1,
+  'employerProfile.verificationDocs.overallStatus': 1,
+  'employerProfile.profileVisible': 1,
+  createdAt: -1,
+});
+userSchema.index({
+  role: 1,
+  'jobSeekerProfile.verificationDocs.overallStatus': 1,
+  status: 1,
+  createdAt: -1,
+});
+
 module.exports = mongoose.model('User', userSchema);

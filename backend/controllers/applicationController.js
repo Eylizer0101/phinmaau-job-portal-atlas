@@ -1881,6 +1881,55 @@ exports.getEmployerApplications = async (req, res) => {
       });
     }
 
+    if (String(req.query.summary || '').trim().toLowerCase() === 'true') {
+      const employerId = req.user._id;
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const [
+        total,
+        pending,
+        forInterview,
+        hired,
+        declined,
+        withdrawn,
+        new7d,
+        needsReview,
+      ] = await Promise.all([
+        Application.countDocuments({ employer: employerId }),
+        Application.countDocuments({ employer: employerId, status: 'pending' }),
+        Application.countDocuments({ employer: employerId, status: 'for interview' }),
+        Application.countDocuments({
+          employer: employerId,
+          status: 'hired',
+          employmentStatus: { $ne: 'inactive' },
+        }),
+        Application.countDocuments({
+          employer: employerId,
+          status: 'declined',
+          isDeclinedArchived: { $ne: true },
+        }),
+        Application.countDocuments({ employer: employerId, status: 'withdrawn' }),
+        Application.countDocuments({ employer: employerId, appliedAt: { $gte: sevenDaysAgo } }),
+        Application.countDocuments({ employer: employerId, status: { $in: ['pending', 'for interview'] } }),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        stats: {
+          total,
+          pending,
+          forInterview,
+          hired,
+          declined,
+          withdrawn,
+          new7d,
+          needsReview,
+        },
+        applications: [],
+      });
+    }
+
     const applications = await Application.find({ employer: req.user._id })
       .populate({
         path: 'job',

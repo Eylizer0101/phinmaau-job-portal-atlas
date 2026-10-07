@@ -257,26 +257,13 @@ const JobseekerCompanies = () => {
       setLocations(Array.isArray(f.locations) ? f.locations : []);
       setIndustries(Array.isArray(f.industries) ? f.industries : []);
 
-      try {
-        const jobsRes = await api.get("/jobs");
-        const jobs = normalizeJobsResponse(jobsRes);
-
-        const countMap = {};
-        (jobs || []).forEach((job) => {
-          const employerId =
-            typeof job?.employer === "string"
-              ? job.employer
-              : job?.employer?._id || job?.employer?.id;
-
-          if (!employerId) return;
-          countMap[employerId] = (countMap[employerId] || 0) + 1;
-        });
-
-        setJobCountByEmployerId(countMap);
-      } catch (e) {
-        console.error("Error fetching jobs for company counts:", e);
-        setJobCountByEmployerId({});
-      }
+      const countMap = {};
+      (list || []).forEach((company) => {
+        const employerId = String(company?._id || company?.id || "").trim();
+        if (!employerId) return;
+        countMap[employerId] = Number(company?.openingsCount || 0);
+      });
+      setJobCountByEmployerId(countMap);
     } catch (e) {
       console.error("Error fetching companies:", e);
       setCompanies([]);

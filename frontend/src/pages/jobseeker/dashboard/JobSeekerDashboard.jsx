@@ -289,32 +289,19 @@ const JobSeekerDashboard = () => {
     try {
       setCompaniesLoading(true);
 
-      const res = await api.get('/companies/verified');
+      const res = await api.get('/companies/verified', { params: { limit: 4 } });
       const list = res?.data?.companies || [];
       console.log('Verified companies:', list);
       const preview = list.slice(0, 4);
       setCompanies(preview);
 
-      try {
-        const jobsRes = await api.get('/jobs');
-        const jobs = filterOpenJobListings(normalizeJobsResponse(jobsRes));
-
-        const countMap = {};
-        (jobs || []).forEach((job) => {
-          const employerId =
-            typeof job?.employer === 'string'
-              ? job.employer
-              : job?.employer?._id || job?.employer?.id;
-
-          if (!employerId) return;
-          countMap[employerId] = (countMap[employerId] || 0) + 1;
-        });
-
-        setJobCountByEmployerId(countMap);
-      } catch (e) {
-        console.error('Error fetching jobs for company counts:', e);
-        setJobCountByEmployerId({});
-      }
+      const countMap = {};
+      (list || []).forEach((company) => {
+        const employerId = String(company?._id || company?.id || '').trim();
+        if (!employerId) return;
+        countMap[employerId] = Number(company?.openingsCount || 0);
+      });
+      setJobCountByEmployerId(countMap);
     } catch (e) {
       console.error('Error fetching companies:', e);
       setCompanies([]);
@@ -330,10 +317,10 @@ const JobSeekerDashboard = () => {
 
       let jobsRes;
       try {
-        jobsRes = await api.get('/jobs/recommended');
+        jobsRes = await api.get('/jobs/recommended', { params: { limit: 2 } });
       } catch (recommendedError) {
         console.error('Error fetching recommended job offers, falling back to all jobs:', recommendedError);
-        jobsRes = await api.get('/jobs');
+        jobsRes = await api.get('/jobs', { params: { limit: 2 } });
       }
       const filteredJobs = filterOpenJobListings(normalizeJobsResponse(jobsRes));
 

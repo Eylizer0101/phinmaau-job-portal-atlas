@@ -10,6 +10,32 @@ import { filterOpenJobListings } from "../../utils/jobVisibility";
 
 const normalizeAmount = (value) => String(value || "").replace(/[^\d]/g, "");
 
+const JOB_OFFERS_CACHE_KEY = "agapay:public:job-offers-cache";
+const JOB_OFFERS_CACHE_TTL_MS = 60 * 1000;
+
+const readJobOffersCache = () => {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(JOB_OFFERS_CACHE_KEY) || "null");
+    if (!cached || !Array.isArray(cached.jobs)) return null;
+    if (Date.now() - Number(cached.savedAt || 0) > JOB_OFFERS_CACHE_TTL_MS) return null;
+    return cached.jobs;
+  } catch {
+    return null;
+  }
+};
+
+const writeJobOffersCache = (jobs) => {
+  try {
+    sessionStorage.setItem(
+      JOB_OFFERS_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), jobs: Array.isArray(jobs) ? jobs : [] })
+    );
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
+
 const formatAmountInput = (value) => {
   const digits = normalizeAmount(value);
   return digits ? Number(digits).toLocaleString("en-PH") : "";
@@ -932,17 +958,28 @@ const JobOffers = () => {
   };
 
   const fetchAllJobs = async () => {
+    const cachedJobs = readJobOffersCache();
+
     try {
       setErrorMsg("");
-      setLoadingInitial(true);
+      if (cachedJobs?.length) {
+        setAllJobs(cachedJobs);
+        setLoadingInitial(false);
+      } else {
+        setLoadingInitial(true);
+      }
+
       const response = await api.get("/jobs");
       const eligible = filterOpenJobListings(normalizeJobsResponse(response));
 
       setAllJobs(eligible);
+      writeJobOffersCache(eligible);
     } catch (e) {
       console.error("Error fetching jobs:", e);
-      setAllJobs([]);
-      setErrorMsg("We couldn’t load job posts right now. Please try again.");
+      if (!cachedJobs?.length) {
+        setAllJobs([]);
+        setErrorMsg("We couldn’t load job posts right now. Please try again.");
+      }
     } finally {
       setLoadingInitial(false);
     }

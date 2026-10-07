@@ -1010,15 +1010,20 @@ exports.getAllJobs = async (req, res) => {
       }
     }
 
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const rawLimit = String(req.query.limit || '').trim().toLowerCase();
+    const hasLimit = rawLimit !== '' && rawLimit !== 'all';
+    const limit = hasLimit ? Math.min(Math.max(parseInt(rawLimit, 10) || 20, 1), 100) : null;
     const jobs = await Job.find(query)
       .populate({
         path: 'employer',
         select: 'fullName email employerProfile.companyLogo employerProfile.companyAddress employerProfile.country employerProfile.regionCity employerProfile.companyWebsiteUrl'
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     const transformedJobs = jobs.filter((job) => isPublicJobOpen(job)).map(job => {
-      const jobObj = job.toObject();
+      const jobObj = { ...job };
 
       if (!jobObj.companyLogo && jobObj.employer?.employerProfile?.companyLogo) {
         jobObj.companyLogo = jobObj.employer.employerProfile.companyLogo;
@@ -1034,10 +1039,20 @@ exports.getAllJobs = async (req, res) => {
       return jobObj;
     });
 
+    const total = transformedJobs.length;
+    const paginatedJobs = limit
+      ? transformedJobs.slice((page - 1) * limit, page * limit)
+      : transformedJobs;
+
+    res.set('Cache-Control', 'public, max-age=15, stale-while-revalidate=45');
     res.status(200).json({
       success: true,
-      count: transformedJobs.length,
-      jobs: transformedJobs
+      count: paginatedJobs.length,
+      total,
+      page,
+      limit: limit || total,
+      totalPages: limit ? Math.max(1, Math.ceil(total / limit)) : 1,
+      jobs: paginatedJobs
     });
   } catch (error) {
     console.error('Error fetching jobs:', error);
@@ -1146,7 +1161,8 @@ exports.getRecommendedJobs = async (req, res) => {
         path: 'employer',
         select: 'fullName email employerProfile.companyLogo employerProfile.companyAddress employerProfile.country employerProfile.regionCity employerProfile.companyWebsiteUrl'
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     const transformedJobs = attachRecommendationData(
       jobs.filter((job) => isPublicJobOpen(job)),
@@ -1170,10 +1186,14 @@ exports.getRecommendedJobs = async (req, res) => {
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
+    const requestedLimit = Math.min(Math.max(parseInt(req.query.limit, 10) || transformedJobs.length, 1), 100);
+    const limitedJobs = req.query.limit ? transformedJobs.slice(0, requestedLimit) : transformedJobs;
+
     res.status(200).json({
       success: true,
-      count: transformedJobs.length,
-      jobs: transformedJobs,
+      count: limitedJobs.length,
+      total: transformedJobs.length,
+      jobs: limitedJobs,
       recommendationContext: {
         hasProfileKeywords: buildJobseekerMatchKeywords(user).length > 0
       }

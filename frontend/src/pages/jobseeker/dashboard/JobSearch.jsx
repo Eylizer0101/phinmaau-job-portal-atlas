@@ -11,6 +11,40 @@ import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisib
 
 const normalizeAmount = (value) => String(value || '').replace(/[^\d]/g, '');
 
+const JOB_SEARCH_CACHE_TTL_MS = 60 * 1000;
+
+const getJobSearchCacheKey = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return `agapay:jobseeker:job-search-cache:${user?._id || user?.id || 'current'}`;
+  } catch {
+    return 'agapay:jobseeker:job-search-cache:current';
+  }
+};
+
+const readJobSearchCache = () => {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(getJobSearchCacheKey()) || 'null');
+    if (!cached || !Array.isArray(cached.jobs)) return null;
+    if (Date.now() - Number(cached.savedAt || 0) > JOB_SEARCH_CACHE_TTL_MS) return null;
+    return cached.jobs;
+  } catch {
+    return null;
+  }
+};
+
+const writeJobSearchCache = (jobs) => {
+  try {
+    sessionStorage.setItem(
+      getJobSearchCacheKey(),
+      JSON.stringify({ savedAt: Date.now(), jobs: Array.isArray(jobs) ? jobs : [] })
+    );
+  } catch {
+    // Keep the page usable even when session storage is unavailable.
+  }
+};
+
+
 const formatAmountInput = (value) => {
   const digits = normalizeAmount(value);
   return digits ? Number(digits).toLocaleString('en-PH') : '';
@@ -896,12 +930,19 @@ const JobSearch = () => {
   };
 
   const fetchJobs = async () => {
+    const cachedJobs = readJobSearchCache();
+
     try {
-      setLoading(true);
+      if (cachedJobs?.length) {
+        setJobs(cachedJobs);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
       const params = new URLSearchParams();
 
       // Kunin ang available jobs once. Search at filters are combined below.
-
       let response;
       try {
         response = await api.get(`/jobs/recommended?${params.toString()}`);
@@ -925,9 +966,10 @@ const JobSearch = () => {
       const filteredJobs = filterOpenJobListings(jobsData);
 
       setJobs(filteredJobs);
+      writeJobSearchCache(filteredJobs);
     } catch (error) {
       console.error('Error fetching jobs:', error);
-      setJobs([]);
+      if (!cachedJobs?.length) setJobs([]);
     } finally {
       setLoading(false);
     }
