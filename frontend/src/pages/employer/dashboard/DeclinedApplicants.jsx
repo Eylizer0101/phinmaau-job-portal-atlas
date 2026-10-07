@@ -1180,8 +1180,11 @@ const DeclinedApplicants = () => {
 
               {hasActiveFilters && (
                 <div className="lg:col-span-1">
-                  <Button variant="secondary" className="w-full" onClick={clearFilters} disabled={loading}>
-                    Clear
+                  <Button variant="secondary" className="w-full gap-2 inline-flex items-center justify-center" onClick={clearFilters} disabled={loading}>
+                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear All
                   </Button>
                 </div>
               )}

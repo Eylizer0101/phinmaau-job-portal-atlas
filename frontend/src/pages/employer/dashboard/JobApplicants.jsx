@@ -764,8 +764,11 @@ const JobApplicants = () => {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 gap-2"
               >
+                <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
                 Clear All
               </button>
             )}

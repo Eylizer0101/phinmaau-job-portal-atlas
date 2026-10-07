@@ -1153,9 +1153,12 @@ const ArchivedJobs = () => {
                   <button
                     type="button"
                     onClick={clearControls}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 gap-2 inline-flex items-center justify-center"
                   >
-                    Clear
+                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear All
                   </button>
                 </div>
               )}

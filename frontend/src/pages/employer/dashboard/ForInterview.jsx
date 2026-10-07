@@ -2391,10 +2391,13 @@ const selectBase =
                 <div className="lg:col-span-1">
                   <Button
                     variant="secondary"
-                    className="h-[50px] w-full px-3"
+                    className="h-[50px] w-full px-3 gap-2 inline-flex items-center justify-center"
                     onClick={clearFilters}
                   >
-                    Clear
+                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear All
                   </Button>
                 </div>
               )}
