@@ -2836,6 +2836,8 @@ exports.getJobApplications = async (req, res) => {
         category: job.category,
         description: job.description,
         requirements: job.requirements,
+        qualification: job.qualification,
+        educationalRequirements: job.educationalRequirements,
       },
       applications: applicationsWithHistory.map(protectApplicantSalaryForEmployer)
     });

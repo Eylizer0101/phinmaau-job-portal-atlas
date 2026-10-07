@@ -70,31 +70,54 @@ const getRequiredExperienceYears = (value = '') => {
 };
 
 const getApplicantExperienceYears = (workExperiences = [], profileExperience = '') => {
-  const dateBasedYears = (Array.isArray(workExperiences) ? workExperiences : []).reduce((total, item) => {
-    const start = new Date(item?.startDate);
-    const end = item?.isPresent ? new Date() : new Date(item?.endDate);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return total;
-    return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-  }, 0);
-
-  if (dateBasedYears > 0) return dateBasedYears;
   const normalized = normalizeMatchText(profileExperience);
-  if (!normalized || normalized.includes('no experience')) return 0;
-  if (normalized.includes('less than 1')) return 0.5;
-  const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
-  if (rangeMatch) return Number(rangeMatch[2]);
-  const numberMatch = normalized.match(/(\d+)/);
-  return numberMatch ? Number(numberMatch[1]) : 0;
+
+  // Use the experience level selected in the applicant profile as the source of truth.
+  // Only calculate from work dates when the profile experience field is empty.
+  if (normalized) {
+    if (normalized.includes('no experience')) return 0;
+    if (normalized.includes('less than 1')) return 0.5;
+
+    const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (rangeMatch) return Number(rangeMatch[2]);
+
+    const numberMatch = normalized.match(/(\d+)/);
+    if (numberMatch) return Number(numberMatch[1]);
+  }
+
+  return (Array.isArray(workExperiences) ? workExperiences : []).reduce(
+    (total, item) => {
+      const start = new Date(item?.startDate);
+      const end = item?.isPresent ? new Date() : new Date(item?.endDate);
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+        return total;
+      }
+
+      return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    },
+    0
+  );
 };
 
 const getEducationRank = (value = '') => {
   const normalized = normalizeMatchText(value);
   if (!normalized) return 0;
-  if (normalized.includes('doctor')) return 5;
-  if (normalized.includes('master')) return 4;
-  if (normalized.includes('bachelor') || normalized.includes('college') || normalized.includes('degree graduate')) return 3;
-  if (normalized.includes('associate') || normalized.includes('vocational')) return 2;
-  if (normalized.includes('high school')) return 1;
+  if (normalized.includes('doctor') || normalized.includes('phd')) return 5;
+  if (normalized.includes('master') || normalized.includes('post graduate')) return 4;
+  if (
+    normalized.includes('bachelor') ||
+    normalized.includes('college') ||
+    normalized.includes('degree graduate') ||
+    normalized.includes('professional license') ||
+    normalized.includes('board exam')
+  ) return 3;
+  if (
+    normalized.includes('associate') ||
+    normalized.includes('vocational') ||
+    normalized.includes('diploma')
+  ) return 2;
+  if (normalized.includes('high school') || normalized.includes('secondary')) return 1;
   return 0;
 };
 
@@ -110,7 +133,25 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
 
   const skillRatio = requiredSkills.length ? matchedSkills.length / requiredSkills.length : applicantSkills.length ? 0.75 : 0;
   const latestEducation = Array.isArray(education) && education.length ? education[education.length - 1] : {};
-  const applicantEducation = latestEducation.educationalAttainment || latestEducation.level || profile.educationalAttainment || profile.course || '';
+
+  const educationCandidates = [
+    profile.educationalAttainment,
+    ...(Array.isArray(education)
+      ? education.flatMap((entry) => [
+          entry?.educationalAttainment,
+          entry?.level,
+        ])
+      : []),
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  const applicantEducation = educationCandidates.reduce((highest, candidate) => {
+    return getEducationRank(candidate) > getEducationRank(highest)
+      ? candidate
+      : highest;
+  }, educationCandidates[0] || '');
+
   const requiredEducation = job.educationLevel || job.educationalRequirements || '';
   const applicantEducationRank = getEducationRank(applicantEducation);
   const requiredEducationRank = getEducationRank(requiredEducation);
@@ -501,7 +542,16 @@ const JobApplicants = () => {
   useEffect(() => { fetchApplicants(); }, [fetchApplicants]);
 
   const applicantCards = useMemo(() => applications.map((application) => {
-    const user = application.jobseeker || {};
+    const liveUser = application.jobseeker || {};
+    const resumeSnapshot = application.resumeSnapshot || null;
+    const hasResumeSnapshot = Boolean(resumeSnapshot?.profile);
+    const user = hasResumeSnapshot
+      ? {
+          ...liveUser,
+          ...(resumeSnapshot.user || {}),
+          jobSeekerProfile: resumeSnapshot.profile,
+        }
+      : liveUser;
     const profile = user.jobSeekerProfile || {};
     const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
     const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
@@ -509,7 +559,7 @@ const JobApplicants = () => {
     return {
       application, user, profile, skills,
       level: calculateJobSeekerLevel({ skills, certifications: profile.certifications || [], projects: profile.projects || [], seminars: profile.seminars || [], awards: profile.awards || [], workExperiences: work }),
-      matchScore: calculateApplicationMatch({ job: job || {}, profile, skills, work, education }),
+      matchScore: calculateApplicationMatch({ job: application.job || job || {}, profile, skills, work, education }),
     };
   }), [applications, job]);
 
