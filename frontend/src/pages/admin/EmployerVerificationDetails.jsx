@@ -1299,7 +1299,7 @@ const EmployerVerificationDetails = () => {
                     />
                   ) : (
                     <img
-                      src="/images/default-company-logo.png"
+                      src="/images/default-company.svg"
                       alt="Default company placeholder"
                       className="h-full w-full object-contain bg-white p-2"
                     />
