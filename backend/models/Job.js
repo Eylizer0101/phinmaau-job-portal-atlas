@@ -317,6 +317,7 @@ jobSchema.index({ title: 'text', description: 'text', category: 'text' });
 jobSchema.index({ employer: 1, createdAt: -1 });
 jobSchema.index({ isActive: 1, isPublished: 1 });
 jobSchema.index({ employer: 1, isArchived: 1, createdAt: -1 });
+jobSchema.index({ employer: 1, isArchived: 1, updatedAt: -1, createdAt: -1 });
 jobSchema.index({ isPublished: 1, isActive: 1, status: 1, isArchived: 1, createdAt: -1 });
 jobSchema.index({ locationProvince: 1, status: 1, createdAt: -1 });
 jobSchema.index({ category: 1, status: 1, createdAt: -1 });

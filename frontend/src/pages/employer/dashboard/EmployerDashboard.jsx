@@ -530,7 +530,7 @@ const EmployerDashboard = () => {
 
       const token = localStorage.getItem('token');
 
-      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/notifications', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/notifications?limit=10', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -602,7 +602,7 @@ const EmployerDashboard = () => {
       const token = localStorage.getItem('token');
 
       const [jobsResponse, appsResponse, conversationsResponse, unreadCountResponse] = await Promise.all([
-        axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs', {
+        axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs?summary=true', {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/all?summary=true', {
@@ -706,7 +706,10 @@ const EmployerDashboard = () => {
           setDashboardData({
             jobs: {
               total: typeof jobsStats.total === 'number' ? jobsStats.total : allJobs.length,
-              active: postedJobs.length,
+              active:
+                typeof jobsStats.active === 'number'
+                  ? jobsStats.active
+                  : postedJobs.length,
               closed:
                 typeof jobsStats.closed === 'number'
                   ? jobsStats.closed

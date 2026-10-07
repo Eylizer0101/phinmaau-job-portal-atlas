@@ -1691,7 +1691,7 @@ const ForInterview = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedJob]);
+  }, []);
 
   useEffect(() => {
     fetchJobs();

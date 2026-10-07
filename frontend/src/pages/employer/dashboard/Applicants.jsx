@@ -1772,7 +1772,7 @@ const Applicants = () => {
     } finally {
       setAppsLoading(false);
     }
-  }, [selectedJob, navigate]);
+  }, [navigate]);
 
   useEffect(() => {
     fetchJobs();

@@ -144,37 +144,53 @@ exports.getNotifications = async (req, res) => {
 
             const expiringJobs = (myJobs || []).filter((j) => withinNextDays(j.applicationDeadline, 3));
 
-            // Create (or prevent duplicates) expiring notifications
-            for (const job of expiringJobs) {
-                const existing = await Notification.findOne({
+            // Check all recently-created expiry notifications in one query instead
+            // of doing one database lookup per job.
+            if (expiringJobs.length) {
+                const jobIds = expiringJobs.map((job) => job._id);
+                const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+                const existingNotifications = await Notification.find({
                     user: userId,
                     type: 'job_expiring',
-                    'metadata.jobId': job._id,
+                    'metadata.jobId': { $in: jobIds },
                     isArchived: false,
-                    createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // last 24 hours
-                });
+                    createdAt: { $gte: recentCutoff }
+                })
+                    .select('metadata.jobId')
+                    .lean();
 
-                if (!existing) {
-                    const daysLeft = Math.ceil((new Date(job.applicationDeadline) - now) / msInDay);
-                    const safeDaysLeft = Number.isFinite(daysLeft) ? Math.max(daysLeft, 0) : 0;
+                const existingJobIds = new Set(
+                    existingNotifications
+                        .map((notification) => String(notification?.metadata?.jobId || ''))
+                        .filter(Boolean)
+                );
 
-                    const notification = new Notification({
-                        user: userId,
-                        type: 'job_expiring',
-                        title: 'Job Expiring Soon',
-                        message: `"${job.title}" is expiring in ${safeDaysLeft} day${safeDaysLeft === 1 ? '' : 's'}.`,
-                        relatedId: job._id,
-                        relatedModel: 'Job',
-                        link: `/employer/manage-jobs?job=${job._id}`,
-                        metadata: {
-                            jobId: job._id,
-                            jobTitle: job.title,
-                            deadline: job.applicationDeadline,
-                            daysLeft: safeDaysLeft
-                        }
+                const newNotifications = expiringJobs
+                    .filter((job) => !existingJobIds.has(String(job._id)))
+                    .map((job) => {
+                        const daysLeft = Math.ceil((new Date(job.applicationDeadline) - now) / msInDay);
+                        const safeDaysLeft = Number.isFinite(daysLeft) ? Math.max(daysLeft, 0) : 0;
+
+                        return {
+                            user: userId,
+                            type: 'job_expiring',
+                            title: 'Job Expiring Soon',
+                            message: `"${job.title}" is expiring in ${safeDaysLeft} day${safeDaysLeft === 1 ? '' : 's'}.`,
+                            relatedId: job._id,
+                            relatedModel: 'Job',
+                            link: `/employer/manage-jobs?job=${job._id}`,
+                            metadata: {
+                                jobId: job._id,
+                                jobTitle: job.title,
+                                deadline: job.applicationDeadline,
+                                daysLeft: safeDaysLeft
+                            }
+                        };
                     });
 
-                    await notification.save();
+                if (newNotifications.length) {
+                    await Notification.insertMany(newNotifications, { ordered: false });
                 }
             }
         }

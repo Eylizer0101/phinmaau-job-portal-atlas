@@ -1341,6 +1341,77 @@ exports.getEmployerJobs = async (req, res) => {
           ]
         };
 
+    const summaryOnly = String(req.query.summary || '').trim().toLowerCase() === 'true';
+
+    if (summaryOnly && !archivedFilter) {
+      const now = new Date();
+      const expiringUntil = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const nonArchivedQuery = {
+        employer: req.user._id,
+        $or: [
+          { isArchived: false },
+          { isArchived: { $exists: false } }
+        ]
+      };
+
+      const [
+        total,
+        activeCount,
+        archivedCount,
+        expiringSoon,
+        recentJobs,
+      ] = await Promise.all([
+        Job.countDocuments(nonArchivedQuery),
+        Job.countDocuments({
+          ...baseQuery,
+          $and: [
+            {
+              $or: [
+                { isArchived: false },
+                { isArchived: { $exists: false } }
+              ]
+            },
+            { status: { $ne: 'draft' } },
+            { isPublished: { $ne: false } }
+          ]
+        }),
+        Job.countDocuments({ ...baseQuery, isArchived: true }),
+        Job.countDocuments({
+          ...nonArchivedQuery,
+          status: 'published',
+          isPublished: true,
+          isActive: true,
+          applicationDeadline: { $gte: now, $lte: expiringUntil }
+        }),
+        Job.find(nonArchivedQuery)
+          .select(
+            'title location jobType workMode category isActive isPublished status createdAt updatedAt publishedAt companyLogo companyName applicationCount applicationDeadline vacancies isUrgent isArchived'
+          )
+          .sort({ updatedAt: -1, createdAt: -1 })
+          .limit(3)
+          .lean(),
+      ]);
+
+      const jobsWithLogo = recentJobs.map((job) => ({
+        ...job,
+        companyLogo: job.companyLogo || employerLogo || '',
+      }));
+
+      return res.status(200).json({
+        success: true,
+        count: jobsWithLogo.length,
+        activeCount,
+        archivedCount,
+        stats: {
+          total,
+          active: activeCount,
+          closed: Math.max(total - activeCount, 0),
+          expiringSoon,
+        },
+        jobs: jobsWithLogo,
+      });
+    }
+
     const [jobs, activeCount, archivedCount] = await Promise.all([
       Job.find(filterQuery)
         .select(
