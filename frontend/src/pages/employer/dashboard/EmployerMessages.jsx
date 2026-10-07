@@ -100,6 +100,30 @@ const UI = {
 // ---------------- CONSTANTS ----------------
 const MAX_FILE_MB = 10;
 const CONVERSATIONS_PER_PAGE = 7;
+const MESSAGE_CACHE_TTL_MS = 60 * 1000;
+
+const readMessageCache = (key) => {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(key) || 'null');
+    if (!parsed || !Array.isArray(parsed.data)) return null;
+    if (Date.now() - Number(parsed.savedAt || 0) > MESSAGE_CACHE_TTL_MS) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+};
+
+const writeMessageCache = (key, data) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify({
+      savedAt: Date.now(),
+      data: Array.isArray(data) ? data : [],
+    }));
+  } catch {
+    // Messaging continues normally when session storage is unavailable.
+  }
+};
+
 
 const STATUS_FILTER_OPTIONS = [
   { value: 'pending', label: 'Pending' },
@@ -983,7 +1007,10 @@ const EmployerMessages = () => {
   const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api$/, '');
 
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState(() => {
+    const userId = getUserId() || 'current';
+    return readMessageCache(`agapay:employer:messages:conversations:${userId}`) || [];
+  });
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -1141,6 +1168,10 @@ const EmployerMessages = () => {
       if (res.data?.success) {
         const nextConversations = res.data.data || [];
         setConversations(nextConversations);
+        writeMessageCache(
+          `agapay:employer:messages:conversations:${currentUserId || 'current'}`,
+          nextConversations
+        );
         return nextConversations;
       }
     } catch (err) {
@@ -1149,7 +1180,7 @@ const EmployerMessages = () => {
     }
 
     return [];
-  }, [showToast]);
+  }, [showToast, currentUserId]);
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -1248,10 +1279,20 @@ const EmployerMessages = () => {
 
   const fetchMessages = useCallback(
     async (conversationId) => {
+      const cacheKey = `agapay:employer:messages:thread:${currentUserId || 'current'}:${conversationId}`;
+      const cachedMessages = readMessageCache(cacheKey);
+
+      if (cachedMessages) {
+        setMessages(cachedMessages);
+        setTimeout(() => scrollToBottom(false), 0);
+      }
+
       try {
         const res = await api.get(`/messages/conversation/${conversationId}`);
         if (res.data?.success) {
-          setMessages(res.data.data || []);
+          const nextMessages = res.data.data || [];
+          setMessages(nextMessages);
+          writeMessageCache(cacheKey, nextMessages);
           setConversations((previous) =>
             previous.map((conversation) =>
               conversation._id === conversationId
@@ -1269,10 +1310,12 @@ const EmployerMessages = () => {
         }
       } catch (err) {
         console.error(err);
-        showToast({ type: 'error', title: 'Failed to load messages', message: 'Try selecting the conversation again.' });
+        if (!cachedMessages) {
+          showToast({ type: 'error', title: 'Failed to load messages', message: 'Try selecting the conversation again.' });
+        }
       }
     },
-    [scrollToBottom, showToast]
+    [currentUserId, scrollToBottom, showToast]
   );
 
   const markConversationRead = useCallback(
@@ -1280,17 +1323,24 @@ const EmployerMessages = () => {
       if (!conversationId) return;
       try {
         await api.put(`/messages/mark-read/${conversationId}`);
-        fetchConversations('active');
+        setConversations((previous) =>
+          previous.map((conversation) =>
+            conversation._id === conversationId
+              ? { ...conversation, unreadCount: 0 }
+              : conversation
+          )
+        );
+        window.dispatchEvent(new Event('messages:unread-updated'));
       } catch (err) {
         console.log('Mark read endpoint not available, continuing...');
       }
     },
-    [fetchConversations]
+    []
   );
 
   useEffect(() => {
     const boot = async () => {
-      setLoading(true);
+      if (!conversations.length) setLoading(true);
       await Promise.all([
         fetchConversations('active'),
         fetchApplications(),

@@ -127,22 +127,20 @@ exports.getNotifications = async (req, res) => {
         if (req.user.role === 'employer') {
             const now = new Date();
             const msInDay = 24 * 60 * 60 * 1000;
+            const expiringUntil = new Date(now.getTime() + (3 * msInDay));
 
-            const withinNextDays = (dateString, days) => {
-                if (!dateString) return false;
-                const d = new Date(dateString);
-                const diff = d - now;
-                return diff >= 0 && diff <= days * msInDay;
-            };
-
-            const myJobs = await Job.find({
+            const expiringJobs = await Job.find({
                 employer: userId,
                 isActive: true,
                 isPublished: true,
-                status: 'published'
-            }).select('_id title applicationDeadline');
-
-            const expiringJobs = (myJobs || []).filter((j) => withinNextDays(j.applicationDeadline, 3));
+                status: 'published',
+                applicationDeadline: {
+                    $gte: now,
+                    $lte: expiringUntil
+                }
+            })
+                .select('_id title applicationDeadline')
+                .lean();
 
             // Check all recently-created expiry notifications in one query instead
             // of doing one database lookup per job.

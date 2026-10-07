@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -13,9 +13,9 @@ import {
   faTimesCircle,
   faCircle
 } from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
 import Pagination from '../../../components/shared/Pagination';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import api from '../../../services/api';
 
 const buildEmployerNotificationTarget = (notification = {}) => {
   const metadata = notification?.metadata || {};
@@ -98,43 +98,48 @@ const EmployerNotificationsPage = () => {
   const [filter, setFilter] = useState('all'); // all, unread, read
   const [unreadCount, setUnreadCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filter, searchQuery]);
+  const [totalNotifications, setTotalNotifications] = useState(0);
 
   const navigate = useNavigate();
 
-  const api = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
-  });
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 350);
 
-  const fetchNotifications = async () => {
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, debouncedSearchQuery, pageSize]);
+
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/notifications');
+      const response = await api.get('/notifications', {
+        params: {
+          page: currentPage,
+          limit: pageSize,
+          filter,
+          search: debouncedSearchQuery,
+        },
+      });
 
       if (response.data.success) {
         setNotifications(response.data.notifications || []);
         setUnreadCount(response.data.unreadCount || 0);
+        setTotalNotifications(Number(response.data.total || 0));
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      if (error.response && error.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, pageSize, filter, debouncedSearchQuery]);
 
   const fetchUnreadCount = async () => {
     try {
@@ -147,13 +152,14 @@ const EmployerNotificationsPage = () => {
 
   useEffect(() => {
     fetchNotifications();
+  }, [fetchNotifications]);
 
+  useEffect(() => {
     const interval = setInterval(() => {
       fetchUnreadCount();
     }, 30000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleMarkAsRead = async (notificationId) => {
@@ -162,8 +168,13 @@ const EmployerNotificationsPage = () => {
 
       if (response.data.success) {
         setNotifications((prev) =>
-          prev.map((notif) => (notif._id === notificationId ? { ...notif, isRead: true } : notif))
+          filter === 'unread'
+            ? prev.filter((notif) => notif._id !== notificationId)
+            : prev.map((notif) => (notif._id === notificationId ? { ...notif, isRead: true } : notif))
         );
+        if (filter === 'unread') {
+          setTotalNotifications((prev) => Math.max(0, prev - 1));
+        }
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
@@ -192,7 +203,12 @@ const EmployerNotificationsPage = () => {
     try {
       const response = await api.put('/notifications/mark-all-read');
       if (response.data.success) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        if (filter === 'unread') {
+          setNotifications([]);
+          setTotalNotifications(0);
+        } else {
+          setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        }
         setUnreadCount(0);
       }
     } catch (error) {
@@ -308,47 +324,11 @@ const EmployerNotificationsPage = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const filteredNotifications = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    return notifications.filter((notif) => {
-      const matchesFilter =
-        filter === 'unread' ? !notif.isRead : filter === 'read' ? notif.isRead : true;
-
-      if (!matchesFilter) return false;
-      if (!query) return true;
-
-      const searchableValues = [
-        notif.title,
-        notif.message,
-        notif.type,
-        notif.metadata?.companyName,
-        notif.metadata?.jobTitle,
-        notif.metadata?.newStatus,
-        notif.metadata?.status,
-      ];
-
-      return searchableValues.some((value) =>
-        String(value || '').toLowerCase().includes(query)
-      );
-    });
-  }, [notifications, filter, searchQuery]);
-
-  const numericPageSize = pageSize === 'all' ? Math.max(filteredNotifications.length, 1) : Number(pageSize);
   const totalPages = pageSize === 'all'
     ? 1
-    : Math.max(1, Math.ceil(filteredNotifications.length / numericPageSize));
+    : Math.max(1, Math.ceil(totalNotifications / Math.max(Number(pageSize) || 1, 1)));
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedNotifications = pageSize === 'all'
-    ? filteredNotifications
-    : filteredNotifications.slice(
-        (safePage - 1) * numericPageSize,
-        safePage * numericPageSize
-      );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filter, searchQuery, pageSize]);
+  const paginatedNotifications = notifications;
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -608,10 +588,10 @@ const EmployerNotificationsPage = () => {
           )}
         </div>
 
-        {filteredNotifications.length >= 10 ? (
+        {totalNotifications >= 10 ? (
           <Pagination
             currentPage={safePage}
-            totalItems={filteredNotifications.length}
+            totalItems={totalNotifications}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}

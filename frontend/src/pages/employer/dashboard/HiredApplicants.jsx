@@ -701,7 +701,7 @@ const HiredApplicants = () => {
     } finally {
       setLoading(false);
     }
-  }, [handleAuthError, selectedJob]);
+  }, [handleAuthError]);
 
   useEffect(() => {
     fetchJobs();

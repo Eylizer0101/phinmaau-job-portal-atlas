@@ -64,6 +64,8 @@ messageSchema.index({ conversationId: 1, createdAt: -1 });
 messageSchema.index({ sender: 1, receiver: 1 });
 messageSchema.index({ isRead: 1 });
 messageSchema.index({ receiver: 1, isRead: 1, createdAt: -1 });
+messageSchema.index({ sender: 1, createdAt: -1 });
+messageSchema.index({ receiver: 1, createdAt: -1 });
 
 const Message = mongoose.model('Message', messageSchema);
 
