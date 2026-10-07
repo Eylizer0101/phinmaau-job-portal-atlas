@@ -1067,7 +1067,6 @@ const AdminApplications = () => {
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                   isLoading={loading}
-                  enableLoadingTransition
                 
                   className="!min-h-[50px] !py-2"
                 />

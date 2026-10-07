@@ -552,7 +552,6 @@ const AdminJobOffers = () => {
 
   const fetchJobs = useCallback(async () => {
     try {
-      setLoading(true);
       setError('');
       const params = {
         page,
@@ -576,6 +575,7 @@ const AdminJobOffers = () => {
         return;
       }
 
+      setLoading(true);
       const response = await api.get('/admin/job-offers', { params });
       const nextJobs = Array.isArray(response.data?.jobs) ? response.data.jobs : [];
       const nextTotal = response.data?.pagination?.total || 0;
@@ -803,7 +803,6 @@ const AdminJobOffers = () => {
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
                 isLoading={loading}
-                enableLoadingTransition
               
                   className="!min-h-[50px] !py-2"
                 />

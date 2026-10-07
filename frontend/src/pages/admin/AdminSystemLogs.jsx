@@ -572,7 +572,7 @@ const AdminSystemLogs = () => {
 
   const loadLogs = useCallback(async () => {
     try {
-      setLoading(true); setError('');
+      setError('');
       const params = {
         q: search,
         role: filters.role,
@@ -592,6 +592,7 @@ const AdminSystemLogs = () => {
         return;
       }
 
+      setLoading(true);
       const response = await api.get('/admin/system-logs', { params });
       if (!response.data?.success) throw new Error(response.data?.message || 'Unable to load activity logs.');
       const nextLogs = response.data.data || [];
@@ -682,7 +683,6 @@ const AdminSystemLogs = () => {
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
           isLoading={loading}
-          enableLoadingTransition
           ariaLabel="Activity logs pagination"
           className={`!min-h-[50px] !py-2 ${loading ? 'pointer-events-none opacity-60' : ''}`}
         />

@@ -1678,7 +1678,6 @@ const AdminJobApplicants = () => {
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                   isLoading={loading}
-                  enableLoadingTransition
                   ariaLabel="Admin job applicants pagination"
                 
                   className="!min-h-[50px] !py-2"
