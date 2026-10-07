@@ -849,8 +849,17 @@ const Companies = () => {
                   ) : null}
 
                   {hasAnyFilter ? (
-                    <button type="button" className={pillBtn} onClick={clearAll}>
-                      Clear all
+                    <button type="button" className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-white/30 bg-white/95 text-[15px] font-medium text-[#6B7280] hover:bg-white transition" onClick={clearAll}>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear All
                     </button>
                   ) : null}
                 </div>
@@ -927,11 +936,19 @@ const Companies = () => {
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <button
                     type="button"
-                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                    className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-white/30 bg-white/95 text-[15px] font-medium text-[#6B7280] hover:bg-white transition"
                     onClick={clearAll}
                   >
-                    
-                    Clear filters
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear All
                   </button>
 
                   <button
