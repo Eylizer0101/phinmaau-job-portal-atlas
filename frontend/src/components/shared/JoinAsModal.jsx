@@ -57,9 +57,12 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
     return "";
   }, [role]);
 
+  const initialNavigationStateRef = useRef(location.state);
+
   useEffect(() => {
-    const requestedRole = location.state?.initialRole;
-    const requestedStep = location.state?.initialStep;
+    const initialNavigationState = initialNavigationStateRef.current;
+    const requestedRole = initialNavigationState?.initialRole;
+    const requestedStep = initialNavigationState?.initialStep;
     const canRestorePrivacy =
       requestedStep === "privacy" &&
       (requestedRole === "jobseeker" || requestedRole === "employer");
@@ -73,7 +76,7 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
     }
 
     setTimeout(() => topButtonRef.current?.focus?.(), 0);
-  }, [location.pathname, location.state, navigate]);
+  }, [location.pathname, navigate]);
 
   const proceedFromRole = () => {
     if (!role) return;
