@@ -999,9 +999,17 @@ const EmployerRegisterPage = () => {
             <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">READY TO GO?</h3>
 
             <div className="mt-5 rounded-xl bg-[#eaf1fb] px-6 py-4 text-center">
-              <p className="text-sm text-gray-800">
-                Before submitting your registration, please ensure that your company information is accurate, complete, and officially authorized. By clicking Submit Registration, you confirm that the details provided are true and legitimate. You also authorize AGAPAY to display your company profile and job postings within the system to facilitate recruitment, talent matching, and communication with qualified graduates.
-              </p>
+              <div className="space-y-3 text-sm text-gray-800">
+                <p>
+                  Before submitting your registration, please carefully review all the information you have provided to ensure it is <strong>accurate, complete, and valid.</strong>
+                </p>
+                <p>
+                  You also authorize AGAPAY to use your company information for <strong>recruitment and talent-matching purposes</strong> and display your <strong>company profile and job postings</strong> to help connect with qualified graduates.
+                </p>
+                <p>
+                  By clicking <strong>Submit Registration</strong>, you confirm that all information you provided is <strong>true, correct, and officially authorized.</strong>
+                </p>
+              </div>
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
@@ -1298,17 +1306,18 @@ const EmployerRegisterPage = () => {
               <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">Thank you for signing up!</h3>
 
               <div className="mt-5 bg-[#eef3fb] rounded-xl px-6 py-5">
-                <p className="text-sm font-semibold text-gray-900 mb-3">Your account is awaiting review</p>
+                <p className="text-sm font-semibold text-gray-900 mb-3">Your account is awaiting review.</p>
                 <p className="text-sm text-gray-800">
-                  Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. This verification process usually takes 24 to 48 hours.
-
-                  Once your account is approved, you’ll receive a confirmation email with your login details. Keep an eye on your inbox if we require any additional information, our team will contact you directly.
+                  The information and company credentials you submitted are being reviewed to ensure they are <strong>complete and accurate.</strong> This verification process usually takes <strong>24–48 hours.</strong>
                 </p>
-                <p className="text-sm text-gray-800 mt-4">
-                  After verification, you’ll gain full access as an employer, allowing you to post job opportunities, connect with top PHINMA AU graduates, and manage applications efficiently.
-
-                  If you don’t receive a confirmation email within 48 hours or have any questions during this process, please contact us at
-                  agapay@gmail.com
+                <p className="mt-4 text-sm text-gray-800">
+                  Once your account is approved, you will receive an appropriate confirmation notification/email.
+                </p>
+                <p className="mt-4 text-sm text-gray-800">
+                  If additional information is required, AGAPAY will notify you directly.
+                </p>
+                <p className="mt-4 text-sm text-gray-800">
+                  After verification, you will have <strong>full access to AGAPAY as an employer</strong>, allowing you to post job opportunities, connect with qualified PHINMA AU graduates, and manage applications efficiently.
                 </p>
               </div>
 
