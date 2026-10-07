@@ -354,18 +354,37 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
   const fetchProfile = async () => {
     try {
-      setProfileLoading(true);
+      let cachedUser = null;
+      try {
+        cachedUser = JSON.parse(localStorage.getItem('user') || 'null');
+      } catch {
+        cachedUser = null;
+      }
+
+      if (cachedUser) {
+        setUserData(cachedUser);
+        setProfileLoading(false);
+      } else {
+        setProfileLoading(true);
+      }
+
       setProfileError('');
 
       const response = await api.get('/auth/me');
 
       if (response.data?.success) {
-        setUserData(response.data.user || null);
-      } else {
+        const latestUser = response.data.user || null;
+        setUserData(latestUser);
+        if (latestUser) {
+          localStorage.setItem('user', JSON.stringify(latestUser));
+        }
+      } else if (!cachedUser) {
         setProfileError('Failed to load your profile.');
       }
     } catch (error) {
-      setProfileError(error.response?.data?.message || 'Failed to load your profile.');
+      if (!userData) {
+        setProfileError(error.response?.data?.message || 'Failed to load your profile.');
+      }
     } finally {
       setProfileLoading(false);
     }

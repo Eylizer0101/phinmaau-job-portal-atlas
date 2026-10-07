@@ -142,6 +142,11 @@ exports.getPosts = async (req, res) => {
   try {
     const category = String(req.query.category || 'all').toLowerCase();
     const search = String(req.query.search || '').trim();
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const rawLimit = String(req.query.limit || '10').trim().toLowerCase();
+    const limit = rawLimit === 'all'
+      ? 0
+      : Math.min(Math.max(parseInt(rawLimit, 10) || 10, 1), 50);
     const query = { isDeleted: { $ne: true } };
 
     if (category === 'you') {
@@ -151,16 +156,37 @@ exports.getPosts = async (req, res) => {
     }
 
     if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { content: { $regex: search, $options: 'i' } },
-        { topics: { $elemMatch: { $regex: search, $options: 'i' } } },
+        { content: { $regex: escapedSearch, $options: 'i' } },
+        { topics: { $elemMatch: { $regex: escapedSearch, $options: 'i' } } },
       ];
     }
 
-    const posts = await populatePost(CommunityPost.find(query).sort({ createdAt: -1 }));
+    let postsQuery = CommunityPost.find(query).sort({ createdAt: -1 });
+
+    if (limit > 0) {
+      postsQuery = postsQuery
+        .skip((page - 1) * limit)
+        .limit(limit);
+    }
+
+    const [posts, total] = await Promise.all([
+      populatePost(postsQuery),
+      CommunityPost.countDocuments(query),
+    ]);
+
     const data = posts.map((post) => decoratePost(post, req.user?._id));
 
-    res.json({ success: true, count: data.length, data });
+    res.json({
+      success: true,
+      count: data.length,
+      total,
+      page,
+      limit: limit || total,
+      totalPages: limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1,
+      data,
+    });
   } catch (error) {
     console.error('Error fetching community posts:', error);
     res.status(500).json({ success: false, message: 'Error fetching community posts' });

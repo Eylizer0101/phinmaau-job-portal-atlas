@@ -200,6 +200,9 @@ const CommunityPage = () => {
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [postsPage, setPostsPage] = useState(1);
+  const [postsTotal, setPostsTotal] = useState(0);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
 
   const [showCreate, setShowCreate] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
@@ -343,22 +346,48 @@ const CommunityPage = () => {
     }
   };
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (pageToLoad = 1, append = false) => {
     try {
-      setLoading(true);
+      if (append) setLoadingMorePosts(true);
+      else setLoading(true);
+
       const response = await api.get('/community/posts', {
-        params: { category, search: search.trim() },
+        params: {
+          category,
+          search: search.trim(),
+          page: pageToLoad,
+          limit: 10,
+        },
       });
-      if (response.data?.success) setPosts(response.data.data || []);
+
+      if (response.data?.success) {
+        const incomingPosts = Array.isArray(response.data.data) ? response.data.data : [];
+        setPosts((previous) => {
+          if (!append) return incomingPosts;
+
+          const existingIds = new Set(previous.map((post) => String(post?._id || '')));
+          return [
+            ...previous,
+            ...incomingPosts.filter((post) => !existingIds.has(String(post?._id || ''))),
+          ];
+        });
+        setPostsPage(pageToLoad);
+        setPostsTotal(Number(response.data.total || incomingPosts.length));
+      }
     } catch (error) {
       console.error('Error fetching community posts:', error);
     } finally {
-      setLoading(false);
+      if (append) setLoadingMorePosts(false);
+      else setLoading(false);
     }
   }, [category, search]);
 
   useEffect(() => {
-    const timer = setTimeout(fetchPosts, 250);
+    const timer = setTimeout(() => {
+      setPostsPage(1);
+      fetchPosts(1, false);
+    }, 250);
+
     return () => clearTimeout(timer);
   }, [fetchPosts]);
 
@@ -1743,6 +1772,26 @@ const CommunityPage = () => {
               </article>
             );
           })}
+
+          {posts.length < postsTotal ? (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => fetchPosts(postsPage + 1, true)}
+                disabled={loadingMorePosts}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-[#d8e2ee] bg-white px-5 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#f7faff] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loadingMorePosts ? (
+                  <>
+                    <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                    Loading more...
+                  </>
+                ) : (
+                  'Load more posts'
+                )}
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
 

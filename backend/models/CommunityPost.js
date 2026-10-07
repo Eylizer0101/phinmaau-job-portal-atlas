@@ -72,5 +72,8 @@ const communityPostSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 communityPostSchema.index({ createdAt: -1 });
+communityPostSchema.index({ isDeleted: 1, createdAt: -1 });
+communityPostSchema.index({ isDeleted: 1, category: 1, createdAt: -1 });
+communityPostSchema.index({ author: 1, isDeleted: 1, createdAt: -1 });
 
 module.exports = mongoose.model('CommunityPost', communityPostSchema);

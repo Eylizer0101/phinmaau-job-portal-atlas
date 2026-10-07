@@ -375,10 +375,6 @@ const JobSeekerLayout = ({ children }) => {
   }, [fetchMessageUnreadCount]);
 
   useEffect(() => {
-    fetchMessageUnreadCount();
-  }, [location.pathname, fetchMessageUnreadCount]);
-
-  useEffect(() => {
     const TOP_SHOW_PX = 8;
     const HIDE_AFTER_PX = 120;
     const DELTA_THRESHOLD = 8;
@@ -427,7 +423,7 @@ const JobSeekerLayout = ({ children }) => {
   const fetchNotifications = async () => {
     try {
       setNotificationLoading(true);
-      const response = await api.get('/notifications');
+      const response = await api.get('/notifications', { params: { page: 1, limit: 5 } });
       if (response.data.success) {
         setNotifications(response.data.notifications || []);
         setUnreadCount(response.data.unreadCount || 0);
