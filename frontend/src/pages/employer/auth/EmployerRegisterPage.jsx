@@ -168,9 +168,9 @@ const EmployerRegisterPage = () => {
   };
 
   const steps = [
-    { id: 1, label: 'Company Info', title: 'Company information' },
-    { id: 2, label: 'Primary Contact', title: 'Primary user' },
-    { id: 3, label: 'Company Requirements', title: 'Company documents' },
+    { id: 1, label: 'Company Information', title: 'Company Information' },
+    { id: 2, label: 'Primary Contact', title: 'Primary Contact' },
+    { id: 3, label: 'Company Requirements', title: 'Company Requirements' },
   ];
 
   const EXTENSION_OPTIONS = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
@@ -637,7 +637,21 @@ const EmployerRegisterPage = () => {
     }
   };
 
-  const handleBack = () => navigate('/employer/login');
+  const handleBack = () => {
+    if (loading) return;
+
+    if (step > 1) {
+      setStep((current) => Math.max(1, current - 1));
+      return;
+    }
+
+    navigate('/join-as', {
+      state: {
+        initialStep: 'privacy',
+        initialRole: 'employer',
+      },
+    });
+  };
 
   const labelBase = 'block text-sm font-semibold text-gray-800';
 
@@ -1665,8 +1679,7 @@ const EmployerRegisterPage = () => {
                                 disabled={loading}
                                 aria-invalid={!!fieldErrors.regionCity}
                                 aria-describedby={describedBy(
-                                  fieldErrors.regionCity ? 'regionCity-error' : null,
-                                  focused.regionCity && !fieldErrors.regionCity ? 'regionCity-help' : null
+                                  fieldErrors.regionCity ? 'regionCity-error' : null
                                 )}
                               >
                                 <option value="">Select Region</option>
@@ -1709,7 +1722,6 @@ const EmployerRegisterPage = () => {
                           </div>
 
                           <input type="hidden" name="regionCity" value={formData.regionCity} />
-                          {focused.regionCity && !fieldErrors.regionCity && helperText('regionCity-help', 'Select your region and province.')}
                           {errorText('regionCity-error', fieldErrors.regionCity)}
                         </div>
                       </div>
@@ -1927,57 +1939,87 @@ const EmployerRegisterPage = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-sm font-semibold text-gray-700">Upload required documents</p>
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <p className="text-xs font-extrabold uppercase tracking-wide text-gray-700">
+                            Required Documents
+                          </p>
+                          <span className="shrink-0 rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-semibold text-red-500">
+                            Required
+                          </span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FileRow k="secRegistration" title="SEC registration" />
-                          <FileRow k="birRegistration" title="BIR registration" />
-                          <FileRow k="dtiRegistration" title="DTI registration" />
-                          <FileRow k="cityPermit" title="City / Municipality permit" />
-                          <FileRow k="businessPermit" title="Business permit" />
+                        <div className="space-y-3">
+                          <FileRow k="secRegistration" title="SEC Registration" />
+                          <FileRow k="birRegistration" title="BIR Registration" />
+                          <FileRow k="dtiRegistration" title="DTI Registration" />
+                          <FileRow k="cityPermit" title="City / Municipality Permit" />
+                          <FileRow k="businessPermit" title="Business Permit" />
                         </div>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-center pt-2">
-                      <div className="flex items-center gap-3">
-                        {step > 1 && (
-                          <button
-                            type="button"
-                            onClick={handleBackStep}
-                            disabled={loading}
-                            className="h-11 px-8 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50
-                              focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
-                              disabled:opacity-50 disabled:cursor-not-allowed"
+                    <div className="grid grid-cols-1 items-center gap-3 pt-2 sm:grid-cols-3">
+                      <div className="flex justify-center sm:justify-start">
+                        <button
+                          type="button"
+                          onClick={step === 1 ? handleBack : handleBackStep}
+                          disabled={loading}
+                          className="inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800
+                            hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                            disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
                           >
-                            Previous
-                          </button>
-                        )}
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                          <span>{step === 1 ? 'Back' : 'Previous'}</span>
+                        </button>
+                      </div>
 
+                      <p className="flex items-center justify-center whitespace-nowrap text-center text-sm text-gray-700">
+                        <span>Already have an account?&nbsp;</span>
+                        <Link to="/employer/login" className="font-semibold text-[#2e66a6] hover:text-[#255489] underline">
+                          Sign In here
+                        </Link>
+                      </p>
+
+                      <div className="flex justify-center sm:justify-end">
                         <button
                           type="submit"
                           disabled={loading}
-                          className="h-11 px-8 rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#255489]
-                            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
-                            disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white
+                            hover:bg-[#255489] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                            disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Next
+                          <span>Next</span>
+                          <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
                         </button>
                       </div>
                     </div>
                   </form>
-
-                  <div className="mt-7">
-                    <div className="h-px bg-gray-100 mb-4" />
-                    <p className="text-center text-sm text-gray-700">
-                      Already have an account?{' '}
-                      <Link to="/employer/login" className="font-semibold text-[#2e66a6] hover:text-[#255489] underline">
-                        Sign In here
-                      </Link>
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
