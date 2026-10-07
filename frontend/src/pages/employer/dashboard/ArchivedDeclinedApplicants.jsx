@@ -639,7 +639,7 @@ const Modal = ({
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-md bg-[#2e66a6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#255487] disabled:opacity-50"
           >
-            {loading ? <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white" /> : <Icon name="restore" className="h-5 w-5" />}
+            {loading ? <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white" /> : null}
             {loading ? loadingText : confirmText}
           </button>
         </div>
@@ -1331,9 +1331,9 @@ const ArchivedDeclinedApplicants = () => {
                                   aria-label={`Restore declined application of ${name}`}
                                   onClick={() => setRestoreTarget(app)}
                                   disabled={busy}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex h-10 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                  <Icon name="restore" className="h-4 w-4" />
+                                  Restore
                                 </button>
                               </div>
                             </td>
@@ -1409,9 +1409,9 @@ const ArchivedDeclinedApplicants = () => {
                             aria-label={`Restore declined application of ${name}`}
                             onClick={() => setRestoreTarget(app)}
                             disabled={busy}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            <Icon name="restore" className="h-5 w-5" />
+                            Restore
                           </button>
                         </div>
                       </div>

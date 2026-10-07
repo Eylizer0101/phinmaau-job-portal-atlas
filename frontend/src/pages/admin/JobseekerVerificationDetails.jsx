@@ -1635,7 +1635,7 @@ const JobseekerVerificationDetails = () => {
                     <img
                       src="/images/profile.png"
                       alt="Default profile placeholder"
-                      className="h-full w-full object-cover bg-white"
+                      className="h-full w-full scale-110 object-cover bg-white"
                     />
                   </div>
                 )}
@@ -1827,15 +1827,6 @@ const JobseekerVerificationDetails = () => {
                   This will confirm that the <strong className="text-black">{verifyCredential.label}</strong> credential has been reviewed and verified.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setVerifyCredential(null)}
-                disabled={Boolean(checkingDoc)}
-                className="absolute right-5 top-5 rounded-lg p-1.5 text-[#667085] transition hover:bg-slate-100"
-                aria-label="Close"
-              >
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4">
               <button

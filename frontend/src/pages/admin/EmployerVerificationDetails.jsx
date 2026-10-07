@@ -1301,7 +1301,7 @@ const EmployerVerificationDetails = () => {
                     <img
                       src="/images/default-company.svg"
                       alt="Default company placeholder"
-                      className="h-full w-full object-contain bg-white p-2"
+                      className="h-full w-full scale-110 object-contain bg-white p-2"
                     />
                   )}
                 </div>
@@ -1464,9 +1464,6 @@ const EmployerVerificationDetails = () => {
                   This will confirm that the <strong className="text-black">{verifyCredential.label}</strong> credential has been reviewed and verified.
                 </p>
               </div>
-              <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(action)} className="absolute right-5 top-5 rounded-lg p-1.5 text-[#667085] transition hover:bg-slate-100" aria-label="Close">
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4">
               <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(action)} className={cn("h-10 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-black shadow-sm", UI.ring)}>

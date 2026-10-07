@@ -1952,9 +1952,6 @@ const EmployerRegisterPage = () => {
                           <p className="text-xs font-extrabold uppercase tracking-wide text-gray-700">
                             Required Documents
                           </p>
-                          <span className="shrink-0 rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-semibold text-red-500">
-                            Required
-                          </span>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
