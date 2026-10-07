@@ -1,6 +1,6 @@
 // src/components/shared/JoinAsModal.jsx
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BookmarksSvgIcon } from "./JobseekerIcons";
 
 const BLUE = {
@@ -12,6 +12,7 @@ const BLUE = {
 
 const JoinAsModal = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const topButtonRef = useRef(null);
 
@@ -57,11 +58,22 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
   }, [role]);
 
   useEffect(() => {
-    setStep("role");
-    setRole("");
+    const requestedRole = location.state?.initialRole;
+    const requestedStep = location.state?.initialStep;
+    const canRestorePrivacy =
+      requestedStep === "privacy" &&
+      (requestedRole === "jobseeker" || requestedRole === "employer");
+
+    setStep(canRestorePrivacy ? "privacy" : "role");
+    setRole(canRestorePrivacy ? requestedRole : "");
     setAgreePrivacy(false);
+
+    if (canRestorePrivacy) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+
     setTimeout(() => topButtonRef.current?.focus?.(), 0);
-  }, []);
+  }, [location.pathname, location.state, navigate]);
 
   const proceedFromRole = () => {
     if (!role) return;

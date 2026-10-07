@@ -1144,16 +1144,48 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FileRow k="cvFile" title="Upload CV or Resume (Required)" />
-              <FileRow k="diplomaFile" title="Diploma (Required)" />
-              <FileRow k="validIdFile" title="Valid ID (Required)" />
-              <FileRow k="torFile" title="Transcript of Records (TOR) (Required)" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <section className="space-y-3" aria-labelledby="required-documents-heading">
+                <div className="flex items-center justify-between gap-3">
+                  <h3
+                    id="required-documents-heading"
+                    className="text-xs font-extrabold uppercase tracking-wide text-gray-700"
+                  >
+                    Required Documents
+                  </h3>
+                  <span className="shrink-0 rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-semibold text-red-500">
+                    Required
+                  </span>
+                </div>
 
-              <FileRow k="sssFile" title="SSS (Optional)" />
-              <FileRow k="philhealthFile" title="PhilHealth (Optional)" />
-              <FileRow k="pagibigFile" title="Pag-IBIG (Optional)" />
-              <FileRow k="tinFile" title="TIN (Optional)" />
+                <div className="space-y-3">
+                  <FileRow k="cvFile" title="CV or Resume" />
+                  <FileRow k="diplomaFile" title="Diploma" />
+                  <FileRow k="validIdFile" title="Valid ID" />
+                  <FileRow k="torFile" title="Transcript of Records (TOR)" />
+                </div>
+              </section>
+
+              <section className="space-y-3" aria-labelledby="additional-credentials-heading">
+                <div className="flex items-center justify-between gap-3">
+                  <h3
+                    id="additional-credentials-heading"
+                    className="text-xs font-extrabold uppercase tracking-wide text-gray-700"
+                  >
+                    Additional Credentials
+                  </h3>
+                  <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-500">
+                    If available
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <FileRow k="sssFile" title="SSS" />
+                  <FileRow k="philhealthFile" title="PhilHealth" />
+                  <FileRow k="pagibigFile" title="Pag-IBIG" />
+                  <FileRow k="tinFile" title="TIN" />
+                </div>
+              </section>
             </div>
           </div>
         );
@@ -1662,8 +1694,19 @@ If you don’t receive a confirmation email within 48 hours or have any question
               <button
                 type="button"
                 onClick={() => {
-                  if (window.history.length > 1) navigate(-1);
-                  else navigate('/');
+                  if (loading) return;
+
+                  if (currentStep > 1) {
+                    setCurrentStep((s) => Math.max(s - 1, 1));
+                    return;
+                  }
+
+                  navigate('/join-as', {
+                    state: {
+                      initialStep: 'privacy',
+                      initialRole: 'jobseeker',
+                    },
+                  });
                 }}
                 className="absolute left-4 top-4 sm:left-6 sm:top-6 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition
     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
@@ -1728,46 +1771,82 @@ If you don’t receive a confirmation email within 48 hours or have any question
                     {renderStepContent()}
 
                     {/* ACTIONS (Step 1-3 buttons only) */}
-                    <div className="flex items-center justify-center pt-2">
-                      <div className="flex items-center gap-3">
-                        {currentStep > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (loading) return;
-                              setCurrentStep((s) => Math.max(s - 1, 1));
-                            }}
-                            disabled={loading}
-                            className="h-11 px-8 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50
-                              focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
-                              disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Previous
-                          </button>
-                        )}
+                    <div className="grid grid-cols-1 items-center gap-3 pt-2 sm:grid-cols-3">
+                      <div className="flex justify-center sm:justify-start">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (loading) return;
 
+                            if (currentStep === 1) {
+                              navigate('/join-as', {
+                                state: {
+                                  initialStep: 'privacy',
+                                  initialRole: 'jobseeker',
+                                },
+                              });
+                              return;
+                            }
+
+                            setCurrentStep((s) => Math.max(s - 1, 1));
+                          }}
+                          disabled={loading}
+                          className="inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800
+                            hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                            disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                          <span>{currentStep === 1 ? 'Back' : 'Previous'}</span>
+                        </button>
+                      </div>
+
+                      <p className="text-center text-sm text-gray-700">
+                        Already have an account?{' '}
+                        <Link to="/login" className="font-semibold text-[#2e66a6] hover:text-[#245387] underline">
+                          Sign In here
+                        </Link>
+                      </p>
+
+                      <div className="flex justify-center sm:justify-end">
                         <button
                           type="submit"
                           disabled={loading}
-                          className="h-11 px-8 rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#245387]
-                            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
-                            disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white
+                            hover:bg-[#245387] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                            disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Next
+                          <span>Next</span>
+                          <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
                         </button>
                       </div>
                     </div>
                   </form>
-
-                  <div className="mt-7">
-                    <div className="h-px bg-gray-100 mb-4" />
-                    <p className="text-center text-sm text-gray-700">
-                      Already have an account?{' '}
-                      <Link to="/login" className="font-semibold text-[#2e66a6] hover:text-[#245387] underline">
-                        Sign In here
-                      </Link>
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
