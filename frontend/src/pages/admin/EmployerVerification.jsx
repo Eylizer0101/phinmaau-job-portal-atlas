@@ -897,7 +897,6 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
       try {
         clearMessages();
         if (silent) setRefreshing(true);
-        else setLoading(true);
 
         const params = {
           page: filters.page,
@@ -923,6 +922,8 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
           setRefreshing(false);
           return;
         }
+
+        if (!silent) setLoading(true);
 
         const res = await api.get("/admin/employers/verification", { params });
         const payload = res?.data || {};
@@ -1467,7 +1468,6 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                     onPageChange={(page) => onChangeFilter("page", page)}
                     onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
                     isLoading={loading}
-                    enableLoadingTransition
                   
                   className="!min-h-[50px] !py-2"
                                 />

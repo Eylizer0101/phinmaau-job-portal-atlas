@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Bell, Check, ChevronLeft, Search, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
@@ -110,63 +110,65 @@ const AdminNotificationsPage = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeFilter, setActiveFilter] = useState(() => persistedFilterState.activeFilter || "all");
   const [searchQuery, setSearchQuery] = useState(() => persistedFilterState.searchQuery || "");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(() => persistedFilterState.searchQuery || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+  const [totalNotifications, setTotalNotifications] = useState(0);
 
   useEffect(() => {
     saveAgapayAdminNotificationsFiltersState({ activeFilter, searchQuery, pageSize });
   }, [activeFilter, searchQuery, pageSize]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get("/notifications");
+      const response = await api.get("/notifications", {
+        params: {
+          page: currentPage,
+          limit: pageSize,
+          filter: activeFilter,
+          search: debouncedSearchQuery,
+        },
+      });
+
       const data = response.data || {};
       setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
       setUnreadCount(Number(data.unreadCount || 0));
+      setTotalNotifications(Number(data.total || 0));
     } catch (error) {
       console.error("Error fetching admin notifications:", error);
       setNotifications([]);
       setUnreadCount(0);
+      setTotalNotifications(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeFilter, currentPage, debouncedSearchQuery, pageSize]);
 
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [fetchNotifications]);
 
-  const filteredNotifications = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+  const totalPages = pageSize === "all"
+    ? 1
+    : Math.max(1, Math.ceil(totalNotifications / Math.max(Number(pageSize) || 1, 1)));
 
-    return notifications.filter((item) => {
-      const matchesFilter =
-        activeFilter === "unread" ? !item.isRead : activeFilter === "read" ? item.isRead : true;
-
-      if (!matchesFilter) return false;
-      if (!query) return true;
-
-      return [item.title, item.message, item.type, item.metadata?.companyName, item.metadata?.jobTitle]
-        .some((value) => String(value || "").toLowerCase().includes(query));
-    });
-  }, [activeFilter, notifications, searchQuery]);
-
-  const numericPageSize = pageSize === "all" ? Math.max(filteredNotifications.length, 1) : Number(pageSize);
-  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filteredNotifications.length / numericPageSize));
-
-  const paginatedNotifications = useMemo(() => {
-    if (pageSize === "all") return filteredNotifications;
-    const startIndex = (currentPage - 1) * numericPageSize;
-    return filteredNotifications.slice(startIndex, startIndex + numericPageSize);
-  }, [currentPage, filteredNotifications, numericPageSize, pageSize]);
-
+  const paginatedNotifications = notifications;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter, searchQuery, pageSize]);
+  }, [activeFilter, debouncedSearchQuery, pageSize]);
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
@@ -178,8 +180,13 @@ const AdminNotificationsPage = () => {
     try {
       await api.put(`/notifications/${notificationId}/read`);
       setNotifications((items) =>
-        items.map((item) => (item._id === notificationId ? { ...item, isRead: true } : item))
+        activeFilter === "unread"
+          ? items.filter((item) => item._id !== notificationId)
+          : items.map((item) => (item._id === notificationId ? { ...item, isRead: true } : item))
       );
+      if (activeFilter === "unread") {
+        setTotalNotifications((count) => Math.max(count - 1, 0));
+      }
       setUnreadCount((count) => Math.max(count - 1, 0));
     } catch (error) {
       console.error("Error marking notification as read:", error);
@@ -190,7 +197,12 @@ const AdminNotificationsPage = () => {
     try {
       setActionLoading(true);
       await api.put("/notifications/mark-all-read");
-      setNotifications((items) => items.map((item) => ({ ...item, isRead: true })));
+      if (activeFilter === "unread") {
+        setNotifications([]);
+        setTotalNotifications(0);
+      } else {
+        setNotifications((items) => items.map((item) => ({ ...item, isRead: true })));
+      }
       setUnreadCount(0);
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
@@ -217,8 +229,13 @@ const AdminNotificationsPage = () => {
       if (!notification?.isRead && notification?._id) {
         await api.put(`/notifications/${notification._id}/read`);
         setNotifications((items) =>
-          items.map((item) => (item._id === notification._id ? { ...item, isRead: true } : item))
+          activeFilter === "unread"
+            ? items.filter((item) => item._id !== notification._id)
+            : items.map((item) => (item._id === notification._id ? { ...item, isRead: true } : item))
         );
+        if (activeFilter === "unread") {
+          setTotalNotifications((count) => Math.max(count - 1, 0));
+        }
         setUnreadCount((count) => Math.max(count - 1, 0));
       }
 
@@ -402,15 +419,14 @@ const AdminNotificationsPage = () => {
             </div>
           )}
 
-          {!loading && filteredNotifications.length >= 10 ? (
+          {!loading && totalNotifications >= 10 ? (
             <Pagination
               currentPage={currentPage}
-              totalItems={filteredNotifications.length}
+              totalItems={totalNotifications}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
               isLoading={loading}
-              enableLoadingTransition
               ariaLabel="Admin notifications pagination"
             
                 className="!min-h-[50px] !py-2"

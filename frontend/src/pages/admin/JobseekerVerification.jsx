@@ -757,7 +757,6 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
       try {
         clearMessages();
         if (silent) setRefreshing(true);
-        else setLoading(true);
 
         const params = {
           page: filters.page,
@@ -783,6 +782,8 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
           setRefreshing(false);
           return;
         }
+
+        if (!silent) setLoading(true);
 
         const res = await api.get("/admin/jobseekers/verification", { params });
         const payload = res?.data || {};
@@ -1267,7 +1268,6 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                     onPageChange={(page) => onChangeFilter("page", page)}
                     onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
                     isLoading={loading}
-                    enableLoadingTransition
                     ariaLabel="Jobseeker verification pagination"
                     className="!min-h-[50px] !py-2"
                     />
