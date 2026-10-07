@@ -353,6 +353,7 @@ applicationSchema.index({ employer: 1, 'employmentStatusRequest.status': 1 });
 applicationSchema.index({ employer: 1, status: 1, appliedAt: -1 });
 applicationSchema.index({ jobseeker: 1, appliedAt: -1 });
 applicationSchema.index({ jobseeker: 1, updatedAt: -1 });
+applicationSchema.index({ jobseeker: 1, job: 1 });
 applicationSchema.index({ status: 1, appliedAt: -1 });
 
 module.exports = mongoose.model('Application', applicationSchema);

@@ -3583,6 +3583,35 @@ exports.getApplicationDetails = async (req, res) => {
   }
 };
 
+// Lightweight Job Search helper: return only the IDs of jobs this jobseeker
+// has already applied to. This avoids downloading full application records just
+// to decide whether a card should show "Apply Now" or "Already Applied".
+exports.getMyAppliedJobIds = async (req, res) => {
+  try {
+    if (req.user.role !== 'jobseeker') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only jobseekers can view applied job IDs'
+      });
+    }
+
+    const jobIds = await Application.distinct('job', {
+      jobseeker: req.user._id
+    });
+
+    return res.status(200).json({
+      success: true,
+      appliedJobIds: (jobIds || []).map((jobId) => String(jobId))
+    });
+  } catch (error) {
+    console.error('Error fetching applied job IDs:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error fetching applied job IDs'
+    });
+  }
+};
+
 // ✅ IDINAGDAG: CHECK IF APPLIED TO JOB FUNCTION
 exports.checkIfApplied = async (req, res) => {
   try {

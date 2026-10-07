@@ -13,6 +13,35 @@ const normalizeAmount = (value) => String(value || '').replace(/[^\d]/g, '');
 
 const JOB_SEARCH_CACHE_TTL_MS = 60 * 1000;
 
+const getAppliedJobIdsCacheKey = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return `agapay:jobseeker:applied-job-ids:${user?._id || user?.id || 'current'}`;
+  } catch {
+    return 'agapay:jobseeker:applied-job-ids:current';
+  }
+};
+
+const readAppliedJobIdsCache = () => {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(getAppliedJobIdsCacheKey()) || '[]');
+    return Array.isArray(cached) ? cached.map(String).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeAppliedJobIdsCache = (jobIds) => {
+  try {
+    sessionStorage.setItem(
+      getAppliedJobIdsCacheKey(),
+      JSON.stringify(Array.from(new Set((Array.isArray(jobIds) ? jobIds : []).map(String).filter(Boolean))))
+    );
+  } catch {
+    // Keep Job Search usable even when session storage is unavailable.
+  }
+};
+
 const getJobSearchCacheKey = () => {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -609,7 +638,7 @@ const JobSearch = () => {
 
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [savingJobId, setSavingJobId] = useState('');
-  const [appliedJobIds, setAppliedJobIds] = useState([]);
+  const [appliedJobIds, setAppliedJobIds] = useState(() => readAppliedJobIdsCache());
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   useEffect(() => {
@@ -904,28 +933,30 @@ const JobSearch = () => {
 
       if (!token || !userStr) {
         setAppliedJobIds([]);
+        writeAppliedJobIdsCache([]);
         return;
       }
 
       const parsedUser = JSON.parse(userStr);
       if (parsedUser.role !== 'jobseeker') {
         setAppliedJobIds([]);
+        writeAppliedJobIdsCache([]);
         return;
       }
 
-      const response = await api.get('/applications/my-applications');
+      const response = await api.get('/applications/my-applied-job-ids');
 
-      if (response.data?.success && Array.isArray(response.data.applications)) {
-        const ids = response.data.applications
-          .map((application) => application?.job?._id || application?.job?.id)
-          .filter(Boolean);
+      if (response.data?.success && Array.isArray(response.data.appliedJobIds)) {
+        const ids = Array.from(
+          new Set(response.data.appliedJobIds.map((jobId) => String(jobId || '').trim()).filter(Boolean))
+        );
 
-        setAppliedJobIds(Array.from(new Set(ids)));
-      } else {
-        setAppliedJobIds([]);
+        setAppliedJobIds(ids);
+        writeAppliedJobIdsCache(ids);
       }
-    } catch {
-      setAppliedJobIds([]);
+    } catch (error) {
+      console.error('Error refreshing applied job IDs:', error);
+      // Keep the cached IDs so the buttons do not flash back to "Apply Now".
     }
   };
 
@@ -2068,7 +2099,14 @@ const JobSearch = () => {
             const appliedJobId = applyingJob?._id || applyingJob?.id;
 
             if (appliedJobId) {
-              setAppliedJobIds((prev) => (prev.includes(appliedJobId) ? prev : [...prev, appliedJobId]));
+              const normalizedAppliedJobId = String(appliedJobId);
+              setAppliedJobIds((prev) => {
+                const next = prev.includes(normalizedAppliedJobId)
+                  ? prev
+                  : [...prev, normalizedAppliedJobId];
+                writeAppliedJobIdsCache(next);
+                return next;
+              });
             }
 
             fetchJobs();
