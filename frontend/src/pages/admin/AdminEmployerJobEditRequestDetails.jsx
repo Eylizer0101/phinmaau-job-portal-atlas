@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BriefcaseBusiness, CalendarClock, CalendarDays, ChevronRight, Clock3, ExternalLink, FileEdit, MapPin, RefreshCw, Search, UnlockKeyhole, Users, WalletCards, X } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import {
   BuildingIcon,
@@ -598,6 +598,7 @@ const SectionHeader = ({ icon, title }) => (
 const AdminEmployerJobEditRequestDetails = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -689,7 +690,13 @@ const AdminEmployerJobEditRequestDetails = () => {
   }, [modalSearch, modalStatus, modalTime, modalDateFrom, modalDateTo, request, sections]);
 
   const openReviewModal = () => {
-    navigate(`/admin/employer-job-edit-requests/${requestId}/review`);
+    navigate(`/admin/employer-job-edit-requests/${requestId}/review`, {
+      state: {
+        backPath: location.pathname,
+        backLabel: 'Edit Request Details',
+        backState: location.state,
+      },
+    });
   };
 
   const changeModalTime = (value) => {
@@ -747,7 +754,12 @@ const AdminEmployerJobEditRequestDetails = () => {
         <div className="mb-4">
           <button
             type="button"
-            onClick={() => navigate('/admin/employer-job-edit-requests')}
+            onClick={() =>
+              navigate(
+                location.state?.backPath || '/admin/employer-job-edit-requests',
+                { state: location.state?.backState }
+              )
+            }
             className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           >
             <ArrowLeft size={16} /> Back to Edit Requests

@@ -499,6 +499,7 @@ const AdminEmployerJobEditRequests = () => {
         state: {
           backPath: '/admin/employer-job-edit-requests',
           backLabel: 'Edit Requests',
+          backState: location.state,
         },
       });
       return;
@@ -508,6 +509,7 @@ const AdminEmployerJobEditRequests = () => {
       state: {
         backPath: '/admin/employer-job-edit-requests',
         backLabel: 'Edit Requests',
+        backState: location.state,
       },
     });
   };
