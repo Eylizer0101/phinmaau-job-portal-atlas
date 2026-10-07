@@ -122,17 +122,35 @@ const getEducationRank = (value = '') => {
 };
 
 const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work = [], education = [] }) => {
-  const applicantSkills = skills.map((item) => normalizeSkillName(item?.skill || item)).filter(Boolean);
-  const requiredSkills = (Array.isArray(job?.skillsRequired) ? job.skillsRequired : String(job?.skillsRequired || '').split(','))
+  const applicantSkills = skills
+    .map((item) => normalizeSkillName(item?.skill || item))
+    .filter(Boolean);
+
+  const requiredSkills = (Array.isArray(job?.skillsRequired)
+    ? job.skillsRequired
+    : String(job?.skillsRequired || '').split(',')
+  )
     .map(normalizeSkillName)
     .filter(Boolean);
 
-  const matchedSkills = requiredSkills.filter((requiredSkill) => applicantSkills.some(
-    (applicantSkill) => applicantSkill === requiredSkill || applicantSkill.includes(requiredSkill) || requiredSkill.includes(applicantSkill)
-  ));
+  const matchedSkills = requiredSkills.filter((requiredSkill) =>
+    applicantSkills.some(
+      (applicantSkill) =>
+        applicantSkill === requiredSkill ||
+        applicantSkill.includes(requiredSkill) ||
+        requiredSkill.includes(applicantSkill)
+    )
+  );
 
-  const skillRatio = requiredSkills.length ? matchedSkills.length / requiredSkills.length : applicantSkills.length ? 0.75 : 0;
-  const latestEducation = Array.isArray(education) && education.length ? education[education.length - 1] : {};
+  const skillRatio = requiredSkills.length
+    ? matchedSkills.length / requiredSkills.length
+    : applicantSkills.length
+      ? 0.75
+      : 0;
+
+  const latestEducation = Array.isArray(education) && education.length
+    ? education[education.length - 1]
+    : {};
 
   const educationCandidates = [
     profile.educationalAttainment,
@@ -155,31 +173,66 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
   const requiredEducation = job.educationLevel || job.educationalRequirements || '';
   const applicantEducationRank = getEducationRank(applicantEducation);
   const requiredEducationRank = getEducationRank(requiredEducation);
-  const educationRatio = requiredEducationRank ? Math.min(1, applicantEducationRank / requiredEducationRank) : applicantEducationRank ? 0.75 : 0;
-  const applicantYears = getApplicantExperienceYears(work, profile.experience || profile.whatHaveYouDone);
+  const educationRatio = requiredEducationRank
+    ? Math.min(1, applicantEducationRank / requiredEducationRank)
+    : applicantEducationRank
+      ? 0.75
+      : 0;
+
+  const applicantYears = getApplicantExperienceYears(
+    work,
+    profile.experience || profile.whatHaveYouDone
+  );
   const requiredYears = getRequiredExperienceYears(job.experienceLevel);
-  const experienceRatio = requiredYears ? Math.min(1, applicantYears / requiredYears) : job.openToFreshGraduates || applicantYears >= 0 ? 1 : 0;
-  const applicantCourseText = normalizeMatchText([
-    profile.course,
-    profile.studyField,
-    profile.educationalAttainment,
-    latestEducation.course,
-    latestEducation.studyField,
-    latestEducation.educationalAttainment,
-    latestEducation.level,
-  ].filter(Boolean).join(' '));
-  const jobContextText = normalizeMatchText([
-    job.title,
-    job.category,
-    job.description,
-    job.requirements,
-    job.qualification,
-    job.educationalRequirements,
-  ].filter(Boolean).join(' '));
-  const courseWords = applicantCourseText.split(' ').filter((word) => word.length >= 4);
+  const experienceRatio = requiredYears
+    ? Math.min(1, applicantYears / requiredYears)
+    : job.openToFreshGraduates || applicantYears >= 0
+      ? 1
+      : 0;
+
+  const applicantCourseText = normalizeMatchText(
+    [
+      profile.course,
+      profile.studyField,
+      profile.educationalAttainment,
+      latestEducation.course,
+      latestEducation.studyField,
+      latestEducation.educationalAttainment,
+      latestEducation.level,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+
+  const jobContextText = normalizeMatchText(
+    [
+      job.title,
+      job.category,
+      job.description,
+      job.requirements,
+      job.qualification,
+      job.educationalRequirements,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+
+  const courseWords = applicantCourseText
+    .split(' ')
+    .filter((word) => word.length >= 4);
+
   const courseHits = courseWords.filter((word) => jobContextText.includes(word));
-  const courseRatio = courseWords.length ? Math.min(1, courseHits.length / Math.min(courseWords.length, 4)) : 0;
-  const score = Math.round(skillRatio * 45 + educationRatio * 20 + experienceRatio * 20 + courseRatio * 15);
+  const courseRatio = courseWords.length
+    ? Math.min(1, courseHits.length / Math.min(courseWords.length, 4))
+    : 0;
+
+  const score = Math.round(
+    skillRatio * 45 +
+    educationRatio * 20 +
+    experienceRatio * 20 +
+    courseRatio * 15
+  );
+
   return Math.max(0, Math.min(100, score));
 };
 
@@ -559,7 +612,7 @@ const JobApplicants = () => {
     return {
       application, user, profile, skills,
       level: calculateJobSeekerLevel({ skills, certifications: profile.certifications || [], projects: profile.projects || [], seminars: profile.seminars || [], awards: profile.awards || [], workExperiences: work }),
-      matchScore: calculateApplicationMatch({ job: application.job || job || {}, profile, skills, work, education }),
+      matchScore: calculateApplicationMatch({ job: job || {}, profile, skills, work, education }),
     };
   }), [applications, job]);
 
