@@ -2041,7 +2041,7 @@ const AdminDashboard = () => {
     <main className="mx-auto w-full max-w-[1600px] px-1 py-6">
       <div className="space-y-4">
         <header
-          className="relative overflow-hidden rounded-[22px] border border-slate-200 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+          className="relative overflow-visible rounded-[22px] border border-slate-200 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
           style={{
             background:
               "linear-gradient(135deg, #eaf4ff 0%, #ffffff 48%, #dff3fb 100%)",
