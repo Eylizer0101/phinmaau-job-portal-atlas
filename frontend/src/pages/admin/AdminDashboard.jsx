@@ -2179,7 +2179,7 @@ const AdminDashboard = () => {
                     >
                       <Bell size={19} />
                       {adminUnreadCount > 0 ? (
-                        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#2e66a6] px-1 text-[9px] font-extrabold leading-none text-white shadow-sm">
+                        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[9px] font-extrabold leading-none text-white shadow-sm">
                           {adminUnreadCount > 99 ? "99+" : adminUnreadCount}
                         </span>
                       ) : null}
