@@ -23,7 +23,7 @@ const getAdminReportBrowser = async () => {
   if (!adminReportBrowserPromise) {
     adminReportBrowserPromise = puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     }).then((browser) => {
       browser.once('disconnected', () => {
         adminReportBrowserPromise = null;
@@ -36,6 +36,112 @@ const getAdminReportBrowser = async () => {
   }
 
   return adminReportBrowserPromise;
+};
+
+const ADMIN_REPORT_PDF_CACHE_TTL_MS = 30 * 1000;
+const adminReportPdfCache = new Map();
+let adminReportLogoPromise = null;
+
+const getAdminReportCacheKey = (filters = {}) => {
+  const normalized = {
+    date: String(filters.date || 'overall'),
+    specificDate: String(filters.specificDate || ''),
+    startDate: String(filters.startDate || ''),
+    endDate: String(filters.endDate || ''),
+    campus: String(filters.campus || 'all'),
+    yearGraduated: String(filters.yearGraduated || 'all'),
+    course: String(filters.course || 'all'),
+    gender: String(filters.gender || 'all'),
+  };
+
+  return JSON.stringify(normalized);
+};
+
+const readAdminReportPdfCache = (filters = {}) => {
+  const key = getAdminReportCacheKey(filters);
+  const cached = adminReportPdfCache.get(key);
+
+  if (!cached) return null;
+  if (Date.now() - cached.savedAt >= ADMIN_REPORT_PDF_CACHE_TTL_MS) {
+    adminReportPdfCache.delete(key);
+    return null;
+  }
+
+  return cached;
+};
+
+const writeAdminReportPdfCache = (filters = {}, pdf, filename) => {
+  const key = getAdminReportCacheKey(filters);
+  adminReportPdfCache.set(key, {
+    savedAt: Date.now(),
+    pdf: Buffer.from(pdf),
+    filename,
+  });
+
+  // Keep this tiny and bounded. Reports only need a short "same filters" cache.
+  if (adminReportPdfCache.size > 8) {
+    const oldestKey = adminReportPdfCache.keys().next().value;
+    if (oldestKey) adminReportPdfCache.delete(oldestKey);
+  }
+};
+
+const fetchImageAsDataUrl = async (url) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) return '';
+
+    const contentType = String(response.headers.get('content-type') || 'image/png');
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (!bytes.length) return '';
+
+    return `data:${contentType};base64,${bytes.toString('base64')}`;
+  } catch {
+    return '';
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const getAdminReportLogoSources = async () => {
+  if (!adminReportLogoPromise) {
+    const frontendUrl = String(
+      process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com'
+    ).replace(/\/$/, '');
+
+    const remoteSources = {
+      leftLogo: `${frontendUrl}/images/agapayreports/leftlogo.png`,
+      rightLogo: `${frontendUrl}/images/agapayreports/rightlogo.png`,
+      centerLogo: `${frontendUrl}/images/agapayreports/centerlogos.png`,
+    };
+
+    adminReportLogoPromise = Promise.all([
+      fetchImageAsDataUrl(remoteSources.leftLogo),
+      fetchImageAsDataUrl(remoteSources.rightLogo),
+      fetchImageAsDataUrl(remoteSources.centerLogo),
+    ])
+      .then(([leftLogo, rightLogo, centerLogo]) => ({
+        leftLogo: leftLogo || remoteSources.leftLogo,
+        rightLogo: rightLogo || remoteSources.rightLogo,
+        centerLogo: centerLogo || remoteSources.centerLogo,
+      }))
+      .catch(() => remoteSources);
+  }
+
+  return adminReportLogoPromise;
+};
+
+exports.warmAdminReportRenderer = async () => {
+  try {
+    await Promise.all([
+      getAdminReportBrowser(),
+      getAdminReportLogoSources(),
+    ]);
+  } catch (error) {
+    console.error('Admin report renderer warmup error:', error?.message || error);
+  }
 };
 
 const DEFAULT_ADMIN_LOGO = '/images/phinma-logo.png';
@@ -7002,6 +7108,18 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
 
   try {
     const filters = req.body?.filters || {};
+    const cachedReport = readAdminReportPdfCache(filters);
+
+    if (cachedReport) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${cachedReport.filename}"; filename*=UTF-8''${encodeURIComponent(cachedReport.filename)}`
+      );
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-AGAPAY-Report-Cache', 'HIT');
+      return res.send(Buffer.from(cachedReport.pdf));
+    }
     const range = getAdminAnalyticsDateRange({
       preset: filters.date || 'overall',
       specificDate: filters.specificDate,
@@ -7133,12 +7251,11 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
       day: '2-digit',
     }).format(new Date());
 
-    const frontendUrl = String(
-      process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com'
-    ).replace(/\/$/, '');
-    const leftLogo = `${frontendUrl}/images/agapayreports/leftlogo.png`;
-    const rightLogo = `${frontendUrl}/images/agapayreports/rightlogo.png`;
-    const centerLogo = `${frontendUrl}/images/agapayreports/centerlogos.png`;
+    const {
+      leftLogo,
+      rightLogo,
+      centerLogo,
+    } = await getAdminReportLogoSources();
 
     const campusTableRows = campusRows.map((row) => `
       <tr>
@@ -7329,10 +7446,6 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     page = await browser.newPage();
     await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 1 });
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(
-      () => Array.from(document.images).every((image) => image.complete),
-      { timeout: 3000 }
-    ).catch(() => {});
 
     const pdf = await page.pdf({
       format: 'A4',
@@ -7342,9 +7455,12 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     });
 
     const filename = `agapay-records-report-${reportDate}.pdf`;
+    writeAdminReportPdfCache(filters, pdf, filename);
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
     res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-AGAPAY-Report-Cache', 'MISS');
     return res.send(Buffer.from(pdf));
   } catch (error) {
     console.error('AGAPAY report PDF export error:', error);

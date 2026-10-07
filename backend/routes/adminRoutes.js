@@ -44,7 +44,17 @@ router.delete('/profile/logo', adminController.removeAdminProfileLogo);
 router.put('/profile/password', adminController.updateAdminPassword);
 
 // Dashboard analytics route
-router.get('/dashboard', cacheAdminAnalytics, adminController.getAdminDashboardAnalytics);
+const warmAdminReportRenderer = (req, res, next) => {
+  adminController.warmAdminReportRenderer().catch(() => {});
+  return next();
+};
+
+router.get(
+  '/dashboard',
+  warmAdminReportRenderer,
+  cacheAdminAnalytics,
+  adminController.getAdminDashboardAnalytics
+);
 
 // Presentation demo data (single admin-only endpoint for status / enable / disable)
 router.post('/demo-data', demoDataController.manageDemoData);
