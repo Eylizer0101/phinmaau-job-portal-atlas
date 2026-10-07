@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Bell, Check, ChevronLeft, Search, UserRound } from "lucide-react";
+import { Bell, BriefcaseBusiness, Check, ChevronLeft, Clock3, FilePenLine, FileText, Mail, Search, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
@@ -49,6 +49,61 @@ const formatNotificationTime = (value) => {
 const getNotificationId = (value) => {
   const resolvedValue = value?._id || value;
   return resolvedValue ? String(resolvedValue) : "";
+};
+
+const getAdminNotificationIcon = (notification = {}) => {
+  const type = String(notification?.type || "").trim().toLowerCase();
+  const title = String(notification?.title || "").trim().toLowerCase();
+  const metadata = notification?.metadata || {};
+  const adminCategory = String(metadata.adminCategory || "").trim().toLowerCase();
+
+  if (type === "new_message" || title.includes("message")) {
+    return Mail;
+  }
+
+  if (
+    type === "new_application" ||
+    type === "application_update" ||
+    title.includes("application")
+  ) {
+    return FileText;
+  }
+
+  if (
+    type === "job_expiring" ||
+    title.includes("expiring") ||
+    title.includes("deadline")
+  ) {
+    return Clock3;
+  }
+
+  if (
+    type === "job_edit_request" ||
+    title.includes("job edit request") ||
+    title.includes("edit request")
+  ) {
+    return FilePenLine;
+  }
+
+  if (
+    adminCategory === "new_job_posted" ||
+    type === "job_match" ||
+    title.includes("new job") ||
+    title.includes("job posted")
+  ) {
+    return BriefcaseBusiness;
+  }
+
+  if (
+    type.includes("verification") ||
+    title.includes("verification") ||
+    title.includes("registration") ||
+    adminCategory === "new_registration"
+  ) {
+    return UserRound;
+  }
+
+  return Bell;
 };
 
 const getAdminNotificationLink = (notification) => {
@@ -359,7 +414,10 @@ const AdminNotificationsPage = () => {
             </div>
           ) : (
             <div className={`divide-y divide-gray-100 ${pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-contain"}`}> 
-              {paginatedNotifications.map((notification) => (
+              {paginatedNotifications.map((notification) => {
+                const NotificationIcon = getAdminNotificationIcon(notification);
+
+                return (
                 <div
                   key={notification._id}
                   className={`flex items-start gap-4 px-5 py-5 transition hover:bg-gray-50 ${
@@ -369,7 +427,7 @@ const AdminNotificationsPage = () => {
                   <span className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
                     !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
                   }`}>
-                    <UserRound size={22} />
+                    <NotificationIcon size={22} />
                   </span>
 
                   <div className="min-w-0 flex-1">
@@ -415,7 +473,8 @@ const AdminNotificationsPage = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
