@@ -3012,6 +3012,17 @@ const ApplicationDetails = () => {
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
                   This application was withdrawn by the job seeker and is no longer active or being considered for this position.
                 </div>
+              ) : isAlreadyEmployed ? (
+                <>
+                  <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]">
+                    <SvgIcon name="message" /> Send Message
+                  </button>
+                  {(['pending', 'for interview'].includes(currentStatus)) ? (
+                    <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600">
+                      <SvgIcon name="x" /> Decline Application
+                    </button>
+                  ) : null}
+                </>
               ) : (
                 <>
               {currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}

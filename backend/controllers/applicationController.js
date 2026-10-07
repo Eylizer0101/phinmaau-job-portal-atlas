@@ -3240,6 +3240,24 @@ exports.updateApplicationStatus = async (req, res) => {
       });
     }
 
+    if (['for interview', 'hired'].includes(nextStatus)) {
+      const otherActiveEmployment = await Application.exists({
+        _id: { $ne: application._id },
+        jobseeker: application.jobseeker,
+        job: { $ne: application.job?._id || application.job },
+        status: 'hired',
+        employmentStatus: { $ne: 'inactive' }
+      });
+
+      if (otherActiveEmployment) {
+        return res.status(409).json({
+          success: false,
+          code: 'APPLICANT_ALREADY_EMPLOYED',
+          message: 'This applicant is already employed through another job application.'
+        });
+      }
+    }
+
     if (nextStatus === 'declined') {
       let normalizedDeclineReason = String(declineReason || '').trim();
       const normalizedDeclineComment = String(declineComment || '').trim().slice(0, 30);
