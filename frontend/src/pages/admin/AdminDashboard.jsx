@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Repeat2,
   Building2,
+  Bell,
   UserRoundMinus,
   X,
 } from "lucide-react";
@@ -249,6 +250,92 @@ const titleCase = (value) =>
   String(value || "")
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const formatAdminNotificationTime = (value) => {
+  if (!value) return "Just now";
+  const date = new Date(value);
+  const diff = Date.now() - date.getTime();
+
+  if (Number.isNaN(diff)) return "Just now";
+
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diff < minute) return "Just now";
+  if (diff < hour) return `${Math.floor(diff / minute)}m ago`;
+  if (diff < day) return `${Math.floor(diff / hour)}h ago`;
+
+  const days = Math.floor(diff / day);
+  if (days < 7) return `${days}d ago`;
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getAdminNotificationId = (value) => {
+  const resolvedValue = value?._id || value;
+  return resolvedValue ? String(resolvedValue) : "";
+};
+
+const getAdminDashboardNotificationLink = (notification) => {
+  const metadata = notification?.metadata || {};
+  const type = String(notification?.type || "").toLowerCase();
+  const title = String(notification?.title || "").toLowerCase();
+  const storedLink = String(notification?.link || "").trim();
+  const relatedId = getAdminNotificationId(notification?.relatedId);
+  const relatedModel = String(notification?.relatedModel || "").toLowerCase();
+  const accountType = String(metadata.accountType || metadata.userRole || "").toLowerCase();
+
+  const requestId = getAdminNotificationId(metadata.requestId);
+  if (type === "job_edit_request" || title.includes("job edit request")) {
+    return requestId
+      ? `/admin/employer-job-edit-requests/${requestId}`
+      : storedLink || "/admin/employer-job-edit-requests";
+  }
+
+  const isVerificationNotification =
+    type.includes("verification") ||
+    title.includes("verification") ||
+    metadata.adminCategory === "new_registration";
+
+  if (isVerificationNotification) {
+    const employerId = getAdminNotificationId(
+      metadata.employerId ||
+        (accountType === "employer" ? metadata.subjectUserId || metadata.userId || relatedId : "")
+    );
+    const jobseekerId = getAdminNotificationId(
+      metadata.jobseekerId ||
+        (accountType === "jobseeker" ? metadata.subjectUserId || metadata.userId || relatedId : "")
+    );
+
+    if (employerId || storedLink.includes("/admin/employer-verification/")) {
+      return employerId ? `/admin/employer-verification/${employerId}` : storedLink;
+    }
+
+    if (jobseekerId || storedLink.includes("/admin/jobseeker-verification/")) {
+      return jobseekerId ? `/admin/jobseeker-verification/${jobseekerId}` : storedLink;
+    }
+  }
+
+  const applicationId = getAdminNotificationId(metadata.applicationId);
+  if (applicationId || relatedModel === "application") {
+    return `/admin/applications/${applicationId || relatedId}`;
+  }
+
+  const jobId = getAdminNotificationId(metadata.jobId);
+  if (
+    metadata.adminCategory === "new_job_posted" ||
+    (relatedModel === "job" && type !== "job_edit_request")
+  ) {
+    return jobId || relatedId ? `/admin/jobs/${jobId || relatedId}` : storedLink;
+  }
+
+  return storedLink;
+};
 
 const HeaderStatusCard = ({ label, value, onClick, icon: Icon }) => (
   <button
@@ -1615,10 +1702,95 @@ const AdminDashboard = () => {
   const [exportPasswordMessage, setExportPasswordMessage] = useState("");
   const [dummyMode, setDummyMode] = useState(false);
   const [dummyLoading, setDummyLoading] = useState(false);
+  const [adminNotifications, setAdminNotifications] = useState([]);
+  const [adminUnreadCount, setAdminUnreadCount] = useState(0);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+  const notificationDropdownRef = useRef(null);
 
   useEffect(() => {
     saveAgapayAdminDashboardFiltersState({ filters, activeTab });
   }, [filters, activeTab]);
+
+  const fetchAdminNotifications = async () => {
+    try {
+      const response = await api.get("/notifications", {
+        params: {
+          page: 1,
+          limit: 5,
+          filter: "all",
+        },
+      });
+      const data = response.data || {};
+      setAdminNotifications(Array.isArray(data.notifications) ? data.notifications : []);
+      setAdminUnreadCount(Number(data.unreadCount || 0));
+    } catch (notificationError) {
+      console.error("Error fetching admin dashboard notifications:", notificationError);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminNotifications();
+
+    const refreshTimer = window.setInterval(fetchAdminNotifications, 30000);
+    return () => window.clearInterval(refreshTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!showNotificationDropdown) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (
+        notificationDropdownRef.current &&
+        !notificationDropdownRef.current.contains(event.target)
+      ) {
+        setShowNotificationDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [showNotificationDropdown]);
+
+  const handleOpenAdminNotification = async (notification) => {
+    if (!notification) return;
+
+    try {
+      if (!notification.isRead && notification._id) {
+        await api.put(`/notifications/${notification._id}/read`);
+        setAdminNotifications((items) =>
+          items.map((item) =>
+            item._id === notification._id ? { ...item, isRead: true } : item
+          )
+        );
+        setAdminUnreadCount((count) => Math.max(count - 1, 0));
+      }
+    } catch (notificationError) {
+      console.error("Error marking admin notification as read:", notificationError);
+    }
+
+    setShowNotificationDropdown(false);
+
+    const link = getAdminDashboardNotificationLink(notification);
+    if (link) {
+      const navigationState = link.startsWith("/admin/jobs/")
+        ? { backPath: "/admin/job-offers", backLabel: "Job Offers", fromNotification: true }
+        : link.startsWith("/admin/applications/")
+        ? { backPath: "/admin/applications", backLabel: "Applications", fromNotification: true }
+        : link.startsWith("/admin/employer-job-edit-requests/")
+        ? { backPath: "/admin/employer-job-edit-requests", backLabel: "Edit Requests", fromNotification: true }
+        : link.startsWith("/admin/employer-verification/")
+        ? { backPath: "/admin/employer-verification", backLabel: "Employer Verification", fromNotification: true }
+        : link.startsWith("/admin/jobseeker-verification/")
+        ? { backPath: "/admin/jobseeker-verification", backLabel: "Jobseeker Verification", fromNotification: true }
+        : undefined;
+
+      navigate(link, navigationState ? { state: navigationState } : undefined);
+      return;
+    }
+
+    navigate("/admin/notifications");
+  };
 
   const displayedAnalytics = analytics;
   const options = displayedAnalytics?.filters?.options || {};
@@ -1918,25 +2090,119 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 items-center gap-2.5 pt-2 xl:pt-0">
-                <HeaderStatusCard
-                  label="Pending Jobseeker"
-                  value={kpis.pendingJobseekers}
-                  icon={UserRoundMinus}
-                  onClick={() => navigate("/admin/dashboard/pending-seekers", { state: { fromAdminDashboard: true } })}
-                />
-                <HeaderStatusCard
-                  label="Pending Employers"
-                  value={kpis.pendingEmployers}
-                  icon={Building2}
-                  onClick={() => navigate("/admin/dashboard/pending-employers", { state: { fromAdminDashboard: true } })}
-                />
-                <HeaderStatusCard
-                  label="Request Edit"
-                  value={kpis.pendingEditRequests}
-                  icon={FaFileAlt}
-                  onClick={() => navigate("/admin/employer-job-edit-requests", { state: { fromAdminDashboard: true } })}
-                />
+              <div className="flex flex-col gap-3 pt-2 xl:pt-0">
+                <div className="flex justify-end" ref={notificationDropdownRef}>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNotificationDropdown((previous) => !previous);
+                        if (!showNotificationDropdown) fetchAdminNotifications();
+                      }}
+                      className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#2e66a6] shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#2e66a6]/5 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                      aria-label="Admin notifications"
+                      title="Notifications"
+                    >
+                      <Bell size={19} />
+                      {adminUnreadCount > 0 ? (
+                        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#2e66a6] px-1 text-[9px] font-extrabold leading-none text-white shadow-sm">
+                          {adminUnreadCount > 99 ? "99+" : adminUnreadCount}
+                        </span>
+                      ) : null}
+                    </button>
+
+                    {showNotificationDropdown ? (
+                      <div className="absolute right-0 top-12 z-[80] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                          <div>
+                            <p className="text-sm font-extrabold text-slate-900">Notifications</p>
+                            <p className="text-[11px] text-slate-500">
+                              {adminUnreadCount > 0
+                                ? `${adminUnreadCount} unread notification${adminUnreadCount === 1 ? "" : "s"}`
+                                : "No unread notifications"}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowNotificationDropdown(false);
+                              navigate("/admin/notifications");
+                            }}
+                            className="text-xs font-bold text-[#2e66a6] hover:text-[#244f80]"
+                          >
+                            View all
+                          </button>
+                        </div>
+
+                        <div className="max-h-[330px] overflow-y-auto">
+                          {adminNotifications.length ? (
+                            adminNotifications.map((notification) => (
+                              <button
+                                type="button"
+                                key={notification._id}
+                                onClick={() => handleOpenAdminNotification(notification)}
+                                className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50 ${
+                                  notification.isRead ? "bg-white" : "bg-blue-50/60"
+                                }`}
+                              >
+                                <span
+                                  className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                                    notification.isRead
+                                      ? "bg-slate-100 text-slate-500"
+                                      : "bg-[#2e66a6]/10 text-[#2e66a6]"
+                                  }`}
+                                >
+                                  <Bell size={16} />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-start justify-between gap-3">
+                                    <span className="truncate text-xs font-bold text-slate-900">
+                                      {notification.title || "Notification"}
+                                    </span>
+                                    <span className="shrink-0 whitespace-nowrap text-[10px] text-slate-400">
+                                      {formatAdminNotificationTime(notification.createdAt)}
+                                    </span>
+                                  </span>
+                                  <span className="mt-1 block line-clamp-2 text-[11px] leading-4 text-slate-600">
+                                    {notification.message || "Open this notification to view the details."}
+                                  </span>
+                                </span>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="flex min-h-32 flex-col items-center justify-center px-5 py-6 text-center">
+                              <Bell size={22} className="text-slate-300" />
+                              <p className="mt-2 text-xs font-semibold text-slate-500">
+                                No notifications yet.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 items-center gap-2.5">
+                  <HeaderStatusCard
+                    label="Pending Jobseeker"
+                    value={kpis.pendingJobseekers}
+                    icon={UserRoundMinus}
+                    onClick={() => navigate("/admin/dashboard/pending-seekers", { state: { fromAdminDashboard: true } })}
+                  />
+                  <HeaderStatusCard
+                    label="Pending Employers"
+                    value={kpis.pendingEmployers}
+                    icon={Building2}
+                    onClick={() => navigate("/admin/dashboard/pending-employers", { state: { fromAdminDashboard: true } })}
+                  />
+                  <HeaderStatusCard
+                    label="Request Edit"
+                    value={kpis.pendingEditRequests}
+                    icon={FaFileAlt}
+                    onClick={() => navigate("/admin/employer-job-edit-requests", { state: { fromAdminDashboard: true } })}
+                  />
+                </div>
               </div>
             </div>
 

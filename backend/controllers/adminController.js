@@ -1939,8 +1939,7 @@ exports.getAdminAnalytics = async (req, res) => {
       return job?.isArchived !== true && job?.isPublished !== false && status !== 'draft';
     });
     const countableApplications = applications.filter((item) =>
-      ['pending', 'for interview', 'hired', 'declined'].includes(analyticsLower(item?.status)) &&
-      item?.isDeclinedArchived !== true
+      ['pending', 'for interview', 'hired', 'declined'].includes(analyticsLower(item?.status))
     );
 
     const hiredApplications = applications.filter((item) => analyticsLower(item.status) === 'hired');
@@ -2145,8 +2144,8 @@ exports.getAdminAnalytics = async (req, res) => {
 
     const campusHireRate = DASHBOARD_CAMPUSES.map((campus) => {
       // Use the same countable application set as the Applications KPI/report:
-      // pending, for interview, hired, and declined only, excluding archived declined records.
-      // This keeps Hire Rate by Campus consistent with the AGAPAY Records Report.
+      // pending, for interview, hired, and declined, including archived declined records.
+      // This keeps the dashboard total consistent with the Admin Applications page.
       const campusApplications = countableApplications.filter((item) => {
         const seeker = userById.get(analyticsId(item.jobseeker));
         return getJobseekerCampus(seeker) === campus;
@@ -7218,7 +7217,6 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     const applications = applicationsAll.filter((application) => {
       if (!exportInRange(application.appliedAt || application.createdAt, range)) return false;
       if (!['pending', 'for interview', 'hired', 'declined'].includes(analyticsLower(application?.status))) return false;
-      if (application?.isDeclinedArchived === true) return false;
       const seeker = userById.get(String(application.jobseeker || ''));
       const job = jobById.get(String(application.job || '')) || {};
       const employer = userById.get(String(application.employer || job.employer || ''));
