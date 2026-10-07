@@ -9,6 +9,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 20000,
 });
 
 // Request interceptor to add token
@@ -34,6 +35,14 @@ api.interceptors.response.use(
       'JOBSEEKER_PENDING_APPROVAL',
       'PENDING_ADMIN_APPROVAL',
     ];
+
+    if (error?.code === 'ECONNABORTED') {
+      error.userMessage = "The request took too long. Please try again.";
+    } else if (!error?.response) {
+      error.userMessage = "We couldn't connect to the server. Please try again.";
+    } else if (error.response?.status >= 500) {
+      error.userMessage = "Something went wrong on the server. Please try again.";
+    }
 
     const requestHeaders = error.config?.headers || {};
     const hasAdminPasswordHeader = Boolean(
