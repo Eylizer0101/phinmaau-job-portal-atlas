@@ -2255,7 +2255,7 @@ const Applicants = () => {
           <div
             className={
               hasActiveFilters
-                ? 'grid gap-3 lg:grid-cols-[1.35fr_0.75fr_0.8fr_0.8fr_0.65fr_auto]'
+                ? 'grid gap-3 lg:grid-cols-[1.35fr_0.75fr_0.8fr_0.8fr_0.65fr_minmax(122px,auto)]'
                 : 'grid gap-3 lg:grid-cols-[1.35fr_0.75fr_0.8fr_0.8fr_0.65fr]'
             }
           >
@@ -2390,7 +2390,7 @@ const Applicants = () => {
                 <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Clear All
+                <span className="whitespace-nowrap">Clear All</span>
               </button>
             )}
           </div>

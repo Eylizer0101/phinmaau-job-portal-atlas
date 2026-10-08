@@ -1521,7 +1521,7 @@ const ManageJobs = () => {
                 className={cn(
                   'grid grid-cols-1 gap-2 sm:grid-cols-2',
                   hasActiveFilters
-                    ? 'lg:grid-cols-5 xl:grid-cols-[minmax(130px,1fr)_minmax(105px,0.72fr)_minmax(115px,0.76fr)_minmax(115px,0.76fr)_minmax(100px,0.62fr)]'
+                    ? 'lg:grid-cols-5 xl:grid-cols-[minmax(130px,1fr)_minmax(105px,0.72fr)_minmax(115px,0.76fr)_minmax(115px,0.76fr)_minmax(125px,0.85fr)]'
                     : 'lg:grid-cols-4 xl:grid-cols-[minmax(140px,1fr)_minmax(120px,0.75fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)]'
                 )}
               >
@@ -1599,7 +1599,7 @@ const ManageJobs = () => {
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Clear All
+                    <span className="whitespace-nowrap">Clear All</span>
                   </button>
                 )}
               </div>

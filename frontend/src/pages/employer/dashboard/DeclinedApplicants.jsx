@@ -1086,7 +1086,7 @@ const DeclinedApplicants = () => {
         <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-4' : 'lg:col-span-5'}>
+              <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-5'}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -1179,12 +1179,12 @@ const DeclinedApplicants = () => {
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-2">
                   <Button variant="secondary" className="w-full gap-2 inline-flex items-center justify-center" onClick={clearFilters} disabled={loading}>
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Clear All
+                    <span className="whitespace-nowrap">Clear All</span>
                   </Button>
                 </div>
               )}

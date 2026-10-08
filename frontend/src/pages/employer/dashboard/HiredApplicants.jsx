@@ -1134,7 +1134,7 @@ const selectBase =
         <div className="relative z-[80] mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
           <div className="overflow-visible p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
+              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-4'}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -1246,7 +1246,7 @@ const selectBase =
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-2">
                   <button
                     type="button"
                     onClick={clearFilters}
@@ -1255,7 +1255,7 @@ const selectBase =
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Clear All
+                    <span className="whitespace-nowrap">Clear All</span>
                   </button>
                 </div>
               )}

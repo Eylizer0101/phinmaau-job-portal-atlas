@@ -1102,7 +1102,7 @@ const ArchivedJobs = () => {
         <div className="relative z-[80] mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center">
-              <div className="relative min-w-0 lg:col-span-6">
+              <div className="relative min-w-0 lg:col-span-5">
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>
@@ -1149,7 +1149,7 @@ const ArchivedJobs = () => {
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-2">
                   <button
                     type="button"
                     onClick={clearControls}
@@ -1158,7 +1158,7 @@ const ArchivedJobs = () => {
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Clear All
+                    <span className="whitespace-nowrap">Clear All</span>
                   </button>
                 </div>
               )}
