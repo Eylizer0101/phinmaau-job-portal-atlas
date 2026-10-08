@@ -1173,7 +1173,7 @@ const ArchivedDeclinedApplicants = () => {
                 </select>
               </div>
 
-              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
+              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-4'}>
                 <ArchivedDateFilterDropdown
                   value={sort}
                   startDate={customDateFrom}
