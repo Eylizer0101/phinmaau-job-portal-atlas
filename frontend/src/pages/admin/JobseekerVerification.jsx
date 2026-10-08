@@ -1050,7 +1050,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                     type="button"
                     onClick={clearAllFilters}
                     disabled={loading}
-                    className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60"
+                    className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-gray-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60"
                   >
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
