@@ -2441,7 +2441,7 @@ const AdminDashboard = () => {
                 onClick={resetFilters}
                 className="inline-flex h-10 self-end items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
               >
-                <RefreshCw size={13} /> Clear All
+                <X size={13} /> Clear All
               </button>
             ) : null}
           </div>
