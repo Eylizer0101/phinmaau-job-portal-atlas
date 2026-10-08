@@ -28,7 +28,7 @@ const saveAgapayAdminJobApplicantsFiltersState = (value) => {
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const UI = {
-  page: 'min-h-screen bg-[#f8fafc]',
+  page: 'min-h-screen bg-white',
   container: 'mx-auto max-w-7xl px-1 py-8',
   card: 'w-full rounded-[22px] border border-[#e5e7eb] bg-white shadow-sm',
   ring: 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2',

@@ -680,7 +680,7 @@ const AdminEmployerPostingHistory = () => {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-[#f7f9fc] py-8">
+      <div className="min-h-screen bg-white py-8">
         <div className="space-y-6">
           <div>
             <button
