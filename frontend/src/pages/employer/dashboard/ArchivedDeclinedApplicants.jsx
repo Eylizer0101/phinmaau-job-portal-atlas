@@ -1129,8 +1129,8 @@ const ArchivedDeclinedApplicants = () => {
 
         <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className="lg:col-span-5">
+            <div className={cn("grid grid-cols-1 gap-3", hasActiveFilters ? "lg:grid-cols-12" : "lg:grid-cols-[minmax(0,5fr)_minmax(0,3.5fr)_minmax(0,3.5fr)]")}>
+              <div className={hasActiveFilters ? "lg:col-span-5" : ""}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -1158,7 +1158,7 @@ const ArchivedDeclinedApplicants = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-3">
+              <div className={hasActiveFilters ? "lg:col-span-3" : ""}>
                 <select
                   value={selectedJob}
                   onChange={(e) => setSelectedJob(e.target.value)}
@@ -1173,7 +1173,7 @@ const ArchivedDeclinedApplicants = () => {
                 </select>
               </div>
 
-              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-4'}>
+              <div className={hasActiveFilters ? 'lg:col-span-2' : ''}>
                 <ArchivedDateFilterDropdown
                   value={sort}
                   startDate={customDateFrom}

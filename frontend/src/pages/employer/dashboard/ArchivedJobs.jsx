@@ -1101,8 +1101,8 @@ const ArchivedJobs = () => {
 
         <div className="relative z-[80] mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center">
-              <div className="relative min-w-0 lg:col-span-5">
+            <div className={cn("grid grid-cols-1 gap-3 lg:items-center", hasActiveFilters ? "lg:grid-cols-12" : "lg:grid-cols-[minmax(0,5fr)_minmax(0,3.5fr)_minmax(0,3.5fr)]")}>
+              <div className={cn("relative min-w-0", hasActiveFilters && "lg:col-span-5")}>
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>
@@ -1114,7 +1114,7 @@ const ArchivedJobs = () => {
                 />
               </div>
 
-              <div className="lg:col-span-3">
+              <div className={hasActiveFilters ? "lg:col-span-3" : ""}>
                 <select
                   value={jobFilter}
                   onChange={(e) => setJobFilter(e.target.value)}
@@ -1129,7 +1129,7 @@ const ArchivedJobs = () => {
                 </select>
               </div>
 
-              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-4'}>
+              <div className={hasActiveFilters ? 'lg:col-span-2' : ''}>
                 <ArchivedDateFilterDropdown
                   value={sortBy}
                   startDate={customDateFrom}
