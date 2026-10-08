@@ -1617,6 +1617,16 @@ const UserManagement = () => {
     setSuccess('Export completed successfully');
   };
 
+  const hasActiveFilters = query.trim() !== '' ||
+    roleFilter !== 'all' ||
+    campusFilter !== 'all' ||
+    courseFilter !== 'all' ||
+    companyFilter !== 'all' ||
+    industryFilter !== 'all' ||
+    dateFilter !== 'all' ||
+    dateFrom !== '' ||
+    dateTo !== '';
+
   const inputBase = 'h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
   const selectBase = 'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
 
@@ -1660,8 +1670,12 @@ const UserManagement = () => {
               className={cn(
                 'grid grid-cols-1 gap-3 md:grid-cols-2 2xl:items-center',
                 roleFilter === 'all'
-                  ? '2xl:grid-cols-[minmax(420px,2fr)_minmax(165px,0.8fr)_minmax(165px,0.9fr)_minmax(132px,0.7fr)]'
-                  : '2xl:grid-cols-[minmax(300px,1.6fr)_repeat(4,minmax(140px,1fr))_minmax(132px,0.7fr)]'
+                  ? (hasActiveFilters
+                      ? '2xl:grid-cols-[minmax(420px,2fr)_minmax(165px,0.8fr)_minmax(165px,0.9fr)_minmax(132px,0.7fr)]'
+                      : '2xl:grid-cols-[minmax(420px,2fr)_minmax(165px,1fr)_minmax(165px,1fr)]')
+                  : (hasActiveFilters
+                      ? '2xl:grid-cols-[minmax(300px,1.6fr)_repeat(4,minmax(140px,1fr))_minmax(132px,0.7fr)]'
+                      : '2xl:grid-cols-[minmax(300px,1.6fr)_repeat(4,minmax(140px,1fr))]')
               )}
             >
               <div className="relative min-w-0">
@@ -1800,15 +1814,7 @@ const UserManagement = () => {
                 onSelect={handleDateFilterChange}
               />
 
-              {(query.trim() !== '' ||
-                roleFilter !== 'all' ||
-                campusFilter !== 'all' ||
-                courseFilter !== 'all' ||
-                companyFilter !== 'all' ||
-                industryFilter !== 'all' ||
-                dateFilter !== 'all' ||
-                dateFrom !== '' ||
-                dateTo !== '') && (
+              {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={clearFilters}
