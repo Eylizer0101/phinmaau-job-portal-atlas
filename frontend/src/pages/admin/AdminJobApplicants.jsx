@@ -1531,7 +1531,7 @@ const AdminJobApplicants = () => {
                     setCustomDateTo("");
                     setCurrentPage(1);
                   }}
-                  className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                  className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
                 >
                   <SvgIcon name="x" className="h-4 w-4 shrink-0" />
                   Clear All

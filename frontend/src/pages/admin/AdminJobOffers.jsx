@@ -678,7 +678,7 @@ const AdminJobOffers = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-3 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 md:col-span-2 xl:col-span-3 2xl:col-span-1"
+                  className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 md:col-span-2 xl:col-span-3 2xl:col-span-1 border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
                 >
                   <Icon name="x" className="h-4 w-4" /> Clear All
                 </button>
