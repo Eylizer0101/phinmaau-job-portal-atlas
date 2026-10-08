@@ -914,6 +914,8 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
     });
   }, [filterOptions.statuses]);
 
+  const hasActiveFilters = Boolean(searchDraft || filters.campus !== "all" || filters.course !== "all" || filters.status !== "all" || filters.date !== "all" || filters.dateFrom || filters.dateTo);
+
   return (
     <AdminLayout>
       <div className="mx-auto flex w-full max-w-7xl flex-col px-1 py-8 md:min-h-0 md:pb-2">
@@ -953,8 +955,8 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
 
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-12 xl:items-center">
-              <div className={archiveMode ? "xl:col-span-5" : "xl:col-span-3"}>
+            <div className={cn("grid grid-cols-1 gap-3 xl:items-center", hasActiveFilters ? (archiveMode ? "xl:grid-cols-[minmax(0,2.4fr)_minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,1.6fr)_132px]" : "xl:grid-cols-[minmax(0,2.3fr)_repeat(4,minmax(0,1.15fr))_132px]") : "xl:grid-cols-12")}>
+              <div className={hasActiveFilters ? "xl:col-span-1" : (archiveMode ? "xl:col-span-5" : "xl:col-span-3")}>
                 <div className="relative">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-5 w-5" />
@@ -980,7 +982,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                 </div>
               </div>
 
-              <div className="xl:col-span-2">
+              <div className={hasActiveFilters ? "xl:col-span-1" : "xl:col-span-2"}>
                 <select
                   value={filters.campus}
                   onChange={(e) => onChangeFilter("campus", e.target.value)}
@@ -996,7 +998,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                 </select>
               </div>
 
-              <div className="xl:col-span-2">
+              <div className={hasActiveFilters ? "xl:col-span-1" : "xl:col-span-2"}>
                 <select
                   value={filters.course}
                   onChange={(e) => onChangeFilter("course", e.target.value)}
@@ -1012,7 +1014,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                 </select>
               </div>
 
-              {!archiveMode ? <div className="xl:col-span-2">
+              {!archiveMode ? <div className={hasActiveFilters ? "xl:col-span-1" : "xl:col-span-2"}>
                 <select
                   value={filters.status}
                   onChange={(e) => onChangeFilter("status", e.target.value)}
@@ -1028,7 +1030,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                 </select>
               </div> : null}
 
-              <div className={(searchDraft || filters.campus !== "all" || filters.course !== "all" || filters.status !== "all" || filters.date !== "all" || filters.dateFrom || filters.dateTo) ? "xl:col-span-2" : "xl:col-span-3"}>
+              <div className={hasActiveFilters ? "xl:col-span-1" : "xl:col-span-3"}>
                 <DateFilterDropdown
                   value={filters.date}
                   startDate={filters.dateFrom}
