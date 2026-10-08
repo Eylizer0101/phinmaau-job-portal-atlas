@@ -1592,6 +1592,40 @@ const EditJob = () => {
   }, [formData.isPublished, formData.isActive, formData.applicationDeadline, minDeadlineISO]);
 
   const requiredOk = useMemo(() => {
+    // When an admin approves selected sections, locked fields must not block saving.
+    if (Array.isArray(approvedEditSections)) {
+      return Boolean(approvedEditSections.length > 0 && (
+        !approvedEditSections.includes('Job Details') || (
+          String(formData.title || '').trim() &&
+          !getJobTitleError(formData.title) &&
+          String(formData.jobType || '').trim() &&
+          String(formData.workMode || '').trim() &&
+          vacanciesValid
+        )
+      ) && (
+        !approvedEditSections.includes('Requirements & Qualifications') || (
+          getRichTextPlainText(formData.description).length >= JOB_DESCRIPTION_MIN &&
+          getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
+          getRichTextPlainText(formData.requirements).length >= JOB_REQUIREMENTS_MIN &&
+          getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
+          EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
+          String(formData.educationLevel || '').trim()
+        )
+      ) && (
+        !approvedEditSections.includes('Skills & Benefits') || skillsCountValid
+      ) && (
+        !approvedEditSections.includes('Work Locations') || (
+          String(formData.location || '').trim() &&
+          String(formData.locationProvince || '').trim() &&
+          String(formData.locationCity || '').trim() &&
+          WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())
+        )
+      ) && (
+        !approvedEditSections.includes('Salary') || salaryValid
+      ) && (
+        !approvedEditSections.includes('Deadline') || isDeadlineValid
+      ));
+    }
     return (
       String(formData.title || '').trim() &&
       !getJobTitleError(formData.title) &&
@@ -1610,10 +1644,16 @@ const EditJob = () => {
       salaryValid &&
       skillsCountValid
     );
-  }, [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
+  }, [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid, approvedEditSections]);
 
   const stepReady = useMemo(() => ({
-    1: Boolean(
+    1: Array.isArray(approvedEditSections) ? Boolean(
+      (!approvedEditSections.includes('Job Details') || (
+        String(formData.title || '').trim() && !getJobTitleError(formData.title) &&
+        String(formData.jobType || '').trim() && String(formData.workMode || '').trim() && vacanciesValid
+      )) && (!approvedEditSections.includes('Salary') || salaryValid) &&
+      (!approvedEditSections.includes('Deadline') || isDeadlineValid)
+    ) : Boolean(
       String(formData.title || '').trim() &&
       !getJobTitleError(formData.title) &&
       String(formData.jobType || '').trim() &&
@@ -1622,20 +1662,20 @@ const EditJob = () => {
       isDeadlineValid &&
       salaryValid
     ),
-    2: Boolean(
+    2: Array.isArray(approvedEditSections) && !approvedEditSections.includes('Requirements & Qualifications') ? true : Boolean(
       getRichTextPlainText(formData.description).length >= JOB_DESCRIPTION_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
       getRichTextPlainText(formData.requirements).length >= JOB_REQUIREMENTS_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
       EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
       String(formData.educationLevel || '').trim()
     ),
-    3: Boolean(skillsCountValid),
-    4: Boolean(
+    3: Array.isArray(approvedEditSections) && !approvedEditSections.includes('Skills & Benefits') ? true : Boolean(skillsCountValid),
+    4: Array.isArray(approvedEditSections) && !approvedEditSections.includes('Work Locations') ? true : Boolean(
       String(formData.location || '').trim() &&
       String(formData.locationProvince || '').trim() &&
       String(formData.locationCity || '').trim() &&
       WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())
     ),
-  }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
+  }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid, approvedEditSections]);
 
   const currentStep = JOB_FORM_STEPS[activeStep - 1];
 
