@@ -1660,8 +1660,8 @@ const UserManagement = () => {
               className={cn(
                 'grid grid-cols-1 gap-3 md:grid-cols-2 2xl:items-center',
                 roleFilter === 'all'
-                  ? '2xl:grid-cols-[minmax(460px,2fr)_minmax(180px,0.8fr)_minmax(180px,0.9fr)_auto]'
-                  : '2xl:grid-cols-[minmax(360px,1.6fr)_repeat(4,minmax(160px,1fr))_auto]'
+                  ? '2xl:grid-cols-[minmax(350px,2fr)_minmax(145px,0.8fr)_minmax(145px,0.9fr)_132px]'
+                  : '2xl:grid-cols-[minmax(240px,1.6fr)_repeat(4,minmax(125px,1fr))_132px]'
               )}
             >
               <div className="relative min-w-0">
