@@ -1280,11 +1280,11 @@ const ArchivedJobs = () => {
                             type="button"
                             onClick={() => setRestoreJobCandidate(job)}
                             disabled={busyThisRow}
-                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={`Restore ${title}`}
                             title="Restore Job"
                           >
-                            Restore Job
+                            <ActionIcon name="restore" className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
@@ -1452,11 +1452,11 @@ const ArchivedJobs = () => {
                                   type="button"
                                   onClick={() => setRestoreJobCandidate(job)}
                                   disabled={busyThisRow}
-                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                   aria-label={`Restore ${title}`}
                                   title="Restore Job"
                                 >
-                                  Restore Job
+                                  <ActionIcon name="restore" className="h-4 w-4" />
                                 </button>
                               </div>
                             </td>
