@@ -706,9 +706,7 @@ const JobApplicants = () => {
   return (
     <EmployerLayout>
       <div className="mmx-auto max-w-7xl px-1 py-8">
-        <button type="button" onClick={() => navigate(`/employer/manage-jobs/${jobId}/view`, {
-          state: location.state?.jobViewState || undefined,
-        })} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-gray-50">
+        <button type="button" onClick={() => navigate(`/employer/manage-jobs/${jobId}/view`, { state: location.state?.jobViewState })} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-gray-50">
           <SvgIcon name="back" /> Back to job details
         </button>
 
@@ -820,7 +818,7 @@ const JobApplicants = () => {
                         <button type="button" onClick={() => {
                           saveListState();
                           navigate(`/employer/application/${application._id}?from=job-applicants&jobId=${encodeURIComponent(jobId)}`, {
-                            state: { listStateKey: LIST_STATE_KEY, jobViewState: location.state?.jobViewState },
+                            state: { listStateKey: LIST_STATE_KEY },
                           });
                         }} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]">View profile <SvgIcon name="arrow" /></button>
                       </div>
