@@ -1049,7 +1049,7 @@ const VerticalBars = ({ data = [], maxItems = 6, percentage = false }) => {
   );
 };
 
-const DonutChart = ({ data = [], showPercentage = false }) => {
+const DonutChart = ({ data = [], showPercentage = false, fullLabels = false }) => {
   const rows = data.filter((item) => Number(item.value || 0) > 0);
   const total = rows.reduce((sum, item) => sum + Number(item.value || 0), 0);
   if (!rows.length || !total) return <EmptyChart />;
@@ -1085,7 +1085,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
           </span>
         </div>
       </div>
-      <div className="w-full max-w-[285px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/60">
+      <div className={`${fullLabels ? "w-full max-w-[340px]" : "w-full max-w-[285px]"} rounded-xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/60`}>
         <div className="space-y-2">
           {rows.slice(0, 8).map((item, index) => {
             const value = Number(item.value || 0);
@@ -1101,7 +1101,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
                     className="h-2.5 w-2.5 shrink-0 rounded-sm"
                     style={{ backgroundColor: colors[index % colors.length] }}
                   />
-                  <span className="truncate">{titleCase(item.name)}</span>
+                  <span className={fullLabels ? "whitespace-nowrap text-[11px]" : "truncate"}>{titleCase(item.name)}</span>
                 </span>
 
                 <strong className="text-center text-slate-800">
@@ -1125,7 +1125,7 @@ const DonutChart = ({ data = [], showPercentage = false }) => {
 };
 
 
-const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
+const EmploymentRequestDonut = ({ data = [], colorMap = {}, fullLabels = false }) => {
   const rows = Array.isArray(data) ? data : [];
   const total = rows.reduce((sum, item) => sum + Number(item?.value || 0), 0);
   const positiveRows = rows.filter((item) => Number(item?.value || 0) > 0);
@@ -1172,7 +1172,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
           </div>
         </div>
 
-        <div className="w-full max-w-[285px] rounded-xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/60">
+        <div className={`${fullLabels ? "w-full max-w-[340px]" : "w-full max-w-[285px]"} rounded-xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/60`}>
           <div className="space-y-2">
             {rows.map((item, index) => {
               const value = Number(item?.value || 0);
@@ -1189,7 +1189,7 @@ const EmploymentRequestDonut = ({ data = [], colorMap = {} }) => {
                       className="h-3 w-3 shrink-0 rounded-sm"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="truncate">{titleCase(item.name)}</span>
+                    <span className={fullLabels ? "whitespace-nowrap text-[11px]" : "truncate"}>{titleCase(item.name)}</span>
                   </span>
                   <strong className="text-center text-slate-800">
                     {numberFormat.format(value)}
@@ -2535,7 +2535,7 @@ const AdminDashboard = () => {
               subtitle="Application status breakdown"
               className="xl:col-span-6"
             >
-              <HorizontalBars data={sections.applications?.funnel} maxItems={6} />
+              <HorizontalBars data={(sections.applications?.funnel || []).filter((item) => String(item?.name || "").trim().toLowerCase() !== "cancelled")} maxItems={6} />
             </ChartCard>
             <ChartCard
               title="Employment Type"
@@ -2551,7 +2551,7 @@ const AdminDashboard = () => {
               subtitle="On-site, remote, blended, and work from home"
               className="xl:col-span-6"
             >
-              <DonutChart data={sections.jobs?.workModes} showPercentage />
+              <DonutChart data={sections.jobs?.workModes} showPercentage fullLabels />
             </ChartCard>
             <WithdrawalStageCard data={sections.applications?.withdrawalByStage || []} />
 
@@ -2656,6 +2656,7 @@ const AdminDashboard = () => {
             >
               <EmploymentRequestDonut
                 data={sections.operations?.employmentStatusRequestTypes || []}
+                fullLabels
                 colorMap={{
                   "Contract Ended": "#0b3b66",
                   "Employment Ended": "#f5aa22",
