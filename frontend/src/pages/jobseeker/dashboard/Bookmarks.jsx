@@ -1923,17 +1923,17 @@ const Bookmarks = () => {
   }, []);
 
   const checkAppliedStatuses = useCallback(async (jobs) => {
+    const jobIds = Array.from(
+      new Set(
+        (Array.isArray(jobs) ? jobs : [])
+          .map((job) => String(job?._id || job?.id || '').trim())
+          .filter(Boolean)
+      )
+    );
+
     try {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
-
-      const jobIds = Array.from(
-        new Set(
-          (Array.isArray(jobs) ? jobs : [])
-            .map((job) => String(job?._id || job?.id || '').trim())
-            .filter(Boolean)
-        )
-      );
 
       if (!token || !userStr || jobIds.length === 0) {
         setAppliedMap({});
