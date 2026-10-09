@@ -2138,7 +2138,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-3">
-                    <h1 className="text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 sm:text-[30px]">
+                    <h1 className="whitespace-nowrap text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 sm:text-[30px]">
                       Admin Dashboard
                     </h1>
                     <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-transparent px-2.5 text-xs font-bold text-slate-700 opacity-0 shadow-none transition-opacity duration-150 hover:opacity-[0.06] focus-within:opacity-[0.12]">
