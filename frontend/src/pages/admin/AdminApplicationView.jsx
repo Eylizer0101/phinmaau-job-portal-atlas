@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import { BuildingIcon, MyApplicationsSvgIcon } from "../../components/shared/JobseekerIcons";
@@ -475,6 +475,13 @@ const LoadingState = () => (
 const AdminApplicationView = () => {
   const { applicationId } = useParams();
   const navigate = useNavigate();
+  const routeLocation = useLocation();
+  const returnTo = typeof routeLocation.state?.returnTo === "string" &&
+    routeLocation.state.returnTo.startsWith("/admin/") &&
+    !routeLocation.state.returnTo.startsWith("//")
+      ? routeLocation.state.returnTo
+      : "/admin/applications";
+  const handleBack = () => navigate(returnTo);
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -631,7 +638,7 @@ const AdminApplicationView = () => {
         <div className={UI.page}>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <button
-              onClick={() => navigate("/admin/applications")}
+              onClick={handleBack}
               className={cn("mb-5 inline-flex items-center gap-2 rounded-lg border border-[#d7e6f5] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm transition hover:bg-[#eef5fc] hover:text-[#2e66a6]", UI.ring)}
               type="button"
             >
@@ -653,7 +660,7 @@ const AdminApplicationView = () => {
         <div className="mx-auto max-w-7xl px-1 py-8">
           <div className="mb-4">
             <button
-              onClick={() => navigate("/admin/applications")}
+              onClick={handleBack}
               className={cn(
                 "inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff]",
                 UI.ring

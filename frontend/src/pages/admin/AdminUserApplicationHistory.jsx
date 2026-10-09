@@ -740,7 +740,7 @@ const AdminUserApplicationHistory = () => {
                   <ApplicationHistoryCard
                     key={application._id}
                     application={application}
-                    onView={() => navigate(`/admin/applications/${application._id}`)}
+                    onView={() => navigate(`/admin/applications/${application._id}`, { state: { returnTo: `/admin/users/${userId}/application-history` } })}
                   />
                 ))}
               </div>
