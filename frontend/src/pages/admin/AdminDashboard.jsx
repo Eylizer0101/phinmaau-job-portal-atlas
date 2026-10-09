@@ -2535,7 +2535,7 @@ const AdminDashboard = () => {
               subtitle="Application status breakdown"
               className="xl:col-span-6"
             >
-              <HorizontalBars data={(sections.applications?.funnel || []).filter((item) => String(item?.name || "").trim().toLowerCase() !== "cancelled")} maxItems={6} />
+              <HorizontalBars data={(sections.applications?.funnel || []).filter((item) => !["cancelled", "vacancy full"].includes(String(item?.name || "").trim().toLowerCase()))} maxItems={6} />
             </ChartCard>
             <ChartCard
               title="Employment Type"
