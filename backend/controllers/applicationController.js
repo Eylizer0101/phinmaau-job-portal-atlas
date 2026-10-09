@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 const User = require('../models/User');
@@ -3641,7 +3642,6 @@ exports.getMyJobStatuses = async (req, res) => {
       });
     }
 
-    const mongoose = require('mongoose');
     const jobIds = String(req.query.jobIds || '')
       .split(',')
       .map((value) => value.trim())
