@@ -344,7 +344,7 @@ const JOBSEEKER_CREDENTIAL_DESCRIPTIONS = {
   tin: "Tax Identification Number",
 };
 
-const APPLICATIONS_PER_PAGE = 10;
+const APPLICATIONS_PER_PAGE = 5;
 
 const hasMeaningfulObjectValue = (item = {}) =>
   Boolean(
@@ -483,7 +483,6 @@ const UserManagementDetails = () => {
     return TABS.some((tab) => tab.key === requestedTab) ? requestedTab : "resume";
   });
   const [activeEmployerTab, setActiveEmployerTab] = useState("about");
-  const [applicationPage, setApplicationPage] = useState(1);
   const [brokenAvatar, setBrokenAvatar] = useState(false);
   const [showAllActivity, setShowAllActivity] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
@@ -688,16 +687,10 @@ const UserManagementDetails = () => {
     setBrokenAvatar(false);
   }, [userId, user?.profileImage]);
 
-  useEffect(() => {
-    setApplicationPage(1);
-  }, [userId, applications.length]);
-
-  const totalApplicationPages = Math.max(1, Math.ceil(applications.length / APPLICATIONS_PER_PAGE));
-
-  const paginatedApplications = useMemo(() => {
-    const startIndex = (applicationPage - 1) * APPLICATIONS_PER_PAGE;
-    return applications.slice(startIndex, startIndex + APPLICATIONS_PER_PAGE);
-  }, [applications, applicationPage]);
+  const paginatedApplications = useMemo(
+    () => applications.slice(0, APPLICATIONS_PER_PAGE),
+    [applications]
+  );
 
   const isCurrentlyEmployed = useMemo(
     () =>
@@ -1650,17 +1643,7 @@ const UserManagementDetails = () => {
             ))}
           </div>
 
-          {applications.length >= 10 ? (
-            <Pagination
-              currentPage={applicationPage}
-              totalItems={applications.length}
-              pageSize={APPLICATIONS_PER_PAGE}
-              onPageChange={setApplicationPage}
-              onPageSizeChange={() => {}}
-              showPageSize={false}
-              className="mt-4 !min-h-[50px] !px-0 !py-2"
-            />
-          ) : null}
+
         </div>
       ) : (
         <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">No application history is available for this jobseeker.</div>

@@ -448,7 +448,7 @@ const AdminUserApplicationHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     saveAgapayAdminUserApplicationHistoryFiltersState({ searchQuery, companyFilter, industryFilter, jobTitleFilter, statusFilter, timeFilter, pageSize });
@@ -617,10 +617,10 @@ const AdminUserApplicationHistory = () => {
   if (error) {
     return (
       <AdminLayout>
-        <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
+        <div className="min-h-screen px-0 py-8">
           <button
             type="button"
-            onClick={() => navigate(`/admin/users/${userId}`)}
+            onClick={() => navigate(`/admin/users/${userId}?tab=applications`)}
             className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:bg-[#f7faff]"
           >
             <Icon name="arrowLeft" />
@@ -637,11 +637,11 @@ const AdminUserApplicationHistory = () => {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
+      <div className="min-h-screen px-0 py-8">
         <div className="w-full space-y-5">
           <button
             type="button"
-            onClick={() => navigate(`/admin/users/${userId}`)}
+            onClick={() => navigate(`/admin/users/${userId}?tab=applications`)}
             className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
           >
             <Icon name="arrowLeft" />
@@ -754,7 +754,7 @@ const AdminUserApplicationHistory = () => {
                 </p>
               </div>
             )}
-            {filteredApplications.length >= 10 ? (
+            {filteredApplications.length > 10 ? (
               <Pagination
                 currentPage={currentPage}
                 totalItems={filteredApplications.length}
