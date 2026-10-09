@@ -637,7 +637,7 @@ const EmployerJobView = () => {
     }
 
     navigate(backPath, {
-      state: Object.keys(nextState).length ? nextState : undefined,
+      state: { ...(location.state?.backState || {}), ...nextState },
     });
   };
 
@@ -1012,7 +1012,9 @@ const EmployerJobView = () => {
                 </div>
 
                 <div className="flex w-full shrink-0 lg:w-[285px]">
-                  <button type="button" onClick={() => navigate(`/employer/job/${jobId}/applicants`)} className={`group flex h-14 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`} aria-label={`View ${jobApplications.length} applicants for ${job.title}`}>
+                  <button type="button" onClick={() => navigate(`/employer/job/${jobId}/applicants`, {
+                     state: { jobViewState: location.state || {} },
+                   })} className={`group flex h-14 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`} aria-label={`View ${jobApplications.length} applicants for ${job.title}`}>
                     <div className="flex -space-x-2">
                       {applicantPreview.length ? applicantPreview.map((application, index) => {
                         const image = getApplicantImage(application);

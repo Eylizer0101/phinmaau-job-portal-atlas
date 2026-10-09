@@ -2540,7 +2540,9 @@ const ApplicationDetails = () => {
   if (loading) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="flex justify-center rounded-2xl border bg-white py-16 text-[#2e66a6]"><Spinner /></div></div></EmployerLayout>;
   if (!application) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="rounded-2xl border bg-white p-10 text-center"><p>{error || 'Application not found.'}</p><Link
           to={backDestination}
-          state={location.state?.listStateKey ? { restoreListStateKey: location.state.listStateKey } : undefined}
+          state={location.state?.listStateKey
+            ? { restoreListStateKey: location.state.listStateKey, jobViewState: location.state?.jobViewState }
+            : undefined}
           className="mt-5 inline-block text-[#2e66a6]"
         >{isFromForInterviewPage ? 'Back to For Interview' : 'Back to Applicants'}</Link></div></div></EmployerLayout>;
 
@@ -2690,7 +2692,9 @@ const ApplicationDetails = () => {
     <div className="mx-auto max-w-7xl px-1 py-8">
       <Link
         to={backDestination}
-        state={location.state?.listStateKey ? { restoreListStateKey: location.state.listStateKey } : undefined}
+        state={location.state?.listStateKey
+            ? { restoreListStateKey: location.state.listStateKey, jobViewState: location.state?.jobViewState }
+            : undefined}
         className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#174b91]"
       ><SvgIcon name="back" className="h-4 w-4" /> {isFromForInterviewPage ? 'Back to For Interview' : 'Back to Applicants'}</Link>
       {error ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}{success ? <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">{success}</div> : null}
@@ -2722,6 +2726,7 @@ const ApplicationDetails = () => {
                       state={{
                         backPath: `/employer/application/${applicationId}${location.search || ''}`,
                         backLabel: 'Application Details',
+                        backState: location.state || {},
                       }}
                       className="font-semibold text-[#174b91] underline underline-offset-2 transition hover:text-[#2e66a6] focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
                     >
