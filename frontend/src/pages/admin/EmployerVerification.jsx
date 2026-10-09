@@ -1311,12 +1311,12 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                             <td className="px-4 py-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 <img
-                                  src={item.companyLogo || "/images/default-company.svg"}
+                                  src={item.companyLogo || "/images/Building_Icon.png"}
                                   alt={companyName}
                                   className="h-11 w-11 rounded-xl object-cover border border-gray-200 bg-white"
                                   onError={(e) => {
                                     e.currentTarget.onerror = null;
-                                    e.currentTarget.src = "/images/default-company.svg";
+                                    e.currentTarget.src = "/images/Building_Icon.png";
                                   }}
                                 />
 
@@ -1391,12 +1391,12 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                       <Card key={item._id} className="p-4">
                         <div className="flex items-start gap-3">
                           <img
-                            src={item.companyLogo || "/images/default-company.svg"}
+                            src={item.companyLogo || "/images/Building_Icon.png"}
                             alt={companyName}
                             className="h-11 w-11 shrink-0 rounded-xl object-cover border border-gray-200 bg-white"
                             onError={(e) => {
                               e.currentTarget.onerror = null;
-                              e.currentTarget.src = "/images/default-company.svg";
+                              e.currentTarget.src = "/images/Building_Icon.png";
                             }}
                           />
 
