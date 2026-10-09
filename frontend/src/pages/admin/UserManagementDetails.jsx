@@ -1773,7 +1773,7 @@ const UserManagementDetails = () => {
     const employerLatestDateEvent = getLatestDateEvent([
       { label: "Registered On", value: user.createdAt },
       { label: "Last profile update", value: user.lastProfileUpdateAt },
-      { label: "Last edit request", value: user.latestEditRequestAt },
+      { label: "Last profile update", value: user.latestEditRequestAt },
     ]);
 
     const socialLinks = [
