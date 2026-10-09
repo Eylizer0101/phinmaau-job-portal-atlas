@@ -2127,7 +2127,7 @@ const AdminDashboard = () => {
           </div>
 
           <div className="relative px-5 pb-4 pt-5 lg:px-6">
-            <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(0,1fr)_480px] xl:items-center xl:gap-6">
+            <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(0,1fr)_600px] xl:items-center xl:gap-6">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-2xl bg-white shadow-[0_10px_28px_rgba(46,102,166,0.14)] ring-1 ring-[#2e66a6]/10">
                   <img
@@ -2164,8 +2164,28 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 pt-2 xl:pt-0">
-                <div className="flex justify-end" ref={notificationDropdownRef}>
+              <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2 xl:flex-nowrap xl:pt-0">
+                <div className="grid grid-cols-3 items-center gap-2.5">
+                  <HeaderStatusCard
+                    label="Pending Jobseeker"
+                    value={kpis.pendingJobseekers}
+                    icon={UserRoundMinus}
+                    onClick={() => navigate("/admin/dashboard/pending-seekers", { state: { fromAdminDashboard: true } })}
+                  />
+                  <HeaderStatusCard
+                    label="Pending Employers"
+                    value={kpis.pendingEmployers}
+                    icon={Building2}
+                    onClick={() => navigate("/admin/dashboard/pending-employers", { state: { fromAdminDashboard: true } })}
+                  />
+                  <HeaderStatusCard
+                    label="Request Edit"
+                    value={kpis.pendingEditRequests}
+                    icon={FaFileAlt}
+                    onClick={() => navigate("/admin/employer-job-edit-requests", { state: { fromAdminDashboard: true } })}
+                  />
+                </div>
+                <div className="flex shrink-0 justify-end" ref={notificationDropdownRef}>
                   <div className="relative">
                     <button
                       type="button"
@@ -2331,26 +2351,6 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="mt-2 grid grid-cols-3 items-center gap-2.5">
-                  <HeaderStatusCard
-                    label="Pending Jobseeker"
-                    value={kpis.pendingJobseekers}
-                    icon={UserRoundMinus}
-                    onClick={() => navigate("/admin/dashboard/pending-seekers", { state: { fromAdminDashboard: true } })}
-                  />
-                  <HeaderStatusCard
-                    label="Pending Employers"
-                    value={kpis.pendingEmployers}
-                    icon={Building2}
-                    onClick={() => navigate("/admin/dashboard/pending-employers", { state: { fromAdminDashboard: true } })}
-                  />
-                  <HeaderStatusCard
-                    label="Request Edit"
-                    value={kpis.pendingEditRequests}
-                    icon={FaFileAlt}
-                    onClick={() => navigate("/admin/employer-job-edit-requests", { state: { fromAdminDashboard: true } })}
-                  />
-                </div>
               </div>
             </div>
 
