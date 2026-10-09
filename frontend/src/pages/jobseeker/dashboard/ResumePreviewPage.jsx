@@ -309,6 +309,7 @@ const ResumePreviewPage = () => {
   const formData = storedData?.formData || {};
   const profileImage = userData?.profileImage || formData?.profileImage || '';
   const returnTo = storedData?.returnTo || '/jobseeker/my-profile';
+  const returnState = storedData?.returnState;
   const viewerMode = storedData?.viewerMode || 'jobseeker';
   const isEmployerPreview = viewerMode === 'employer';
   const isAdminPreview = viewerMode === 'admin';
@@ -357,7 +358,7 @@ const ResumePreviewPage = () => {
         <div className="mx-auto max-w-4xl">
           <button
             type="button"
-            onClick={() => navigate(returnTo)}
+            onClick={() => navigate(returnTo, returnState ? { state: returnState } : undefined)}
             className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-xl font-semibold text-gray-700 hover:bg-gray-50"
             aria-label="Close resume preview"
           >
@@ -869,7 +870,7 @@ const ResumePreviewPage = () => {
           <div className="preview-topbar print-hide">
           <button
             type="button"
-            onClick={() => navigate(returnTo)}
+            onClick={() => navigate(returnTo, returnState ? { state: returnState } : undefined)}
             className="preview-close-btn"
             aria-label="Close resume preview"
           >

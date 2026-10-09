@@ -622,6 +622,7 @@ const AdminApplicationView = () => {
           snapshotFormData.workExperience ||
           [],
         returnTo: `/admin/applications/${applicationId}`,
+        returnState: { returnTo },
         viewerMode: "admin",
       })
     );
