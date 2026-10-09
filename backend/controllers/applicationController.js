@@ -3641,10 +3641,11 @@ exports.getMyJobStatuses = async (req, res) => {
       });
     }
 
+    const mongoose = require('mongoose');
     const jobIds = String(req.query.jobIds || '')
       .split(',')
       .map((value) => value.trim())
-      .filter(Boolean)
+      .filter((value) => /^[a-f\d]{24}$/i.test(value))
       .slice(0, 100);
 
     if (!jobIds.length) {
@@ -3668,7 +3669,7 @@ exports.getMyJobStatuses = async (req, res) => {
       Application.aggregate([
         {
           $match: {
-            job: { $in: jobIds.map((jobId) => new require('mongoose').Types.ObjectId(jobId)) },
+            job: { $in: jobIds.map((jobId) => new mongoose.Types.ObjectId(jobId)) },
             status: 'hired'
           }
         },

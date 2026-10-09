@@ -1991,9 +1991,29 @@ const Bookmarks = () => {
       });
 
       setAppliedMap(statusMap);
-    } catch {
-      setAppliedMap({});
-      setAppliedCheckError(true);
+    } catch (error) {
+      // If the detailed status endpoint fails, use the lightweight applied-ID
+      // endpoint so duplicate submissions remain blocked.
+      try {
+        const fallback = await api.get('/applications/my-applied-job-ids');
+        if (!fallback.data?.success || !Array.isArray(fallback.data.appliedJobIds)) {
+          throw new Error('Unable to verify applied jobs.');
+        }
+        const appliedIds = new Set(fallback.data.appliedJobIds.map(String));
+        const fallbackMap = Object.fromEntries(
+          jobIds.map((jobId) => [jobId, {
+            hasApplied: appliedIds.has(jobId),
+            applicationStatus: '',
+            isResolved: true,
+          }])
+        );
+        setAppliedMap(fallbackMap);
+        setAppliedCheckError(false);
+      } catch (fallbackError) {
+        console.error('Unable to check saved-job application statuses:', error, fallbackError);
+        setAppliedMap({});
+        setAppliedCheckError(true);
+      }
     } finally {
       setCheckingApplied(false);
     }
