@@ -534,6 +534,12 @@ const AdminApplicationView = () => {
     if (applicationId) fetchApplication();
   }, [applicationId, fetchApplication]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [applicationId, loading]);
+
   const job = application?.job || {};
   const employer = application?.employer || {};
   const employerProfile = employer?.employerProfile || {};
