@@ -1786,6 +1786,7 @@ const Bookmarks = () => {
 
   const [appliedMap, setAppliedMap] = useState({});
   const [checkingApplied, setCheckingApplied] = useState(true);
+  const [appliedCheckError, setAppliedCheckError] = useState(false);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewStep, setReviewStep] = useState('privacy');
@@ -1948,6 +1949,7 @@ const Bookmarks = () => {
       }
 
       setCheckingApplied(true);
+      setAppliedCheckError(false);
 
       const chunks = [];
       for (let index = 0; index < jobIds.length; index += 100) {
@@ -1962,9 +1964,19 @@ const Bookmarks = () => {
         )
       );
 
-      const statusMap = {};
+      // A missing job entry means no application exists for that job; it must not
+      // leave the Apply button waiting indefinitely for isResolved.
+      const statusMap = Object.fromEntries(
+        jobIds.map((jobId) => [jobId, {
+          hasApplied: false,
+          applicationStatus: '',
+          isResolved: true,
+        }])
+      );
       responses.forEach((response) => {
-        if (!response.data?.success || !response.data?.statuses) return;
+        if (!response.data?.success || !response.data?.statuses) {
+          throw new Error('Could not verify your application status.');
+        }
         Object.entries(response.data.statuses).forEach(([jobId, status]) => {
           statusMap[jobId] = {
             hasApplied: Boolean(status?.hasApplied),
@@ -1981,6 +1993,7 @@ const Bookmarks = () => {
       setAppliedMap(statusMap);
     } catch {
       setAppliedMap({});
+      setAppliedCheckError(true);
     } finally {
       setCheckingApplied(false);
     }
@@ -2839,7 +2852,7 @@ const Bookmarks = () => {
     [navigate, savedJobs, savingJobId, setToastMessage, showJobSaveToast]
   );
 
-  const mainActionLoading = Boolean(selectedJob) && (checkingApplied || !applicationStateReady);
+  const mainActionLoading = Boolean(selectedJob) && !appliedCheckError && (checkingApplied || !applicationStateReady);
   const selectedJobPostingStatus = selectedJob
     ? String(selectedJob.postingStatus || getJobPostingStatus(selectedJob)).toLowerCase()
     : 'unavailable';
@@ -2850,7 +2863,9 @@ const Bookmarks = () => {
     : selectedJobPostingStatus === 'closed'
     ? 'Job Post Closed'
     : 'Application Closed';
-  const primaryCtaLabel = mainActionLoading
+  const primaryCtaLabel = appliedCheckError && selectedJob && isJobActive(selectedJob)
+    ? 'Retry'
+    : mainActionLoading
     ? 'Loading...'
     : selectedJob && !isJobActive(selectedJob)
     ? selectedJobStatusLabel
@@ -3228,6 +3243,8 @@ const Bookmarks = () => {
                               onClick={
                                 mainActionLoading || !isJobActive(selectedJob)
                                   ? undefined
+                                  : appliedCheckError
+                                  ? () => checkAppliedStatuses([...savedJobs, ...companyJobsForAppliedCheck])
                                   : hasApplied
                                   ? () => navigate('/jobseeker/my-applications')
                                   : isJobActive(selectedJob)
