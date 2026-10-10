@@ -1055,10 +1055,10 @@ const DeclinedApplicants = () => {
   }, [archiveCounts.archived, navigate]);
 
   const inputBase =
-    'w-full rounded-xl border border-gray-300 py-3 pl-11 pr-10 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
+    'h-12 w-full rounded-xl border border-gray-300 pl-11 pr-10 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
 
   const selectBase =
-    'w-full rounded-xl border border-gray-300 px-4 py-3 pr-9 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
+    'h-12 w-full rounded-xl border border-gray-300 px-4 pr-9 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
 
   return (
     <EmployerLayout>
@@ -1085,10 +1085,10 @@ const DeclinedApplicants = () => {
 
         <div className="mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-5'}>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
+            <div className={hasActiveFilters ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]'}>
+              <div className="min-w-0">
+                <div className="relative min-w-0">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
                   </span>
 
@@ -1109,7 +1109,7 @@ const DeclinedApplicants = () => {
                     <button
                       type="button"
                       onClick={() => setQuery('')}
-                      className="absolute right-3 top-3.5 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                       aria-label="Clear search"
                     >
                       <Icon name="x" className="h-4 w-4" />
@@ -1118,7 +1118,7 @@ const DeclinedApplicants = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-3">
+              <div className="min-w-0">
                 <label className="sr-only" htmlFor="declinedJobFilter">
                   Filter declined applicants by job
                 </label>
@@ -1137,7 +1137,7 @@ const DeclinedApplicants = () => {
                 </select>
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="min-w-0">
                 <label className="sr-only" htmlFor="declinedDateFilter">
                   Filter declined applicants by date
                 </label>
@@ -1159,7 +1159,7 @@ const DeclinedApplicants = () => {
                 />
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="min-w-0">
                 <label className="sr-only" htmlFor="sortDeclinedFilter">
                   Sort declined applicants
                 </label>
@@ -1179,7 +1179,7 @@ const DeclinedApplicants = () => {
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-2">
+                <div className="min-w-0">
                   <Button variant="secondary" className="w-full gap-2 inline-flex items-center justify-center" onClick={clearFilters} disabled={loading}>
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

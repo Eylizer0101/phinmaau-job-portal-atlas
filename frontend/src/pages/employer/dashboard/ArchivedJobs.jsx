@@ -130,7 +130,7 @@ const ArchivedDateFilterDropdown = ({
   endDate,
   disabled,
   onSelect,
-  heightClass = 'h-11',
+  heightClass = 'h-12',
 }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -1101,7 +1101,7 @@ const ArchivedJobs = () => {
 
         <div className="relative z-[80] mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
-            <div className={cn("grid grid-cols-1 gap-3 lg:items-center", hasActiveFilters ? "lg:grid-cols-12" : "lg:grid-cols-[minmax(0,5fr)_minmax(0,3.5fr)_minmax(0,3.5fr)]")}>
+            <div className={hasActiveFilters ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]'}>
               <div className={cn("relative min-w-0", hasActiveFilters && "lg:col-span-5")}>
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
@@ -1110,15 +1110,15 @@ const ArchivedJobs = () => {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search archived job title..."
-                  className="h-11 w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="h-12 w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 />
               </div>
 
-              <div className={hasActiveFilters ? "lg:col-span-3" : ""}>
+              <div className="min-w-0">
                 <select
                   value={jobFilter}
                   onChange={(e) => setJobFilter(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <option value="all">All Job Title</option>
                   {jobOptions.map((job) => (
@@ -1129,7 +1129,7 @@ const ArchivedJobs = () => {
                 </select>
               </div>
 
-              <div className={hasActiveFilters ? 'lg:col-span-2' : ''}>
+              <div className="min-w-0">
                 <ArchivedDateFilterDropdown
                   value={sortBy}
                   startDate={customDateFrom}
@@ -1149,11 +1149,11 @@ const ArchivedJobs = () => {
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-2">
+                <div className="min-w-0">
                   <button
                     type="button"
                     onClick={clearControls}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 gap-2 inline-flex items-center justify-center"
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 gap-2 inline-flex items-center justify-center"
                   >
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -1496,7 +1496,7 @@ const ManageJobs = () => {
 
         <div className="relative z-[80] mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:items-start">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,4fr)] xl:items-center">
               <div className="relative min-w-0">
                 <svg
                   className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
@@ -1513,16 +1513,16 @@ const ManageJobs = () => {
                     setCurrentPage(1);
                   }}
                   placeholder="Search job title..."
-                  className="w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="h-12 w-full rounded-xl border border-gray-300 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 />
               </div>
 
               <div
                 className={cn(
-                  'grid grid-cols-1 gap-2 sm:grid-cols-2',
+                  'grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2',
                   hasActiveFilters
-                    ? 'lg:grid-cols-5 xl:grid-cols-[minmax(130px,1fr)_minmax(105px,0.72fr)_minmax(115px,0.76fr)_minmax(115px,0.76fr)_minmax(125px,0.85fr)]'
-                    : 'lg:grid-cols-4 xl:grid-cols-[minmax(140px,1fr)_minmax(120px,0.75fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)]'
+                    ? 'xl:grid-cols-5'
+                    : 'xl:grid-cols-4'
                 )}
               >
                 <select
@@ -1531,7 +1531,7 @@ const ManageJobs = () => {
                     setJobFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <option value="all">All Job Title</option>
                   {jobOptions.map((job) => (
@@ -1547,7 +1547,7 @@ const ManageJobs = () => {
                     setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <option value="all">All Status</option>
                   <option value="open">Open</option>
@@ -1579,7 +1579,7 @@ const ManageJobs = () => {
                     setSortBy(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <option value="" disabled>Sort By</option>
                   <option value="most_recent">Newest First</option>
@@ -1594,7 +1594,7 @@ const ManageJobs = () => {
                   <button
                     type="button"
                     onClick={clearControls}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 gap-2 inline-flex items-center justify-center"
+                    className="h-12 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 gap-2 inline-flex items-center justify-center"
                   >
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

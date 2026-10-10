@@ -720,8 +720,8 @@ const JobApplicants = () => {
           <div
             className={
               hasActiveFilters
-                ? 'grid gap-3 lg:grid-cols-[1.3fr_0.7fr_0.8fr_0.8fr_0.7fr_minmax(122px,auto)]'
-                : 'grid gap-3 lg:grid-cols-[1.3fr_0.7fr_0.8fr_0.8fr_0.7fr]'
+                ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))]'
+                : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]'
             }
           >
             <div className="relative">

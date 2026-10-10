@@ -2255,8 +2255,8 @@ const Applicants = () => {
           <div
             className={
               hasActiveFilters
-                ? 'grid gap-3 lg:grid-cols-[1.35fr_0.75fr_0.8fr_0.8fr_0.65fr_minmax(122px,auto)]'
-                : 'grid gap-3 lg:grid-cols-[1.35fr_0.75fr_0.8fr_0.8fr_0.65fr]'
+                ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))]'
+                : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]'
             }
           >
             <div className="relative">

@@ -1100,10 +1100,10 @@ const HiredApplicants = () => {
   };
 
   const inputBase =
-  'h-[54px] w-full rounded-xl border border-gray-300 pl-11 pr-10 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
+  'h-12 w-full rounded-xl border border-gray-300 pl-11 pr-10 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
 
 const selectBase =
-  'h-[54px] w-full rounded-xl border border-gray-300 px-4 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
+  'h-12 w-full rounded-xl border border-gray-300 px-4 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
 
   return (
     <EmployerLayout>
@@ -1133,10 +1133,10 @@ const selectBase =
         {/* Filters */}
         <div className="relative z-[80] mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
           <div className="overflow-visible p-5">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-4'}>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
+            <div className={hasActiveFilters ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))]' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]'}>
+              <div className="min-w-0">
+                <div className="relative min-w-0">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
                   </span>
 
@@ -1163,7 +1163,7 @@ const selectBase =
                         setQuery('');
                         setCurrentPage(1);
                       }}
-                      className="absolute right-3 top-3.5 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                       aria-label="Clear search"
                     >
                       <Icon name="x" className="h-4 w-4" />
@@ -1172,7 +1172,7 @@ const selectBase =
                 </div>
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="min-w-0">
                 <label className="sr-only" htmlFor="jobFilter">
                   Filter by job
                 </label>
@@ -1194,7 +1194,7 @@ const selectBase =
                 </select>
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="min-w-0">
                 <label className="sr-only" htmlFor="employmentFilter">Filter by employment status</label>
                 <select
                   id="employmentFilter"
@@ -1212,7 +1212,7 @@ const selectBase =
                 </select>
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="min-w-0">
                 <EmployerDateFilterDropdown
                   value={dateFilter}
                   startDate={customDateFrom}
@@ -1231,7 +1231,7 @@ const selectBase =
                 />
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="min-w-0">
                 <DropdownFilter
                   id="sortFilter"
                   label="Sort By"
@@ -1246,11 +1246,11 @@ const selectBase =
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-2">
+                <div className="min-w-0">
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="inline-flex h-[54px] w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 gap-2"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 gap-2"
                   >
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
