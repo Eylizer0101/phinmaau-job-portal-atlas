@@ -1823,7 +1823,7 @@ const UserManagement = () => {
         </div>
 
         <div className="flex flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
-          <div className="flex min-h-0 flex-col px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
+          <div className="flex min-h-0 flex-col px-4 pt-0 pb-0 sm:px-6 sm:pt-0 sm:pb-0">
 
             {loading && users.length === 0 ? null : filteredUsers.length === 0 ? (
               <div className="py-14 text-center">
@@ -1842,7 +1842,7 @@ const UserManagement = () => {
               <>
                 <div
                   className={cn(
-                    'hidden overflow-x-auto overscroll-auto md:block',
+                    'hidden -mx-4 overflow-x-auto overscroll-auto md:block sm:-mx-6',
                     pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'
                   )}
                 >
