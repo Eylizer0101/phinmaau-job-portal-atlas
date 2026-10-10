@@ -2559,14 +2559,6 @@ const ApplicationDetails = () => {
   const profile = user.jobSeekerProfile || {};
   const name = user.fullName || [user.firstName, user.middleName, user.lastName, user.extensionName].filter(Boolean).join(' ') || 'Applicant';
   const currentStatus = String(application.status || 'pending').toLowerCase();
-  const currentHiringStage = String(application.hiringStage || '').replace(/\s+/g, ' ').trim();
-  const hiringStages = Array.isArray(application.hiringStages)
-    ? application.hiringStages.map((stage) => String(stage || '').replace(/\s+/g, ' ').trim()).filter(Boolean)
-    : [];
-  const finalHiringStage = hiringStages[hiringStages.length - 1] || '';
-  const isAtFinalHiringStage =
-    !finalHiringStage ||
-    currentHiringStage.toLowerCase() === finalHiringStage.toLowerCase();
   const employmentStatus = String(application.employmentStatus || 'active').toLowerCase();
   const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
   const employerRequestDecision = String(application.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase();
@@ -3031,7 +3023,7 @@ const ApplicationDetails = () => {
               ) : (
                 <>
               {currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
-              {isFromForInterviewPage && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
+              {isFromForInterviewPage && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#16a34a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#15803d] disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}
               {<button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button>}
               {canReviewEmploymentRequest ? (
                 <button onClick={() => { setEmploymentDeclineReason(''); setEmploymentCustomDeclineReason(''); setEmploymentDeclineComment(''); setEmploymentModal('review'); }} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
