@@ -1666,18 +1666,7 @@ const UserManagement = () => {
 
         <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
-            <div
-              className={cn(
-                'grid grid-cols-1 gap-3 md:grid-cols-2 2xl:items-center' + (roleFilter === 'all' ? (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11') : (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11')),
-                roleFilter === 'all'
-                  ? (hasActiveFilters
-                      ? '2xl:grid-cols-[minmax(420px,2fr)_minmax(165px,0.8fr)_minmax(165px,0.9fr)_minmax(132px,0.7fr)]'
-                      : '2xl:grid-cols-[minmax(420px,2fr)_minmax(165px,1fr)_minmax(165px,1fr)]')
-                  : (hasActiveFilters
-                      ? '2xl:grid-cols-[minmax(300px,1.6fr)_repeat(4,minmax(140px,1fr))_minmax(132px,0.7fr)]'
-                      : '2xl:grid-cols-[minmax(300px,1.6fr)_repeat(4,minmax(140px,1fr))]')
-              )}
-            >
+            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(${roleFilter === "all" ? 2 : 4}, minmax(0,1fr))${hasActiveFilters ? " minmax(0,1fr)" : ""}` }}>
               <div className="relative min-w-0">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-4 w-4" />
@@ -1818,7 +1807,7 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-[54px] w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
+                  className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
                   disabled={loading}
                 >
                   <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">

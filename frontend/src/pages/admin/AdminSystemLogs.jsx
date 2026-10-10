@@ -103,7 +103,7 @@ const Dropdown = ({ value, options, onChange, label, icon }) => {
   const selected = options.find(([key]) => key === value) || options[0];
   return <div className="relative">
     <button type="button" onClick={() => setOpen(!open)} onBlur={() => window.setTimeout(() => setOpen(false), 120)} aria-label={label}
-      className="flex h-[54px] w-full items-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300 focus:border-[#212C61] focus:outline-none focus:ring-2 focus:ring-[#212C61]/10">
+      className="flex h-12 w-full items-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300 focus:border-[#212C61] focus:outline-none focus:ring-2 focus:ring-[#212C61]/10">
       {icon ? <Icon name={icon} className="h-4 w-4 text-slate-500" /> : null}
       <span className="flex-1 text-left">{selected[1]}</span><Icon name="down" className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} />
     </button>
@@ -625,12 +625,7 @@ const AdminSystemLogs = () => {
     <header className="mb-5"><h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Activity Logs</h1>
       <p className="mt-1 text-sm text-gray-600">Monitor the important activities performed by Jobseekers and Employers.</p></header>
     <section className="relative z-30 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
-      <div className={cn(
-        'grid gap-3' + (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11'),
-        hasActiveFilters
-          ? 'md:grid-cols-[minmax(320px,1fr)_220px_220px_110px]'
-          : 'md:grid-cols-[minmax(320px,1fr)_220px_220px]'
-      )}>
+      <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(2,minmax(0,1fr))${hasActiveFilters ? " minmax(0,1fr)" : ""}` }}>
         <label className="relative"><span className="sr-only">Search activity logs</span><Icon name="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input type="search" value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Search user or activity..."
             className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10" /></label>
@@ -648,7 +643,7 @@ const AdminSystemLogs = () => {
           <button
             type="button"
             onClick={clearAllFilters}
-            className="inline-flex h-[54px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-semibold border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+            className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-semibold border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
           >
             <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> Clear All
           </button>

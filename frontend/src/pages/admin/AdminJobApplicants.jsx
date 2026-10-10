@@ -835,7 +835,7 @@ const DateFilterDropdown = ({
           event.stopPropagation();
           setOpen((previous) => !previous);
         }}
-        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
       >
         <span className="truncate">
           {value === 'custom' && dateFrom && dateTo
@@ -1442,7 +1442,7 @@ const AdminJobApplicants = () => {
           </div>
 
           <div className="mt-8 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
-            <div className={`grid gap-3 ${search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all" ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto]" : "lg:grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr]"}${(search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all") ? " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11"}`}>
+            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(3,minmax(0,1fr))${search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all" ? " minmax(0,1fr)" : ""}` }}>
               <label className="relative block">
                 <span className="sr-only">Search applicants</span>
                 <SvgIcon
@@ -1457,7 +1457,7 @@ const AdminJobApplicants = () => {
                     setCurrentPage(1);
                   }}
                   placeholder="Search applicant name, email..."
-                  className="h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
                 />
               </label>
 

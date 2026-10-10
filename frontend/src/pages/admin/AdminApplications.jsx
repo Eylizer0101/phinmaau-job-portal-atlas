@@ -414,7 +414,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
           event.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
+        className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
       >
         <span className="truncate">{getDateFilterLabel(value, dateFrom, dateTo)}</span>
         <Icon name="calendar" className="h-4 w-4 text-gray-500" />
@@ -846,15 +846,8 @@ const AdminApplications = () => {
         </div>
 
         <div className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:p-5">
-          <div
-            className={cn(
-              'grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:items-center' + (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11'),
-              hasActiveFilters
-                ? '2xl:grid-cols-[minmax(230px,1.35fr)_repeat(5,minmax(115px,0.72fr))_minmax(150px,0.9fr)_100px]'
-                : '2xl:grid-cols-[minmax(260px,1.45fr)_repeat(5,minmax(125px,0.8fr))_minmax(165px,1fr)]'
-            )}
-          >
-            <div className="relative min-w-0 sm:col-span-2 xl:col-span-2 2xl:col-span-1">
+          <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(6, minmax(0,1fr))${hasActiveFilters ? " minmax(0,1fr)" : ""}` }}>
+            <div className="relative min-w-0">
               <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
                 value={search}
@@ -910,7 +903,7 @@ const AdminApplications = () => {
               <button
                 onClick={clearFilters}
                 type="button"
-                className="inline-flex h-[54px] w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 sm:col-span-2 xl:col-span-4 2xl:col-span-1 border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 sm:col-span-2 xl:col-span-4 2xl:col-span-1 border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
               >
                 <Icon name="x" />
                 Clear All
