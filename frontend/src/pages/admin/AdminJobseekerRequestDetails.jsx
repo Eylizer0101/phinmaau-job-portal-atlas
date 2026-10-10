@@ -299,7 +299,7 @@ const AdminJobseekerRequestDetails = () => {
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-[28px] font-bold leading-tight text-slate-950">Employment Status Request</h1>
+            <h1 className="text-[26px] font-semibold leading-tight text-gray-900 sm:text-[33px]">Employment Status Request</h1>
           </div>
           <p className="mt-1 text-sm text-[#60758f]">Review the job seeker's request and the employer's response.</p>
         </div>
@@ -320,7 +320,7 @@ const AdminJobseekerRequestDetails = () => {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-bold text-slate-950">Employer Response</h2>
 
         <div className={`grid gap-4 rounded-lg border p-4 md:grid-cols-[1fr_1fr_1.15fr] md:items-stretch ${responseCardClass}`}>
@@ -343,7 +343,7 @@ const AdminJobseekerRequestDetails = () => {
       </section>
 
       {isDeclined && (
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#60758f]">
@@ -366,7 +366,7 @@ const AdminJobseekerRequestDetails = () => {
         </section>
       )}
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
         <div className="grid min-h-[140px] md:grid-cols-[1.28fr_0.86fr_0.86fr]">
           <div
             className="relative flex min-h-[140px] items-center overflow-hidden px-7 py-5 text-white"
@@ -421,7 +421,7 @@ const AdminJobseekerRequestDetails = () => {
 
       <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-4">
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
                 <UserRound size={17} />
@@ -488,7 +488,7 @@ const AdminJobseekerRequestDetails = () => {
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
                 <svg
@@ -537,7 +537,7 @@ const AdminJobseekerRequestDetails = () => {
           </section>
         </div>
 
-        <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="flex flex-col rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2e66a6] text-white">
               <JobDetailsSvgIcon name="briefcase" className="h-[17px] w-[17px]" />
@@ -630,7 +630,7 @@ const AdminJobseekerRequestDetails = () => {
         </section>
       </div>
 
-      <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-3">
+      <section className="grid gap-4 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:grid-cols-3">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><CalendarDays size={17} /></span>
           <InfoValue label="Applied Date" value={formatDate(request.appliedAt)} />

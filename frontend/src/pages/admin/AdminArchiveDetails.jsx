@@ -1349,7 +1349,7 @@ const AdminArchiveDetails = () => {
           </div>
 
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold text-black">{companyName}</h1>
+            <h1 className="truncate text-[26px] font-semibold leading-tight text-gray-900 sm:text-[33px]">{companyName}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
               <span className="inline-flex items-center gap-1.5">
                 <Icon name="building" className="h-3.5 w-3.5" />
@@ -1363,7 +1363,7 @@ const AdminArchiveDetails = () => {
           </div>
         </header>
 
-        <section className="relative z-20 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="relative z-20 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div
             className={cn(
               "grid gap-3 border-b border-slate-200 p-4",

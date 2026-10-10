@@ -956,7 +956,7 @@ const ChartCard = ({
   icon: Icon = Activity,
 }) => (
   <section
-    className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}
+    className={`min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm ${className}`}
   >
     <div className="mb-3 flex items-start gap-2 border-b border-slate-100 pb-3">
       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-white shadow-sm">
@@ -1439,7 +1439,7 @@ const RecruitmentCardTitle = ({ icon: Icon, title, subtitle }) => (
 const ApplicationProcessDurationCard = ({ data = {} }) => {
   const rows = Array.isArray(data?.buckets) ? data.buckets : [];
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
+    <section className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
         icon={FaWaveSquare}
         title="Application Processing Time"
@@ -1471,7 +1471,7 @@ const ApplicationProcessDurationCard = ({ data = {} }) => {
 const WithdrawalStageCard = ({ data = [] }) => {
   const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0);
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
+    <section className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
         icon={FaUser}
         title="Withdrawal by Application Stage"
@@ -1488,7 +1488,7 @@ const WithdrawalStageCard = ({ data = [] }) => {
 };
 
 const ApplicationsBeforeHireCard = ({ data = [] }) => (
-  <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
+  <section className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm xl:col-span-6">
     <RecruitmentCardTitle
       icon={FaListOl}
       title="Applications Before Hire"
@@ -1502,7 +1502,7 @@ const HireRateByCampusCard = ({ data = [] }) => {
   const rows = Array.isArray(data) ? data : [];
   if (!rows.length) {
     return (
-      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
+      <section className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm xl:col-span-6">
         <RecruitmentCardTitle
           icon={FaUniversity}
           title="Hire Rate by Campus"
@@ -1514,7 +1514,7 @@ const HireRateByCampusCard = ({ data = [] }) => {
   }
   const max = Math.max(1, ...rows.map((item) => Number(item.value || 0)));
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-6">
+    <section className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm xl:col-span-6">
       <RecruitmentCardTitle
         icon={Building2}
         title="Hire Rate by Campus"
@@ -2138,7 +2138,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-3">
-                    <h1 className="whitespace-nowrap text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 sm:text-[30px]">
+                    <h1 className="whitespace-nowrap text-[26px] font-semibold leading-tight tracking-[-0.02em] text-gray-900 sm:text-[33px]">
                       Admin Dashboard
                     </h1>
                     <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-transparent px-2.5 text-xs font-bold text-slate-700 opacity-0 shadow-none transition-opacity duration-150 hover:opacity-[0.06] focus-within:opacity-[0.12]">

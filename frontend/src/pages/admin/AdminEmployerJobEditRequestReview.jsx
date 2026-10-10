@@ -457,7 +457,7 @@ const AdminEmployerJobEditRequestReview = () => {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="border-b border-[#e6edf5] px-5 py-5 sm:px-6">
             <div className={cn(
               "grid gap-3",
