@@ -2298,7 +2298,7 @@ const selectBase =
           onClose={() => setSuccess('')}
         />
 
-        <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
               <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-5'}>
@@ -2406,7 +2406,7 @@ const selectBase =
           </div>
         </div>
 
-        <div className="relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
+        <div className="relative flex flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
           <div className="flex min-h-0 flex-col p-6">
             {loading ? (
               <div className="py-14 text-center" role="status" aria-live="polite">
@@ -2430,13 +2430,13 @@ const selectBase =
                       <col className="w-[16%]" />
                       <col className="w-[13%]" />
                     </colgroup>
-                    <thead className="bg-gray-50">
-                      <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-gray-50 [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
+                    <thead className="border-b border-gray-200 bg-[#fafafa]">
+                      <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-[#fafafa] [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
                         {['Applied Date', 'Applicant', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
                             key={heading}
                             className={cn(
-                              'px-3 py-4 text-xs font-semibold uppercase tracking-wider text-gray-600',
+                              'px-3 py-5 text-sm font-semibold uppercase tracking-wide text-gray-700',
                               heading === 'Actions' ? 'text-center' : 'text-left'
                             )}
                           >

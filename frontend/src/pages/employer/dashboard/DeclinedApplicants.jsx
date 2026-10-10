@@ -1083,7 +1083,7 @@ const DeclinedApplicants = () => {
           <div className="xl:pt-1">{headerRight}</div>
         </div>
 
-        <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
               <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-5'}>
@@ -1193,7 +1193,7 @@ const DeclinedApplicants = () => {
           </div>
         </div>
 
-        <div className="relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-inset ring-gray-200/70">
+        <div className="relative flex flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
           <div className="flex min-h-0 flex-col p-6">
             {loading ? (
               <div className="py-14 text-center" role="status" aria-live="polite">
@@ -1209,21 +1209,21 @@ const DeclinedApplicants = () => {
               <>
                 <div className={`hidden overflow-x-auto overscroll-auto md:block ${pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto'}`}>
                   <table className="min-w-full border-separate border-spacing-0">
-                    <thead className="bg-gray-50">
-                      <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-gray-50 [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
-                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                    <thead className="border-b border-gray-200 bg-[#fafafa]">
+                      <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-20 [&>th]:bg-[#fafafa] [&>th]:shadow-[0_1px_0_rgba(229,231,235,1)]">
+                        <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Applied Date
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Applicant
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Job Applied
                         </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-6 py-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Decline Stage
                         </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-6 py-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -1267,11 +1267,11 @@ const DeclinedApplicants = () => {
                                 : ''
                             )}
                           >
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-5">
                               <div className="text-sm text-gray-900">{formatDate(app.appliedAt)}</div>
                             </td>
 
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-5">
                               <div className="flex items-center gap-4">
                                 <Avatar
                                   img={app.jobseeker?.profileImage}
@@ -1287,13 +1287,13 @@ const DeclinedApplicants = () => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-5">
                               <div className="max-w-[18rem] truncate text-sm font-semibold text-gray-900" title={jobTitle}>
                                 {jobTitle}
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 text-center align-middle">
+                            <td className="px-6 py-5 text-center align-middle">
                               <div className="flex w-full flex-col items-center justify-center text-center">
                                 <span className="text-sm font-semibold text-red-600">
                                   {declinedStageLabel}
@@ -1304,7 +1304,7 @@ const DeclinedApplicants = () => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-6 py-5 text-center">
                               <div className="flex items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/application/${app._id}?from=declined`}
