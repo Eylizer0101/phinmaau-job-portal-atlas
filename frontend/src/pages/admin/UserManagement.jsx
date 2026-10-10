@@ -306,7 +306,7 @@ const Button = ({
   };
 
   const variants = {
-    secondary: 'border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6] shadow-sm',
+    secondary: 'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6] shadow-sm',
     primary: 'bg-[#2e66a6] text-white hover:bg-[#255487] focus-visible:ring-[#2e66a6] shadow-sm',
     neutral: 'border border-gray-300 bg-gray-50 text-gray-900 hover:bg-gray-100 focus-visible:ring-[#2e66a6] shadow-sm',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 shadow-sm',
@@ -423,7 +423,7 @@ const Alert = ({
 const Card = ({ children, className, hover = false, padding = true }) => (
   <div
     className={cn(
-      'rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-black/5',
+      'rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/5',
       hover && 'hover:shadow-md transition-shadow duration-200',
       padding && 'p-6',
       className
@@ -792,7 +792,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={month}
             onChange={(event) => changeMonthSelect(event.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select month"
           >
             {monthNames.map((name, index) => (
@@ -803,7 +803,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={year}
             onChange={(event) => changeYearSelect(event.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select year"
           >
             {getYearOptions().map((yearOption) => (
@@ -961,7 +961,7 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
           setOpen((prev) => !prev);
         }}
         className={cn(
-          'flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50',
+          'flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60'
         )}
@@ -1627,8 +1627,8 @@ const UserManagement = () => {
     dateFrom !== '' ||
     dateTo !== '';
 
-  const inputBase = 'h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
-  const selectBase = 'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
+  const inputBase = 'h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
+  const selectBase = 'h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
 
   return (
     <AdminLayout>
@@ -1657,14 +1657,14 @@ const UserManagement = () => {
 
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">
+            <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">
               User Management
             </h1>
-            <p className="mt-1.5 text-sm text-slate-600">View, filter, and manage registered users</p>
+            <p className="mt-1 text-sm text-gray-600">View, filter, and manage registered users</p>
           </div>
         </div>
 
-        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+        <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
             <div
               className={cn(
@@ -1818,7 +1818,7 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
+                  className="inline-flex h-[54px] w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
                   disabled={loading}
                 >
                   <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -1833,7 +1833,7 @@ const UserManagement = () => {
           </div>
         </div>
 
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
           <div className="flex min-h-0 flex-col px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
 
             {loading && users.length === 0 ? null : filteredUsers.length === 0 ? (
@@ -1858,33 +1858,33 @@ const UserManagement = () => {
                   )}
                 >
                   <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
+                    <thead className="sticky top-0 z-10 bg-[#fafafa] shadow-[0_1px_0_rgba(229,231,235,1)]">
                       <tr>
-                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Date Registered
                         </th>
-                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Name
                         </th>
-                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Role
                         </th>
                         {roleFilter === 'jobseeker' && (
                           <>
-                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Campus</th>
-                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Course</th>
+                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Campus</th>
+                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Course</th>
                           </>
                         )}
                         {roleFilter === 'employer' && (
                           <>
-                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Company</th>
-                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Industry</th>
+                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Company</th>
+                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Industry</th>
                           </>
                         )}
-                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Contact Number
                         </th>
-                        <th className="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-5 py-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -1911,7 +1911,7 @@ const UserManagement = () => {
                                 handleViewDetails(user.key);
                               }
                             }}
-                            className="group h-[76px] cursor-pointer transition-all duration-200 hover:bg-[#2e66a6]/[0.055] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                            className="group h-[76px] cursor-pointer transition-all duration-200 hover:bg-[#fafafa] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                           >
                             <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
                               {formatDate(user.createdAt)}
@@ -1965,7 +1965,7 @@ const UserManagement = () => {
                                   type="button"
                                   onClick={() => handleViewDetails(user.key)}
                                   disabled={isLoading}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   aria-label={`View ${user.name}`}
                                 >
                                   <Icon name="eye" className="h-4 w-4" />
@@ -1992,7 +1992,7 @@ const UserManagement = () => {
                     const isLoading = userActionLoading[user.key];
 
                     return (
-                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#2e66a6]/25 hover:shadow-md">
+                      <div className="overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#2e66a6]/25 hover:shadow-md">
                         <div className="h-1 bg-gradient-to-r from-[#2e66a6] to-[#73b7dc]" aria-hidden="true" />
                         <div className="p-4">
                           <div className="flex items-start gap-3">
@@ -2024,7 +2024,7 @@ const UserManagement = () => {
                                   type="button"
                                   onClick={() => handleViewDetails(user.key)}
                                   disabled={isLoading}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   aria-label={`View ${user.name}`}
                                 >
                                   <Icon name="eye" className="h-4 w-4" />

@@ -591,7 +591,7 @@ const CalendarMonth = ({
           <select
             value={month}
             onChange={(event) => changeMonthSelect(event.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select month"
           >
             {monthNames.map((name, index) => (
@@ -604,7 +604,7 @@ const CalendarMonth = ({
           <select
             value={year}
             onChange={(event) => changeYearSelect(event.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select year"
           >
             {getYearOptions().map((yearOption) => (
@@ -835,7 +835,7 @@ const DateFilterDropdown = ({
           event.stopPropagation();
           setOpen((previous) => !previous);
         }}
-        className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
       >
         <span className="truncate">
           {value === 'custom' && dateFrom && dateTo
@@ -1431,17 +1431,17 @@ const AdminJobApplicants = () => {
             <p className="text-sm font-bold uppercase tracking-wide text-[#2e66a6]">
               Applicants
             </p>
-            <h1 className="mt-1 text-3xl font-bold text-[#111827]">
+            <h1 className="mt-1 text-[33px] leading-[40px] font-semibold text-gray-900">
               {job?.title || location.state?.jobTitle || "Job Applicants"}
             </h1>
-            <p className="mt-2 text-lg text-[#6b7280]">
+            <p className="mt-1 text-sm text-gray-600">
               {applicants.length} candidate{applicants.length === 1 ? "" : "s"} applied
               {" · "}
               {openPositions} open position{openPositions === 1 ? "" : "s"}
             </p>
           </div>
 
-          <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-5 shadow-sm">
+          <div className="mt-8 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
             <div className={`grid gap-3 ${search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all" ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto]" : "lg:grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr]"}`}>
               <label className="relative block">
                 <span className="sr-only">Search applicants</span>
@@ -1457,7 +1457,7 @@ const AdminJobApplicants = () => {
                     setCurrentPage(1);
                   }}
                   placeholder="Search applicant name, email..."
-                  className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                  className="h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
                 />
               </label>
 
@@ -1469,7 +1469,7 @@ const AdminJobApplicants = () => {
                     setStatusFilter(event.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                  className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-10 text-sm text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
                 >
                   <option value="all">All Status</option>
                   {statusOptions.map((status) => (
@@ -1492,7 +1492,7 @@ const AdminJobApplicants = () => {
                     setLevelFilter(event.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                  className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-10 text-sm text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
                 >
                   <option value="all">All Job Seeker Level</option>
                   <option value="First Time Job Seeker">First Time Job Seeker</option>
@@ -1531,7 +1531,7 @@ const AdminJobApplicants = () => {
                     setCustomDateTo("");
                     setCurrentPage(1);
                   }}
-                  className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                  className="inline-flex h-[54px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
                 >
                   <SvgIcon name="x" className="h-4 w-4 shrink-0" />
                   Clear All
@@ -1555,7 +1555,7 @@ const AdminJobApplicants = () => {
             </div>
           ) : paginatedApplicants.length > 0 ? (
             <>
-              <div className={cn("mt-8 space-y-5 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-contain")}> 
+              <div className={cn("mt-4 space-y-3 pr-1", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-contain")}> 
                 {paginatedApplicants.map(
                   ({ application, user, profile, level, matchScore }) => {
                     const name =
@@ -1581,14 +1581,14 @@ const AdminJobApplicants = () => {
                     return (
                       <article
                         key={application._id}
-                        className="rounded-3xl border border-[#e3e5ef] bg-white p-6 shadow-sm"
+                        className="rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm"
                       >
                         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                           <div className="flex min-w-0 items-center gap-5">
                             <img
                               src={resolveApplicantImage(user)}
                               alt={name}
-                              className="h-20 w-20 shrink-0 rounded-full object-cover"
+                              className="h-12 w-12 shrink-0 rounded-full object-cover"
                               onError={(event) => {
                                 event.currentTarget.onerror = null;
                                 event.currentTarget.src = "/images/profile.png";
@@ -1597,7 +1597,7 @@ const AdminJobApplicants = () => {
 
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-3">
-                                <h2 className="text-xl font-bold text-[#111827]">
+                                <h2 className="text-base font-semibold text-gray-900">
                                   {name}
                                 </h2>
 

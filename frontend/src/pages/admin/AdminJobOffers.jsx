@@ -231,7 +231,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={month}
             onChange={(event) => changeMonthSelect(event.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-10 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select month"
           >
             {MONTH_NAMES.map((name, index) => (
@@ -242,7 +242,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={year}
             onChange={(event) => changeYearSelect(event.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-10 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select year"
           >
             {getYearOptions().map((yearOption) => (
@@ -416,7 +416,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
           event.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
+        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
       >
         <span className="truncate">{getDateFilterLabel(value, dateFrom, dateTo)}</span>
         <Icon name="calendar" className="h-4 w-4 text-gray-500" />
@@ -503,7 +503,7 @@ const statusMeta = (status) => {
 };
 
 const StatCard = ({ label, value, icon }) => (
-  <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#2e66a6]/30 hover:shadow-md">
+  <div className="group rounded-2xl border border-gray-300 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#2e66a6]/30 hover:shadow-md">
     <div className="flex items-start justify-between gap-4">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">{label}</p>
@@ -637,12 +637,12 @@ const AdminJobOffers = () => {
         <div className="mx-auto w-full max-w-[1480px] space-y-6 px-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Job Offers</h1>
-              <p className="mt-1.5 text-sm text-slate-600">View, filter, and review all posted job opportunities.</p>
+              <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Job Offers</h1>
+              <p className="mt-1 text-sm text-gray-600">View, filter, and review all posted job opportunities.</p>
             </div>
           </div>
 
-          <section className="min-w-0 overflow-visible rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] sm:p-5">
+          <section className="min-w-0 overflow-visible rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:p-5">
             <div
               className={cn(
                 'grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:items-end',
@@ -658,7 +658,7 @@ const AdminJobOffers = () => {
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
                   placeholder="Search company, job title..."
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:ring-4 focus:ring-[#2e66a6]/10"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:ring-4 focus:ring-[#2e66a6]/10"
                 />
               </label>
 
@@ -678,7 +678,7 @@ const AdminJobOffers = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 md:col-span-2 xl:col-span-3 2xl:col-span-1 border-gray-200 bg-[#f3f6fa] text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                  className="inline-flex h-[54px] w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 md:col-span-2 xl:col-span-3 2xl:col-span-1 border-gray-200 bg-[#f3f6fa] text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
                 >
                   <Icon name="x" className="h-4 w-4" /> Clear All
                 </button>
@@ -686,7 +686,7 @@ const AdminJobOffers = () => {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+          <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
             <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
               <table className="w-full min-w-[1060px] table-fixed divide-y divide-slate-200">
                 <colgroup>
@@ -699,10 +699,10 @@ const AdminJobOffers = () => {
                   <col className="w-[10%]" />
                   <col className="w-[7%]" />
                 </colgroup>
-                <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
+                <thead className="sticky top-0 z-10 bg-[#fafafa] shadow-[0_1px_0_rgba(229,231,235,1)]">
                   <tr>
                     {['Date Posted', 'Company', 'Job Title', 'Vacancy', 'Applicant', 'Status', 'Valid Until', 'Actions'].map((header) => (
-                      <th key={header} className={cn('whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600', header === 'Actions' ? 'text-center' : '')}>
+                      <th key={header} className={cn('whitespace-nowrap px-4 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700', header === 'Actions' ? 'text-center' : '')}>
                         {header}
                       </th>
                     ))}
@@ -746,7 +746,7 @@ const AdminJobOffers = () => {
                               navigate(`/admin/jobs/${job._id}`, { state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' } });
                             }
                           }}
-                          className="group cursor-pointer transition-all duration-200 hover:bg-[#2e66a6]/[0.055] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                          className="group cursor-pointer transition-all duration-200 hover:bg-[#fafafa] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                         >
                           <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">{formatDate(job.createdAt)}</td>
                           <td className="px-4 py-4">
@@ -780,7 +780,7 @@ const AdminJobOffers = () => {
                             <button
                               type="button"
                               onClick={() => navigate(`/admin/jobs/${job._id}`, { state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' } })}
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                               title="View job offer"
                               aria-label="View job offer"
                             >
@@ -820,7 +820,7 @@ const Select = ({ value, onChange, options }) => (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:ring-4 focus:ring-[#2e66a6]/10"
+      className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:ring-4 focus:ring-[#2e66a6]/10"
     >
       {options.map((option) => <option key={option} value={option}>{option}</option>)}
     </select>

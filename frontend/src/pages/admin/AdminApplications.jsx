@@ -229,7 +229,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={month}
             onChange={(event) => changeMonthSelect(event.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-10 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select month"
           >
             {MONTH_NAMES.map((name, index) => (
@@ -240,7 +240,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={year}
             onChange={(event) => changeYearSelect(event.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-10 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select year"
           >
             {getYearOptions().map((yearOption) => (
@@ -414,7 +414,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
           event.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
+        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
       >
         <span className="truncate">{getDateFilterLabel(value, dateFrom, dateTo)}</span>
         <Icon name="calendar" className="h-4 w-4 text-gray-500" />
@@ -840,12 +840,12 @@ const AdminApplications = () => {
       <div className="mx-auto max-w-[1480px] px-1 py-7 sm:py-8">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Applications</h1>
-            <p className="mt-1.5 text-sm text-slate-600">View, filter, and review applicant submissions.</p>
+            <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Applications</h1>
+            <p className="mt-1 text-sm text-gray-600">View, filter, and review applicant submissions.</p>
           </div>
         </div>
 
-        <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] sm:p-5">
+        <div className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:p-5">
           <div
             className={cn(
               'grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:items-center',
@@ -859,7 +859,7 @@ const AdminApplications = () => {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-700 outline-none shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:bg-white focus:ring-4 focus:ring-[#2e66a6]/10"
+                className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-sm text-slate-700 outline-none shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:bg-white focus:ring-4 focus:ring-[#2e66a6]/10"
                 placeholder="Search applicant, job title..."
                 type="search"
               />
@@ -910,7 +910,7 @@ const AdminApplications = () => {
               <button
                 onClick={clearFilters}
                 type="button"
-                className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 sm:col-span-2 xl:col-span-4 2xl:col-span-1 border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                className="inline-flex h-[54px] w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 sm:col-span-2 xl:col-span-4 2xl:col-span-1 border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
               >
                 <Icon name="x" />
                 Clear All
@@ -919,7 +919,7 @@ const AdminApplications = () => {
           </div>
         </div>
 
-        <div className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+        <div className="mt-4 overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
           {error ? (
             <div className="p-6 text-sm font-semibold text-red-600">{error}</div>
           ) : (
@@ -935,7 +935,7 @@ const AdminApplications = () => {
                     <col className="w-[9%]" />
                     <col className="w-[8%]" />
                   </colgroup>
-                  <thead className="sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
+                  <thead className="sticky top-0 z-10 bg-[#fafafa] shadow-[0_1px_0_rgba(229,231,235,1)]">
                     <tr>
                       {[
                         'Applicant',
@@ -949,7 +949,7 @@ const AdminApplications = () => {
                         <th
                           key={head}
                           className={cn(
-                            'whitespace-nowrap py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600',
+                            'whitespace-nowrap py-4 text-sm font-semibold uppercase tracking-wide text-gray-700',
                             head === 'Actions' ? 'px-2 text-center' : 'px-4'
                           )}
                         >
@@ -986,7 +986,7 @@ const AdminApplications = () => {
                               navigate(`/admin/applications/${app._id}`);
                             }
                           }}
-                          className="group cursor-pointer transition-all duration-200 hover:bg-[#2e66a6]/[0.055] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                          className="group cursor-pointer transition-all duration-200 hover:bg-[#fafafa] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                         >
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
@@ -1042,7 +1042,7 @@ const AdminApplications = () => {
                             <button
                               onClick={() => navigate(`/admin/applications/${app._id}`)}
                               type="button"
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                               title="View application"
                               aria-label="View application"
                             >
@@ -1085,7 +1085,7 @@ const FilterSelect = ({ value, onChange, options }) => (
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm outline-none transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:bg-white focus:ring-4 focus:ring-[#2e66a6]/10"
+      className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm outline-none transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:bg-white focus:ring-4 focus:ring-[#2e66a6]/10"
     >
       {options.map((option) => <option key={option} value={option}>{option}</option>)}
     </select>

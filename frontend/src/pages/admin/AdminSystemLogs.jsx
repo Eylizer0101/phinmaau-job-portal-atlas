@@ -103,11 +103,11 @@ const Dropdown = ({ value, options, onChange, label, icon }) => {
   const selected = options.find(([key]) => key === value) || options[0];
   return <div className="relative">
     <button type="button" onClick={() => setOpen(!open)} onBlur={() => window.setTimeout(() => setOpen(false), 120)} aria-label={label}
-      className="flex h-11 w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300 focus:border-[#212C61] focus:outline-none focus:ring-2 focus:ring-[#212C61]/10">
+      className="flex h-[54px] w-full items-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300 focus:border-[#212C61] focus:outline-none focus:ring-2 focus:ring-[#212C61]/10">
       {icon ? <Icon name={icon} className="h-4 w-4 text-slate-500" /> : null}
       <span className="flex-1 text-left">{selected[1]}</span><Icon name="down" className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} />
     </button>
-    {open ? <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-full rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+    {open ? <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-full rounded-xl border border-gray-300 bg-white p-1.5 shadow-xl">
       {options.map(([key, text]) => <button key={key} type="button" onMouseDown={(event) => event.preventDefault()}
         onClick={() => { onChange(key); setOpen(false); }}
         className={`block w-full whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50 ${key === value ? 'bg-[#212C61]/10 font-bold text-[#212C61]' : 'text-slate-700'}`}>{text}</button>)}
@@ -276,7 +276,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={month}
             onChange={(event) => changeMonthSelect(event.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-10 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select month"
           >
             {MONTH_NAMES.map((name, index) => (
@@ -287,7 +287,7 @@ const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMont
           <select
             value={year}
             onChange={(event) => changeYearSelect(event.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            className="h-10 rounded-lg border border-gray-300 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             aria-label="Select year"
           >
             {getYearOptions().map((yearOption) => (
@@ -462,7 +462,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
           event.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
       >
         <span className="truncate">{getDateFilterLabel(value, dateFrom, dateTo)}</span>
         <Icon name="calendar" className="h-4 w-4 text-gray-500" />
@@ -622,9 +622,9 @@ const AdminSystemLogs = () => {
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
   return <AdminLayout><main className="mx-auto flex w-full max-w-[1480px] flex-col px-1 py-7 sm:py-8 md:min-h-0 md:pb-2 md:pt-8">
-    <header className="mb-5"><h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Activity Logs</h1>
-      <p className="mt-1.5 text-sm text-slate-500">Monitor the important activities performed by Jobseekers and Employers.</p></header>
-    <section className="relative z-30 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+    <header className="mb-5"><h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Activity Logs</h1>
+      <p className="mt-1 text-sm text-gray-600">Monitor the important activities performed by Jobseekers and Employers.</p></header>
+    <section className="relative z-30 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
       <div className={cn(
         'grid gap-3',
         hasActiveFilters
@@ -648,16 +648,16 @@ const AdminSystemLogs = () => {
           <button
             type="button"
             onClick={clearAllFilters}
-            className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-semibold border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+            className="inline-flex h-[54px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-semibold border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
           >
             <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> Clear All
           </button>
         ) : null}
       </div>
     </section>
-    <section className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+    <section className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
       <div className="min-h-0 flex-1 max-w-full overflow-x-auto overflow-y-hidden lg:overflow-x-hidden"><div className="flex h-full min-w-[760px] min-h-0 flex-col lg:min-w-0">
-        <div className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] gap-5 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+        <div className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] gap-5 border-b border-gray-200 bg-[#fafafa] px-6 py-5 text-sm font-semibold uppercase tracking-wide text-gray-700">
           <span>Date & Time</span><span>Performed By</span><span>Role</span><span>Action</span>
         </div>
         <div className={pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-auto"}> 
@@ -666,7 +666,7 @@ const AdminSystemLogs = () => {
           : logs.length === 0 ? <div className="flex min-h-[300px] flex-col items-center justify-center text-center"><Icon name="activity" className="h-8 w-8 text-[#212C61]" /><h2 className="mt-3 font-bold text-slate-900">No activity logs found</h2><p className="mt-1 text-sm text-slate-500">Jobseeker and Employer activities will appear here.</p></div>
           : <div className="divide-y divide-slate-100">{logs.map((log) => {
             const created = formatDateTime(log.createdAt);
-            return <div key={log.id} className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] items-center gap-5 px-5 py-4 transition-colors hover:bg-[#2e66a6]/[0.045]">
+            return <div key={log.id} className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] items-center gap-5 px-6 py-5 transition-colors hover:bg-[#2e66a6]/[0.045]">
               <div><p className="text-sm font-bold text-slate-800">{created}</p></div>
               <div className="flex min-w-0 items-center gap-3"><ActorAvatar image={log.actorImage} name={log.actorName} /><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{log.actorEmail || 'No email recorded'}</p></div></div>
               <span className="text-sm font-normal text-black">{formatActorRole(log.actorRole)}</span>
