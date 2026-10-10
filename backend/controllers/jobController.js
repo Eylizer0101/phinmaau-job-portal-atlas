@@ -1668,7 +1668,7 @@ exports.updateJob = async (req, res) => {
       }
     }
 
-    if (req.body.location !== undefined) {
+    if (req.body.location !== undefined && wantsToPublish) {
       const provinceValue = String(
         req.body.locationProvince !== undefined ? req.body.locationProvince : job.locationProvince || ''
       ).trim();

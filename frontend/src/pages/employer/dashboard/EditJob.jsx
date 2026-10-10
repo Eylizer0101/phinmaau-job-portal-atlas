@@ -1968,7 +1968,11 @@ const EditJob = () => {
       if (canEditSection(sectionName)) payload.append(key, value);
     };
 
-    appendSectionField('Job Details', 'title', normalizeSingleLine(formData.title));
+    if (mode === 'draft' && !normalizeSingleLine(formData.title)) {
+      // Keep the existing draft title when this optional edit field is left blank.
+    } else {
+      appendSectionField('Job Details', 'title', normalizeSingleLine(formData.title));
+    }
     appendSectionField('Job Details', 'jobType', formData.jobType);
     appendSectionField('Job Details', 'isUrgent', String(Boolean(formData.isUrgent)));
     appendSectionField('Job Details', 'workMode', formData.workMode);
@@ -2357,14 +2361,9 @@ const EditJob = () => {
   };
 
   const handleSaveDraft = async () => {
-    setSubmitted(true);
+    setSubmitted(false);
+    setTouched({});
     clearMessages();
-
-    if (!String(formData.title || '').trim()) {
-      setError('Please add a job title before saving as draft.');
-      focusFirstError({ title: 'required' });
-      return;
-    }
 
     setSavingDraft(true);
 
