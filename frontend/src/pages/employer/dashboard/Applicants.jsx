@@ -1550,6 +1550,7 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
 const Applicants = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [fromDashboardCard] = useState(() => location.state?.fromEmployerDashboardCard === true);
   const { jobId } = useParams();
 
   // ✅ API base (same pattern with EmployerMessages.jsx)
@@ -2231,6 +2232,18 @@ const Applicants = () => {
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
+        {fromDashboardCard && (
+          <button
+            type="button"
+            onClick={() => navigate('/employer/dashboard')}
+            className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+          >
+            <svg className="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+        )}
         {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>

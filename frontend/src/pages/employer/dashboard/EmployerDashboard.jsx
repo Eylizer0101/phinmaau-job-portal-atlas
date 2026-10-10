@@ -2147,6 +2147,7 @@ const EmployerDashboard = () => {
             <Link
               key={card.key}
               to={card.href}
+              state={{ fromEmployerDashboardCard: true, ...(card.key === 'forInterview' ? { returnTo: '/employer/dashboard', returnLabel: 'Back' } : {}) }}
               className="relative rounded-2xl overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#2e66a6]"
               aria-label={`${card.label}: ${card.value}. Click to view.`}
             >

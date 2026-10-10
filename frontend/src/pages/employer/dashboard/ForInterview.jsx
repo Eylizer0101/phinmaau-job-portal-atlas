@@ -2275,9 +2275,17 @@ const selectBase =
           <button
             type="button"
             onClick={() => navigate(returnNavigation.returnTo)}
-            className="mb-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-[#174b91] shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+            className={returnNavigation.returnTo === '/employer/dashboard' && returnNavigation.returnLabel === 'Back'
+              ? 'mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50'
+              : 'mb-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-[#174b91] shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]'}
           >
-            <Icon name="chevron-left" className="h-4 w-4" />
+            {returnNavigation.returnTo === '/employer/dashboard' && returnNavigation.returnLabel === 'Back' ? (
+              <svg className="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            ) : (
+              <Icon name="chevron-left" className="h-4 w-4" />
+            )}
             {returnNavigation.returnLabel}
           </button>
         ) : null}

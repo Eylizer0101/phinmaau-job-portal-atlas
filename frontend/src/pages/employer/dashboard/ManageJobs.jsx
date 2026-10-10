@@ -471,6 +471,7 @@ const Alert = ({ type = 'error', children, onClose }) => {
 const ManageJobs = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [fromDashboardCard] = useState(() => location.state?.fromEmployerDashboardCard === true);
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1467,6 +1468,18 @@ const ManageJobs = () => {
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
+        {fromDashboardCard && (
+          <button
+            type="button"
+            onClick={() => navigate('/employer/dashboard')}
+            className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+          >
+            <svg className="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+        )}
         <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Manage Jobs</h1>
