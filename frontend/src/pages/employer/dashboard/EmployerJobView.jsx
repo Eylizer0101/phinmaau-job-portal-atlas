@@ -661,6 +661,24 @@ const EmployerJobView = () => {
         : '',
   }));
   const [showSuccessIndicator, setShowSuccessIndicator] = useState(successIndicator.visible);
+  const jobDetailsTopRef = React.useRef(null);
+
+  useEffect(() => {
+    if (!successIndicator.visible || loading || !job) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      let element = jobDetailsTopRef.current;
+      while (element) {
+        if (element.scrollHeight > element.clientHeight) {
+          element.scrollTop = 0;
+        }
+        element = element.parentElement;
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading, job, successIndicator.visible]);
 
   const formatSalary = useCallback((min, max, hideSalary = false) => {
     if (hideSalary) return 'Salary Undisclosed';
@@ -916,7 +934,7 @@ const EmployerJobView = () => {
 
   return (
     <EmployerLayout>
-      <div className={UI.page}>
+      <div className={UI.page} ref={jobDetailsTopRef}>
         <div className={UI.container}>
           <div className="mb-4">
             <button
