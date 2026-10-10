@@ -898,7 +898,7 @@ const AdminLayout = ({ children }) => {
   const logoSrc = "/images/phinma-logo.png";
 
   return (
-    <div className="min-h-screen bg-white" style={layoutVars}>
+    <div className="min-h-screen bg-gray-50" style={layoutVars}>
       {/* ✅ Logout Confirmation Modal (match screenshot style) */}
       {showLogoutModal && (
         <div
