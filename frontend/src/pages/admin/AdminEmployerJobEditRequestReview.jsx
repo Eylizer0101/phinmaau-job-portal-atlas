@@ -459,11 +459,11 @@ const AdminEmployerJobEditRequestReview = () => {
 
         <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="border-b border-[#e6edf5] px-5 py-5 sm:px-6">
-            <div className={cn(
-              "grid gap-3",
+            <div className="w-full overflow-x-auto"><div className={cn(
+              "grid min-w-[740px] items-center gap-3",
               hasActiveFilters
-                ? "md:grid-cols-[minmax(0,1.55fr)_145px_155px_145px_auto]"
-                : "md:grid-cols-[minmax(0,1.55fr)_145px_155px_145px]"
+                ? "grid-cols-[minmax(240px,1.7fr)_repeat(3,minmax(120px,1fr))_auto]"
+                : "grid-cols-[minmax(240px,1.7fr)_repeat(3,minmax(120px,1fr))]"
             )}>
               <label className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7890aa]" size={17} />
@@ -513,7 +513,7 @@ const AdminEmployerJobEditRequestReview = () => {
                   <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> Clear All
                 </button>
               )}
-            </div>
+            </div></div>
           </div>
 
           <div className="bg-[#fbfdff] p-5 sm:p-6">

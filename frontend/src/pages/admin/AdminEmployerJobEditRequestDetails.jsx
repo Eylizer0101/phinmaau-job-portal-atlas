@@ -1003,7 +1003,7 @@ const AdminEmployerJobEditRequestDetails = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1.55fr)_145px_145px_145px]">
+                <div className="overflow-x-auto"><div className="mt-4 grid min-w-[680px] grid-cols-[minmax(240px,1.7fr)_repeat(3,minmax(120px,1fr))] items-center gap-3">
                   <label className="relative">
                     <Search
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7890aa]"
@@ -1053,7 +1053,7 @@ const AdminEmployerJobEditRequestDetails = () => {
                     <option value="newest">Newest first</option>
                     <option value="oldest">Oldest first</option>
                   </select>
-                </div>
+                </div></div>
               </div>
 
               <div className="border-t border-[#e5e7eb] bg-[#fbfdff] px-6 py-6 sm:px-7">
