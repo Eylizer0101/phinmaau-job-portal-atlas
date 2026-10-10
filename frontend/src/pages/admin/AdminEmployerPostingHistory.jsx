@@ -693,7 +693,7 @@ const AdminEmployerPostingHistory = () => {
             </button>
 
             <div className="mt-6">
-              <h1 className="text-3xl font-bold text-black">
+              <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">
                 Posting History
               </h1>
               <p className="mt-1 text-sm text-black/55">
@@ -708,7 +708,7 @@ const AdminEmployerPostingHistory = () => {
             </div>
           ) : (
             <>
-              <section className="rounded-2xl border border-[#dfe5ec] bg-white p-5 shadow-sm">
+              <section className="rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
                 <div className={`grid gap-3 ${hasActiveFilters ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(180px,1fr)_minmax(150px,0.8fr)_minmax(180px,1fr)_auto]" : "lg:grid-cols-[minmax(0,1.65fr)_minmax(180px,1fr)_minmax(150px,0.8fr)_minmax(180px,1fr)]"}`}>
                   <label className="relative block">
                     <span className="sr-only">Search jobs</span>
@@ -721,14 +721,14 @@ const AdminEmployerPostingHistory = () => {
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder="Search job title, location, status"
-                      className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                      className="h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     />
                   </label>
 
                   <select
                     value={jobTitle}
                     onChange={(event) => setJobTitle(event.target.value)}
-                    className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    className="h-[54px] rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                   >
                     <option value="all">All Job Title</option>
                     {titleOptions.map((title) => (
@@ -741,7 +741,7 @@ const AdminEmployerPostingHistory = () => {
                   <select
                     value={status}
                     onChange={(event) => setStatus(event.target.value)}
-                    className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    className="h-[54px] rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                   >
                     <option value="all">All Status</option>
                     <option value="open">Open</option>
@@ -777,9 +777,9 @@ const AdminEmployerPostingHistory = () => {
               
               </section>
 
-              <section className="overflow-hidden rounded-2xl border border-[#dfe5ec] bg-white p-5 shadow-sm">
+              <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
                 <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
-                  <table className="min-w-[920px] w-full table-fixed text-left text-[15px]">
+                  <table className="min-w-[920px] w-full table-fixed text-left text-sm">
                     <colgroup>
                       <col className="w-[16%]" />
                       <col className="w-[22%]" />
@@ -789,7 +789,7 @@ const AdminEmployerPostingHistory = () => {
                       <col className="w-[16%]" />
                       <col className="w-[12%]" />
                     </colgroup>
-                    <thead className="border-y border-[#e5e7eb] text-xs font-semibold uppercase tracking-wide text-black/60 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
+                    <thead className="border-b border-gray-200 text-xs font-semibold uppercase tracking-[0.08em] text-slate-600 sticky top-0 z-10 bg-[#fafafa] shadow-[0_1px_0_rgba(229,231,235,1)]">
                       <tr>
                         <th className="px-3 py-4">Date Posted</th>
                         <th className="px-3 py-4">Job Title</th>
@@ -801,7 +801,7 @@ const AdminEmployerPostingHistory = () => {
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-[#e5e7eb]">
+                    <tbody className="divide-y divide-gray-200">
                       {loading && paginatedJobs.length === 0 ? (
                         <tr aria-hidden="true">
                           <td colSpan={7} className="h-56 bg-white" />

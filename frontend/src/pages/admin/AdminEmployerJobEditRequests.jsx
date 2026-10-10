@@ -183,7 +183,7 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
         <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
         <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
       </div>
-      <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
+      <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-5 py-4">
         <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600 transition hover:text-slate-900">Cancel</button>
         <button type="button" onClick={() => draftStart && draftEnd && onApply(draftStart, draftEnd)} disabled={!draftStart || !draftEnd} className="h-12 rounded-xl bg-[#2e66a6] px-9 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60">Apply Range</button>
       </div>
@@ -531,7 +531,7 @@ const AdminEmployerJobEditRequests = () => {
     </header>
 
     <section className={cn(
-      'grid gap-3 rounded-2xl border border-[#dbe3ee] bg-white p-4 shadow-[0_2px_5px_rgba(15,23,42,0.08)] md:grid-cols-2',
+      'grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-2',
       role === 'employer' || role === 'jobseeker'
         ? hasActiveFilters
           ? 'xl:grid-cols-[1.45fr_repeat(6,minmax(0,1fr))_96px]'
@@ -546,11 +546,11 @@ const AdminEmployerJobEditRequests = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search request..."
-          className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-[#526d91] focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
+          className="h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-[#526d91] focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
         />
       </label>
 
-      <select value={role} onChange={(e) => setRole(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+      <select value={role} onChange={(e) => setRole(e.target.value)} className="h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
         <option value="all">All Role</option>
         <option value="jobseeker">Job Seeker</option>
         <option value="employer">Employer</option>
@@ -582,13 +582,13 @@ const AdminEmployerJobEditRequests = () => {
         </>
       )}
 
-      <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+      <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className="h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
         <option value="all">All Type</option>
         <option value="status_request">Status Request</option>
         <option value="job_post">Job Post</option>
       </select>
 
-      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 w-full rounded-xl border border-[#d7e0eb] bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+      <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
         <option value="all">All Status</option>
         <option value="pending">Pending</option>
         <option value="approved">Approved</option>
@@ -597,7 +597,7 @@ const AdminEmployerJobEditRequests = () => {
       </select>
 
       <div className="relative min-w-0">
-        <select value={time} onChange={(e) => changeTime(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-[#d7e0eb] bg-white px-4 pr-11 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
+        <select value={time} onChange={(e) => changeTime(e.target.value)} className="h-[54px] w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-11 text-sm text-slate-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10">
           <option value="all">All Time</option>
           <option value="today">Today</option>
           <option value="yesterday">Yesterday</option>
@@ -625,29 +625,29 @@ const AdminEmployerJobEditRequests = () => {
 
     {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-    <section className="overflow-hidden rounded-2xl border border-[#dbe3ee] bg-white shadow-[0_2px_5px_rgba(15,23,42,0.08)]">
+    <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
       <div className={cn('overflow-x-auto overscroll-auto', pageSize === 10 ? 'overflow-y-visible' : 'max-h-[812px] overflow-y-auto')}>
         <table className="w-full min-w-[1040px] text-left">
-          <thead className="border-b border-[#dbe3ee] bg-white text-[11px] font-medium uppercase tracking-[0.08em] text-[#526d91]">
+          <thead className="border-b border-gray-200 bg-[#fafafa] text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
             <tr>
-              <th className="px-6 py-5">Request Date</th>
-              <th className="px-6 py-5">Name</th>
-              {role === 'all' && <th className="px-6 py-5">Role</th>}
+              <th className="px-5 py-4">Request Date</th>
+              <th className="px-5 py-4">Name</th>
+              {role === 'all' && <th className="px-5 py-4">Role</th>}
               {role === 'employer' && <>
-                <th className="px-6 py-5">Company</th>
-                <th className="px-6 py-5">Job Title</th>
+                <th className="px-5 py-4">Company</th>
+                <th className="px-5 py-4">Job Title</th>
               </>}
               {role === 'jobseeker' && <>
-                <th className="px-6 py-5">Campus</th>
-                <th className="px-6 py-5">Course</th>
+                <th className="px-5 py-4">Campus</th>
+                <th className="px-5 py-4">Course</th>
               </>}
-              <th className="px-6 py-5">Request Type</th>
-              <th className="px-6 py-5">Status</th>
-              <th className="px-6 py-5 text-center">Action</th>
+              <th className="px-5 py-4">Request Type</th>
+              <th className="px-5 py-4">Status</th>
+              <th className="px-5 py-4 text-center">Action</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-[#dbe3ee]">
+          <tbody className="divide-y divide-gray-200">
             {loading && <tr aria-hidden="true"><td colSpan={role === 'employer' ? 7 : role === 'jobseeker' ? 7 : 6} className="h-56 bg-white" /></tr>}
 
             {!loading && paginatedRows.map((item) => {

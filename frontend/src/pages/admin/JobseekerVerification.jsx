@@ -87,7 +87,7 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
 const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2";
 
 const inputBase =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
+  "h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
   focusRing +
   " disabled:bg-gray-50 disabled:opacity-60";
 
@@ -165,7 +165,7 @@ const Alert = ({ type = "error", title, children, onClose }) => {
 };
 
 const Card = ({ children, className, padding = true }) => (
-  <div className={cn("rounded-2xl bg-white border border-gray-200 shadow-sm ring-1 ring-black/5", padding && "p-5", className)}>{children}</div>
+  <div className={cn("rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70", padding && "p-5", className)}>{children}</div>
 );
 
 const SummaryCard = ({ label, value, image, href = null }) => {
@@ -954,7 +954,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
         ) : null}
 
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             <div className={cn("grid grid-cols-1 gap-3 xl:items-center", hasActiveFilters ? (archiveMode ? "xl:grid-cols-[minmax(0,2.4fr)_minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,1.6fr)_132px]" : "xl:grid-cols-[minmax(0,2.3fr)_repeat(4,minmax(0,1.15fr))_132px]") : "xl:grid-cols-12")}>
               <div className={hasActiveFilters ? "xl:col-span-1" : (archiveMode ? "xl:col-span-5" : "xl:col-span-3")}>
                 <div className="relative">
@@ -1082,19 +1082,19 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                   }`}
                 >
                   <table className="w-full min-w-[1000px]">
-                    <thead className="border-b border-gray-100 sticky top-0 z-10 bg-[#f7f9fc] shadow-[0_1px_0_rgba(226,232,240,1)]">
+                    <thead className="border-b border-gray-200 sticky top-0 z-10 bg-[#fafafa] shadow-[0_1px_0_rgba(229,231,235,1)]">
                       <tr>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Campus</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Course</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
-                        {archiveMode ? <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Declined</th> : null}
-                        <th className="px-5 py-4 text-center text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Date Registered</th>
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Name</th>
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Campus</th>
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Course</th>
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Status</th>
+                        {archiveMode ? <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Date Declined</th> : null}
+                        <th className="px-5 py-4 text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Actions</th>
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-gray-100 bg-white">
+                    <tbody className="divide-y divide-gray-200 bg-white">
                       {loading && visibleRows.length === 0 ? (
                         <tr aria-hidden="true">
                           <td colSpan={archiveMode ? 7 : 6} className="h-56 bg-white" />

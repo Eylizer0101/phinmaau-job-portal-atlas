@@ -184,10 +184,10 @@ const AdminEmployerReviews = () => {
             Back to Employer Profile
           </button>
 
-          <section className="rounded-[18px] border border-[#d1d5db] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.05)] sm:p-7">
+          <section className="rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm ring-1 ring-inset ring-gray-300/70 sm:p-7">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px_360px] lg:items-center">
               <div>
-                <h1 className="text-xl font-bold text-black sm:text-[22px] xl:whitespace-nowrap">
+                <h1 className="text-[22px] font-semibold leading-tight text-gray-900 sm:text-[26px] xl:whitespace-nowrap">
                   All Applications Reviews at {companyName}
                 </h1>
                 <p className="mt-1 text-black/65">
@@ -236,7 +236,7 @@ const AdminEmployerReviews = () => {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search reviews, name, or messages..."
-                  className="h-12 w-full rounded-xl border border-[#d8e2ee] py-3 pl-12 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  className="h-[54px] w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                 />
               </div>
             </div>
@@ -259,7 +259,7 @@ const AdminEmployerReviews = () => {
                 {paginatedReviews.map((review, index) => (
                   <article
                     key={review?._id || index}
-                    className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6"
+                    className="rounded-[22px] border border-gray-300 bg-white px-5 py-5 shadow-sm sm:px-6 sm:py-6"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
