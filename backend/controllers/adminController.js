@@ -10,6 +10,7 @@ const Message = require('../models/Message');
 const ConversationPreference = require('../models/ConversationPreference');
 const PendingEmailVerification = require('../models/PendingEmailVerification');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const ExcelJS = require('exceljs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
@@ -146,16 +147,39 @@ exports.warmAdminReportRenderer = async () => {
 
 const DEFAULT_ADMIN_LOGO = '/images/phinma-logo.png';
 
+const getAuthenticatedAdminIdentity = (req) => {
+  // The login token identifies whether the active session is Main Admin or Sub Admin.
+  // Verify its signature instead of trusting browser-supplied profile or role values.
+  const authorization = String(req.headers.authorization || '');
+  const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  if (!token || !process.env.JWT_SECRET) return '';
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const sessionId = String(payload.userId || '');
+    const requestId = String(req.user?._id || req.userId || '');
+    if (!sessionId || !requestId || sessionId !== requestId || payload.role !== 'admin') return '';
+    return payload.adminIdentity === 'subadmin' ? 'subadmin' : 'admin';
+  } catch {
+    return '';
+  }
+};
+
 const isValidAdminPassword = async (req, rawPassword) => {
   const password = String(rawPassword || req.headers['x-admin-password'] || '');
   if (!password) return false;
+
+  const identity = getAuthenticatedAdminIdentity(req);
+  if (!identity) return false;
 
   const adminId = req.user?._id || req.userId;
   const admin = await User.findById(adminId).select('password role email +adminProfile.subAdminPasswordHash');
   if (!admin || admin.role !== 'admin') return false;
 
-  const subAdminPasswordHash = String(admin.adminProfile?.subAdminPasswordHash || '');
-  if (subAdminPasswordHash && await bcrypt.compare(password, subAdminPasswordHash)) return true;
+  if (identity === 'subadmin') {
+    const subAdminPasswordHash = String(admin.adminProfile?.subAdminPasswordHash || '');
+    return Boolean(subAdminPasswordHash && await bcrypt.compare(password, subAdminPasswordHash));
+  }
 
   const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').trim().toLowerCase();
   const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
@@ -4654,44 +4678,15 @@ exports.requireAdminPasswordForCredential = async (req, res, next) => {
       });
     }
 
-    const admin = await User.findById(req.userId).select('password role email');
-
-    if (!admin || admin.role !== 'admin') {
+    const identity = getAuthenticatedAdminIdentity(req);
+    if (!identity) {
       return res.status(403).json({
         success: false,
-        message: 'Admin access is required.',
+        message: 'Admin session is invalid. Please sign in again.',
       });
     }
 
-    let isPasswordValid = false;
-
-    if (admin.password) {
-      isPasswordValid = await bcrypt.compare(password, admin.password);
-    }
-
-    const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '')
-      .trim()
-      .toLowerCase();
-    const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
-
-    const isDefaultAdmin =
-      defaultAdminEmail &&
-      String(admin.email || '').trim().toLowerCase() === defaultAdminEmail;
-
-    if (
-      !isPasswordValid &&
-      isDefaultAdmin &&
-      defaultAdminPassword &&
-      password === defaultAdminPassword
-    ) {
-      isPasswordValid = true;
-
-      const salt = await bcrypt.genSalt(10);
-      admin.password = await bcrypt.hash(defaultAdminPassword, salt);
-      await admin.save();
-    }
-
-    if (!isPasswordValid) {
+    if (!(await isValidAdminPassword(req, password))) {
       return res.status(401).json({
         success: false,
         message: 'Incorrect password.',
