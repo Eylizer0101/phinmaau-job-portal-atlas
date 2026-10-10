@@ -256,11 +256,7 @@ router.put(
   '/update-company-profile',
   protect,
   authorize('employer'),
-  upload.uploadEmployerCompanyMedia.fields([
-    { name: 'companyLogo', maxCount: 1 },
-    { name: 'coverPhotoFile', maxCount: 1 },
-    { name: 'galleryImagesFiles', maxCount: 12 },
-  ]),
+  upload.handleEmployerCompanyMediaUploads,
   authController.updateCompanyProfile
 );
 

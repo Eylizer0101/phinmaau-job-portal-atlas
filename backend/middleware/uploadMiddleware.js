@@ -599,6 +599,47 @@ const uploadEmployerCompanyMedia = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
+// Company Profile uploads return field-specific validation errors to the frontend.
+const companyProfileUpload = uploadEmployerCompanyMedia.fields([
+  { name: 'companyLogo', maxCount: 1 },
+  { name: 'coverPhotoFile', maxCount: 1 },
+  { name: 'galleryImagesFiles', maxCount: 12 },
+]);
+
+const handleEmployerCompanyMediaUploads = (req, res, next) => {
+  companyProfileUpload(req, res, (error) => {
+    if (!error) return next();
+
+    const fieldLabels = {
+      companyLogo: 'Company Logo',
+      coverPhotoFile: 'Cover Photo',
+      galleryImagesFiles: 'Gallery Photo',
+    };
+    const label = fieldLabels[error.field] || 'Company image';
+    let message;
+
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        message = `${label} must not exceed 5 MB.`;
+      } else if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+        message = error.field === 'galleryImagesFiles'
+          ? 'You can upload up to 12 gallery photos only.'
+          : `Invalid or too many files for ${label}.`;
+      } else {
+        message = 'Unable to upload company images. Please check your selected files and try again.';
+      }
+    } else if (/Only image files/i.test(String(error.message || ''))) {
+      message = `${label} must be a JPG, JPEG, PNG, GIF, or WEBP image.`;
+    } else if (/Cloudinary is not fully configured/i.test(String(error.message || ''))) {
+      message = 'Image upload service is temporarily unavailable. Please try again later.';
+    } else {
+      message = 'Unable to upload the selected company image. Please try another supported image.';
+    }
+
+    return res.status(400).json({ success: false, message });
+  });
+};
+
 const uploadJobLocationImage = multer({
   storage: jobLocationImageStorage,
   fileFilter: jobLocationImageFileFilter,
@@ -773,4 +814,5 @@ module.exports = {
   uploadEmployerRegisterDocs,
   handleEmployerRegisterUploads,
   uploadEmployerCompanyMedia,
+  handleEmployerCompanyMediaUploads,
 };

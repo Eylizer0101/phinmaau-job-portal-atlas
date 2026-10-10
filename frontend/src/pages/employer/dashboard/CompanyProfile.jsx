@@ -2340,7 +2340,7 @@ const CompanyProfile = () => {
 
       const v = validateClient();
       if (!v.ok) {
-        setError('Please Complete all the required fields.');
+        setError(Object.values(v.errors)[0] || 'Please complete the required fields.');
         return;
       }
 
@@ -2395,7 +2395,19 @@ const CompanyProfile = () => {
         }
       } catch (err) {
         console.error('Update failed:', err);
-        setError(err.response?.data?.message || 'Failed to update profile.');
+        const serverMessage = err.response?.data?.message;
+        const status = err.response?.status;
+        if (serverMessage) {
+          setError(serverMessage);
+        } else if (status === 413) {
+          setError('The upload is too large. Each company image must not exceed 5 MB.');
+        } else if (status === 429) {
+          setError('Too many requests. Please wait a moment and try again.');
+        } else if (!err.response) {
+          setError('Unable to connect to the server. Please check your internet connection and try again.');
+        } else {
+          setError('We couldn’t save your company profile. Please try again.');
+        }
       } finally {
         setSaving(false);
       }
