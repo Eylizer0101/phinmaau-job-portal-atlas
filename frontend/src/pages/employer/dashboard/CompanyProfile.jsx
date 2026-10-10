@@ -2385,6 +2385,8 @@ const CompanyProfile = () => {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
+          // Company images are uploaded to Cloudinary before the API responds.
+          timeout: 180000,
         });
 
         if (response.data?.success) {
@@ -2403,8 +2405,10 @@ const CompanyProfile = () => {
           setError('The upload is too large. Each company image must not exceed 5 MB.');
         } else if (status === 429) {
           setError('Too many requests. Please wait a moment and try again.');
+        } else if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+          setError('Saving your company profile took too long. Please try again with fewer or smaller images.');
         } else if (!err.response) {
-          setError('Unable to connect to the server. Please check your internet connection and try again.');
+          setError('The server could not be reached. Please try again in a moment.');
         } else {
           setError('We couldn’t save your company profile. Please try again.');
         }
