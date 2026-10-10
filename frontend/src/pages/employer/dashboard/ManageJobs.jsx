@@ -1849,13 +1849,13 @@ const ManageJobs = () => {
                 <div className="">
                   <table className="w-full table-fixed border-separate border-spacing-0">
                     <colgroup>
-                      <col className="w-[128px]" />
-                      <col />
-                      <col className="w-[120px]" />
-                      <col className="w-[112px]" />
-                      <col className="w-[120px]" />
-                      <col className="w-[128px]" />
-                      <col className="w-[208px]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[26%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[13%]" />
+                      <col className="w-[18%]" />
                     </colgroup>
 
                     <thead className="border-b border-gray-200 bg-[#fafafa]">
