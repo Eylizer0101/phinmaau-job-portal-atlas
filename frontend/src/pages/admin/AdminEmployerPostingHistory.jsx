@@ -709,7 +709,7 @@ const AdminEmployerPostingHistory = () => {
           ) : (
             <>
               <section className="rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
-                <div className={`grid gap-3 ${hasActiveFilters ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(180px,1fr)_minmax(150px,0.8fr)_minmax(180px,1fr)_auto]" : "lg:grid-cols-[minmax(0,1.65fr)_minmax(180px,1fr)_minmax(150px,0.8fr)_minmax(180px,1fr)]"}`}>
+                <div className={`grid gap-3 ${hasActiveFilters ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(180px,1fr)_minmax(150px,0.8fr)_minmax(180px,1fr)_auto]" : "lg:grid-cols-[minmax(0,1.65fr)_minmax(180px,1fr)_minmax(150px,0.8fr)_minmax(180px,1fr)]"}${hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11"}`}>
                   <label className="relative block">
                     <span className="sr-only">Search jobs</span>
                     <Icon

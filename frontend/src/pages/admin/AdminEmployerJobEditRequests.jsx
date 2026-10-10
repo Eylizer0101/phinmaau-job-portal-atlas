@@ -531,7 +531,7 @@ const AdminEmployerJobEditRequests = () => {
     </header>
 
     <section className={cn(
-      'grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-2',
+      'grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-2' + ((role === 'employer' || role === 'jobseeker') ? (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11') : (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11')),
       role === 'employer' || role === 'jobseeker'
         ? hasActiveFilters
           ? 'xl:grid-cols-[1.45fr_repeat(6,minmax(0,1fr))_96px]'

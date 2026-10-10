@@ -1135,13 +1135,13 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
           <div className="p-4 sm:p-5">
             <div
               className={cn(
-                "grid grid-cols-1 gap-3 xl:items-end",
+                "grid grid-cols-1 gap-3 xl:items-end" + (hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11"),
                 hasActiveFilters
                   ? "xl:grid-cols-[minmax(210px,1.3fr)_minmax(145px,1fr)_minmax(160px,1fr)_minmax(140px,.9fr)_minmax(125px,.75fr)_auto]"
                   : "xl:grid-cols-[minmax(220px,1.35fr)_minmax(150px,1fr)_minmax(170px,1fr)_minmax(145px,.9fr)_minmax(125px,.75fr)]"
               )}
             >
-              <div className={archiveMode ? "xl:col-span-2" : ""}>
+              <div className="!col-span-1 min-w-0">
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />

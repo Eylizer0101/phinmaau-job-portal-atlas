@@ -955,8 +955,8 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
 
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
           <div className="p-4 sm:p-5">
-            <div className={cn("grid grid-cols-1 gap-3 xl:items-center", hasActiveFilters ? (archiveMode ? "xl:grid-cols-[minmax(0,2.4fr)_minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,1.6fr)_132px]" : "xl:grid-cols-[minmax(0,2.3fr)_repeat(4,minmax(0,1.15fr))_132px]") : "xl:grid-cols-12")}>
-              <div className={hasActiveFilters ? "xl:col-span-1" : (archiveMode ? "xl:col-span-5" : "xl:col-span-3")}>
+            <div className={cn("grid grid-cols-1 gap-3 xl:items-center" + (archiveMode ? (hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11") : (hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11")), hasActiveFilters ? (archiveMode ? "xl:grid-cols-[minmax(0,2.4fr)_minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,1.6fr)_132px]" : "xl:grid-cols-[minmax(0,2.3fr)_repeat(4,minmax(0,1.15fr))_132px]") : "xl:grid-cols-12")}>
+              <div className="!col-span-1 min-w-0">
                 <div className="relative">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-5 w-5" />

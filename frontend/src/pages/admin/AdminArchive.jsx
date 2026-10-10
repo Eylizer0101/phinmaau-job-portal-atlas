@@ -747,7 +747,7 @@ const AdminArchive = () => {
         <section className="rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm">
           <div
             className={cn(
-              "grid gap-3",
+              "grid gap-3" + (hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11"),
               hasActiveFilters
                 ? "lg:grid-cols-[minmax(240px,1.55fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)_minmax(140px,0.85fr)_auto]"
                 : "lg:grid-cols-[minmax(260px,1.6fr)_minmax(140px,0.8fr)_minmax(140px,0.8fr)_minmax(140px,0.8fr)_minmax(150px,0.85fr)]"

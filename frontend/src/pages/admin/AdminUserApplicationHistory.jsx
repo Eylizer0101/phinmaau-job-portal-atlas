@@ -680,7 +680,7 @@ const AdminUserApplicationHistory = () => {
               </div>
             </div>
 
-            <div className="mt-6 rounded-[22px] border border-gray-300 bg-white p-3 shadow-sm">
+            <div className={"mt-6 grid items-center gap-2 rounded-[22px] border border-gray-300 bg-white p-3 shadow-sm" + (hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11")}>
               <label className="relative block w-full">
                 <span className="sr-only">
                   Search application history
@@ -697,8 +697,8 @@ const AdminUserApplicationHistory = () => {
                   className="h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-9 pr-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 lg:max-w-none"
                 />
               </label>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <div className="grid flex-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="contents">
+                <div className="contents">
                 {[
                   [companyFilter, setCompanyFilter, "All Company", filterOptions.companies],
                   [industryFilter, setIndustryFilter, "All Industry", filterOptions.industries],

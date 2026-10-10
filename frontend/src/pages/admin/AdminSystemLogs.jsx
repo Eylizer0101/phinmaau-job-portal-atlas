@@ -626,7 +626,7 @@ const AdminSystemLogs = () => {
       <p className="mt-1 text-sm text-gray-600">Monitor the important activities performed by Jobseekers and Employers.</p></header>
     <section className="relative z-30 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
       <div className={cn(
-        'grid gap-3',
+        'grid gap-3' + (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11'),
         hasActiveFilters
           ? 'md:grid-cols-[minmax(320px,1fr)_220px_220px_110px]'
           : 'md:grid-cols-[minmax(320px,1fr)_220px_220px]'

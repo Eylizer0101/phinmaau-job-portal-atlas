@@ -645,7 +645,7 @@ const AdminJobOffers = () => {
           <section className="min-w-0 overflow-visible rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:p-5">
             <div
               className={cn(
-                'grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:items-end',
+                'grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:items-end' + (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11'),
                 hasActiveFilters
                   ? '2xl:grid-cols-[minmax(250px,1.3fr)_repeat(4,minmax(130px,0.72fr))_minmax(170px,0.9fr)_120px]'
                   : '2xl:grid-cols-[minmax(280px,1.4fr)_repeat(4,minmax(140px,0.8fr))_minmax(180px,1fr)]'

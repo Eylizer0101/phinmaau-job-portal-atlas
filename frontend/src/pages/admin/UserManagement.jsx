@@ -1668,7 +1668,7 @@ const UserManagement = () => {
           <div className="p-5">
             <div
               className={cn(
-                'grid grid-cols-1 gap-3 md:grid-cols-2 2xl:items-center',
+                'grid grid-cols-1 gap-3 md:grid-cols-2 2xl:items-center' + (roleFilter === 'all' ? (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11') : (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11')),
                 roleFilter === 'all'
                   ? (hasActiveFilters
                       ? '2xl:grid-cols-[minmax(420px,2fr)_minmax(165px,0.8fr)_minmax(165px,0.9fr)_minmax(132px,0.7fr)]'

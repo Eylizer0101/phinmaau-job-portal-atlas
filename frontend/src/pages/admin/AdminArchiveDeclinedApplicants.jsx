@@ -492,7 +492,7 @@ const AdminArchiveDeclinedApplicants = () => {
             </p>
           </header>
 
-          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(320px,1.5fr)_minmax(220px,0.8fr)_minmax(190px,0.7fr)]">
+          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(320px,1.5fr)_minmax(220px,0.8fr)_minmax(190px,0.7fr)] !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11">
             <label className="relative block">
               <span className="sr-only">Search declined applicants</span>
               <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

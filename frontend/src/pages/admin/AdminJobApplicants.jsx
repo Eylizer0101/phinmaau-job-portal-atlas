@@ -1442,7 +1442,7 @@ const AdminJobApplicants = () => {
           </div>
 
           <div className="mt-8 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
-            <div className={`grid gap-3 ${search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all" ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto]" : "lg:grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr]"}`}>
+            <div className={`grid gap-3 ${search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all" ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto]" : "lg:grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr]"}${(search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all") ? " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11"}`}>
               <label className="relative block">
                 <span className="sr-only">Search applicants</span>
                 <SvgIcon

@@ -848,7 +848,7 @@ const AdminApplications = () => {
         <div className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:p-5">
           <div
             className={cn(
-              'grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:items-center',
+              'grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:items-center' + (hasActiveFilters ? ' !grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11' : ' !grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11'),
               hasActiveFilters
                 ? '2xl:grid-cols-[minmax(230px,1.35fr)_repeat(5,minmax(115px,0.72fr))_minmax(150px,0.9fr)_100px]'
                 : '2xl:grid-cols-[minmax(260px,1.45fr)_repeat(5,minmax(125px,0.8fr))_minmax(165px,1fr)]'
