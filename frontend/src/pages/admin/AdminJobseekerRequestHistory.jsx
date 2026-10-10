@@ -266,12 +266,12 @@ export default function AdminJobseekerRequestHistory() {
   const historyBackState = location.state?.backState;
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
-    <section className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="flex items-center gap-4 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
       <button onClick={() => navigate(historyBackPath, { state: historyBackState })} className="inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold"><ArrowLeft size={17}/>Back</button>
       {jobseeker.profileImage ? <img src={jobseeker.profileImage} alt="" className="h-12 w-12 rounded-full object-cover"/> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-[#2e66a6]"><UserRound/></span>}
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold">{nameOf(jobseeker)}</h1>
+          <h1 className="text-[28px] font-semibold leading-tight text-gray-900">{nameOf(jobseeker)}</h1>
           {jobseeker.jobSeekerProfile?.yearGraduated && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs">Class of {jobseeker.jobSeekerProfile.yearGraduated}</span>}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -294,7 +294,7 @@ export default function AdminJobseekerRequestHistory() {
       </div>
     </section>
 
-    <section className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(0,0.85fr)]">
+    <section className="grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(0,0.85fr)]">
       <label className="relative min-w-0"><Search className="absolute left-3 top-3.5 text-slate-400" size={18}/><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search request..." className="h-11 w-full rounded-xl border pl-10 pr-3"/></label>
       <select value={company} onChange={(e)=>setCompany(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Company</option>{companies.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Job Title</option>{jobs.map(value=><option key={value} value={value}>{value}</option>)}</select>
@@ -305,10 +305,10 @@ export default function AdminJobseekerRequestHistory() {
 
     {error && <p className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
 
-    <section className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+    <section className="overflow-x-auto rounded-[22px] border border-gray-300 bg-white shadow-sm">
       <table className="w-full min-w-[900px]">
-        <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-          <tr>{['Request Date','Company','Job Title','Request Type','Status','Action'].map(label=><th key={label} className="px-6 py-5">{label}</th>)}</tr>
+        <thead className="bg-[#fafafa] text-left text-xs font-semibold text-gray-600">
+          <tr>{['Request Date','Company','Job Title','Request Type','Status','Action'].map(label=><th key={label} className="px-6 py-4">{label}</th>)}</tr>
         </thead>
         <tbody className="divide-y">
           {!loading && filtered.map(item => {
@@ -318,7 +318,7 @@ export default function AdminJobseekerRequestHistory() {
 
             return <tr key={item?._id || `${companyName}-${item?.job?.title || ''}`}>
               <td className="px-6 py-5 text-sm">{formatDate(item?.employmentStatusRequest?.requestedAt)}</td>
-              <td className="px-6 py-5">
+              <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
                   {companyLogo ? <img src={companyLogo} alt={`${companyName} logo`} className="h-11 w-11 shrink-0 rounded-xl border border-slate-200 object-cover"/> : <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#2e66a6] text-xs font-bold text-white">{companyName.slice(0,2).toUpperCase()}</span>}
                   <div className="min-w-0">
@@ -328,9 +328,9 @@ export default function AdminJobseekerRequestHistory() {
                 </div>
               </td>
               <td className="px-6 py-5 font-semibold">{item?.job?.title || '—'}</td>
-              <td className="px-6 py-5">{reasonLabel(item?.employmentStatusRequest?.reason)}</td>
-              <td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${statusBadgeClass(requestStatus)}`}>{requestStatus.replace('_',' ')}</span></td>
-              <td className="px-6 py-5"><button onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`, { state: { backPath: location.pathname, backLabel: 'Request History', backState: location.state } })} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"><Eye size={18}/></button></td>
+              <td className="px-6 py-4">{reasonLabel(item?.employmentStatusRequest?.reason)}</td>
+              <td className="px-6 py-4"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${statusBadgeClass(requestStatus)}`}>{requestStatus.replace('_',' ')}</span></td>
+              <td className="px-6 py-4"><button onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`, { state: { backPath: location.pathname, backLabel: 'Request History', backState: location.state } })} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"><Eye size={18}/></button></td>
             </tr>;
           })}
           {!loading && !filtered.length && <tr><td colSpan="6" className="p-12 text-center text-slate-500">No requests found.</td></tr>}

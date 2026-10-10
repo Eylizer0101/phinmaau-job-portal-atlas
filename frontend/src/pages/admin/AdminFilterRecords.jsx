@@ -146,7 +146,7 @@ const SelectField = ({ label, value, onChange, options, placeholder = "All" }) =
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
+      className="h-[54px] w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
     >
       <option value="">{placeholder}</option>
       {options.map(([key, text]) => <option key={`${label}-${key}`} value={key}>{text}</option>)}
@@ -403,7 +403,7 @@ const AdminFilterRecords = () => {
               />
               <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold">Filter Records</h1>
+                  <h1 className="text-[28px] font-semibold leading-tight text-white sm:text-[33px]">Filter Records</h1>
                   <p className="mt-1 text-sm text-white/80">{records.length} record(s) · {roleLabel(activeRole)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -436,16 +436,16 @@ const AdminFilterRecords = () => {
               </div>
             ) : null}
 
-            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-100 p-4 shadow-sm sm:p-5">
+            <div className="mt-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm sm:p-5">
               <div className="max-h-[620px] overflow-auto rounded-xl bg-white p-1">
-                <table className="min-w-max border-separate border-spacing-x-0 border-spacing-y-1 text-left text-xs">
+                <table className="min-w-max border-separate border-spacing-x-0 border-spacing-y-1 text-left text-sm">
                   <thead className="sticky top-0 z-10 bg-white">
                     <tr>
-                      <th className="whitespace-nowrap rounded-l-xl bg-white px-3 py-3 text-center font-bold text-slate-700 shadow-sm">#</th>
+                      <th className="whitespace-nowrap rounded-l-xl bg-white px-3 py-3 text-center font-semibold text-gray-700 shadow-sm">#</th>
                       {activeColumns.map(([key, label], index) => (
                         <th
                           key={key}
-                          className={`whitespace-nowrap bg-white px-3 py-3 font-bold text-slate-700 shadow-sm ${index === activeColumns.length - 1 ? "rounded-r-xl" : ""}`}
+                          className={`whitespace-nowrap bg-white px-3 py-3 font-semibold text-gray-700 shadow-sm ${index === activeColumns.length - 1 ? "rounded-r-xl" : ""}`}
                         >
                           {label}
                         </th>

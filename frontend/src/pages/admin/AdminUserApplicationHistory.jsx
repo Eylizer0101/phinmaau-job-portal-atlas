@@ -648,10 +648,10 @@ const AdminUserApplicationHistory = () => {
             Back to User Details
           </button>
 
-          <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
+          <section className="flex min-h-[760px] flex-col rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:p-7">
             <div className="grid gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-x-6">
               <div className="min-w-0">
-                <h1 className="text-2xl font-bold text-black sm:text-3xl">
+                <h1 className="text-[28px] font-semibold leading-tight text-gray-900 sm:text-[33px]">
                   Full Application History
                 </h1>
                 <p className="mt-2 text-sm text-gray-500 sm:whitespace-nowrap">
@@ -680,7 +680,7 @@ const AdminUserApplicationHistory = () => {
               </div>
             </div>
 
-            <div className="mt-6 rounded-xl border border-[#d8e2ee] bg-[#fbfdff] p-3">
+            <div className="mt-6 rounded-[22px] border border-gray-300 bg-white p-3 shadow-sm">
               <label className="relative block w-full">
                 <span className="sr-only">
                   Search application history
@@ -694,7 +694,7 @@ const AdminUserApplicationHistory = () => {
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search company, role, location..."
-                  className="h-10 w-full rounded-lg border border-[#d8e2ee] bg-white pl-9 pr-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 lg:max-w-none"
+                  className="h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-9 pr-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 lg:max-w-none"
                 />
               </label>
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -703,8 +703,8 @@ const AdminUserApplicationHistory = () => {
                   [companyFilter, setCompanyFilter, "All Company", filterOptions.companies],
                   [industryFilter, setIndustryFilter, "All Industry", filterOptions.industries],
                   [jobTitleFilter, setJobTitleFilter, "All Job Title", filterOptions.jobTitles],
-                ].map(([value, setter, label, options]) => <select key={label} value={value} onChange={(event) => setter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">{label}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>)}
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option></select>
+                ].map(([value, setter, label, options]) => <select key={label} value={value} onChange={(event) => setter(event.target.value)} className="h-[54px] rounded-xl border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">{label}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>)}
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-[54px] rounded-xl border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option></select>
                 <ApplicationDateFilter
                   value={timeFilter}
                   dateFrom={dateFrom}

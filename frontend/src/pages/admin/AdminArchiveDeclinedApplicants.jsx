@@ -484,9 +484,9 @@ const AdminArchiveDeclinedApplicants = () => {
           Back
         </button>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <header className="border-b border-slate-200 px-5 py-5">
-            <h1 className="text-2xl font-bold text-black">{jobTitle} – Declined Applicants</h1>
+            <h1 className="text-[28px] leading-tight font-semibold text-gray-900">{jobTitle} – Declined Applicants</h1>
             <p className="mt-2 text-sm text-slate-600">
               {count} {count === 1 ? "applicant" : "applicants"} declined for {jobTitle}
             </p>
@@ -501,14 +501,14 @@ const AdminArchiveDeclinedApplicants = () => {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search applicant..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
+                className="h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
               />
             </label>
 
             <select
               value={level}
               onChange={(event) => setLevel(event.target.value)}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"
+              className="h-[54px] rounded-xl border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"
             >
               <option value="all">All Job Seeker Level</option>
               {levels.map((value) => (
@@ -519,7 +519,7 @@ const AdminArchiveDeclinedApplicants = () => {
             <select
               value={date}
               onChange={(event) => handleDateChange(event.target.value)}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"
+              className="h-[54px] rounded-xl border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"
             >
               {DATE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>

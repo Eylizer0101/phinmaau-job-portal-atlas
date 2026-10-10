@@ -283,7 +283,7 @@ const SelectField = ({ value, onChange, children, ariaLabel, icon }) => (
     <select
       value={value}
       onChange={onChange}
-      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 pr-9 text-sm font-medium text-slate-800 outline-none transition hover:border-slate-300 focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10"
+      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 pr-9 text-sm font-medium text-slate-800 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
     >
       {children}
     </select>
@@ -736,7 +736,7 @@ const AdminArchive = () => {
     <AdminLayout>
       <main className="w-full max-w-none px-1 py-7 sm:py-8">
         <header className="mb-5">
-          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">
+          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em] text-gray-900 sm:text-[33px]">
             Archived
           </h1>
           <p className="mt-1.5 text-sm text-slate-600">
@@ -744,7 +744,7 @@ const AdminArchive = () => {
           </p>
         </header>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+        <section className="rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm">
           <div
             className={cn(
               "grid gap-3",
@@ -764,7 +764,7 @@ const AdminArchive = () => {
                 value={filters.search}
                 onChange={(event) => updateFilter("search", event.target.value)}
                 placeholder="Search name, company, industry..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
               />
             </label>
 
@@ -822,7 +822,7 @@ const AdminArchive = () => {
 
         </section>
 
-        <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+        <section className="mt-4 overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
             <div className="min-w-[980px]">
               <div className="sticky top-0 z-10 grid grid-cols-[1.35fr_1.1fr_1.1fr_1.3fr_0.55fr] gap-4 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
