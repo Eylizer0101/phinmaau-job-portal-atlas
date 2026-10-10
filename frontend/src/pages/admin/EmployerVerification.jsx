@@ -105,7 +105,7 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
 const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2";
 
 const inputBase =
-  "h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
+  "h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
   focusRing +
   " disabled:bg-gray-50 disabled:opacity-60";
 
@@ -633,7 +633,7 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
           setOpen((prev) => !prev);
         }}
         className={cn(
-          "flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
+          "flex h-12 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
           focusRing,
           "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
         )}
@@ -645,7 +645,7 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[68px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[54px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {dateOptions.map((option) => (
@@ -1134,12 +1134,8 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
           <div className="p-4 sm:p-5">
             <div
-              className={cn(
-                "grid grid-cols-1 gap-3 xl:items-end" + (hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11"),
-                hasActiveFilters
-                  ? "xl:grid-cols-[minmax(210px,1.3fr)_minmax(145px,1fr)_minmax(160px,1fr)_minmax(140px,.9fr)_minmax(125px,.75fr)_auto]"
-                  : "xl:grid-cols-[minmax(220px,1.35fr)_minmax(150px,1fr)_minmax(170px,1fr)_minmax(145px,.9fr)_minmax(125px,.75fr)]"
-              )}
+              className="grid min-w-0 items-center gap-3"
+              style={{ gridTemplateColumns: `minmax(0,2fr) repeat(${archiveMode ? 3 : 4},minmax(0,1fr))${hasActiveFilters ? " max-content" : ""}` }}
             >
               <div className="!col-span-1 min-w-0">
                 <div className="relative">
@@ -1231,7 +1227,7 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                     type="button"
                     onClick={clearAllFilters}
                     disabled={loading}
-                    className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 disabled:opacity-60 border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                    className="inline-flex h-12 w-auto min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold duration-200 disabled:opacity-60 border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
                   >
                     <Icon name="x" className="h-4 w-4" /> Clear All
                   </button>

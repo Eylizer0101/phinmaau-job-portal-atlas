@@ -87,7 +87,7 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
 const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2";
 
 const inputBase =
-  "h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
+  "h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
   focusRing +
   " disabled:bg-gray-50 disabled:opacity-60";
 
@@ -624,7 +624,7 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
           setOpen((prev) => !prev);
         }}
         className={cn(
-          "flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
+          "flex h-12 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
           focusRing,
           "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
         )}
@@ -636,7 +636,7 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[48px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[54px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {dateOptions.map((option) => (
@@ -955,7 +955,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
 
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
           <div className="p-4 sm:p-5">
-            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(${archiveMode ? 3 : 4},minmax(0,1fr))${hasActiveFilters ? " minmax(0,1fr)" : ""}` }}>
+            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(${archiveMode ? 3 : 4},minmax(0,1fr))${hasActiveFilters ? " max-content" : ""}` }}>
               <div className="!col-span-1 min-w-0">
                 <div className="relative">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
@@ -1052,7 +1052,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                     type="button"
                     onClick={clearAllFilters}
                     disabled={loading}
-                    className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-gray-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60"
+                    className="inline-flex h-12 w-auto min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-gray-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60"
                   >
                     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

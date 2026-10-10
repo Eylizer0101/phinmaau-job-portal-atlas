@@ -1442,7 +1442,7 @@ const AdminJobApplicants = () => {
           </div>
 
           <div className="mt-8 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
-            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(3,minmax(0,1fr))${search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all" ? " minmax(0,1fr)" : ""}` }}>
+            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(3,minmax(0,1fr))${search.trim() || statusFilter !== "all" || levelFilter !== "all" || dateFilter !== "all" ? " max-content" : ""}` }}>
               <label className="relative block">
                 <span className="sr-only">Search applicants</span>
                 <SvgIcon
@@ -1531,7 +1531,7 @@ const AdminJobApplicants = () => {
                     setCustomDateTo("");
                     setCurrentPage(1);
                   }}
-                  className="inline-flex h-[54px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                  className="inline-flex h-12 w-auto items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-medium border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
                 >
                   <SvgIcon name="x" className="h-4 w-4 shrink-0" />
                   Clear All

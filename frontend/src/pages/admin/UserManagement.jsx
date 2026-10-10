@@ -961,7 +961,7 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
           setOpen((prev) => !prev);
         }}
         className={cn(
-          'flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50',
+          'flex h-12 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60'
         )}
@@ -973,7 +973,7 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[68px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[54px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {dateOptions.map((option) => (
@@ -1627,8 +1627,8 @@ const UserManagement = () => {
     dateFrom !== '' ||
     dateTo !== '';
 
-  const inputBase = 'h-[54px] w-full rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
-  const selectBase = 'h-[54px] w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
+  const inputBase = 'h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
+  const selectBase = 'h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
 
   return (
     <AdminLayout>
@@ -1666,7 +1666,7 @@ const UserManagement = () => {
 
         <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(${roleFilter === "all" ? 2 : 4}, minmax(0,1fr))${hasActiveFilters ? " minmax(0,1fr)" : ""}` }}>
+            <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12 [&_select]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(${roleFilter === "all" ? 2 : 4}, minmax(0,1fr))${hasActiveFilters ? " max-content" : ""}` }}>
               <div className="relative min-w-0">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-4 w-4" />
@@ -1807,7 +1807,7 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
+                  className="inline-flex h-12 w-auto min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-[#f3f6fa] hover:text-slate-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60"
                   disabled={loading}
                 >
                   <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">

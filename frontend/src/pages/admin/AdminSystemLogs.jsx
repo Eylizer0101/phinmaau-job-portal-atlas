@@ -462,7 +462,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
           event.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
       >
         <span className="truncate">{getDateFilterLabel(value, dateFrom, dateTo)}</span>
         <Icon name="calendar" className="h-4 w-4 text-gray-500" />
@@ -471,7 +471,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[68px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[54px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {DATE_FILTER_OPTIONS.map((option) => (
@@ -625,7 +625,7 @@ const AdminSystemLogs = () => {
     <header className="mb-5"><h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Activity Logs</h1>
       <p className="mt-1 text-sm text-gray-600">Monitor the important activities performed by Jobseekers and Employers.</p></header>
     <section className="relative z-30 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
-      <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(2,minmax(0,1fr))${hasActiveFilters ? " minmax(0,1fr)" : ""}` }}>
+      <div className="grid min-w-0 items-center gap-3 [&_input]:!h-12" style={{ gridTemplateColumns: `minmax(0,2fr) repeat(2,minmax(0,1fr))${hasActiveFilters ? " max-content" : ""}` }}>
         <label className="relative"><span className="sr-only">Search activity logs</span><Icon name="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input type="search" value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Search user or activity..."
             className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10" /></label>
