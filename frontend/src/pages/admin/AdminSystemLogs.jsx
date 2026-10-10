@@ -652,7 +652,7 @@ const AdminSystemLogs = () => {
     </section>
     <section className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
       <div className="min-h-0 flex-1 max-w-full overflow-x-auto overflow-y-hidden lg:overflow-x-hidden"><div className="flex h-full min-w-[760px] min-h-0 flex-col lg:min-w-0">
-        <div className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] gap-5 border-b border-gray-200 bg-[#fafafa] px-6 py-5 text-sm font-semibold uppercase tracking-wide text-gray-700">
+        <div className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] gap-5 border-b border-gray-200 bg-[#fafafa] px-6 py-4 text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
           <span>Date & Time</span><span>Performed By</span><span>Role</span><span>Action</span>
         </div>
         <div className={pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto overscroll-auto"}> 

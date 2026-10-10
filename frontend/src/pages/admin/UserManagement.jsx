@@ -1849,31 +1849,31 @@ const UserManagement = () => {
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="sticky top-0 z-10 bg-[#fafafa] shadow-[0_1px_0_rgba(229,231,235,1)]">
                       <tr>
-                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
                           Date Registered
                         </th>
-                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
                           Name
                         </th>
-                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
                           Role
                         </th>
                         {roleFilter === 'jobseeker' && (
                           <>
-                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Campus</th>
-                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Course</th>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Campus</th>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Course</th>
                           </>
                         )}
                         {roleFilter === 'employer' && (
                           <>
-                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Company</th>
-                            <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Industry</th>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Company</th>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">Industry</th>
                           </>
                         )}
-                        <th className="px-5 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
                           Contact Number
                         </th>
-                        <th className="px-5 py-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        <th className="px-5 py-4 text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
                           Actions
                         </th>
                       </tr>

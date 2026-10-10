@@ -695,7 +695,7 @@ const AdminJobOffers = () => {
                 <thead className="sticky top-0 z-10 bg-[#fafafa] shadow-[0_1px_0_rgba(229,231,235,1)]">
                   <tr>
                     {['Date Posted', 'Company', 'Job Title', 'Vacancy', 'Applicant', 'Status', 'Valid Until', 'Actions'].map((header) => (
-                      <th key={header} className={cn('whitespace-nowrap px-4 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700', header === 'Actions' ? 'text-center' : '')}>
+                      <th key={header} className={cn('whitespace-nowrap px-4 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-600', header === 'Actions' ? 'text-center' : '')}>
                         {header}
                       </th>
                     ))}

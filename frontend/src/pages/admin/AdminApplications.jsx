@@ -942,7 +942,7 @@ const AdminApplications = () => {
                         <th
                           key={head}
                           className={cn(
-                            'whitespace-nowrap py-4 text-sm font-semibold uppercase tracking-wide text-gray-700',
+                            'whitespace-nowrap py-4 text-xs font-semibold uppercase tracking-[0.08em] text-slate-600',
                             head === 'Actions' ? 'px-2 text-center' : 'px-4'
                           )}
                         >
