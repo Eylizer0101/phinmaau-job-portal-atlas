@@ -1102,7 +1102,7 @@ const ArchivedJobs = () => {
         <div className="relative z-[80] mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="p-5">
             <div className={hasActiveFilters ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]'}>
-              <div className={cn("relative min-w-0", hasActiveFilters && "lg:col-span-5")}>
+              <div className="relative min-w-0">
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>

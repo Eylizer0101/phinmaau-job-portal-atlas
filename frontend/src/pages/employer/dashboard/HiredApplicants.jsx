@@ -1062,7 +1062,7 @@ const HiredApplicants = () => {
         <button
           type="button"
           onClick={() => setOpenDropdown(isOpen ? null : id)}
-          className="inline-flex h-[54px] w-full min-w-[105px] items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+          className="inline-flex h-12 w-full min-w-[105px] items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
           disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
