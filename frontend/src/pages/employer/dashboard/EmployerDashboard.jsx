@@ -86,7 +86,7 @@ const EmployerDashboard = () => {
   const [userData, setUserData] = useState({
     companyName: '',
     email: '',
-    profileComplete: false,
+    profileComplete: null, // Profile status is unknown until the employer data has been checked.
     avatarUrl: '',
   });
 
@@ -1846,7 +1846,7 @@ const EmployerDashboard = () => {
 
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-4 shrink-0">
-            {!userData.profileComplete && showProfileReminder && (
+            {userData.profileComplete === false && showProfileReminder && (
               <div className="mt-8 w-full max-w-[640px]">
                 <div className="relative flex items-center justify-between gap-4 rounded-[28px] border border-[#D9E3F2] bg-white px-5 py-4 shadow-sm">
                   <div className="flex min-w-0 items-center gap-3">
