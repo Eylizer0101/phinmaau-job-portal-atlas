@@ -1610,7 +1610,7 @@ const ManageJobs = () => {
         </div>
 
         <div className="relative flex flex-col overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm ring-1 ring-inset ring-gray-300/70">
-          <div className="flex min-h-0 flex-col p-6">
+          <div className="flex min-h-0 flex-col p-6 md:p-0">
             {loading ? (
               <div className="py-14 text-center">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
@@ -1884,7 +1884,7 @@ const ManageJobs = () => {
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                    <tbody className="divide-y divide-gray-200 bg-white [&>tr]:h-[84px]">
                       {paginatedJobs.map((job) => {
                         const title = safeTitle(job);
                         const busyThisRow = action.jobId === job._id;
