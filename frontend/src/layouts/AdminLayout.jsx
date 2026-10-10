@@ -768,7 +768,7 @@ const AdminLayout = ({ children }) => {
 
   const NavList = ({ onItemClick }) => (
     <nav className="p-3">
-      <ul className="space-y-2">
+      <ul className="space-y-1">
         <SideNavItem item={dashboardNavItem} onItemClick={onItemClick} />
         {navSections.map((section) => (
           <SidebarDropdown key={section.name} section={section} onItemClick={onItemClick} />
@@ -780,7 +780,7 @@ const AdminLayout = ({ children }) => {
   const SidebarProfile = ({ mobile = false }) => (
     <div
       ref={mobile ? undefined : sidebarProfileRef}
-      className="relative border-t border-gray-200 bg-white p-3"
+      className="relative border-t border-gray-200 bg-white px-2 py-1.5"
     >
       {sidebarProfileOpen ? (
         <div className="absolute bottom-[calc(100%+8px)] left-3 right-3 z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
@@ -844,14 +844,14 @@ const AdminLayout = ({ children }) => {
         type="button"
         onClick={() => setSidebarProfileOpen((open) => !open)}
         className={[
-          "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition",
+          "flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left transition",
           "hover:bg-gray-100",
           focusRing,
         ].join(" ")}
         aria-haspopup="menu"
         aria-expanded={sidebarProfileOpen}
       >
-        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
           <img
             src={
               sidebarAvatarFailed
