@@ -1432,12 +1432,12 @@ const AdminArchiveDetails = () => {
           <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
             <div className="min-w-[1000px]">
               <div className="sticky top-0 z-10 grid grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] gap-4 border-b border-slate-200 bg-[#fafafa] px-5 py-4 text-sm font-semibold text-gray-600">
-                <span>Job Title</span>
-                <span>Archived Type</span>
-                <span>Vacancy</span>
-                <span>Applicant</span>
-                <span>Status</span>
-                <span className="text-center">Actions</span>
+                <span>JOB TITLE</span>
+                <span>ARCHIVED TYPE</span>
+                <span>VACANCY</span>
+                <span>APPLICANT</span>
+                <span>STATUS</span>
+                <span className="text-center">ACTIONS</span>
               </div>
 
               {loading ? (

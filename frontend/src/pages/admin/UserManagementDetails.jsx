@@ -1313,7 +1313,7 @@ const UserManagementDetails = () => {
                 <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Skills
                 </h3>
-                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1.5 pl-5 pt-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1.5 pl-5 pt-1.5 opacity-55 blur-[1.5px] sm:grid-cols-2 lg:grid-cols-3">
                   {resumeSkills.map((item, index) => (
                     <li key={`${item.skill}-${index}`}>
                       {item.skill}
