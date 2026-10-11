@@ -798,7 +798,7 @@ const Settings = () => {
         </Panel>
         </div> : null}
 
-        <Panel title="Password" blue>
+        <Panel title="Change Password" blue>
           <form onSubmit={handleChangePassword}>
             <InlineMessage message={passwordMessage} />
             <div className="space-y-4 text-sm">

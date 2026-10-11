@@ -853,7 +853,7 @@ const Settings = () => {
               ) : null}
 
               <Section
-                title="Password"
+                title="Change Password"
                 actionText="Save"
                 onAction={handlePasswordSubmit}
                 loading={saving.password}

@@ -3005,8 +3005,8 @@ exports.updateApplicationHiringStage = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Hiring stage is required' });
       }
 
-      if (!['hired', 'declined'].includes(requestedStage.toLowerCase()) && application.hiringStages.length >= 30) {
-        return res.status(400).json({ success: false, message: 'Maximum of 30 hiring stages only' });
+      if (!['hired', 'declined'].includes(requestedStage.toLowerCase()) && application.hiringStages.length >= 10) {
+        return res.status(400).json({ success: false, message: 'Maximum of 10 hiring stages allowed.' });
       }
 
       if (application.hiringStages.some((stage) => sameHiringStage(stage, requestedStage))) {

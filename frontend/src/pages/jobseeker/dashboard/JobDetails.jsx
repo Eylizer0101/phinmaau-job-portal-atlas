@@ -1287,14 +1287,16 @@ const JobDetails = () => {
   }, [job?.perksAndBenefits, job?.otherBenefits]);
 
   const jobActive = isJobActive();
-  const jobPostingStatus = String(job?.postingStatus || getJobPostingStatus(job)).toLowerCase();
+  const jobPostingStatus = job?.isArchived === true || job?.isDeleted === true
+    ? 'unavailable'
+    : String(job?.postingStatus || getJobPostingStatus(job)).toLowerCase();
   const unavailableStatusLabel = jobPostingStatus === 'filled'
     ? 'Position Filled'
     : jobPostingStatus === 'expired'
     ? 'Job Post Expired'
     : jobPostingStatus === 'closed'
     ? 'Job Post Closed'
-    : 'Application Closed';
+    : 'Job Unavailable';
   const isApplyDisabled = hasApplied || (!jobActive && !hasApplied);
 
   const primaryCtaLabel = !jobActive

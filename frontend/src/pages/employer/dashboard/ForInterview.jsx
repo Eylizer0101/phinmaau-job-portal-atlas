@@ -1113,8 +1113,8 @@ const HiringStageModal = ({
       return;
     }
     const normalizedValue = normalizeHiringStageName(value);
-    if (!['hired', 'declined'].includes(normalizedValue) && stages.length >= 30) {
-      setLocalError('Maximum of 30 hiring stages only.');
+    if (!['hired', 'declined'].includes(normalizedValue) && stages.length >= 10) {
+      setLocalError('Maximum of 10 hiring stages allowed.');
       return;
     }
     if (!['hired', 'declined'].includes(normalizedValue) && stages.some((stage) => isSameHiringStage(stage, value))) {
@@ -1239,7 +1239,7 @@ const HiringStageModal = ({
               </div>
               <button
                 type="button"
-                disabled={busy || isFinalized || !customStage.trim()}
+                disabled={busy || isFinalized || !customStage.trim() || (stages.length >= 10 && !['hired', 'declined'].includes(normalizeHiringStageName(customStage)))}
                 onClick={addCustomStage}
                 className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#102a78] px-5 text-sm font-semibold text-white hover:bg-[#0d2365] disabled:opacity-50"
               >
@@ -1256,6 +1256,7 @@ const HiringStageModal = ({
                 The stage you add is applied to this applicant right away.
               </p>
             )}
+            {stages.length >= 10 && !isFinalized ? <p className="mt-2 text-xs font-medium text-amber-700">Maximum of 10 hiring stages allowed.</p> : null}
             {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
           </div>
 
