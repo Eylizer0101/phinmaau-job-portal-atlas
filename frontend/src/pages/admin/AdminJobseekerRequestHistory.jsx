@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Building2, CalendarDays, Eye, GraduationCap, Search, UserRound } from 'lucide-react';
+import { ArrowLeft, Building2, CalendarDays, Eye, GraduationCap, Search, UserRound, X } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
@@ -308,13 +308,14 @@ export default function AdminJobseekerRequestHistory() {
       </div>
     </section>
 
-    <section className="grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11">
+    <section className={cn("grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-3 !items-center [&_input]:!h-11 [&_select]:!h-11", hasActiveFilters ? "xl:grid-cols-[minmax(0,1.8fr)_repeat(6,minmax(0,1fr))]" : "xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))]")}>
       <label className="relative min-w-0"><Search className="absolute left-3 top-3.5 text-slate-400" size={18}/><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search request..." className="h-11 w-full rounded-xl border pl-10 pr-3"/></label>
       <select value={company} onChange={(e)=>setCompany(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Company</option>{companies.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Job Title</option>{jobs.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={type} onChange={(e)=>setType(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Type</option><option value="contract_ended">Contract Ended</option><option value="employment_ended">Employment Ended</option></select>
       <select value={status} onChange={(e)=>setStatus(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="no_response">No Response</option></select>
       <select value={time} onChange={(e)=>changeTime(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select>
+      {hasActiveFilters && <button type="button" onClick={clearFilters} className="inline-flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200 md:col-span-3 xl:col-span-1"><X size={16} />Clear All</button>}
     </section>
 
     {error && <p className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
