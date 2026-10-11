@@ -1204,18 +1204,18 @@ const UserManagementDetails = () => {
               </h2>
 
               {profile.address ? (
-                <p className="mt-2 break-words text-[11px] leading-relaxed sm:text-[12px]">
+                <p className="mt-2 break-words text-[13px] leading-relaxed sm:text-[14px]">
                   {profile.address}
                 </p>
               ) : null}
 
-              <p className={`${profile.address ? "mt-1" : "mt-2"} break-words text-[11px] leading-relaxed sm:text-[12px]`}>
+              <p className={`${profile.address ? "mt-1" : "mt-2"} break-words text-[13px] leading-relaxed sm:text-[14px]`}>
                 {[user?.email, profile.phoneNumber || user?.phoneNumber || user?.contactNumber]
                   .filter(Boolean)
                   .join(" | ") || "Contact information not provided"}
               </p>
 
-              <p className="mt-1 break-words text-[11px] leading-relaxed text-[#56616f] sm:text-[12px]">
+              <p className="mt-1 break-words text-[13px] leading-relaxed text-[#56616f] sm:text-[14px]">
                 {[
                   profile.campus,
                   profile.course,
