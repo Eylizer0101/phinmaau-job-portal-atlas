@@ -381,7 +381,7 @@ const AdminFilterRecords = () => {
   const showJobOfferFilters = activeRole === "jobOffer";
 
   return (
-    <div className="min-h-screen bg-white py-3">
+    <div className="min-h-screen bg-transparent py-3">
       <div className="w-full">
         <button
           type="button"
