@@ -323,7 +323,7 @@ export default function AdminJobseekerRequestHistory() {
     <section className="overflow-x-auto rounded-[22px] border border-gray-300 bg-white shadow-sm">
       <table className="w-full min-w-[900px]">
         <thead className="bg-[#fafafa] text-left text-sm font-semibold text-gray-600">
-          <tr>{['Request Date','Company','Job Title','Request Type','Status','Action'].map(label=><th key={label} className="px-6 py-4">{label}</th>)}</tr>
+          <tr>{['Request Date','Company','Job Title','Request Type','Status','Action'].map(label=><th key={label} className="px-6 py-4 uppercase">{label}</th>)}</tr>
         </thead>
         <tbody className="divide-y">
           {!loading && filtered.map(item => {

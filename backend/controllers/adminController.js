@@ -2035,6 +2035,7 @@ exports.getAdminAnalytics = async (req, res) => {
     const verifiedRegistrations = verificationRequests.filter((item) => item.verifiedAt || item.consumedAt).length;
 
     const jobseekersAll = usersAll.filter((item) => analyticsLower(item.role) === 'jobseeker');
+    const verifiedSeekerOptions = getVerifiedJobseekerFilterOptions(usersAll);
     const flattenProfileOptions = (field) => analyticsUnique(jobseekersAll.flatMap((user) => profileValues(user, field)));
     const yearsGraduated = flattenProfileOptions('yearGraduated').sort((a, b) => Number(b) - Number(a) || String(b).localeCompare(String(a)));
 
@@ -2191,7 +2192,7 @@ exports.getAdminAnalytics = async (req, res) => {
       appliedFilters: { ...filters, dateLabel: range.label },
       filters: {
         options: {
-          campuses: DASHBOARD_CAMPUSES,
+          campuses: verifiedSeekerOptions.campuses,
           verificationStatuses: ['pending', 'verified', 'declined', 'on hold'],
           jobStatuses: ['open', 'closed', 'filled', 'expired'],
           industries: analyticsUnique(jobsAll.map((item) => userById.get(analyticsId(item.employer))?.employerProfile?.industry || item.category)),
@@ -2199,11 +2200,11 @@ exports.getAdminAnalytics = async (req, res) => {
           workModes: analyticsUnique(jobsAll.map((item) => item.workMode)),
           applicationStatuses: applicationStatusesForFilter,
           requestEditStatuses: ['pending', 'approved', 'declined'],
-          yearsGraduated,
-          courses: flattenProfileOptions('course'),
+          yearsGraduated: verifiedSeekerOptions.yearsGraduated,
+          courses: verifiedSeekerOptions.courses,
           availabilities: flattenProfileOptions('availability'),
           experiences: flattenProfileOptions('experience'),
-          genders: flattenProfileOptions('gender'),
+          genders: verifiedSeekerOptions.genders,
           educationLevels: flattenProfileOptions('educationLevel'),
         },
       },
@@ -2501,6 +2502,12 @@ exports.getAllUsers = async (req, res) => {
       ? User.find(metadataQuery)
           .select([
             'role',
+            'status', 'isActive', 'inactiveBySystem', 'isVerified',
+            'jobSeekerProfile.verificationStatus',
+            'jobSeekerProfile.yearGraduated',
+            'jobSeekerProfile.gender',
+            'jobSeekerProfile.educationEntries.yearGraduated',
+            'jobSeekerProfile.educationEntries.endYear',
             'employerProfile.companyName',
             'employerProfile.industry',
             'employerProfile.verificationDocs.overallStatus',
@@ -2594,26 +2601,10 @@ exports.getAllUsers = async (req, res) => {
         return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
       };
 
+      const verifiedSeekerOptions = getVerifiedJobseekerFilterOptions(allUsersForStats);
       userFilterOptions = {
-        campuses: uniqueSortedUserOptions(
-          allUsersForStats
-            .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
-            .map((user) =>
-              user?.jobSeekerProfile?.campus ||
-              user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
-              ''
-            ),
-          normalizeDashboardCampus
-        ),
-        courses: uniqueSortedUserOptions(
-          allUsersForStats
-            .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
-            .map((user) =>
-              user?.jobSeekerProfile?.course ||
-              user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
-              ''
-            )
-        ),
+        campuses: verifiedSeekerOptions.campuses,
+        courses: verifiedSeekerOptions.courses,
         companies: uniqueSortedUserOptions(
           allUsersForStats
             .filter((user) => String(user.role || '').toLowerCase() === 'employer')
@@ -6756,6 +6747,29 @@ const isVerifiedExportUser = (user = {}) => {
   return String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
 };
 
+// Share one authoritative set of options across Admin analytics, Users, and Filter Records.
+// Use verified active jobseeker records only; do not derive options from a paginated table.
+const getVerifiedJobseekerFilterOptions = (users = []) => {
+  const seekers = users.filter((user) => String(user.role || '').toLowerCase() === 'jobseeker' && isVerifiedExportUser(user));
+  const valuesFor = (user, field) => {
+    const profile = user.jobSeekerProfile || {};
+    const entries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+    if (field === 'campus') return normalizeDashboardCampus(profile.campus || entries.find((entry) => entry?.campus)?.campus || '');
+    if (field === 'course') return String(profile.course || entries.find((entry) => entry?.course)?.course || '').trim();
+    if (field === 'yearGraduated') return String(profile.yearGraduated || entries.find((entry) => entry?.yearGraduated || entry?.endYear)?.yearGraduated || entries.find((entry) => entry?.endYear)?.endYear || '').trim();
+    return String(profile[field] || '').trim();
+  };
+  const unique = (field) => [...new Map(seekers.map((user) => valuesFor(user, field))
+    .filter((value) => value && value !== 'Unspecified' && !/^(null|undefined|n\/?a)$/i.test(value))
+    .map((value) => [value.toLowerCase(), value])).values()].sort((a, b) => a.localeCompare(b));
+  return {
+    campuses: unique('campus'),
+    courses: unique('course'),
+    yearsGraduated: unique('yearGraduated').filter((year) => /^\d{4}$/.test(year) && Number(year) >= 1950 && Number(year) <= new Date().getFullYear()).sort((a, b) => Number(b) - Number(a)),
+    genders: unique('gender'),
+  };
+};
+
 const buildAdminFilterRecords = async (rawFilters = {}) => {
   const role = normalizeAdminFilterRole(rawFilters.role);
   const [users, jobs, applications] = await Promise.all([
@@ -6904,6 +6918,7 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
   }
 
   const optionsSource = records;
+  const verifiedSeekerOptions = getVerifiedJobseekerFilterOptions(users);
   const filters = rawFilters || {};
 
   records = records.filter((record) => {
@@ -6924,10 +6939,10 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
     role,
     records,
     options: {
-      campuses: uniqueFilterValues(optionsSource, 'campus'),
-      courses: uniqueFilterValues(optionsSource, 'course'),
-      yearsGraduated: uniqueFilterValues(optionsSource, 'yearGraduated'),
-      genders: uniqueFilterValues(optionsSource, 'gender'),
+      campuses: role === 'jobseeker' ? verifiedSeekerOptions.campuses : uniqueFilterValues(optionsSource, 'campus'),
+      courses: role === 'jobseeker' ? verifiedSeekerOptions.courses : uniqueFilterValues(optionsSource, 'course'),
+      yearsGraduated: role === 'jobseeker' ? verifiedSeekerOptions.yearsGraduated : uniqueFilterValues(optionsSource, 'yearGraduated'),
+      genders: role === 'jobseeker' ? verifiedSeekerOptions.genders : uniqueFilterValues(optionsSource, 'gender'),
       companyNames: uniqueFilterValues(optionsSource, 'companyName'),
       industries: uniqueFilterValues(optionsSource, 'industry'),
       jobTitles: uniqueFilterValues(optionsSource, 'jobTitle'),

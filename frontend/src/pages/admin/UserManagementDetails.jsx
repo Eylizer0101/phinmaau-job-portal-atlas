@@ -1307,6 +1307,7 @@ const UserManagementDetails = () => {
               </section>
             ) : null}
 
+            <div className={resumeSkills.length ? "[mask-image:linear-gradient(to_bottom,black_0%,transparent_180px)]" : ""}>
             {resumeSkills.length ? (
               <section className="pt-5">
                 <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
@@ -1445,6 +1446,8 @@ const UserManagementDetails = () => {
               </section>
             ) : null}
 
+            </div>
+
             {!String(profile.aboutMe || "").trim() &&
             !personalInformationRows.length &&
             !meaningfulWorkExperiences.length &&
@@ -1457,10 +1460,7 @@ const UserManagementDetails = () => {
               </div>
             ) : null}
           </article>
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent"
-            aria-hidden="true"
-          />
+
         </div>
       </section>
     );
