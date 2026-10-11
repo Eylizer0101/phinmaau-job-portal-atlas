@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Bell, BriefcaseBusiness, Check, ChevronLeft, Clock3, FilePenLine, FileText, Mail, Search, UserRound } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 
@@ -160,6 +160,12 @@ const getAdminNotificationLink = (notification) => {
 
 const AdminNotificationsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const notificationBackPath = typeof location.state?.backPath === "string" &&
+    location.state.backPath.startsWith("/admin/") &&
+    !location.state.backPath.startsWith("/admin/notifications")
+    ? location.state.backPath
+    : "/admin/dashboard";
   const persistedFilterState = readAgapayAdminNotificationsFiltersState();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -321,7 +327,7 @@ const AdminNotificationsPage = () => {
         <div>
           <button
             type="button"
-            onClick={() => navigate("/admin/dashboard")}
+            onClick={() => navigate(notificationBackPath)}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
