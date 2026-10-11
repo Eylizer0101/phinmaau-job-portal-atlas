@@ -222,7 +222,7 @@ const ResubmitDocumentPage = () => {
             Resubmit Documents
           </h1>
           <p className="mt-2 text-sm text-gray-500">
-            Upload the correct file for each credential requested by the Admin.
+            Upload the correct file for each credential requested by AGAPAY.
           </p>
         </div>
 

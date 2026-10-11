@@ -341,12 +341,6 @@ const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [
 
           ${safeAdditionalMessage ? `<p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.7; white-space:pre-line;">${safeAdditionalMessage}</p>` : ''}
 
-          <div style="margin-top:20px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
-            <p style="margin:0; font-size:14px; color:#6b4b00; line-height:1.7;">
-              <strong>Important Note:</strong> Please resubmit the requested ${normalizedDocLabels.length > 1 ? 'documents' : 'document'} within 30 days from the date of the original request. Failure to resubmit within this timeframe will result in the automatic declining of your verification request.
-            </p>
-          </div>
-
           <p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.6;">Once you have submitted the required ${normalizedDocLabels.length > 1 ? 'documents, they' : 'document, it'} will be reviewed again.</p>
 
           <p style="font-size:14px; color:#374151;">Thank you.</p>
@@ -439,12 +433,6 @@ const sendVerificationResubmissionReminderEmail = async ({
           ${documentBlocks}
 
           ${safeAdditionalMessage ? `<p style="margin-top:18px; font-size:14px; color:#374151; line-height:1.7; white-space:pre-line;">${safeAdditionalMessage}</p>` : ''}
-
-          <div style="margin-top:20px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
-            <p style="margin:0; font-size:14px; color:#6b4b00; line-height:1.7;">
-              <strong>Important Note:</strong> Please resubmit the requested ${normalizedDocLabels.length > 1 ? 'documents' : 'document'} within 30 days from the date of the original request. Failure to resubmit within this timeframe will result in the automatic declining of your verification request.
-            </p>
-          </div>
 
           <p style="margin-top:20px; font-size:14px; color:#374151; line-height:1.6;">
             Once you have submitted the required ${normalizedDocLabels.length > 1 ? 'documents, they' : 'document, it'} will be reviewed again.
