@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBell,
@@ -67,17 +67,37 @@ const UI = {
 };
 
 const NotificationsPage = () => {
+  const location = useLocation();
+  const readNotificationListState = () => {
+    if (!location.state?.restoreNotificationList) return {};
+    try { return JSON.parse(sessionStorage.getItem('agapay:jobseeker:notifications:ui-state') || '{}'); } catch { return {}; }
+  };
+  const [restoredNotificationList] = useState(readNotificationListState);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, unread, read
+  const [filter, setFilter] = useState(() => restoredNotificationList.filter || 'all'); // all, unread, read
   const [unreadCount, setUnreadCount] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState(() => restoredNotificationList.searchQuery || '');
+  const [currentPage, setCurrentPage] = useState(() => restoredNotificationList.currentPage || 1);
+  const [pageSize, setPageSize] = useState(() => restoredNotificationList.pageSize || 10);
   const [totalNotifications, setTotalNotifications] = useState(0);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => restoredNotificationList.searchQuery || '');
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try { sessionStorage.setItem('agapay:jobseeker:notifications:ui-state', JSON.stringify({ filter, searchQuery, currentPage, pageSize, scrollTop: window.scrollY })); } catch {}
+  }, [filter, searchQuery, currentPage, pageSize]);
+
+  useEffect(() => {
+    if (!location.state?.restoreNotificationList || loading) return;
+    window.requestAnimationFrame(() => window.scrollTo(0, Number(restoredNotificationList.scrollTop || 0)));
+  }, [location.state, loading, restoredNotificationList]);
+
+  const rememberNotificationListPosition = () => {
+    try { sessionStorage.setItem('agapay:jobseeker:notifications:ui-state', JSON.stringify({ filter, searchQuery, currentPage, pageSize, scrollTop: window.scrollY })); } catch {}
+  };
+
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -120,7 +140,12 @@ const NotificationsPage = () => {
     return () => window.clearTimeout(timer);
   }, [searchQuery]);
 
+  const skipInitialNotificationPageReset = React.useRef(Boolean(location.state?.restoreNotificationList));
   useEffect(() => {
+    if (skipInitialNotificationPageReset.current) {
+      skipInitialNotificationPageReset.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [filter, debouncedSearch, pageSize]);
 
@@ -160,12 +185,8 @@ const NotificationsPage = () => {
     }
     const target = buildJobseekerNotificationTarget(notification);
     if (target) {
-      navigate(
-        target,
-        notification?.type === 'job_match'
-          ? { state: { sourcePage: 'notifications' } }
-          : undefined
-      );
+      rememberNotificationListPosition();
+      navigate(target, { state: { sourcePage: 'notifications', notificationOrigin: 'list', notificationReturnPath: '/jobseeker/notifications' } });
     }
   };
 

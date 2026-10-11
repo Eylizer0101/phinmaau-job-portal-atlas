@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -165,6 +165,7 @@ const ALLOWED_MIMES = [
 
 const JobseekerMessages = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [conversations, setConversations] = useState(() => readSessionCache(`agapay:messages:conversations:${getMessageCacheUserKey()}`, []));
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -974,7 +975,12 @@ const normalizeLinkHref = (value = '') => {
     <JobSeekerLayout>
       <div className={UI.pageBg}>
         <div className={UI.container}>
-          <div className="mb-6">
+          {location.state?.notificationOrigin && (
+          <button type="button" onClick={() => navigate(location.state.notificationReturnPath, { state: location.state.notificationOrigin === 'dropdown' ? { reopenNotifications: true, notificationScrollTop: location.state.notificationScrollTop || 0 } : { restoreNotificationList: true } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+            <span aria-hidden="true">←</span> Back
+          </button>
+        )}
+        <div className="mb-6">
             <h1 className="text-[33px] leading-[40px] font-semibold text-black">Messages</h1>
             <p className="mt-2 text-black/70">
               Communicate with employers for interviews and follow-ups

@@ -1,6 +1,6 @@
 // src/pages/employer/dashboard/EmployerDashboard.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -65,6 +65,9 @@ const buildEmployerNotificationTarget = (notification = {}) => {
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const notifScrollRef = useRef(null);
+  const restoreNotifScrollRef = useRef(null);
 
   const [dashboardData, setDashboardData] = useState({
     jobs: { total: 0, active: 0, closed: 0, expiringSoon: 0 },
@@ -99,6 +102,20 @@ const EmployerDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [notifUnreadCount, setNotifUnreadCount] = useState(0);
   const [notifLoading, setNotifLoading] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.reopenNotifications) {
+      restoreNotifScrollRef.current = Number(location.state.notificationScrollTop || 0);
+      setNotifOpen(true);
+      fetchNotifications({ silent: true });
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!notifOpen || restoreNotifScrollRef.current === null || !notifScrollRef.current) return;
+    notifScrollRef.current.scrollTop = restoreNotifScrollRef.current;
+    if (!notifLoading) restoreNotifScrollRef.current = null;
+  }, [notifOpen, notifLoading, notifications]);
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [companyLogoError, setCompanyLogoError] = useState(false);
@@ -584,11 +601,11 @@ const EmployerDashboard = () => {
 
     const target = buildEmployerNotificationTarget(notif);
     if (target) {
-      navigate(target);
+      navigate(target, { state: { notificationOrigin: 'dropdown', notificationReturnPath: '/employer/dashboard', notificationScrollTop: notifScrollRef.current?.scrollTop || 0 } });
       return;
     }
 
-    if (notif?.type === 'new_message') navigate('/employer/messages');
+    if (notif?.type === 'new_message') navigate('/employer/messages', { state: { notificationOrigin: 'dropdown', notificationReturnPath: '/employer/dashboard', notificationScrollTop: notifScrollRef.current?.scrollTop || 0 } });
   };
 
   const fetchDashboardData = async (opts = { silent: false }) => {
@@ -1943,6 +1960,7 @@ const EmployerDashboard = () => {
               {notifOpen ? (
                 <div
                   id="employer-notifications-menu"
+                  ref={notifScrollRef}
                   className={[
                     'fixed left-1/2 top-[76px] z-[80] w-[calc(100vw-1.5rem)] max-w-sm -translate-x-1/2',
                     'md:absolute md:left-auto md:right-0 md:top-auto md:mt-2 md:w-96 md:max-w-[calc(100vw-1.5rem)] md:translate-x-0 md:z-50',

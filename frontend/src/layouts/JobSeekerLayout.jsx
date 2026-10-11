@@ -111,6 +111,7 @@ const JobSeekerLayout = ({ children }) => {
   // click-outside refs
   const notifBtnRef = useRef(null);
   const notifMenuRef = useRef(null);
+  const notificationRestoreScrollRef = useRef(null);
   const desktopProfileBtnRef = useRef(null);
   const desktopProfileMenuRef = useRef(null);
   const mobileProfileBtnRef = useRef(null);
@@ -437,7 +438,9 @@ const JobSeekerLayout = ({ children }) => {
 
   useEffect(() => {
     if (location.state?.reopenNotifications) {
+      notificationRestoreScrollRef.current = Number(location.state?.notificationScrollTop || 0);
       setIsNotificationOpen(true);
+      fetchNotifications();
     }
 
     try {
@@ -456,24 +459,28 @@ const JobSeekerLayout = ({ children }) => {
   const getCurrentJobseekerPath = () =>
     `${location.pathname}${location.search}${location.hash || ''}`;
 
+  useEffect(() => {
+    if (!isNotificationOpen || notificationRestoreScrollRef.current === null) return;
+    const scrollTop = notificationRestoreScrollRef.current;
+    if (notifMenuRef.current) notifMenuRef.current.scrollTop = scrollTop;
+    if (!notificationLoading && notifMenuRef.current) {
+      notifMenuRef.current.scrollTop = scrollTop;
+      notificationRestoreScrollRef.current = null;
+    }
+  }, [isNotificationOpen, notificationLoading, notifications]);
+
   const openNotificationTarget = (notification, target) => {
     if (!target) return;
 
-    const isJobDetailsTarget =
-      notification?.type === 'job_match' &&
-      String(target).startsWith('/jobseeker/job-details/');
-
-    navigate(
-      target,
-      isJobDetailsTarget
-        ? {
-            state: {
-              sourcePage: 'notification-dropdown',
-              returnTo: getCurrentJobseekerPath(),
-            },
-          }
-        : undefined
-    );
+    navigate(target, {
+      state: {
+        sourcePage: 'notification-dropdown',
+        returnTo: getCurrentJobseekerPath(),
+        notificationOrigin: 'dropdown',
+        notificationReturnPath: getCurrentJobseekerPath(),
+        notificationScrollTop: notifMenuRef.current?.scrollTop || 0,
+      },
+    });
 
     setIsNotificationOpen(false);
   };
@@ -1125,8 +1132,7 @@ const JobSeekerLayout = ({ children }) => {
                                         if (!n.isRead) await handleMarkAsRead(n._id);
                                         const target = buildJobseekerNotificationTarget(n);
                                         if (target) {
-                                          navigate(target);
-                                          setIsNotificationOpen(false);
+                                          openNotificationTarget(n, target);
                                         }
                                       }
                                     }}

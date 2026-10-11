@@ -1138,6 +1138,12 @@ const MyApplications = () => {
   return (
     <div className={`${UI.pageBg} min-h-screen`}>
       <div className="max-w-[1400px] mx-auto mt-2 px-4 sm:px-6 lg:px-8 py-8">
+        {location.state?.notificationOrigin && (
+          <button type="button" onClick={() => navigate(location.state.notificationReturnPath, { state: location.state.notificationOrigin === 'dropdown' ? { reopenNotifications: true, notificationScrollTop: location.state.notificationScrollTop || 0 } : { restoreNotificationList: true } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+            <span aria-hidden="true">←</span> Back
+          </button>
+        )}
+        
         <div className={UI.section}>
           <div
             className="

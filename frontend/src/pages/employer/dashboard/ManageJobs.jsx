@@ -1468,6 +1468,12 @@ const ManageJobs = () => {
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
+        {location.state?.notificationOrigin && (
+          <button type="button" onClick={() => navigate(location.state.notificationReturnPath, { state: location.state.notificationOrigin === 'dropdown' ? { reopenNotifications: true, notificationScrollTop: location.state.notificationScrollTop || 0 } : { restoreNotificationList: true } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+            <span aria-hidden="true">←</span> Back
+          </button>
+        )}
+        
         {fromDashboardCard && (
           <button
             type="button"

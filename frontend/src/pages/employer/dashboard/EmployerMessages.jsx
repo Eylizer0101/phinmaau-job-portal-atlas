@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faSearch,
@@ -1005,6 +1005,7 @@ const ScheduleInterviewModal = ({
 
 const EmployerMessages = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api$/, '');
 
   const [conversations, setConversations] = useState(() => {
@@ -2030,7 +2031,12 @@ const EmployerMessages = () => {
     <EmployerLayout>
       <div className={UI.pageBg}>
         <div className={UI.container}>
-          <div className="mb-6">
+          {location.state?.notificationOrigin && (
+          <button type="button" onClick={() => navigate(location.state.notificationReturnPath, { state: location.state.notificationOrigin === 'dropdown' ? { reopenNotifications: true, notificationScrollTop: location.state.notificationScrollTop || 0 } : { restoreNotificationList: true } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+            <span aria-hidden="true">←</span> Back
+          </button>
+        )}
+        <div className="mb-6">
             <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Messages</h1>
             <p className="text-gray-600 mt-2">Communicate with job seekers for interviews and follow-ups</p>
           </div>

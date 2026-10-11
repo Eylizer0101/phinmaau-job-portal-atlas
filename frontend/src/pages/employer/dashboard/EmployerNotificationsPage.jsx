@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBell,
@@ -93,17 +93,37 @@ const UI = {
 };
 
 const EmployerNotificationsPage = () => {
+  const location = useLocation();
+  const readNotificationListState = () => {
+    if (!location.state?.restoreNotificationList) return {};
+    try { return JSON.parse(sessionStorage.getItem('agapay:employer:notifications:ui-state') || '{}'); } catch { return {}; }
+  };
+  const [restoredNotificationList] = useState(readNotificationListState);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, unread, read
+  const [filter, setFilter] = useState(() => restoredNotificationList.filter || 'all'); // all, unread, read
   const [unreadCount, setUnreadCount] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState(() => restoredNotificationList.searchQuery || '');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(() => restoredNotificationList.searchQuery || '');
+  const [currentPage, setCurrentPage] = useState(() => restoredNotificationList.currentPage || 1);
+  const [pageSize, setPageSize] = useState(() => restoredNotificationList.pageSize || 10);
   const [totalNotifications, setTotalNotifications] = useState(0);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try { sessionStorage.setItem('agapay:employer:notifications:ui-state', JSON.stringify({ filter, searchQuery, currentPage, pageSize, scrollTop: window.scrollY })); } catch {}
+  }, [filter, searchQuery, currentPage, pageSize]);
+
+  useEffect(() => {
+    if (!location.state?.restoreNotificationList || loading) return;
+    window.requestAnimationFrame(() => window.scrollTo(0, Number(restoredNotificationList.scrollTop || 0)));
+  }, [location.state, loading, restoredNotificationList]);
+
+  const rememberNotificationListPosition = () => {
+    try { sessionStorage.setItem('agapay:employer:notifications:ui-state', JSON.stringify({ filter, searchQuery, currentPage, pageSize, scrollTop: window.scrollY })); } catch {}
+  };
+
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -113,7 +133,12 @@ const EmployerNotificationsPage = () => {
     return () => window.clearTimeout(timer);
   }, [searchQuery]);
 
+  const skipInitialNotificationPageReset = React.useRef(Boolean(location.state?.restoreNotificationList));
   useEffect(() => {
+    if (skipInitialNotificationPageReset.current) {
+      skipInitialNotificationPageReset.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [filter, debouncedSearchQuery, pageSize]);
 
@@ -192,11 +217,12 @@ const EmployerNotificationsPage = () => {
       const target = isStatusRequest && !notificationTarget.includes('employmentStatus=')
         ? `${notificationTarget}${notificationTarget.includes('?') ? '&' : '?'}employmentStatus=active`
         : notificationTarget;
-      navigate(target);
+      rememberNotificationListPosition();
+      navigate(target, { state: { notificationOrigin: 'list', notificationReturnPath: '/employer/notifications' } });
       return;
     }
 
-    if (notification.type === 'new_message') navigate('/employer/messages');
+    if (notification.type === 'new_message') { rememberNotificationListPosition(); navigate('/employer/messages', { state: { notificationOrigin: 'list', notificationReturnPath: '/employer/notifications' } }); }
   };
 
   const handleMarkAllAsRead = async () => {

@@ -841,12 +841,12 @@ const JobDetails = () => {
     }
 
     if (sourcePage === 'notifications') {
-      navigate('/jobseeker/notifications');
+      navigate('/jobseeker/notifications', { state: { restoreNotificationList: true } });
       return;
     }
 
     if (sourcePage === 'notification-dropdown' && returnTo) {
-      navigate(returnTo, { state: { reopenNotifications: true } });
+      navigate(returnTo, { state: { reopenNotifications: true, notificationScrollTop: location.state?.notificationScrollTop || 0 } });
       return;
     }
 
