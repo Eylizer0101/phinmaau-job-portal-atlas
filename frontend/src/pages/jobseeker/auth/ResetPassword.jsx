@@ -243,7 +243,7 @@ const ResetPassword = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] px-4 py-8 sm:py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] px-4 py-8 sm:py-12">
       <div className="mx-auto grid w-full max-w-[1080px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl lg:grid-cols-2">
         <div className="relative border-b border-gray-200 px-6 pb-6 pt-8 text-center lg:border-b-0 lg:border-r lg:px-9 lg:py-10">
           <button
