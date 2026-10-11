@@ -1196,7 +1196,7 @@ const UserManagementDetails = () => {
           </button>
         </div>
 
-        <div className="relative max-h-[650px] overflow-hidden px-5 py-7 sm:px-8 lg:px-10">
+        <div className="relative max-h-[800px] overflow-hidden px-5 py-7 sm:px-8 lg:px-10">
           <article className="mx-auto w-full bg-white font-serif text-[12px] leading-[1.45] text-black sm:text-[13px]">
             <header className="relative flex min-h-[120px] flex-col items-center justify-center pb-6 pr-0 text-center sm:pr-[132px]">
               <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em] sm:text-[31px]">
@@ -1307,13 +1307,13 @@ const UserManagementDetails = () => {
               </section>
             ) : null}
 
-            <div className={resumeSkills.length ? "[mask-image:linear-gradient(to_bottom,black_0px,rgba(0,0,0,0.85)_35px,rgba(0,0,0,0.35)_100px,transparent_160px)]" : ""}>
+            <div>
             {resumeSkills.length ? (
               <section className="pt-5">
                 <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Skills
                 </h3>
-                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1.5 pl-5 pt-1.5 opacity-90 blur-[0.75px] sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1.5 pl-5 pt-1.5 sm:grid-cols-2 lg:grid-cols-3">
                   {resumeSkills.map((item, index) => (
                     <li key={`${item.skill}-${index}`}>
                       {item.skill}
@@ -1460,7 +1460,7 @@ const UserManagementDetails = () => {
               </div>
             ) : null}
           </article>
-
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-white/0 via-white/70 to-white" aria-hidden="true" />
         </div>
       </section>
     );
