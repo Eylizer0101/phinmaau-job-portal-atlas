@@ -211,7 +211,7 @@ const ResubmitDocumentPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-2xl rounded-[32px] border border-[#D9E2EC] bg-white p-6 sm:p-8 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+      <div className="w-full max-w-6xl rounded-[32px] border border-[#D9E2EC] bg-white p-6 sm:p-8 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
         <div className="text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F4F7FB] text-[#2e66a6]">
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +246,7 @@ const ResubmitDocumentPage = () => {
         ) : null}
 
         {tokenValid ? (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {docTypes.map((docType, index) => {
               const file = selectedFiles[docType];
               const isActive = Boolean(dragActive[docType]);
@@ -330,7 +330,7 @@ const ResubmitDocumentPage = () => {
                 !docTypes.length ||
                 docTypes.some((docType) => !selectedFiles[docType])
               }
-              className="mt-2 w-full rounded-xl bg-[#2e66a6] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-2 w-full md:col-span-2 xl:col-span-3 rounded-xl bg-[#2e66a6] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? "Submitting..." : "Submit All Documents"}
             </button>

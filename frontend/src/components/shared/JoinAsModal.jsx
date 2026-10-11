@@ -72,7 +72,7 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
     setAgreePrivacy(false);
 
     if (canRestorePrivacy) {
-      navigate(location.pathname, { replace: true, state: null });
+      navigate(location.pathname, { replace: true, state: { returnToModal: initialNavigationState?.returnToModal } });
     }
 
     setTimeout(() => topButtonRef.current?.focus?.(), 0);
@@ -87,7 +87,7 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
 
   const proceedFromPrivacy = () => {
     if (!role || !agreePrivacy) return;
-    navigate(routes[role]);
+    navigate(routes[role], { state: { returnToModal: location.state?.returnToModal } });
   };
 
   // ---------- ROLE PAGE ----------
@@ -130,7 +130,14 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
           <button
             ref={topButtonRef}
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              const source = location.state?.returnToModal;
+              if (source?.pathname) {
+                navigate(`${source.pathname}${source.search || ''}${source.hash || ''}`, { state: { reopenGuestModal: true } });
+              } else {
+                navigate('/');
+              }
+            }}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-black transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ "--tw-ring-color": BLUE.ring }}
             aria-label="Back"
@@ -289,7 +296,14 @@ By registering your organization on AGAPAY, you acknowledge and agree that your 
 
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              const source = location.state?.returnToModal;
+              if (source?.pathname) {
+                navigate(`${source.pathname}${source.search || ''}${source.hash || ''}`, { state: { reopenGuestModal: true } });
+              } else {
+                navigate('/');
+              }
+            }}
             className="h-10 w-10 rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm hover:bg-slate-50 flex items-center justify-center transition
                        focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ "--tw-ring-color": BLUE.ring }}

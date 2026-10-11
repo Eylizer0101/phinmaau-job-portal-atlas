@@ -274,7 +274,12 @@ const LoginPage = () => {
   };
 
   const handleBack = () => {
-    navigate('/');
+    if (location.state?.returnToModal?.pathname) {
+      const { pathname, search = '', hash = '' } = location.state.returnToModal;
+      navigate(`${pathname}${search}${hash}`, { state: { reopenGuestModal: true } });
+    } else {
+      navigate('/');
+    }
   };
 
   const handleChange = (e) => {
@@ -776,9 +781,9 @@ const LoginPage = () => {
              <img
   src="/images/agpay.png"
   alt="AGAPAY"
-  className="mx-auto h-20 w-auto max-w-[260px] object-contain"
+  className="mx-auto h-16 w-auto max-w-[230px] object-contain"
 />
-              <h3 id="forgot-password-title" className="mt-3 text-xl font-extrabold tracking-tight text-gray-950">
+              <h3 id="forgot-password-title" className="mt-3 text-2xl font-extrabold tracking-tight text-gray-950">
                 Forgot Password
               </h3>
              
@@ -1162,7 +1167,7 @@ const LoginPage = () => {
                   Don&apos;t have an account yet?{' '}
                   <button
                     type="button"
-                    onClick={() => navigate('/join-as')}
+                    onClick={() => navigate('/join-as', { state: { returnToModal: location.state?.returnToModal } })}
                     className="font-semibold text-[#2e66a6] hover:text-[#245387] transition underline"
                   >
                     Sign Up here

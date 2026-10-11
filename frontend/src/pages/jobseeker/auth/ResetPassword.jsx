@@ -244,8 +244,8 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] px-4 py-8 sm:py-12">
-      <div className="mx-auto w-full max-w-[480px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
-        <div className="relative border-b border-gray-200 px-6 pb-5 pt-6 text-center">
+      <div className="mx-auto grid w-full max-w-[1080px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl lg:grid-cols-2">
+        <div className="relative border-b border-gray-200 px-6 pb-6 pt-8 text-center lg:border-b-0 lg:border-r lg:px-9 lg:py-10">
           <button
             type="button"
             onClick={handleBackToSignIn}
@@ -286,7 +286,7 @@ const ResetPassword = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5" noValidate aria-busy={loading}>
+        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-7 lg:px-9 lg:py-9" noValidate aria-busy={loading}>
           {successMessage ? (
             <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800" role="status" aria-live="polite">
               {successMessage}

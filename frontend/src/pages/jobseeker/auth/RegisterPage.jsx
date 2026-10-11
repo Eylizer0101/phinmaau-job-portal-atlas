@@ -1,6 +1,6 @@
 // src/pages/jobseeker/auth/RegisterPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 // ✅ Use existing dropdown options (course dropdown)
@@ -63,6 +63,7 @@ const validateCredentialFile = async (file) => {
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/register`;
@@ -1717,6 +1718,7 @@ const RegisterPage = () => {
                     state: {
                       initialStep: 'privacy',
                       initialRole: 'jobseeker',
+                      returnToModal: location.state?.returnToModal,
                     },
                   });
                 }}
@@ -1795,6 +1797,7 @@ const RegisterPage = () => {
                                 state: {
                                   initialStep: 'privacy',
                                   initialRole: 'jobseeker',
+                      returnToModal: location.state?.returnToModal,
                                 },
                               });
                               return;
@@ -1827,7 +1830,7 @@ const RegisterPage = () => {
 
                       <p className="flex items-center justify-center whitespace-nowrap text-center text-sm text-gray-700">
                         <span>Already have an account?&nbsp;</span>
-                        <Link to="/login" className="font-semibold text-[#2e66a6] hover:text-[#245387] underline">
+                        <Link to="/login" state={{ returnToModal: location.state?.returnToModal }} className="font-semibold text-[#2e66a6] hover:text-[#245387] underline">
                           Sign In here
                         </Link>
                       </p>

@@ -2233,7 +2233,7 @@ const EmployerDashboard = () => {
 
         <div className="grid grid-cols-1">
           <Panel
-            title="Recent job posts"
+            title="Recent Job Posts"
             iconName="briefcase"
             actionLabel={
               <span className="inline-flex items-center gap-1">
