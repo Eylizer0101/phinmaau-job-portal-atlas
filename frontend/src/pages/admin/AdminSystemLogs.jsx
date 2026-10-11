@@ -663,7 +663,7 @@ const AdminSystemLogs = () => {
             const created = formatDateTime(log.createdAt);
             return <div key={log.id} className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] items-center gap-5 px-6 py-5 transition-colors hover:bg-[#2e66a6]/[0.045]">
               <div><p className="text-sm font-bold text-slate-800">{created}</p></div>
-              <div className="flex min-w-0 items-center gap-3"><ActorAvatar image={log.actorImage} name={log.actorName} /><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{log.actorEmail || 'No email recorded'}</p></div></div>
+              <div className="flex min-w-0 items-center gap-3"><ActorAvatar image={log.actorImage} name={log.actorName} /><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{String(log.actorName || '').trim().toLowerCase() === 'system admin' && String(log.actorEmail || '').trim().toLowerCase() === 'admin@agapay.local' ? 'agapay1950@gmail.com' : (log.actorEmail || 'No email recorded')}</p></div></div>
               <span className="text-sm font-normal text-black">{formatActorRole(log.actorRole)}</span>
               <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900" title={getActionCode(log.action)}>{getActionLabel(log.action)}</p><p className="truncate text-[11px] font-medium text-[#212C61]/70">{log.module || 'Activity'}</p></div>
             </div>;
