@@ -1398,7 +1398,7 @@ const EmployerVerificationDetails = () => {
 
                           <button
                             type="button"
-                            onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
+                            onClick={() => setVerifyCredential({ key: docType.key, label: docType.label })}
                             disabled={action !== null || credentialApproved || credentialOnHold}
                             className={cn(
                               "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9] disabled:cursor-not-allowed",
@@ -1632,15 +1632,7 @@ const EmployerVerificationDetails = () => {
               aria-modal="true"
               aria-labelledby="hold-modal-title"
             >
-              <button
-                type="button"
-                onClick={() => !action && resetHoldModal()}
-                disabled={!!action}
-                className="absolute right-4 top-4 z-10 rounded p-1 text-[#475467] hover:bg-black/5"
-                aria-label="Close resubmission modal"
-              >
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
+              
 
               <div className="max-h-[86vh] overflow-y-auto px-7 pb-5 pt-7 sm:px-9">
                 <div className="max-w-2xl">
@@ -1758,15 +1750,7 @@ const EmployerVerificationDetails = () => {
               aria-modal="true"
               aria-labelledby="decline-modal-title"
             >
-              <button
-                type="button"
-                onClick={() => !action && resetRejectModal()}
-                disabled={action === "reject"}
-                className="absolute right-4 top-4 z-10 rounded p-1 text-[#475467] hover:bg-black/5"
-                aria-label="Close decline modal"
-              >
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
+              
 
               <div className="px-8 pb-6 pt-8 sm:px-10">
                 <div className="flex items-start gap-3 pr-6">

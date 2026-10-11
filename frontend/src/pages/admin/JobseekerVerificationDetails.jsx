@@ -1749,7 +1749,7 @@ const JobseekerVerificationDetails = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
+                          onClick={() => setVerifyCredential({ key: docType.key, label: docType.label })}
                           disabled={
                             checkingDoc === docType.key ||
                             credentialApproved ||
@@ -2083,15 +2083,7 @@ const JobseekerVerificationDetails = () => {
               aria-modal="true"
               aria-labelledby="hold-modal-title"
             >
-              <button
-                type="button"
-                onClick={() => !actionLoading && resetHoldModal()}
-                disabled={actionLoading}
-                className="absolute right-4 top-4 z-10 rounded p-1 text-[#475467] hover:bg-black/5"
-                aria-label="Close resubmission modal"
-              >
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
+              
               <div className="max-h-[86vh] overflow-y-auto px-7 pb-5 pt-7 sm:px-9">
                 <div>
                   <div className="flex items-start gap-3 pr-6">
@@ -2219,15 +2211,7 @@ const JobseekerVerificationDetails = () => {
               aria-modal="true"
               aria-labelledby="decline-modal-title"
             >
-              <button
-                type="button"
-                onClick={() => !actionLoading && resetDeclineModal()}
-                disabled={actionLoading}
-                className="absolute right-4 top-4 rounded p-1 text-[#475467] hover:bg-black/5"
-                aria-label="Close decline modal"
-              >
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
+              
               <div className="px-8 pb-6 pt-8 sm:px-10">
                 <div className="flex items-start gap-3 pr-6">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
