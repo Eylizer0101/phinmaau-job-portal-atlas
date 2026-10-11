@@ -556,7 +556,7 @@ const ManageJobs = () => {
       // Keep the existing defaults if saved state cannot be read.
     }
 
-    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: location.state?.notificationOrigin ? { notificationOrigin: location.state.notificationOrigin, notificationReturnPath: location.state.notificationReturnPath, notificationScrollTop: location.state.notificationScrollTop } : {} });
   }, [location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
@@ -707,7 +707,7 @@ const ManageJobs = () => {
       openEditRequestFlow(job);
     }
 
-    navigate(location.pathname, { replace: true, state: {} });
+    navigate(location.pathname, { replace: true, state: location.state?.notificationOrigin ? { notificationOrigin: location.state.notificationOrigin, notificationReturnPath: location.state.notificationReturnPath, notificationScrollTop: location.state.notificationScrollTop } : {} });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobs, location.pathname, location.state, navigate]);
 
@@ -763,7 +763,7 @@ const ManageJobs = () => {
       });
     }
 
-    navigate(location.pathname, { replace: true, state: {} });
+    navigate(location.pathname, { replace: true, state: location.state?.notificationOrigin ? { notificationOrigin: location.state.notificationOrigin, notificationReturnPath: location.state.notificationReturnPath, notificationScrollTop: location.state.notificationScrollTop } : {} });
   }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
@@ -1389,7 +1389,7 @@ const ManageJobs = () => {
     const clearTimer = window.setTimeout(() => {
       navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, {
         replace: true,
-        state: {},
+        state: location.state?.notificationOrigin ? { notificationOrigin: location.state.notificationOrigin, notificationReturnPath: location.state.notificationReturnPath, notificationScrollTop: location.state.notificationScrollTop } : {},
       });
     }, 3000);
 

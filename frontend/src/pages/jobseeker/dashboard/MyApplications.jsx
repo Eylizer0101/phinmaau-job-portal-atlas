@@ -721,7 +721,7 @@ const MyApplications = () => {
 
       params.delete('employmentRequest');
       const nextQuery = params.toString();
-      navigate(`/jobseeker/my-applications${nextQuery ? `?${nextQuery}` : ''}`, { replace: true });
+      navigate(`/jobseeker/my-applications${nextQuery ? `?${nextQuery}` : ''}`, { replace: true, state: location.state });
       return;
     }
 

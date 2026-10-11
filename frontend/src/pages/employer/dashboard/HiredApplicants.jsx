@@ -549,7 +549,7 @@ const HiredApplicants = () => {
         window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
       }
     } catch {}
-    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: location.state?.notificationOrigin ? { notificationOrigin: location.state.notificationOrigin, notificationReturnPath: location.state.notificationReturnPath, notificationScrollTop: location.state.notificationScrollTop } : {} });
   }, [location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
@@ -748,7 +748,7 @@ const HiredApplicants = () => {
     const nextParams = new URLSearchParams(location.search);
     nextParams.delete('statusRequest');
     nextParams.delete('application');
-    navigate(`${location.pathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`, { replace: true });
+    navigate(`${location.pathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`, { replace: true, state: location.state });
   }, [location.pathname, location.search, loading, applications, pageSize, navigate]);
 
   useEffect(() => {

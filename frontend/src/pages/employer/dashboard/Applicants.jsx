@@ -1671,7 +1671,7 @@ const Applicants = () => {
         window.setTimeout(() => setCurrentPage(Number(saved.currentPage) || 1), 0);
       }
     } catch {}
-    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: {} });
+    navigate(`${location.pathname}${location.search || ''}`, { replace: true, state: location.state?.notificationOrigin ? { notificationOrigin: location.state.notificationOrigin, notificationReturnPath: location.state.notificationReturnPath, notificationScrollTop: location.state.notificationScrollTop } : {} });
   }, [jobId, location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
@@ -1759,7 +1759,7 @@ const Applicants = () => {
 
     navigate(
       { pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' },
-      { replace: true }
+      { replace: true, state: location.state }
     );
   };
 
@@ -2083,6 +2083,7 @@ const Applicants = () => {
       params.delete('application');
       navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ''}`, {
         replace: true,
+        state: location.state,
       });
     }, 3000);
 
