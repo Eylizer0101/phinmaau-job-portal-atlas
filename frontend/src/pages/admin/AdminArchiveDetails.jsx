@@ -1329,8 +1329,8 @@ const AdminArchiveDetails = () => {
 
   return (
     <AdminLayout>
-      <main className="w-full max-w-none px-1 py-8">
-        <header className="mb-5 flex flex-wrap items-center gap-4">
+      <main className="mx-auto w-full max-w-[1500px] space-y-6 px-1 py-8">
+        <header className="flex flex-wrap items-center gap-4 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm">
           <button
             type="button"
             onClick={() => navigate("/admin/archive")}
@@ -1363,13 +1363,13 @@ const AdminArchiveDetails = () => {
           </div>
         </header>
 
-        <section className="relative z-20 overflow-visible rounded-[22px] border border-gray-300 bg-white shadow-sm">
+        <section className="relative z-20 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm">
           <div
             className={cn(
-              "grid gap-3 border-b border-slate-200 p-4" + (hasActiveFilters ? " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_minmax(0,1fr)] !items-center [&_input]:!h-11 [&_select]:!h-11" : " !grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11"),
+              "grid grid-cols-1 items-center gap-3 [&_input]:!h-11 [&_select]:!h-11 md:grid-cols-2",
               hasActiveFilters
-                ? "lg:grid-cols-[minmax(260px,1.45fr)_minmax(150px,0.85fr)_minmax(150px,0.8fr)_minmax(160px,0.85fr)_auto]"
-                : "lg:grid-cols-[minmax(300px,1.5fr)_minmax(170px,0.85fr)_minmax(170px,0.8fr)_minmax(180px,0.85fr)]"
+                ? "xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_minmax(0,1fr)]"
+                : "xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]"
             )}
           >
             <label className="relative block">
@@ -1420,16 +1420,18 @@ const AdminArchiveDetails = () => {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200 md:col-span-2 xl:col-span-1"
               >
                 <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> Clear All
               </button>
             ) : null}
           </div>
+        </section>
 
+        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className={cn("overflow-x-auto overscroll-auto", pageSize === 10 ? "overflow-y-visible" : "max-h-[812px] overflow-y-auto")}> 
             <div className="min-w-[1000px]">
-              <div className="sticky top-0 z-10 grid grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+              <div className="sticky top-0 z-10 grid grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] gap-4 border-b border-slate-200 bg-[#fafafa] px-5 py-4 text-sm font-semibold text-gray-600">
                 <span>Job Title</span>
                 <span>Archived Type</span>
                 <span>Vacancy</span>
@@ -1461,7 +1463,7 @@ const AdminArchiveDetails = () => {
                         handleViewRecord(record);
                       }
                     }}
-                    className="grid cursor-pointer grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] items-center gap-4 border-b border-slate-200 px-5 py-4 transition last:border-b-0 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#212C61]/30"
+                    className="grid cursor-pointer grid-cols-[1.6fr_1fr_0.65fr_0.7fr_0.75fr_0.55fr] items-center gap-4 border-b border-slate-200 px-5 py-5 transition last:border-b-0 hover:bg-[#f8fbff] focus-visible:bg-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-[#212C61] shadow-sm">
