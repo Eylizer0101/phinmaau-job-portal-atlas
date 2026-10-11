@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, BriefcaseBusiness, Check, ChevronLeft, Clock3, FilePenLine, FileText, Mail, Search, UserRound } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
@@ -172,13 +172,13 @@ const AdminNotificationsPage = () => {
   const [activeFilter, setActiveFilter] = useState(() => persistedFilterState.activeFilter || "all");
   const [searchQuery, setSearchQuery] = useState(() => persistedFilterState.searchQuery || "");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(() => persistedFilterState.searchQuery || "");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => Number(persistedFilterState.currentPage || 1));
   const [pageSize, setPageSize] = useState(() => persistedFilterState.pageSize || 10);
   const [totalNotifications, setTotalNotifications] = useState(0);
 
   useEffect(() => {
-    saveAgapayAdminNotificationsFiltersState({ activeFilter, searchQuery, pageSize });
-  }, [activeFilter, searchQuery, pageSize]);
+    saveAgapayAdminNotificationsFiltersState({ activeFilter, searchQuery, pageSize, currentPage });
+  }, [activeFilter, searchQuery, pageSize, currentPage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -227,7 +227,12 @@ const AdminNotificationsPage = () => {
 
   const paginatedNotifications = notifications;
 
+  const hasInitializedPageFilters = useRef(false);
   useEffect(() => {
+    if (!hasInitializedPageFilters.current) {
+      hasInitializedPageFilters.current = true;
+      return;
+    }
     setCurrentPage(1);
   }, [activeFilter, debouncedSearchQuery, pageSize]);
 
@@ -302,19 +307,15 @@ const AdminNotificationsPage = () => {
 
       const link = getAdminNotificationLink(notification);
       if (link) {
-        const navigationState = link.startsWith("/admin/jobs/")
-          ? { backPath: "/admin/job-offers", backLabel: "Job Offers", fromNotification: true }
-          : link.startsWith("/admin/applications/")
-          ? { backPath: "/admin/applications", backLabel: "Applications", fromNotification: true }
-          : link.startsWith("/admin/employer-job-edit-requests/")
-          ? { backPath: "/admin/employer-job-edit-requests", backLabel: "Edit Requests", fromNotification: true }
-          : link.startsWith("/admin/employer-verification/")
-          ? { backPath: "/admin/employer-verification", backLabel: "Employer Verification", fromNotification: true }
-          : link.startsWith("/admin/jobseeker-verification/")
-          ? { backPath: "/admin/jobseeker-verification", backLabel: "Jobseeker Verification", fromNotification: true }
-          : undefined;
-
-        navigate(link, navigationState ? { state: navigationState } : undefined);
+        navigate(link, {
+          state: {
+            backPath: "/admin/notifications",
+            backLabel: "Notifications",
+            returnTo: "/admin/notifications",
+            fromNotification: true,
+            backState: location.state || undefined,
+          },
+        });
       }
     } catch (error) {
       console.error("Error opening notification:", error);
@@ -327,7 +328,7 @@ const AdminNotificationsPage = () => {
         <div>
           <button
             type="button"
-            onClick={() => navigate(notificationBackPath)}
+            onClick={() => navigate(notificationBackPath, { state: location.state?.reopenAdminNotifications ? location.state : undefined })}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />

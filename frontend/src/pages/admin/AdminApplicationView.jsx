@@ -476,12 +476,12 @@ const AdminApplicationView = () => {
   const { applicationId } = useParams();
   const navigate = useNavigate();
   const routeLocation = useLocation();
-  const returnTo = typeof routeLocation.state?.returnTo === "string" &&
-    routeLocation.state.returnTo.startsWith("/admin/") &&
-    !routeLocation.state.returnTo.startsWith("//")
-      ? routeLocation.state.returnTo
+  const returnTo = typeof (routeLocation.state?.returnTo || routeLocation.state?.backPath) === "string" &&
+    (routeLocation.state.returnTo || routeLocation.state.backPath).startsWith("/admin/") &&
+    !(routeLocation.state.returnTo || routeLocation.state.backPath).startsWith("//")
+      ? (routeLocation.state.returnTo || routeLocation.state.backPath)
       : "/admin/applications";
-  const handleBack = () => navigate(returnTo);
+  const handleBack = () => navigate(returnTo, { state: routeLocation.state?.backState });
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

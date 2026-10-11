@@ -1310,11 +1310,11 @@ const JobseekerVerificationDetails = () => {
             <p className="mt-2 text-sm text-black/70">{error}</p>
             <div className="mt-6">
               <Link
-                to={verificationListPath}
+                to={verificationListPath} state={location.state?.backState}
                 className={cn(UI.btnBase, UI.btnLg, UI.btnPrimary, UI.ring)}
               >
                 <SvgIcon name="back" className="w-4 h-4" />
-                Back to List
+                {location.state?.fromNotification ? "Back" : "Back to List"}
               </Link>
             </div>
           </div>
@@ -1338,11 +1338,11 @@ const JobseekerVerificationDetails = () => {
             </p>
             <div className="mt-6">
               <Link
-                to={verificationListPath}
+                to={verificationListPath} state={location.state?.backState}
                 className={cn(UI.btnBase, UI.btnLg, UI.btnSecondary, UI.ring)}
               >
                 <SvgIcon name="back" className="w-4 h-4" />
-                Back to List
+                {location.state?.fromNotification ? "Back" : "Back to List"}
               </Link>
             </div>
           </div>
@@ -1452,14 +1452,14 @@ const JobseekerVerificationDetails = () => {
         <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
-              to={verificationListPath}
+              to={verificationListPath} state={location.state?.backState}
               className={cn(
                 "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#245487]",
                 UI.ring,
               )}
             >
               <SvgIcon name="back" className="h-4 w-4" />
-              Back to List
+              {location.state?.fromNotification ? "Back" : "Back to List"}
             </Link>
             {canShowActionButtons ? (
               <div className="flex flex-wrap items-center gap-2">

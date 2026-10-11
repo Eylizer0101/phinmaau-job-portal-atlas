@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   CalendarDays,
@@ -1729,6 +1729,7 @@ const ExportPasswordModal = ({ open, actionLabel, password, onPasswordChange, on
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const persistedFilterState = readAgapayAdminDashboardFiltersState();
   const [analytics, setAnalytics] = useState(emptyAnalytics);
   const [filters, setFilters] = useState(() => ({ ...initialFilters, ...(persistedFilterState.filters || {}) }));
@@ -1748,6 +1749,30 @@ const AdminDashboard = () => {
   const [adminNotificationsLoading, setAdminNotificationsLoading] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const notificationDropdownRef = useRef(null);
+  const notificationMenuRef = useRef(null);
+  const restoredNotificationScroll = useRef(false);
+  const notificationOriginState = () => ({
+    backPath: "/admin/dashboard",
+    backLabel: "Dashboard",
+    fromNotification: true,
+    fromNotificationDropdown: true,
+    reopenAdminNotifications: true,
+    notificationScrollTop: notificationMenuRef.current?.scrollTop || 0,
+  });
+
+  useEffect(() => {
+    if (!location.state?.reopenAdminNotifications) return;
+    restoredNotificationScroll.current = false;
+    setShowNotificationDropdown(true);
+    fetchAdminNotifications();
+  }, [location.key]);
+
+  useEffect(() => {
+    if (!showNotificationDropdown || adminNotificationsLoading || restoredNotificationScroll.current || !location.state?.reopenAdminNotifications) return;
+    if (!notificationMenuRef.current) return;
+    notificationMenuRef.current.scrollTop = Number(location.state.notificationScrollTop || 0);
+    restoredNotificationScroll.current = true;
+  }, [showNotificationDropdown, adminNotificationsLoading, adminNotifications, location.state]);
 
   useEffect(() => {
     saveAgapayAdminDashboardFiltersState({ filters, activeTab });
@@ -1832,27 +1857,16 @@ const AdminDashboard = () => {
       console.error("Error marking admin notification as read:", notificationError);
     }
 
+    const navigationState = notificationOriginState();
     setShowNotificationDropdown(false);
 
     const link = getAdminDashboardNotificationLink(notification);
     if (link) {
-      const navigationState = link.startsWith("/admin/jobs/")
-        ? { backPath: "/admin/job-offers", backLabel: "Job Offers", fromNotification: true }
-        : link.startsWith("/admin/applications/")
-        ? { backPath: "/admin/applications", backLabel: "Applications", fromNotification: true }
-        : link.startsWith("/admin/employer-job-edit-requests/")
-        ? { backPath: "/admin/employer-job-edit-requests", backLabel: "Edit Requests", fromNotification: true }
-        : link.startsWith("/admin/employer-verification/")
-        ? { backPath: "/admin/employer-verification", backLabel: "Employer Verification", fromNotification: true }
-        : link.startsWith("/admin/jobseeker-verification/")
-        ? { backPath: "/admin/jobseeker-verification", backLabel: "Jobseeker Verification", fromNotification: true }
-        : undefined;
-
-      navigate(link, navigationState ? { state: navigationState } : undefined);
+      navigate(link, { state: navigationState });
       return;
     }
 
-    navigate("/admin/notifications", { state: { backPath: "/admin/dashboard", fromNotificationDropdown: true } });
+    navigate("/admin/notifications", { state: navigationState });
   };
 
   const groupedAdminNotifications = ["Today", "Yesterday", "Last Week"]
@@ -2208,6 +2222,7 @@ const AdminDashboard = () => {
                     {showNotificationDropdown ? (
                       <div
                         id="admin-notifications-menu"
+                        ref={notificationMenuRef}
                         className={[
                           "fixed left-1/2 top-[76px] z-[80] w-[calc(100vw-1.5rem)] max-w-sm -translate-x-1/2",
                           "md:absolute md:left-auto md:right-0 md:top-auto md:mt-2 md:w-96 md:max-w-[calc(100vw-1.5rem)] md:translate-x-0 md:z-50",
