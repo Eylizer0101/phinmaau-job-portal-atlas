@@ -260,6 +260,20 @@ export default function AdminJobseekerRequestHistory() {
     setTo('');
   };
 
+  const hasActiveFilters = Boolean(search.trim()) || company !== 'all' || jobTitle !== 'all' || type !== 'all' || status !== 'all' || time !== 'all' || Boolean(from) || Boolean(to);
+  const clearFilters = () => {
+    setSearch('');
+    setCompany('all');
+    setJobTitle('all');
+    setType('all');
+    setStatus('all');
+    setTime('all');
+    setFrom('');
+    setTo('');
+    setShowCustomDate(false);
+  };
+  const openRequest = (item) => navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`, { state: { backPath: location.pathname, backLabel: 'Request History', backState: location.state } });
+
   const jobseeker = data.jobseeker || {};
   const location = useLocation();
   const historyBackPath = location.state?.backPath || '/admin/employer-job-edit-requests';
@@ -294,7 +308,7 @@ export default function AdminJobseekerRequestHistory() {
       </div>
     </section>
 
-    <section className="grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,0.85fr)_minmax(0,0.85fr)] !grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11">
+    <section className="grid gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11">
       <label className="relative min-w-0"><Search className="absolute left-3 top-3.5 text-slate-400" size={18}/><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search request..." className="h-11 w-full rounded-xl border pl-10 pr-3"/></label>
       <select value={company} onChange={(e)=>setCompany(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Company</option>{companies.map(value=><option key={value} value={value}>{value}</option>)}</select>
       <select value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} className="min-w-0 w-full rounded-xl border px-3"><option value="all">All Job Title</option>{jobs.map(value=><option key={value} value={value}>{value}</option>)}</select>
@@ -307,7 +321,7 @@ export default function AdminJobseekerRequestHistory() {
 
     <section className="overflow-x-auto rounded-[22px] border border-gray-300 bg-white shadow-sm">
       <table className="w-full min-w-[900px]">
-        <thead className="bg-[#fafafa] text-left text-xs font-semibold text-gray-600">
+        <thead className="bg-[#fafafa] text-left text-sm font-semibold text-gray-600">
           <tr>{['Request Date','Company','Job Title','Request Type','Status','Action'].map(label=><th key={label} className="px-6 py-4">{label}</th>)}</tr>
         </thead>
         <tbody className="divide-y">
@@ -316,7 +330,7 @@ export default function AdminJobseekerRequestHistory() {
             const companyLogo = companyLogoOf(item);
             const companyName = companyNameOf(item);
 
-            return <tr key={item?._id || `${companyName}-${item?.job?.title || ''}`}>
+            return <tr key={item?._id || `${companyName}-${item?.job?.title || ''}`} role="button" tabIndex={0} onClick={() => openRequest(item)} onKeyDown={(event) => { if (event.target !== event.currentTarget) return; if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openRequest(item); } }} className="cursor-pointer transition-colors hover:bg-[#f8fbff] focus:bg-[#f8fbff] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]">
               <td className="px-6 py-5 text-sm">{formatDate(item?.employmentStatusRequest?.requestedAt)}</td>
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
@@ -330,7 +344,7 @@ export default function AdminJobseekerRequestHistory() {
               <td className="px-6 py-5 font-semibold">{item?.job?.title || '—'}</td>
               <td className="px-6 py-4">{reasonLabel(item?.employmentStatusRequest?.reason)}</td>
               <td className="px-6 py-4"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${statusBadgeClass(requestStatus)}`}>{requestStatus.replace('_',' ')}</span></td>
-              <td className="px-6 py-4"><button onClick={()=>navigate(`/admin/jobseeker-status-requests/${jobseekerId}/${item?._id}`, { state: { backPath: location.pathname, backLabel: 'Request History', backState: location.state } })} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"><Eye size={18}/></button></td>
+              <td className="px-6 py-4"><button type="button" onClick={(event)=>{event.stopPropagation(); openRequest(item);}} aria-label="View request details" className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"><Eye size={18}/></button></td>
             </tr>;
           })}
           {!loading && !filtered.length && <tr><td colSpan="6" className="p-12 text-center text-slate-500">No requests found.</td></tr>}

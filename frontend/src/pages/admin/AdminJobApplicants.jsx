@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
+import { CheckCircleIcon, BookmarksSvgIcon } from '../../components/shared/JobseekerIcons';
 
 
 const AGAPAY_ADMIN_JOB_APPLICANTS_FILTERS_KEY = "agapay:admin:job-applicants:filters";
@@ -931,23 +932,35 @@ const parseSkills = (value) => {
     .filter((item) => item.skill);
 };
 
-const getRequiredExperienceYears = (value = "") => {
+const getRequiredExperienceYears = (value = '') => {
   const normalized = normalizeMatchText(value);
-  if (!normalized || normalized.includes("no experience")) return 0;
+  if (!normalized || normalized.includes('no experience')) return 0;
   const match = normalized.match(/(\d+)/);
   return match ? Number(match[1]) : 0;
 };
 
-const getApplicantExperienceYears = (workExperiences = [], profileExperience = "") => {
-  const dateBasedYears = (Array.isArray(workExperiences) ? workExperiences : []).reduce(
+const getApplicantExperienceYears = (workExperiences = [], profileExperience = '') => {
+  const normalized = normalizeMatchText(profileExperience);
+
+  // Use the experience level selected in the applicant profile as the source of truth.
+  // Only calculate from work dates when the profile experience field is empty.
+  if (normalized) {
+    if (normalized.includes('no experience')) return 0;
+    if (normalized.includes('less than 1')) return 0.5;
+
+    const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (rangeMatch) return Number(rangeMatch[2]);
+
+    const numberMatch = normalized.match(/(\d+)/);
+    if (numberMatch) return Number(numberMatch[1]);
+  }
+
+  return (Array.isArray(workExperiences) ? workExperiences : []).reduce(
     (total, item) => {
       const start = new Date(item?.startDate);
       const end = item?.isPresent ? new Date() : new Date(item?.endDate);
-      if (
-        Number.isNaN(start.getTime()) ||
-        Number.isNaN(end.getTime()) ||
-        end < start
-      ) {
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
         return total;
       }
 
@@ -955,106 +968,142 @@ const getApplicantExperienceYears = (workExperiences = [], profileExperience = "
     },
     0
   );
-
-  if (dateBasedYears > 0) return dateBasedYears;
-
-  const normalized = normalizeMatchText(profileExperience);
-  if (!normalized || normalized.includes("no experience")) return 0;
-  if (normalized.includes("less than 1")) return 0.5;
-
-  const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
-  if (rangeMatch) return Number(rangeMatch[2]);
-
-  const numberMatch = normalized.match(/(\d+)/);
-  return numberMatch ? Number(numberMatch[1]) : 0;
 };
 
-const getEducationRank = (value = "") => {
+const getEducationRank = (value = '') => {
   const normalized = normalizeMatchText(value);
   if (!normalized) return 0;
-  if (normalized.includes("doctor")) return 5;
-  if (normalized.includes("master")) return 4;
+  if (normalized.includes('doctor') || normalized.includes('phd')) return 5;
+  if (normalized.includes('master') || normalized.includes('post graduate')) return 4;
   if (
-    normalized.includes("bachelor") ||
-    normalized.includes("college degree") ||
-    normalized.includes("college graduate")
-  ) {
-    return 3;
-  }
-  if (normalized.includes("associate") || normalized.includes("vocational")) return 2;
-  if (normalized.includes("high school") || normalized.includes("senior high")) return 1;
+    normalized.includes('bachelor') ||
+    normalized.includes('college') ||
+    normalized.includes('degree graduate') ||
+    normalized.includes('professional license') ||
+    normalized.includes('board exam')
+  ) return 3;
+  if (
+    normalized.includes('associate') ||
+    normalized.includes('vocational') ||
+    normalized.includes('diploma')
+  ) return 2;
+  if (normalized.includes('high school') || normalized.includes('secondary')) return 1;
   return 0;
 };
 
 const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work = [], education = [] }) => {
-  let totalWeight = 0;
-  let earnedWeight = 0;
+  const applicantSkills = skills
+    .map((item) => normalizeSkillName(item?.skill || item))
+    .filter(Boolean);
 
-  const requiredSkills = (Array.isArray(job.skillsRequired) ? job.skillsRequired : [])
+  const requiredSkills = (Array.isArray(job?.skillsRequired)
+    ? job.skillsRequired
+    : String(job?.skillsRequired || '').split(',')
+  )
     .map(normalizeSkillName)
     .filter(Boolean);
 
-  if (requiredSkills.length) {
-    totalWeight += 45;
-    const applicantSkills = skills.map((item) => normalizeSkillName(item?.skill || item)).filter(Boolean);
-    const matchedSkills = requiredSkills.filter((required) =>
-      applicantSkills.some(
-        (applicantSkill) =>
-          applicantSkill === required ||
-          applicantSkill.includes(required) ||
-          required.includes(applicantSkill)
-      )
-    );
-    earnedWeight += 45 * (matchedSkills.length / requiredSkills.length);
-  }
+  const matchedSkills = requiredSkills.filter((requiredSkill) =>
+    applicantSkills.some(
+      (applicantSkill) =>
+        applicantSkill === requiredSkill ||
+        applicantSkill.includes(requiredSkill) ||
+        requiredSkill.includes(applicantSkill)
+    )
+  );
 
-  const requiredExperience = getRequiredExperienceYears(job.experienceLevel);
-  if (job.experienceLevel) {
-    totalWeight += 25;
-    if (requiredExperience === 0) {
-      earnedWeight += 25;
-    } else {
-      const applicantExperience = getApplicantExperienceYears(work, profile.experience);
-      earnedWeight += 25 * Math.min(1, applicantExperience / requiredExperience);
-    }
-  }
+  const skillRatio = requiredSkills.length
+    ? matchedSkills.length / requiredSkills.length
+    : applicantSkills.length
+      ? 0.75
+      : 0;
 
-  if (job.educationLevel) {
-    totalWeight += 20;
-    const requiredRank = getEducationRank(job.educationLevel);
-    const educationValues = [
+  const latestEducation = Array.isArray(education) && education.length
+    ? education[education.length - 1]
+    : {};
+
+  const educationCandidates = [
+    profile.educationalAttainment,
+    ...(Array.isArray(education)
+      ? education.flatMap((entry) => [
+          entry?.educationalAttainment,
+          entry?.level,
+        ])
+      : []),
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  const applicantEducation = educationCandidates.reduce((highest, candidate) => {
+    return getEducationRank(candidate) > getEducationRank(highest)
+      ? candidate
+      : highest;
+  }, educationCandidates[0] || '');
+
+  const requiredEducation = job.educationLevel || job.educationalRequirements || '';
+  const applicantEducationRank = getEducationRank(applicantEducation);
+  const requiredEducationRank = getEducationRank(requiredEducation);
+  const educationRatio = requiredEducationRank
+    ? Math.min(1, applicantEducationRank / requiredEducationRank)
+    : applicantEducationRank
+      ? 0.75
+      : 0;
+
+  const applicantYears = getApplicantExperienceYears(
+    work,
+    profile.experience || profile.whatHaveYouDone
+  );
+  const requiredYears = getRequiredExperienceYears(job.experienceLevel);
+  const experienceRatio = requiredYears
+    ? Math.min(1, applicantYears / requiredYears)
+    : job.openToFreshGraduates || applicantYears >= 0
+      ? 1
+      : 0;
+
+  const applicantCourseText = normalizeMatchText(
+    [
+      profile.course,
+      profile.studyField,
       profile.educationalAttainment,
-      profile.educationLevel,
-      ...education.map((item) => item?.degree || item?.educationLevel || item?.course || ""),
-    ];
-    const applicantRank = Math.max(0, ...educationValues.map(getEducationRank));
+      latestEducation.course,
+      latestEducation.studyField,
+      latestEducation.educationalAttainment,
+      latestEducation.level,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
 
-    if (requiredRank === 0 || applicantRank >= requiredRank) {
-      earnedWeight += 20;
-    } else if (applicantRank > 0) {
-      earnedWeight += 20 * (applicantRank / requiredRank);
-    }
-  }
+  const jobContextText = normalizeMatchText(
+    [
+      job.title,
+      job.category,
+      job.description,
+      job.requirements,
+      job.qualification,
+      job.educationalRequirements,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
 
-  const categoryText = normalizeMatchText(job.category);
-  if (categoryText) {
-    totalWeight += 10;
-    const applicantText = normalizeMatchText(
-      [
-        profile.studyField,
-        profile.course,
-        profile.objective,
-        ...work.map((item) => `${item?.position || ""} ${item?.companyName || item?.company || ""}`),
-      ].join(" ")
-    );
+  const courseWords = applicantCourseText
+    .split(' ')
+    .filter((word) => word.length >= 4);
 
-    if (applicantText.includes(categoryText) || categoryText.includes(applicantText)) {
-      earnedWeight += 10;
-    }
-  }
+  const courseHits = courseWords.filter((word) => jobContextText.includes(word));
+  const courseRatio = courseWords.length
+    ? Math.min(1, courseHits.length / Math.min(courseWords.length, 4))
+    : 0;
 
-  if (totalWeight <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((earnedWeight / totalWeight) * 100)));
+  const score = Math.round(
+    skillRatio * 45 +
+    educationRatio * 20 +
+    experienceRatio * 20 +
+    courseRatio * 15
+  );
+
+  return Math.max(0, Math.min(100, score));
 };
 
 const hasMeaningfulObjectValue = (value) => {
@@ -1065,7 +1114,9 @@ const hasMeaningfulObjectValue = (value) => {
   return value !== undefined && value !== null && String(value).trim() !== "";
 };
 
-const calculateJobSeekerLevel = ({
+const hasMeaningfulEmployerProfileEntry = (item = {}) => Boolean(item && typeof item === 'object' && Object.entries(item).some(([key, value]) => { if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false; if (Array.isArray(value)) return value.length > 0; if (value && typeof value === 'object') return hasMeaningfulEmployerProfileEntry(value); return Boolean(String(value ?? '').trim()); }));
+
+const calculateJobSeekerLevelDetails = ({
   skills = [],
   certifications = [],
   projects = [],
@@ -1073,19 +1124,129 @@ const calculateJobSeekerLevel = ({
   awards = [],
   workExperiences = [],
 }) => {
-  const score =
-    skills.length +
-    certifications.filter(hasMeaningfulObjectValue).length * 2 +
-    projects.filter(hasMeaningfulObjectValue).length * 2 +
-    seminars.filter(hasMeaningfulObjectValue).length +
-    awards.filter(hasMeaningfulObjectValue).length * 2 +
-    workExperiences.filter(hasMeaningfulObjectValue).length * 3;
+  const counts = {
+    skills: Array.isArray(skills) ? skills.filter(Boolean).length : 0,
+    certifications: Array.isArray(certifications)
+      ? certifications.filter(hasMeaningfulEmployerProfileEntry).length
+      : 0,
+    projects: Array.isArray(projects)
+      ? projects.filter(hasMeaningfulEmployerProfileEntry).length
+      : 0,
+    seminars: Array.isArray(seminars)
+      ? seminars.filter(hasMeaningfulEmployerProfileEntry).length
+      : 0,
+    awards: Array.isArray(awards)
+      ? awards.filter(hasMeaningfulEmployerProfileEntry).length
+      : 0,
+    work: Array.isArray(workExperiences) ? workExperiences.length : 0,
+  };
 
-  if (score >= 30) return "Legend";
-  if (score >= 20) return "Pro";
-  if (score >= 12) return "Expert";
-  if (score >= 6) return "Intermediate";
-  return "First Time Job Seeker";
+  const tiers = [
+    {
+      name: 'First Time Job Seeker',
+      requirements: {
+        skills: 0,
+        certifications: 0,
+        projects: 0,
+        seminars: 0,
+        awards: 0,
+        work: 0,
+      },
+    },
+    {
+      name: 'Intermediate',
+      requirements: {
+        skills: 5,
+        certifications: 1,
+        projects: 1,
+        seminars: 1,
+        awards: 1,
+        work: 0,
+      },
+    },
+    {
+      name: 'Expert',
+      requirements: {
+        skills: 9,
+        certifications: 2,
+        projects: 2,
+        seminars: 2,
+        awards: 2,
+        work: 1,
+      },
+    },
+    {
+      name: 'Pro',
+      requirements: {
+        skills: 13,
+        certifications: 5,
+        projects: 5,
+        seminars: 5,
+        awards: 5,
+        work: 2,
+      },
+    },
+    {
+      name: 'Legend',
+      requirements: {
+        skills: 17,
+        certifications: 7,
+        projects: 7,
+        seminars: 7,
+        awards: 7,
+        work: 3,
+      },
+    },
+  ];
+
+  const meetsRequirements = (requirements) =>
+    Object.entries(requirements).every(([key, required]) => counts[key] >= required);
+
+  let currentTierIndex = 0;
+  tiers.forEach((tier, index) => {
+    if (meetsRequirements(tier.requirements)) currentTierIndex = index;
+  });
+
+  const currentTier = tiers[currentTierIndex];
+  const nextTier = tiers[currentTierIndex + 1];
+
+  if (!nextTier) {
+    return {
+      currentRank: currentTier.name,
+      nextTier: 'Completed',
+      percentage: 100,
+    };
+  }
+
+  const requirementEntries = Object.entries(nextTier.requirements).filter(
+    ([, required]) => required > 0
+  );
+
+  const ratios = requirementEntries.map(([key, required]) =>
+    Math.min(1, counts[key] / required)
+  );
+
+  const percentage = ratios.length
+    ? Math.round(
+        (ratios.reduce((total, ratio) => total + ratio, 0) / ratios.length) * 100
+      )
+    : 0;
+
+  return {
+    currentRank: currentTier.name,
+    nextTier: nextTier.name,
+    percentage,
+  };
+};
+
+
+const calculateJobSeekerLevel = (profileParts) => calculateJobSeekerLevelDetails(profileParts).currentRank;
+
+const formatDate = (value) => {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+    : '—';
 };
 
 const formatRelativeTime = (value) => {
@@ -1623,45 +1784,24 @@ const AdminJobApplicants = () => {
                               </div>
 
                               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                                <span
-                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(
-                                    level
-                                  )}`}
-                                >
-                                  ★ {level}
-                                </span>
-
                                 <span className="inline-flex items-center gap-1.5 text-[#7b8190]">
                                   <SvgIcon name="calendar" className="h-4 w-4" />
-                                  Applied{" "}
-                                  {formatRelativeTime(
-                                    application.appliedAt ||
-                                      application.createdAt
-                                  )}
+                                  Applied {formatDate(application.appliedAt || application.createdAt)}
                                 </span>
-
-                                {application.applicationHistorySummary ? (
-                                  <span className="inline-flex overflow-hidden rounded-full border border-[#dbe3ee] bg-white text-xs font-semibold text-[#5f6b7a]">
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1">
-                                      Previously Hired:
-                                      <span className="font-bold text-[#374151]">
-                                        {application.applicationHistorySummary
-                                          ?.hired ?? 0}
-                                      </span>
-                                    </span>
-                                    <span
-                                      className="h-auto w-px bg-[#dbe3ee]"
-                                      aria-hidden="true"
-                                    />
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1">
-                                      Total Withdrawals:
-                                      <span className="font-bold text-[#374151]">
-                                        {application.applicationHistorySummary
-                                          ?.withdrawn ?? 0}
-                                      </span>
-                                    </span>
+                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>
+                                  ★ {level}
+                                </span>
+                                <span className="inline-flex overflow-hidden rounded-full border border-[#dbe3ee] bg-white text-xs font-semibold text-[#5f6b7a]">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1">
+                                    <CheckCircleIcon className="h-4 w-4 text-emerald-600" />
+                                    Previously Hired: <span className="font-bold text-[#374151]">{application.applicationHistorySummary?.hired ?? 0}</span>
                                   </span>
-                                ) : null}
+                                  <span className="h-auto w-px bg-[#dbe3ee]" aria-hidden="true" />
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1">
+                                    <BookmarksSvgIcon name="minusCircle" className="h-4 w-4 text-[#7b8190]" />
+                                    Total Withdrawals: <span className="font-bold text-[#374151]">{application.applicationHistorySummary?.withdrawn ?? 0}</span>
+                                  </span>
+                                </span>
                               </div>
                             </div>
                           </div>

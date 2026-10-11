@@ -33,7 +33,7 @@ const Icon = ({ name, className = "h-5 w-5" }) => {
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24",
-    strokeWidth: 2,
+    strokeWidth: name === "eye" ? 1.7 : 2,
   };
 
   if (name === "arrowLeft") {
@@ -55,7 +55,7 @@ const Icon = ({ name, className = "h-5 w-5" }) => {
   if (name === "eye") {
     return (
       <svg {...common}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     );
@@ -680,7 +680,7 @@ const AdminEmployerPostingHistory = () => {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-white py-8">
+      <div className="min-h-screen bg-transparent py-8">
         <div className="space-y-6">
           <div>
             <button
@@ -846,9 +846,6 @@ const AdminEmployerPostingHistory = () => {
                                     job?.jobTitle ||
                                     "Untitled Job"}
                                 </p>
-                                <p className="mt-1 truncate text-sm font-normal text-black/50">
-                                  {job?.companyName || companyName}
-                                </p>
                               </td>
 
                               <td className="px-4 py-5 text-center text-[16px] font-medium text-black">
@@ -895,7 +892,7 @@ const AdminEmployerPostingHistory = () => {
                                     "job"
                                   }`}
                                 >
-                                  <Icon name="eye" className="h-5 w-5" />
+                                  <Icon name="eye" className="h-4 w-4" />
                                 </button>
                               </td>
                             </tr>
