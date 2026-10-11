@@ -2772,22 +2772,22 @@ const ApplicationDetails = () => {
                   </AutoFitResumeHeaderName>
 
                   {resumeAddress ? (
-                    <p className="mt-2 break-words text-[10px] leading-relaxed">
+                    <p className="mt-2 break-words text-[12px] leading-relaxed">
                       {resumeAddress}
                     </p>
                   ) : null}
 
                   {resumeEmail || resumePhoneNumber ? (
-                    <p className="mt-0.5 break-words text-[10px] leading-relaxed">
+                    <p className="mt-0.5 break-words text-[12px] leading-relaxed">
                       {[resumeEmail, resumePhoneNumber].filter(Boolean).join(' • ')}
                     </p>
                   ) : !resumeAddress ? (
-                    <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+                    <p className="mt-2 text-[12px] leading-relaxed text-gray-500">
                       Contact information not provided
                     </p>
                   ) : null}
 
-                  <p className="mt-1 text-[10px] not-italic">
+                  <p className="mt-1 text-[12px] not-italic">
                     {[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : '']
                       .filter(Boolean)
                       .join(', ')}

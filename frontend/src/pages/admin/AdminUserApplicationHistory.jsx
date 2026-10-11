@@ -731,7 +731,6 @@ const AdminUserApplicationHistory = () => {
                 )}
               </div>
 
-              <p className="mt-2 text-xs text-gray-500">Showing {filteredApplications.length} of {applications.length} applications</p>
             </div>
 
             {filteredApplications.length ? (

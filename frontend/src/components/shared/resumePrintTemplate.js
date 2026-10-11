@@ -447,7 +447,7 @@ const resumeStyles = `
   .resume-contact {
     margin-top: 3px;
     color: #222222;
-    font-size: 8.7px;
+    font-size: 9.5px;
     line-height: 1.4;
     overflow-wrap: anywhere;
   }
@@ -468,7 +468,7 @@ const resumeStyles = `
   .resume-education-summary {
     margin-top: 2px;
     color: #222222;
-    font-size: 9.2px;
+    font-size: 9.7px;
     line-height: 1.35;
     font-family: inherit;
     font-style: normal;
@@ -779,13 +779,13 @@ const resumeStyles = `
 
   .resume-paper.resume-fit-one-page .resume-contact {
     margin-top: 2px;
-    font-size: 8.3px;
+    font-size: 9px;
     line-height: 1.24;
   }
 
   .resume-paper.resume-fit-one-page .resume-education-summary {
     margin-top: 1px;
-    font-size: 8.7px;
+    font-size: 9.2px;
     line-height: 1.2;
   }
 

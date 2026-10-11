@@ -539,7 +539,7 @@ const ResumePreviewPage = () => {
         .resume-contact {
           margin-top: 5px;
           color: #222222;
-          font-size: 8.7px;
+          font-size: 9.5px;
           line-height: 1.4;
           overflow-wrap: anywhere;
         }
@@ -560,7 +560,7 @@ const ResumePreviewPage = () => {
         .resume-education-summary {
           margin-top: 3px;
           color: #222222;
-          font-size: 9.2px;
+          font-size: 9.7px;
           line-height: 1.35;
           font-family: inherit;
           font-style: normal;

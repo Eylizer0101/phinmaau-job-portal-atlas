@@ -66,8 +66,8 @@ export const getApplicationPresentation = (application = {}) => {
     const progress = stage.toLowerCase().includes("final") ? 85 : application?.interviewSchedule?.scheduledAt ? 75 : 70;
     return { label: "For Interview", progress, description: stage || (application?.interviewSchedule?.scheduledAt ? "Interview scheduled" : "Interview stage"), color: "blue", statusIcon: "forInterview" };
   }
-  if (application.reviewedAt || application.viewedAt || application.isViewedByEmployer) return { label: "Pending", progress: 40, description: "Resume under review", color: "blue", statusTextClass: "text-amber-600", statusIcon: "clock" };
-  return { label: "Pending", progress: 25, description: "Application received", color: "blue", statusTextClass: "text-amber-600", statusIcon: "clock" };
+  if (application.reviewedAt || application.viewedAt || application.isViewedByEmployer) return { label: "Pending", progress: 40, description: "Resume under review", color: "amber", statusTextClass: "text-amber-600", statusIcon: "clock" };
+  return { label: "Pending", progress: 25, description: "Application submitted", color: "amber", statusTextClass: "text-amber-600", statusIcon: "clock" };
 };
 
 const timelineTitle = (activity = {}) => {
@@ -164,7 +164,7 @@ const ApplicationHistoryCard = ({ application, onView }) => {
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1 text-[10px] text-[#6681a0]"><MyApplicationsSvgIcon name="clock" className="h-3 w-3" />{formatRelativeTime(application.updatedAt || application.reviewedAt || application.appliedAt || application.createdAt)}</span>
-        <button type="button" onClick={onView} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-[#0057d9] transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><MyApplicationsSvgIcon name="eye" className="h-3.5 w-3.5" />View Application</button>
+        <button type="button" onClick={onView} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-[#0057d9] transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><MyApplicationsSvgIcon name="eye" className="h-3.5 w-3.5" />Application</button>
       </div>
     </article>
   );
