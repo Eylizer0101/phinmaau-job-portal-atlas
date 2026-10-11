@@ -1307,13 +1307,13 @@ const UserManagementDetails = () => {
               </section>
             ) : null}
 
-            <div className={resumeSkills.length ? "[mask-image:linear-gradient(to_bottom,black_0%,transparent_180px)]" : ""}>
+            <div className={resumeSkills.length ? "[mask-image:linear-gradient(to_bottom,black_0px,rgba(0,0,0,0.85)_35px,rgba(0,0,0,0.35)_100px,transparent_160px)]" : ""}>
             {resumeSkills.length ? (
               <section className="pt-5">
                 <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Skills
                 </h3>
-                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1.5 pl-5 pt-1.5 opacity-55 blur-[1.5px] sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1.5 pl-5 pt-1.5 opacity-90 blur-[0.75px] sm:grid-cols-2 lg:grid-cols-3">
                   {resumeSkills.map((item, index) => (
                     <li key={`${item.skill}-${index}`}>
                       {item.skill}
