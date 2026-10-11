@@ -1751,14 +1751,20 @@ const AdminDashboard = () => {
   const notificationDropdownRef = useRef(null);
   const notificationMenuRef = useRef(null);
   const restoredNotificationScroll = useRef(false);
-  const notificationOriginState = () => ({
-    backPath: "/admin/dashboard",
-    backLabel: "Dashboard",
-    fromNotification: true,
-    fromNotificationDropdown: true,
-    reopenAdminNotifications: true,
-    notificationScrollTop: notificationMenuRef.current?.scrollTop || 0,
-  });
+  const notificationOriginState = () => {
+    const returnState = {
+      reopenAdminNotifications: true,
+      notificationScrollTop: notificationMenuRef.current?.scrollTop || 0,
+    };
+    return {
+      backPath: "/admin/dashboard",
+      backLabel: "Dashboard",
+      fromNotification: true,
+      fromNotificationDropdown: true,
+      ...returnState,
+      backState: returnState,
+    };
+  };
 
   useEffect(() => {
     if (!location.state?.reopenAdminNotifications) return;
@@ -2352,7 +2358,7 @@ const AdminDashboard = () => {
                               type="button"
                               onClick={() => {
                                 setShowNotificationDropdown(false);
-                                navigate("/admin/notifications", { state: { backPath: "/admin/dashboard", fromNotificationDropdown: true } });
+                                navigate("/admin/notifications", { state: notificationOriginState() });
                               }}
                               className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#2e66a6] transition hover:text-[#25558c]"
                             >
