@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
@@ -651,6 +651,7 @@ const StatCard = ({ label, value }) => (
 
 const AdminApplications = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const persistedFilterState = readAgapayAdminApplicationsFiltersState();
   const [applications, setApplications] = useState([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, forInterview: 0, hired: 0, declined: 0 });
@@ -838,6 +839,17 @@ const AdminApplications = () => {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1480px] px-1 py-7 sm:py-8">
+        {location.state?.fromAdminDashboard && (
+          <button
+            type="button"
+            onClick={() => navigate('/admin/dashboard')}
+            className="mb-4 inline-flex h-11 w-fit items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            Back
+          </button>
+        )}
+        
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Applications</h1>

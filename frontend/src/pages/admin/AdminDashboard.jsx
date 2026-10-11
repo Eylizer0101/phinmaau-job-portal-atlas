@@ -2392,19 +2392,19 @@ const AdminDashboard = () => {
             label="Registered Users"
             value={kpis.totalRegisteredUsers}
             imageSrc={statCardImages.applications}
-            onClick={() => navigate("/admin/users")}
+            onClick={() => navigate("/admin/users", { state: { fromAdminDashboard: true } })}
           />
           <StatCard
             label="Job Posts"
             value={kpis.totalJobPosts}
             imageSrc={statCardImages.jobs}
-            onClick={() => navigate("/admin/job-offers")}
+            onClick={() => navigate("/admin/job-offers", { state: { fromAdminDashboard: true } })}
           />
           <StatCard
             label="Applications"
             value={kpis.applications}
             imageSrc={statCardImages.applications}
-            onClick={() => navigate("/admin/applications")}
+            onClick={() => navigate("/admin/applications", { state: { fromAdminDashboard: true } })}
           />
           <StatCard
             label="Hire Rate"

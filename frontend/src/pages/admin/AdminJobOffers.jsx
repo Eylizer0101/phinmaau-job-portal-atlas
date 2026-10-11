@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 import Pagination from '../../components/shared/Pagination';
@@ -530,6 +530,7 @@ const EmptyState = ({ title = 'No job offers found.', subtitle = 'Try changing o
 
 const AdminJobOffers = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState({ totalJobs: 0, active: 0, closed: 0, expired: 0 });
   const [options, setOptions] = useState({ companies: [], industries: [], jobTitles: [] });
@@ -635,6 +636,17 @@ const AdminJobOffers = () => {
     <AdminLayout>
       <div className="min-h-screen px-0 py-7 sm:py-8">
         <div className="mx-auto w-full max-w-[1480px] space-y-6 px-1">
+        {location.state?.fromAdminDashboard && (
+          <button
+            type="button"
+            onClick={() => navigate('/admin/dashboard')}
+            className="mb-4 inline-flex h-11 w-fit items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            Back
+          </button>
+        )}
+        
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Job Offers</h1>
