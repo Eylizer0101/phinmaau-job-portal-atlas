@@ -244,19 +244,20 @@ const ResetPassword = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] px-4 py-8 sm:py-12">
-      <div className="mx-auto grid w-full max-w-[1080px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl lg:grid-cols-2">
-        <div className="relative border-b border-gray-200 px-6 pb-6 pt-8 text-center lg:border-b-0 lg:border-r lg:px-9 lg:py-10">
+      <div className="relative mx-auto grid w-full max-w-[1000px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl lg:grid-cols-2">
           <button
             type="button"
             onClick={handleBackToSignIn}
             disabled={loading || resendLoading}
-            className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/10 disabled:opacity-50"
+            className="absolute right-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/10 disabled:opacity-50"
             aria-label="Close reset password"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+        <div className="relative border-b border-gray-200 px-6 pb-6 pt-8 text-center lg:border-b-0 lg:border-r lg:px-9 lg:py-10">
+
 
           <img src="/images/agpay.png" alt="AGAPAY" className="mx-auto h-24 w-auto max-w-[280px] object-contain" />
           <h1 className="mt-4 text-xl font-extrabold text-gray-950">Reset Password</h1>
