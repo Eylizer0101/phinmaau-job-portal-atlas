@@ -165,6 +165,7 @@ const employerVerificationSchema = new mongoose.Schema(
     rejectedAt: { type: Date, default: null },
 
     resubmitRequest: { type: employerResubmitRequestSchema, default: () => ({}) },
+    resubmitRequests: { type: [employerResubmitRequestSchema], default: [] },
   },
   { _id: false }
 );
@@ -227,6 +228,7 @@ const alumniVerificationSchema = new mongoose.Schema(
     rejectedAt: { type: Date, default: null },
 
     resubmitRequest: { type: alumniResubmitRequestSchema, default: () => ({}) },
+    resubmitRequests: { type: [alumniResubmitRequestSchema], default: [] },
   },
   { _id: false }
 );

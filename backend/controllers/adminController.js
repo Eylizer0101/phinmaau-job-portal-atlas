@@ -3578,6 +3578,16 @@ exports.holdEmployerVerification = async (req, res) => {
       verificationDocs[key].checkedBy = null;
     });
 
+    // Preserve the previous unused request so a new Hold email does not invalidate its link.
+    // The current request remains in the legacy field for existing notifications/reminders.
+    const previousRequest = verificationDocs.resubmitRequest;
+    if (previousRequest?.tokenHash && !previousRequest.usedAt) {
+      if (!Array.isArray(verificationDocs.resubmitRequests)) verificationDocs.resubmitRequests = [];
+      if (!verificationDocs.resubmitRequests.some((entry) => entry.tokenHash === previousRequest.tokenHash)) {
+        verificationDocs.resubmitRequests.push(previousRequest.toObject?.() || previousRequest);
+      }
+    }
+
     verificationDocs.resubmitRequest = {
       tokenHash,
       docType: requestedDocTypes[0],
@@ -4421,6 +4431,16 @@ exports.holdJobseekerVerification = async (req, res) => {
       verificationDocs[key].checkedAt = null;
       verificationDocs[key].checkedBy = null;
     });
+
+    // Preserve the previous unused request so a new Hold email does not invalidate its link.
+    // The current request remains in the legacy field for existing notifications/reminders.
+    const previousRequest = verificationDocs.resubmitRequest;
+    if (previousRequest?.tokenHash && !previousRequest.usedAt) {
+      if (!Array.isArray(verificationDocs.resubmitRequests)) verificationDocs.resubmitRequests = [];
+      if (!verificationDocs.resubmitRequests.some((entry) => entry.tokenHash === previousRequest.tokenHash)) {
+        verificationDocs.resubmitRequests.push(previousRequest.toObject?.() || previousRequest);
+      }
+    }
 
     verificationDocs.resubmitRequest = {
       tokenHash,

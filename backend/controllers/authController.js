@@ -942,36 +942,32 @@ const EMPLOYER_DOC_FOLDERS = {
 };
 
 const findResubmitRequestByToken = async (tokenHash) => {
-  const jobseeker = await User.findOne({
-    role: 'jobseeker',
-    'jobSeekerProfile.verificationDocs.resubmitRequest.tokenHash': tokenHash,
-  });
+  // Support both current links and older, still-unused links retained after another Hold.
+  for (const [accountType, verificationPath, labels] of [
+    ['jobseeker', 'jobSeekerProfile.verificationDocs', ALUMNI_DOC_LABELS],
+    ['employer', 'employerProfile.verificationDocs', EMPLOYER_DOC_LABELS],
+  ]) {
+    const user = await User.findOne({
+      role: accountType,
+      $or: [
+        { [`${verificationPath}.resubmitRequest.tokenHash`]: tokenHash },
+        { [`${verificationPath}.resubmitRequests.tokenHash`]: tokenHash },
+      ],
+    });
+    if (!user) continue;
 
-  if (jobseeker) {
-    return {
-      accountType: 'jobseeker',
-      user: jobseeker,
-      docs: jobseeker?.jobSeekerProfile?.verificationDocs || {},
-      resubmitRequest: jobseeker?.jobSeekerProfile?.verificationDocs?.resubmitRequest || {},
-      labels: ALUMNI_DOC_LABELS,
-    };
+    const docs = accountType === 'jobseeker'
+      ? user.jobSeekerProfile?.verificationDocs
+      : user.employerProfile?.verificationDocs;
+    const currentRequest = docs?.resubmitRequest;
+    if (currentRequest?.tokenHash === tokenHash) {
+      return { accountType, user, docs, resubmitRequest: currentRequest, labels, historical: false };
+    }
+    const historicalRequest = docs?.resubmitRequests?.find((entry) => entry.tokenHash === tokenHash);
+    if (historicalRequest) {
+      return { accountType, user, docs, resubmitRequest: historicalRequest, labels, historical: true };
+    }
   }
-
-  const employer = await User.findOne({
-    role: 'employer',
-    'employerProfile.verificationDocs.resubmitRequest.tokenHash': tokenHash,
-  });
-
-  if (employer) {
-    return {
-      accountType: 'employer',
-      user: employer,
-      docs: employer?.employerProfile?.verificationDocs || {},
-      resubmitRequest: employer?.employerProfile?.verificationDocs?.resubmitRequest || {},
-      labels: EMPLOYER_DOC_LABELS,
-    };
-  }
-
   return null;
 };
 
@@ -3127,15 +3123,15 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
       mimeType: req.file.mimetype,
     };
 
-    if (
-      currentDocs?.resubmitRequest &&
-      String(currentDocs.resubmitRequest.docType || '') === docType &&
-      !currentDocs.resubmitRequest.usedAt
-    ) {
-      currentDocs.resubmitRequest.usedAt = now;
-      currentDocs.adminRemarks = '';
-      currentDocs.overallStatus = 'pending';
+    const matchingRequests = [currentDocs?.resubmitRequest, ...(currentDocs?.resubmitRequests || [])];
+    for (const request of matchingRequests) {
+      const requestTypes = Array.isArray(request?.docTypes) && request.docTypes.length
+        ? request.docTypes : [request?.docType];
+      if (requestTypes.length === 1 && requestTypes.includes(docType) && !request.usedAt) {
+        request.usedAt = now;
+      }
     }
+    currentDocs.overallStatus = Object.keys(ALUMNI_DOC_LABELS).some((key) => currentDocs[key]?.status === 'hold') ? 'hold' : 'pending';
 
     const alreadyVerified =
       isApprovedJobseekerAccount(user);
@@ -4397,6 +4393,10 @@ exports.validateResubmitDocumentToken = async (req, res) => {
       });
     }
 
+    if (expiresAt && (!Number.isFinite(expiresAt.getTime()) || expiresAt <= new Date())) {
+      return res.status(400).json({ success: false, message: 'This resubmit link has expired.' });
+    }
+
     if (usedAt) {
       return res.status(400).json({
         success: false,
@@ -4468,6 +4468,10 @@ exports.resubmitDocument = async (req, res) => {
         success: false,
         message: 'This resubmit link is invalid or expired.',
       });
+    }
+
+    if (expiresAt && (!Number.isFinite(expiresAt.getTime()) || expiresAt <= new Date())) {
+      return res.status(400).json({ success: false, message: 'This resubmit link has expired.' });
     }
 
     if (usedAt) {
@@ -4543,18 +4547,14 @@ exports.resubmitDocument = async (req, res) => {
         };
       }
 
-      verificationDocs.overallStatus = 'pending';
+      verificationDocs.overallStatus = Object.keys(ALUMNI_DOC_LABELS).some((key) => verificationDocs[key]?.status === 'hold') ? 'hold' : 'pending';
       verificationDocs.adminRemarks = '';
       if (user.isVerified !== true) {
         verificationDocs.verifiedBy = null;
         verificationDocs.verifiedAt = null;
       }
-      verificationDocs.resubmitRequest = {
-        ...resubmitRequest,
-        docType: requestedDocTypes[0],
-        docTypes: requestedDocTypes,
-        usedAt: now,
-      };
+      // Consume only the matching token; unrelated pending links remain valid.
+      resubmitRequest.usedAt = now;
 
       user.jobSeekerProfile.verificationDocs = verificationDocs;
       user.jobSeekerProfile.verificationStatus = accountWasVerified ? 'verified' : 'pending';
@@ -4619,14 +4619,10 @@ exports.resubmitDocument = async (req, res) => {
         };
       }
 
-      verificationDocs.overallStatus = 'pending';
+      verificationDocs.overallStatus = Object.keys(EMPLOYER_DOC_LABELS).some((key) => verificationDocs[key]?.status === 'hold') ? 'hold' : 'pending';
       verificationDocs.remarks = '';
-      verificationDocs.resubmitRequest = {
-        ...resubmitRequest,
-        docType: requestedDocTypes[0],
-        docTypes: requestedDocTypes,
-        usedAt: now,
-      };
+      // Consume only the matching token; unrelated pending links remain valid.
+      resubmitRequest.usedAt = now;
 
       user.employerProfile.verificationDocs = verificationDocs;
       await user.save();

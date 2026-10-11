@@ -194,13 +194,13 @@ const EmployerResubmitDocumentPage = () => {
             Resubmit Documents
           </h1>
           <p className="mt-2 text-sm text-gray-500">
-            Upload the correct file for each business credential requested by the Admin.
+            Upload the correct file for each business credential requested by the AGAPAY.
           </p>
         </div>
 
         {reasonMessage ? (
           <div className="mt-6 rounded-2xl border border-[#F3D39A] bg-[#FFF7E9] px-5 py-4 text-[#8A5700]">
-            <p className="text-sm font-semibold">Admin message</p>
+            <p className="text-sm font-semibold">Agapay message</p>
             <p className="mt-1 text-sm leading-6">{reasonMessage}</p>
           </div>
         ) : null}
