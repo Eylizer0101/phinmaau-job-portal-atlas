@@ -427,7 +427,17 @@ const AdminNotificationsPage = () => {
                 return (
                 <div
                   key={notification._id}
-                  className={`flex items-start gap-4 px-5 py-5 transition hover:bg-gray-50 ${
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`View details for ${notification.title}`}
+                  onClick={() => handleOpenNotification(notification)}
+                  onKeyDown={(event) => {
+                    if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      handleOpenNotification(notification);
+                    }
+                  }}
+                  className={`flex cursor-pointer items-start gap-4 px-5 py-5 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#2e66a6]/25 ${
                     !notification.isRead ? "bg-blue-50/70" : "bg-white"
                   }`}
                 >
@@ -461,7 +471,10 @@ const AdminNotificationsPage = () => {
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       <button
                         type="button"
-                        onClick={() => handleOpenNotification(notification)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleOpenNotification(notification);
+                        }}
                         className="text-sm font-semibold text-[#2e66a6] transition hover:text-[#1f4a7a] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                       >
                         View Details →
@@ -470,7 +483,10 @@ const AdminNotificationsPage = () => {
                       {!notification.isRead ? (
                         <button
                           type="button"
-                          onClick={() => handleMarkAsRead(notification._id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleMarkAsRead(notification._id);
+                          }}
                           className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                         >
                           <Check size={16} />
