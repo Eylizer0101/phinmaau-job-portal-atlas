@@ -476,7 +476,7 @@ const SortDropdown = ({
       {isOpen && (
         <div
           id={`${id}-menu`}
-          className="absolute right-0 top-full z-[999] mt-2 w-[208px] max-w-[calc(100vw-24px)] bg-white border border-[#212C61]/20 rounded-xl shadow-xl p-3"
+          className="absolute left-1/2 top-full z-[999] mt-2 w-[208px] -translate-x-1/2 max-w-[calc(100vw-24px)] bg-white border border-[#212C61]/20 rounded-xl shadow-xl p-3"
           role="dialog"
           aria-label={`${label} filter`}
         >

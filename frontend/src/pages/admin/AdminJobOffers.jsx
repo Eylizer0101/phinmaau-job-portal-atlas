@@ -425,7 +425,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute right-0 top-[68px] z-50 w-52 max-w-[calc(100vw-24px)] rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-1/2 top-[68px] z-50 w-52 -translate-x-1/2 max-w-[calc(100vw-24px)] rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {DATE_FILTER_OPTIONS.map((option) => (
