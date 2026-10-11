@@ -977,7 +977,15 @@ const normalizeLinkHref = (value = '') => {
         <div className={UI.container}>
           {location.state?.notificationOrigin && (
           <button type="button" onClick={() => navigate(location.state.notificationReturnPath, { state: location.state.notificationOrigin === 'dropdown' ? { reopenNotifications: true, notificationScrollTop: location.state.notificationScrollTop || 0 } : { restoreNotificationList: true } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
-            <span aria-hidden="true">←</span> Back
+            <svg
+              className="w-[18px] h-[18px] shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg> Back
           </button>
         )}
         <div className="mb-6">
