@@ -753,6 +753,13 @@ const JobOfferDetails = () => {
   const [error, setError] = useState('');
 
   const [showGuestApplyModal, setShowGuestApplyModal] = useState(false);
+
+  // Restore the same guest gate when returning from authentication.
+  useEffect(() => {
+    if (!location.state?.reopenGuestModal) return;
+    setShowGuestApplyModal(true);
+    navigate(location.pathname + location.search + location.hash, { replace: true, state: null });
+  }, [location.state, location.pathname, location.search, location.hash, navigate]);
   const [modalMode, setModalMode] = useState('apply');
   const modalRef = useRef(null);
   const firstBtnRef = useRef(null);
@@ -849,14 +856,16 @@ const JobOfferDetails = () => {
     };
   }, []);
 
+  const returnToModal = { pathname: location.pathname, search: location.search, hash: location.hash };
+
   const goLogin = () => {
     setShowGuestApplyModal(false);
-    navigate('/login');
+    navigate('/login', { state: { returnToModal } });
   };
 
   const openJoinAs = () => {
     setShowGuestApplyModal(false);
-    navigate('/join-as');
+    navigate('/join-as', { state: { returnToModal } });
   };
 
   const closeGuestApplyModal = useCallback(() => {
@@ -1515,7 +1524,7 @@ const JobOfferDetails = () => {
                         <img
                           src="/images/agapaymo.png"
                           alt="AGAPAY"
-                          className="h-14 w-auto object-contain select-none"
+                          className="h-16 w-auto max-w-full object-contain select-none"
                           draggable="false"
                         />
                       </div>
