@@ -912,7 +912,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                       </h3>
 
                       <div className="mt-8 text-[17px] text-black/55 leading-8 max-w-[500px] mx-auto">
-                        <span className="font-semibold text-black/75">{job.companyName || 'the company'}</span> has received your application for the{' '}
+                        The <span className="font-semibold text-black/75">{job.companyName || 'company'}</span> has received your application for the{' '}
                         <span className="font-semibold text-black/75">{job.title || 'selected role'}</span> position.
                       </div>
 
