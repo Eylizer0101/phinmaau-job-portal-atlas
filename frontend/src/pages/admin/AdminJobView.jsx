@@ -1065,7 +1065,7 @@ const AdminJobView = () => {
                 {isArchivedView ? (
                   <div className="flex w-full shrink-0 flex-col gap-3 lg:w-[285px]">
                     <div className="flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-[#d8e2ee] bg-[#f7faff] px-5 py-4 text-center">
-                      <span className="text-sm font-semibold text-black/55">Archived Date</span>
+                      <span className="text-base font-bold text-black">Archived Date</span>
                       <span className="text-base font-bold text-black">
                         {formatArchivedDate(job.archivedAt || job.updatedAt)}
                       </span>
