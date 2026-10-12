@@ -30,12 +30,12 @@ const INITIAL_MESSAGES = {
   jobseeker: {
     id: 'welcome-jobseeker',
     sender: 'assistant',
-    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer career questions, and help with general questions using AI.",
+    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer career questions, and answer AGAPAY-related career questions.",
   },
   employer: {
     id: 'welcome-employer',
     sender: 'assistant',
-    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer hiring questions, and help with general questions using AI.",
+    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer hiring questions, and answer AGAPAY-related career questions.",
   },
 };
 
@@ -45,6 +45,7 @@ const makeMessageId = () =>
 const ChatbotWidget = ({ role = 'jobseeker' }) => {
   const location = useLocation();
   const inputRef = useRef(null);
+  const sendingRef = useRef(false);
   const messagesEndRef = useRef(null);
 
   const normalizedRole = role === 'employer' ? 'employer' : 'jobseeker';
@@ -97,7 +98,8 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
 
   const sendMessage = async (messageText) => {
     const cleanMessage = String(messageText || '').trim();
-    if (!cleanMessage || isSending) return;
+    if (!cleanMessage || isSending || sendingRef.current) return;
+    sendingRef.current = true;
 
     const userMessage = {
       id: makeMessageId(),
@@ -137,8 +139,10 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
       ]);
     } catch (error) {
       const reply =
-        error?.response?.data?.message ||
-        'Agap-AI is temporarily unavailable. Please try again in a moment.';
+        error?.response?.status === 429
+          ? 'Too many chatbot messages. Please wait a minute and try again.'
+          : error?.userMessage ||
+            'Agap-AI is temporarily unavailable. Please try again in a moment.';
 
       setMessages((current) => [
         ...current,
@@ -150,6 +154,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
         },
       ]);
     } finally {
+      sendingRef.current = false;
       setIsSending(false);
     }
   };
@@ -286,7 +291,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
                   }
                 }}
                 rows={1}
-                placeholder="Ask Agap-AI anything..."
+                placeholder="Ask about AGAPAY..."
                 className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#212C61] focus:outline-none focus:ring-2 focus:ring-[#212C61]/20"
               />
               <button
