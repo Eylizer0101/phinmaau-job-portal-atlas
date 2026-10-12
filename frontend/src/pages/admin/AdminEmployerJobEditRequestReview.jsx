@@ -6,7 +6,6 @@ import {
   Clock3,
   FileEdit,
   ExternalLink,
-  Eye,
   Search,
   ShieldAlert,
   UnlockKeyhole,
@@ -212,7 +211,6 @@ const AdminEmployerJobEditRequestReview = () => {
   const [confirmation, setConfirmation] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(null);
-  const [expandedRequestId, setExpandedRequestId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -390,8 +388,8 @@ const AdminEmployerJobEditRequestReview = () => {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <div className="mx-auto max-w-[1500px] space-y-6 px-1 py-8">
-        <header className="flex flex-col gap-4 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto max-w-7xl px-1 py-8">
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
             <button
               type="button"
@@ -459,54 +457,68 @@ const AdminEmployerJobEditRequestReview = () => {
           </div>
         )}
 
-        <section className={cn(
-          "grid items-center gap-3 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-2 [&_input]:!h-11 [&_select]:!h-11",
-          hasActiveFilters ? "xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto]" : "xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]"
-        )}>
-          <label className="relative min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search request, section..." className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-3 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10" />
-          </label>
-          <select value={status} onChange={(event) => setStatus(event.target.value)} className="min-w-0 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]">
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Declined</option>
-          </select>
-          <select value={time} onChange={(event) => handleTimeChange(event.target.value)} className="min-w-0 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]">
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="week">This Week</option>
-            <option value="sevenDays">Last 7 Days</option>
-            <option value="month">This Month</option>
-            <option value="lastMonth">Last Month</option>
-            <option value="year">This Year</option>
-            <option value="lastYear">Last Year</option>
-            <option value="custom">Custom Range</option>
-          </select>
-          <select value={sort} onChange={(event) => setSort(event.target.value)} className="min-w-0 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]">
-            <option value="" disabled>Sort By</option>
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-          </select>
-          {hasActiveFilters && (
-            <button type="button" onClick={clearFilters} className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200 md:col-span-2 xl:col-span-1">
-              <XCircle size={16} /> Clear All
-            </button>
-          )}
-        </section>
+        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
+          <div className="border-b border-[#e6edf5] px-5 py-5 sm:px-6">
+            <div className="w-full overflow-x-auto"><div className={cn(
+              "grid min-w-[740px] items-center gap-3",
+              hasActiveFilters
+                ? "grid-cols-[minmax(240px,1.7fr)_repeat(3,minmax(120px,1fr))_auto]"
+                : "grid-cols-[minmax(240px,1.7fr)_repeat(3,minmax(120px,1fr))]"
+            )}>
+              <label className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7890aa]" size={17} />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search request, section..."
+                  className="h-11 w-full rounded-lg border border-[#cbdcf0] bg-white pl-10 pr-3 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
+                />
+              </label>
 
-        <section className="overflow-x-auto rounded-[22px] border border-gray-300 bg-white shadow-sm">
-          <table className="w-full min-w-[900px]">
-            <thead className="bg-[#fafafa] text-left text-sm font-semibold uppercase text-gray-600">
-              <tr>
-                {['Request Date', 'Edit Request', 'Sections to Edit', 'Status', 'Action'].map((heading) => (
-                  <th key={heading} className="px-6 py-4">{heading}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
+              <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 rounded-lg border border-[#cbdcf0] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Declined</option>
+              </select>
+
+              <div className="relative min-w-0">
+                <select value={time} onChange={(event) => handleTimeChange(event.target.value)} className="h-11 w-full appearance-none rounded-lg border border-[#cbdcf0] bg-white px-3 pr-9 text-sm outline-none focus:border-[#2e66a6]">
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="week">This Week</option>
+                  <option value="sevenDays">Last 7 Days</option>
+                  <option value="month">This Month</option>
+                  <option value="lastMonth">Last Month</option>
+                  <option value="year">This Year</option>
+                  <option value="lastYear">Last Year</option>
+                  <option value="custom">Custom Range</option>
+                </select>
+                <CalendarDays className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#7890aa]" size={16} />
+              </div>
+
+              <select value={sort} onChange={(event) => setSort(event.target.value)} className="h-11 rounded-lg border border-[#cbdcf0] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]">
+                <option value="" disabled>Sort By</option>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </select>
+
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-semibold border-gray-200 bg-[#f3f6fa] text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+                >
+                  <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> Clear All
+                </button>
+              )}
+            </div></div>
+          </div>
+
+          <div className="bg-[#fbfdff] p-5 sm:p-6">
+            {filteredRequests.length ? (
+              <div className="space-y-4">
               {filteredRequests.map((item) => {
                 const itemSections = Array.isArray(item.requestedSections) ? item.requestedSections : [];
                 const itemIsPending = item.status === 'pending';
@@ -516,66 +528,67 @@ const AdminEmployerJobEditRequestReview = () => {
                   .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
                   .findIndex((entry) => entry._id === item._id) + 1;
                 const isLatest = requestHistory[0]?._id === item._id;
-                const isExpanded = expandedRequestId === item._id;
 
                 return (
-                  <React.Fragment key={item._id}>
-                    <tr className="cursor-pointer transition-colors hover:bg-[#f8fbff]" onClick={() => setExpandedRequestId(isExpanded ? null : item._id)}>
-                      <td className="whitespace-nowrap px-6 py-5 text-sm text-gray-800">{formatDateTime(item.createdAt)}</td>
-                      <td className="px-6 py-5">
-                        <span className="font-semibold text-slate-950">#{chronologicalNumber} Edit Request</span>
-                        {isLatest && <span className="ml-2 text-[11px] font-semibold uppercase text-[#2e66a6]">New</span>}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex max-w-[390px] flex-wrap gap-1.5">
-                          {itemSections.length ? itemSections.map((section) => (
-                            <span key={section} className="rounded-lg border border-[#cbdcf0] bg-[#f3f8fe] px-2.5 py-1.5 text-xs font-medium text-[#2e66a6]">{section}</span>
-                          )) : <span className="text-sm text-slate-500">No sections specified.</span>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={cn(
-                          "inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase",
-                          itemIsPending ? "border-amber-300 bg-amber-50 text-amber-700" : item.status === 'approved' ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-red-300 bg-red-50 text-red-700"
-                        )}>{itemStatusLabel}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button type="button" onClick={(event) => { event.stopPropagation(); setExpandedRequestId(isExpanded ? null : item._id); }} aria-label={isExpanded ? 'Hide request details' : 'View request details'} aria-expanded={isExpanded} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15">
-                          <Eye size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr className="bg-[#f8fbff]">
-                        <td colSpan={5} className="px-6 py-5">
-                          <div className="rounded-xl border border-[#cbdcf0] bg-white p-5">
-                            <h4 className="flex items-center gap-2 text-sm font-semibold text-black"><FileEdit size={16} className="text-[#2e66a6]" /> Sections to Edit</h4>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {itemSections.length ? itemSections.map((section) => <span key={section} className="rounded-lg border border-[#80b3ed] bg-[#f3f8fe] px-3 py-2 text-xs font-semibold text-[#2e66a6]">{section}</span>) : <span className="text-sm text-[#55708f]">No sections specified.</span>}
-                            </div>
-                            <div className="mt-5 rounded-lg border border-[#d7e0ea] bg-[#f4f7fa] p-4">
-                              <p className="flex items-center gap-2 text-sm font-semibold text-black"><FileEdit size={15} className="text-[#2e66a6]" /> Reason</p>
-                              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#55708f]">{item.reason || 'No reason provided.'}</p>
-                            </div>
-                            <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                              <p className="flex items-center gap-1.5 text-xs text-[#55708f]"><Clock3 size={15} /> Request On: {formatDateTime(item.createdAt)}</p>
-                              {itemIsPending && item._id === request._id && (
-                                <div className="flex flex-col gap-3 sm:flex-row">
-                                  <button type="button" onClick={() => setConfirmation('decline')} className="inline-flex h-11 min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 transition hover:bg-red-50"><XCircle size={17} /> Decline Request</button>
-                                  <button type="button" onClick={() => setConfirmation('approve')} className="inline-flex h-11 min-w-[175px] items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white transition hover:bg-[#25578f]"><UnlockKeyhole size={17} /> Approve &amp; Unlock</button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
+              <article key={item._id} className="rounded-xl border border-[#75aef0] bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-black">
+                      #{chronologicalNumber} Edit Request
+                      {isLatest ? <span className="text-[11px] font-bold uppercase tracking-wide text-[#2e66a6]">New</span> : null}
+                    </h3>
+                  </div>
+                  <span className={`w-fit rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase ${itemIsPending ? 'border-[#f5c979] bg-[#fff7e8] text-[#b55c00]' : item.status === 'approved' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                    {itemStatusLabel}
+                  </span>
+                </div>
+
+                <div className="mt-5">
+                  <h4 className="flex items-center gap-2 text-sm font-semibold text-black">
+                    <FileEdit size={16} className="shrink-0 text-[#2e66a6]" /> Sections to Edit
+                  </h4>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {itemSections.length ? itemSections.map((section) => (
+                      <span key={section} className="rounded-lg border border-[#80b3ed] bg-[#f3f8fe] px-3 py-2 text-xs font-semibold text-[#2e66a6]">
+                        {section}
+                      </span>
+                    )) : <span className="text-sm text-[#55708f]">No sections specified.</span>}
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-lg border border-[#d7e0ea] bg-[#f4f7fa] p-4">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-black">
+                    <FileEdit size={15} className="text-[#2e66a6]" /> Reason
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#55708f]">{item.reason || 'No reason provided.'}</p>
+                </div>
+
+                <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <p className="flex items-center gap-1.5 text-xs text-[#55708f]">
+                    <Clock3 size={15} /> Request On: {formatDateTime(item.createdAt)}
+                  </p>
+
+                  {itemIsPending && item._id === request._id && (
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button type="button" onClick={() => setConfirmation('decline')} className="inline-flex h-11 min-w-[160px] items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 transition hover:bg-red-50">
+                        <XCircle size={17} /> Decline Request
+                      </button>
+                      <button type="button" onClick={() => setConfirmation('approve')} className="inline-flex h-11 min-w-[175px] items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white transition hover:bg-[#25578f]">
+                        <UnlockKeyhole size={17} /> Approve &amp; Unlock
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </article>
                 );
               })}
-              {!filteredRequests.length && <tr><td colSpan={5} className="p-12 text-center text-sm text-slate-500">No request matches the selected filters.</td></tr>}
-            </tbody>
-          </table>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-white py-12 text-center text-sm text-[#64748b]">
+                No request matches the selected filters.
+              </div>
+            )}
+          </div>
         </section>
 
         <CustomDateRangeModal
