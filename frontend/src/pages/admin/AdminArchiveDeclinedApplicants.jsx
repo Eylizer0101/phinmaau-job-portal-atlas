@@ -472,9 +472,21 @@ const AdminArchiveDeclinedApplicants = () => {
     setCurrentPage(1);
   };
 
+  const hasActiveFilters = Boolean(search.trim()) || level !== "all" || date !== "all" || Boolean(dateFrom) || Boolean(dateTo);
+
+  const clearFilters = () => {
+    setSearch("");
+    setLevel("all");
+    setDate("all");
+    setDateFrom("");
+    setDateTo("");
+    setShowCustomDateModal(false);
+    setCurrentPage(1);
+  };
+
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1180px] px-1 py-8">
+      <main className="mx-auto w-full max-w-[1500px] px-1 py-8">
         <button
           type="button"
           onClick={() => navigate(backPath)}
@@ -492,7 +504,7 @@ const AdminArchiveDeclinedApplicants = () => {
             </p>
           </header>
 
-          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(320px,1.5fr)_minmax(220px,0.8fr)_minmax(190px,0.7fr)] !grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))] !items-center [&_input]:!h-11 [&_select]:!h-11">
+          <div className={`grid items-center gap-3 border-b border-slate-200 p-4 [&_input]:!h-11 [&_select]:!h-11 ${hasActiveFilters ? "lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_auto]" : "lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]"}`}>
             <label className="relative block">
               <span className="sr-only">Search declined applicants</span>
               <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -525,6 +537,17 @@ const AdminArchiveDeclinedApplicants = () => {
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-[#f3f6fa] px-3 text-sm font-semibold text-gray-600 transition hover:bg-[#e8edf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20"
+              >
+                <span aria-hidden="true" className="text-base leading-none">×</span>
+                Clear All
+              </button>
+            )}
           </div>
 
           <div className={pageSize === 10 ? "overflow-x-auto overflow-y-visible" : "max-h-[812px] overflow-x-auto overflow-y-auto overscroll-auto"}> 
