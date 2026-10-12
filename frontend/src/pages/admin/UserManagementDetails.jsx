@@ -487,6 +487,7 @@ const UserManagementDetails = () => {
   const [showAllActivity, setShowAllActivity] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const [activityPageSize, setActivityPageSize] = useState(10);
+  const [activityFilter, setActivityFilter] = useState("all");
   const [credentialAccess, setCredentialAccess] = useState({
     isOpen: false,
     docType: "",
@@ -1016,11 +1017,42 @@ const UserManagementDetails = () => {
       );
   }, [applications, profile, user?.activityLogs, user?.updatedAt]);
 
+  // Filter the existing activity sources without changing their underlying records.
+  const getActivityCategory = (item) => {
+    const type = String(item?.type || "").toLowerCase();
+    const title = String(item?.title || "").toLowerCase();
+    const content = `${type} ${title}`;
+    if (/login|log.in|sign.in|signed.in|logout|log.out/.test(content)) return "logins";
+    if (/resume|profile|cv.upload|personal.info/.test(content)) return "profile";
+    if (/interview|hiring|stage|offer|hired|screening|shortlist/.test(content)) return "hiring";
+    if (/application|appl(ied|y)|submitted|withdraw|viewed|declined|reject/.test(content)) return "applications";
+    return "other";
+  };
+
+  const activityFilters = [
+    { key: "all", label: "All", icon: "grid" },
+    { key: "logins", label: "Logins", icon: "login" },
+    { key: "profile", label: "Profile & Resume", icon: "edit" },
+    { key: "applications", label: "Applications", icon: "document" },
+    { key: "hiring", label: "Hiring & Interviews", icon: "briefcase" },
+    { key: "other", label: "Other", icon: "history" },
+  ];
+  const activityCounts = activityItems.reduce((counts, item) => {
+    const category = getActivityCategory(item);
+    counts[category] = (counts[category] || 0) + 1;
+    return counts;
+  }, { all: activityItems.length });
+  const availableActivityFilters = activityFilters.filter(
+    (filter) => filter.key === "all" || (activityCounts[filter.key] || 0) > 0
+  );
+  const filteredActivityItems = activityFilter === "all"
+    ? activityItems
+    : activityItems.filter((item) => getActivityCategory(item) === activityFilter);
   const visibleActivityItems = showAllActivity
     ? activityPageSize === "all"
-      ? activityItems
-      : activityItems.slice((activityPage - 1) * activityPageSize, activityPage * activityPageSize)
-    : activityItems.slice(0, 10);
+      ? filteredActivityItems
+      : filteredActivityItems.slice((activityPage - 1) * activityPageSize, activityPage * activityPageSize)
+    : filteredActivityItems.slice(0, 10);
 
   const getApplicationPresentation = (application = {}) => {
     const normalizedStatus = String(application.status || "pending").toLowerCase();
@@ -1466,119 +1498,106 @@ const UserManagementDetails = () => {
     );
   };
 
-  const ActivityTimeline = () => (
-    <section className="flex min-h-[620px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h2 className="text-lg font-bold text-black">{showAllActivity ? "All Activity" : "Recent Activity"}</h2>{showAllActivity ? <p className="mt-1 text-xs text-gray-500">Complete activity log for this user.</p> : null}</div>
-       <button
-  type="button"
-  onClick={() => {
-    setShowAllActivity((value) => !value);
-    setActivityPage(1);
-    setActivityPageSize(10);
-  }}
-  className="inline-flex items-center gap-1 text-xs font-semibold text-[#174b91] hover:underline"
->
-  {showAllActivity ? (
-    <>
-      <svg
-        className="h-4 w-4 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M15 19l-7-7 7-7"
-        />
-      </svg>
+  const ActivityTimeline = () => {
+    const ActivityIcon = ({ name, className = "h-5 w-5" }) => {
+      const shapes = {
+        grid: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+        login: <><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M12 3h6a3 3 0 013 3v12a3 3 0 01-3 3h-6"/></>,
+        edit: <><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L8 18l-4 1 1-4z"/></>,
+        document: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></>,
+        briefcase: <><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 13h18"/></>,
+        history: <><path d="M3 12a9 9 0 109-9 9 9 0 00-8.2 5.3"/><path d="M3 3v6h6M12 7v5l3 2"/></>,
+      };
+      return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{shapes[name] || shapes.history}</svg>;
+    };
+    const categoryStyles = {
+      logins: "bg-[#e5efff] text-[#2365cf]",
+      profile: "bg-[#def7e9] text-[#09966d]",
+      applications: "bg-[#eaf0ff] text-[#4067c5]",
+      hiring: "bg-[#f0e5ff] text-[#7e41c8]",
+      other: "bg-[#edf1f6] text-[#52657d]",
+    };
+    const categoryIcons = { logins: "login", profile: "edit", applications: "document", hiring: "briefcase", other: "history" };
 
-      <span>Back to Recent Activity</span>
-    </>
-  ) : (
-    <>
-      <span>View All Activity</span>
+    return (
+      <section className="flex min-h-[620px] min-w-0 flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5efff] text-[#2365cf]"><ActivityIcon name="history" className="h-6 w-6" /></span>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">{showAllActivity ? "All Activity" : "Recent Activity"}</h2>
+              <p className="mt-0.5 text-xs text-slate-500">Track this user's activities and changes in the system.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setShowAllActivity((value) => !value); setActivityPage(1); setActivityPageSize(10); }}
+            className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-[#d5e4fa] bg-[#f6f9ff] px-4 text-xs font-semibold text-[#174b91] transition-colors hover:bg-[#e9f1ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e66a6]"
+          >
+            {showAllActivity ? <><Icon name="arrowLeft" className="h-4 w-4"/> Back to Recent Activity</> : <>View All Activity <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></>}
+          </button>
+        </div>
 
-      <svg
-        className="h-4 w-4 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M9 5l7 7-7 7"
-        />
-      </svg>
-    </>
-  )}
-</button>
-      </div>
-
-      {activityItems.length ? (
-        <div
-          className={cn(
-            "mt-5 flex-1",
-            showAllActivity
-              ? cn(
-                  "divide-y divide-[#e5edf5] pr-1",
-                  activityPageSize === 10
-                    ? "overflow-y-visible"
-                    : "max-h-[812px] overflow-y-auto overscroll-contain"
-                )
-              : "max-w-4xl space-y-5"
-          )}
-        >
-          {visibleActivityItems.map((item) => (
-            <article
-              key={item.key}
-              className={cn("relative pl-5", showAllActivity ? "py-4" : "border-l border-[#d8e2ee] pb-1 last:border-l-transparent")}
+        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filter activities by type">
+          {availableActivityFilters.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              aria-pressed={activityFilter === filter.key}
+              onClick={() => { setActivityFilter(filter.key); setActivityPage(1); }}
+              className={cn(
+                "inline-flex min-h-9 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e66a6]",
+                activityFilter === filter.key
+                  ? "border-[#2e66a6] bg-[#2e66a6] text-white shadow-sm"
+                  : "border-[#dce5f0] bg-[#fafcff] text-[#53647d] hover:border-[#a7c5e7] hover:bg-[#edf4ff]"
+              )}
             >
-              <span
-                className={cn(
-                  "absolute h-2.5 w-2.5 rounded-full bg-[#3875ff]",
-                  showAllActivity ? "left-0 top-5" : "-left-[5px] top-1"
-                )}
-              />
-
-              <p className="text-xs font-medium text-gray-500">
-                {formatActivityDateTime(item.occurredAt)}
-              </p>
-              <h3 className="mt-1 text-sm font-bold text-black">
-                {item.title}
-              </h3>
-              <p className="mt-1 text-xs leading-5 text-gray-600">
-                {item.description}
-              </p>
-            </article>
+              <ActivityIcon name={filter.icon} className="h-4 w-4" />
+              <span>{filter.label} ({activityCounts[filter.key] || 0})</span>
+            </button>
           ))}
         </div>
-      ) : (
-        <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">
-          No recent activity is available for this jobseeker.
-        </div>
-      )}
-      {showAllActivity && activityItems.length >= 10 ? (
-        <Pagination
-          currentPage={activityPage}
-          totalItems={activityItems.length}
-          pageSize={activityPageSize}
-          onPageChange={setActivityPage}
-          onPageSizeChange={(value) => {
-            setActivityPageSize(value);
-            setActivityPage(1);
-          }}
-          className="!min-h-[50px] !py-2"
-        />
-      ) : null}
-    </section>
-  );
+
+        {visibleActivityItems.length ? (
+          <div className="relative mt-4 min-w-0 flex-1">
+            <div className="pointer-events-none absolute bottom-6 left-[6px] top-6 w-px bg-[#d9e5f5]" aria-hidden="true" />
+            <div className="space-y-1.5">
+              {visibleActivityItems.map((item) => {
+                const category = getActivityCategory(item);
+                return (
+                  <article key={item.key} className="relative min-w-0 pl-7">
+                    <span className="absolute left-0 top-1/2 h-[13px] w-[13px] -translate-y-1/2 rounded-full border-2 border-white bg-[#3678f5] shadow-[0_0_0_1px_#dbe7fa]" aria-hidden="true" />
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-[#e5edf6] bg-[#fcfdff] px-3 py-2.5 transition-colors hover:bg-[#f6f9ff] sm:flex-nowrap">
+                      <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", categoryStyles[category])}><ActivityIcon name={categoryIcons[category]} /></span>
+                      <time dateTime={item.occurredAt} className="w-[125px] shrink-0 text-xs text-slate-500">{formatActivityDateTime(item.occurredAt)}</time>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="break-words text-sm font-semibold text-slate-900">{item.title}</h3>
+                        <p className="mt-0.5 break-words text-xs leading-5 text-slate-500">{item.description}</p>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">
+            {activityItems.length ? "No activities found for this category." : "No recent activity is available for this jobseeker."}
+          </div>
+        )}
+        {showAllActivity && filteredActivityItems.length > 10 ? (
+          <Pagination
+            currentPage={activityPage}
+            totalItems={filteredActivityItems.length}
+            pageSize={activityPageSize}
+            onPageChange={setActivityPage}
+            onPageSizeChange={(value) => { setActivityPageSize(value); setActivityPage(1); }}
+            className="mt-4 !min-h-[50px] !py-2"
+          />
+        ) : null}
+      </section>
+    );
+  };
 
   const ApplicationHistory = () => (
     <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
