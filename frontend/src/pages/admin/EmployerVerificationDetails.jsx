@@ -8,6 +8,22 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
+const getCredentialFileExtension = (doc) => {
+  const candidates = [doc?.originalName, doc?.fileName, doc?.filename, doc?.name, doc?.url];
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+    const clean = candidate.split(/[?#]/)[0];
+    const extension = clean.match(/\.([a-z0-9]{2,10})$/i)?.[1]?.toLowerCase();
+    if (extension) return `.${extension}`;
+  }
+  const mimeType = String(doc?.mimetype || doc?.mimeType || doc?.contentType || "").toLowerCase();
+  const mimeExtensions = {
+    "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp",
+    "image/gif": ".gif", "image/bmp": ".bmp", "application/pdf": ".pdf",
+  };
+  return mimeExtensions[mimeType] || "";
+};
+
 // ======================= UI TOKENS =======================
 const UI = {
   // 60/30/10 palette rule:
@@ -1347,6 +1363,7 @@ const EmployerVerificationDetails = () => {
                   cityPermit: "City_Municipality_Permit",
                   businessPermit: "Business_Permit"
                 }[docType.key] || docType.label;
+                const displayFileNameWithExtension = `${displayFileName}${getCredentialFileExtension(doc)}`;
                 const fileSize = doc.fileSize
                   ? doc.fileSize < 1024 * 1024
                     ? `${(doc.fileSize / 1024).toFixed(0)} KB`
@@ -1390,8 +1407,8 @@ const EmployerVerificationDetails = () => {
                         aria-hidden="true"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[11px] font-semibold text-black" title={hasFile ? displayFileName : "No file"}>
-                          {hasFile ? displayFileName : "No file"}
+                        <p className="truncate text-[11px] font-semibold text-black" title={hasFile ? displayFileNameWithExtension : "No file"}>
+                          {hasFile ? displayFileNameWithExtension : "No file"}
                         </p>
                         {fileSize ? <p className="mt-1 text-[10px] text-[#7A8492]">({fileSize})</p> : null}
                       </div>
