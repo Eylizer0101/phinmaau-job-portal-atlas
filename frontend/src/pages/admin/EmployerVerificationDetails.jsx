@@ -1378,7 +1378,7 @@ const EmployerVerificationDetails = () => {
 
                     <div className="mt-3 flex min-h-[46px] flex-1 items-start gap-2">
                       <img
-                        src={hasFile ? "/images/RedDocumentIcon.png" : "/images/NoDocumentSubmit.png"}
+                        src={hasFile ? (credentialApproved ? "/images/DocumentApprovedIcon.png" : "/images/RedDocumentIcon.png") : "/images/NoDocumentSubmit.png"}
                         alt=""
                         className={cn("h-9 w-9 shrink-0 object-contain", !hasFile && "scale-[1.35]")}
                         aria-hidden="true"
