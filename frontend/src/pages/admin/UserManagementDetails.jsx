@@ -1526,7 +1526,7 @@ const UserManagementDetails = () => {
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5efff] text-[#2365cf]"><ActivityIcon name="history" className="h-6 w-6" /></span>
             <div>
               <h2 className="text-lg font-semibold text-slate-950">{showAllActivity ? "All Activity" : "Recent Activity"}</h2>
-              <p className="mt-0.5 text-xs text-slate-500">Track this user's activities.</p>
+              <p className="mt-0.5 text-xs text-slate-500">Track this user's activities and changes in the system.</p>
             </div>
           </div>
           <button
@@ -1553,7 +1553,7 @@ const UserManagementDetails = () => {
               )}
             >
               <ActivityIcon name={filter.icon} className="h-4 w-4" />
-              <span>{filter.label} ({activityCounts[filter.key] || 0})</span>
+              <span>{filter.label}</span>
             </button>
           ))}
         </div>
