@@ -1454,7 +1454,7 @@ const JobseekerVerificationDetails = () => {
             <Link
               to={verificationListPath} state={location.state?.backState}
               className={cn(
-                "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#245487]",
+                "inline-flex min-h-10 w-fit items-center justify-center gap-2 rounded-lg border border-[#cbdcf0] bg-white px-4 py-2 text-sm font-semibold text-[#2e66a6] shadow-sm transition-colors hover:border-[#2e66a6] hover:bg-[#eef4fb] hover:text-[#245487]",
                 UI.ring,
               )}
             >
@@ -1525,8 +1525,8 @@ const JobseekerVerificationDetails = () => {
           </div>
 
           <section className="overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white">
-            <div className="relative mb-6 flex flex-col gap-3 overflow-hidden bg-gradient-to-r from-[#e0f0ff] via-[#eef6ff] to-[#d9ebff] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <div className="relative z-10 flex items-center gap-3 text-[#174b91]">
+            <div className="relative mb-6 flex flex-col gap-3 overflow-hidden bg-gradient-to-r from-[#072258] via-[#2d63a0] to-[#52b2db] px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="relative z-10 flex items-center gap-3 text-white">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2e66a6] to-[#4f9bdb] text-white shadow-sm" aria-hidden="true">
                   <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="12" cy="7.5" r="4" />

@@ -1190,7 +1190,7 @@ const EmployerVerificationDetails = () => {
             <Link
               to={verificationListPath} state={location.state?.backState}
               className={cn(
-                "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#255587]",
+                "inline-flex min-h-10 w-fit items-center justify-center gap-2 rounded-lg border border-[#cbdcf0] bg-white px-4 py-2 text-sm font-semibold text-[#2e66a6] shadow-sm transition-colors hover:border-[#2e66a6] hover:bg-[#eef4fb] hover:text-[#245487]",
                 UI.ring
               )}
             >
