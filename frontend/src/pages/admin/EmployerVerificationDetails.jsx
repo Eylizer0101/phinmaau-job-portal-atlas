@@ -1376,11 +1376,19 @@ const EmployerVerificationDetails = () => {
                       {credentialApproved ? "Approved" : credentialOnHold ? "On Hold" : hasFile ? "Pending" : "Not submitted"}
                     </span>
 
-                    <div className="mt-3 min-h-[46px] flex-1">
-                      <p className="truncate text-[11px] font-semibold text-black" title={fileName}>
-                        {hasFile ? fileName : "No file"}
-                      </p>
-                      {fileSize ? <p className="mt-1 text-[10px] text-[#7A8492]">({fileSize})</p> : null}
+                    <div className="mt-3 flex min-h-[46px] flex-1 items-start gap-2">
+                      <img
+                        src={hasFile ? "/images/RedDocumentIcon.png" : "/images/NoDocumentSubmit.png"}
+                        alt=""
+                        className="h-9 w-9 shrink-0 object-contain"
+                        aria-hidden="true"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-semibold text-black" title={fileName}>
+                          {hasFile ? fileName : "No file"}
+                        </p>
+                        {fileSize ? <p className="mt-1 text-[10px] text-[#7A8492]">({fileSize})</p> : null}
+                      </div>
                     </div>
 
                     <div className="border-t border-[#E1E7EF] pt-3">

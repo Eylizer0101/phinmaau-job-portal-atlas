@@ -1702,15 +1702,13 @@ const JobseekerVerificationDetails = () => {
                     </div>
 
                     <div className="mt-3 min-h-[54px] flex flex-1 items-start gap-2">
-                      <div
-                        className={cn(
-                          "flex h-10 w-9 shrink-0 items-center justify-center rounded",
-                          hasFile
-                            ? "bg-red-50 text-red-600"
-                            : "bg-black/5 text-black/45",
-                        )}
-                      >
-                        <SvgIcon name="document" className="h-5 w-5" />
+                      <div className="flex h-10 w-9 shrink-0 items-center justify-center">
+                        <img
+                          src={hasFile ? "/images/RedDocumentIcon.png" : "/images/NoDocumentSubmit.png"}
+                          alt=""
+                          className="h-9 w-9 object-contain"
+                          aria-hidden="true"
+                        />
                       </div>
 
                       <div className="min-w-0">
