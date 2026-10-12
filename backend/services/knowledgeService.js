@@ -162,12 +162,11 @@ const getDomainBoost = (fileName, normalizedQuery, role) => {
   const file = String(fileName || '').toLowerCase();
   const groups = [
     { terms: ['message', 'messages', 'chat', 'conversation'], files: ['messaging-guide.txt'] },
-    { terms: ['interview', 'google meet', 'video call', 'on-site', 'onsite'], files: ['interview-guide.txt'] },
+    { terms: ['interview', 'video call', 'on-site', 'onsite'], files: ['interview-guide.txt'] },
     { terms: ['hiring stage', 'assessment', 'final interview', 'job offer stage'], files: ['hiring-process.txt'] },
     { terms: ['application status', 'pending', 'declined', 'withdrawn', 'cancelled', 'vacancy full', 'reactivate application'], files: ['application-status-guide.txt'] },
     { terms: ['verification', 'credential', 'credentials', 'approve account', 'hold account', 'resubmit'], files: ['verification-guide.txt'] },
     { terms: ['notification', 'notifications', 'unread'], files: ['notification-guide.txt'] },
-    { terms: ['community', 'post', 'comment', 'reply', 'report content'], files: ['community-guide.txt'] },
     { terms: ['company', 'companies', 'company review', 'saved company'], files: ['company-guide.txt'] },
     { terms: ['draft', 'published', 'filled', 'closed job', 'archive job', 'saved job', 'recommended job', 'post a job'], files: ['job-management-guide.txt'] },
     { terms: ['developer', 'developers', 'developed agapay', 'who made agapay', 'who created agapay', 'what is agapay', 'about agapay'], files: ['agapay-overview.txt', 'frequently-asked-questions.txt'] },
@@ -217,7 +216,6 @@ const scoreKnowledgeChunk = ({ chunk, query, queryTokens, role }) => {
     'apply for a job',
     'message employer',
     'saved job',
-    'community post',
   ];
 
   importantPhrases.forEach((phrase) => {

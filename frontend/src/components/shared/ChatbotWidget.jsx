@@ -14,6 +14,8 @@ const ROLE_QUESTIONS = {
     'How do I apply for a job?',
     'How do I complete my profile?',
     'How do I track my application?',
+    'What are common interview questions?',
+    'Can we practice a mock interview?',
     'How can I prepare for an interview?',
     'How can I increase my chances of getting hired?',
   ],
@@ -21,6 +23,7 @@ const ROLE_QUESTIONS = {
     'How do I post a job?',
     'How do I manage applicants?',
     'How do I add a hiring stage?',
+    'What are good interview questions for applicants?',
     'How do I schedule an interview?',
     'How do I update my company profile?',
   ],
@@ -30,12 +33,12 @@ const INITIAL_MESSAGES = {
   jobseeker: {
     id: 'welcome-jobseeker',
     sender: 'assistant',
-    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer career questions, and answer AGAPAY-related career questions.",
+    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, help with interview practice, resumes, career advice, and AGAPAY questions.",
   },
   employer: {
     id: 'welcome-employer',
     sender: 'assistant',
-    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer hiring questions, and answer AGAPAY-related career questions.",
+    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, help with hiring, interview questions, and AGAPAY features.",
   },
 };
 
@@ -291,7 +294,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
                   }
                 }}
                 rows={1}
-                placeholder="Ask about AGAPAY..."
+                placeholder="Ask about AGAPAY, jobs, or interviews..."
                 className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#212C61] focus:outline-none focus:ring-2 focus:ring-[#212C61]/20"
               />
               <button
