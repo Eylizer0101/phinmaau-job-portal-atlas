@@ -389,7 +389,7 @@ const AdminEmployerJobEditRequestReview = () => {
   return (
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-6 flex flex-col gap-4 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
             <button
               type="button"
@@ -457,8 +457,7 @@ const AdminEmployerJobEditRequestReview = () => {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
-          <div className="border-b border-[#e6edf5] px-5 py-5 sm:px-6">
+        <section className="mb-6 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm">
             <div className="w-full overflow-x-auto"><div className={cn(
               "grid min-w-[740px] items-center gap-3",
               hasActiveFilters
@@ -514,8 +513,9 @@ const AdminEmployerJobEditRequestReview = () => {
                 </button>
               )}
             </div></div>
-          </div>
+        </section>
 
+        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className="bg-[#fbfdff] p-5 sm:p-6">
             {filteredRequests.length ? (
               <div className="space-y-4">
