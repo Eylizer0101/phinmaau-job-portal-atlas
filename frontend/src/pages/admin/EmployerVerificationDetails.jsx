@@ -1627,7 +1627,7 @@ const EmployerVerificationDetails = () => {
             <div className="fixed inset-0 bg-black/45 backdrop-blur-[1px]" onClick={() => !action && resetHoldModal()} aria-hidden="true" />
 
             <div
-              className="relative w-full max-w-[570px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[570px] overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.20)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="hold-modal-title"
@@ -1706,7 +1706,7 @@ const EmployerVerificationDetails = () => {
                 </div>
               </div>
 
-              <div className="bg-[#F8FAFC] px-8 pb-7 pt-3 sm:px-10">
+              <div className="rounded-b-2xl bg-white px-8 pb-7 pt-3 sm:px-10">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
@@ -1745,7 +1745,7 @@ const EmployerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[570px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[570px] overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.20)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
@@ -1793,7 +1793,7 @@ const EmployerVerificationDetails = () => {
                 </div>
               </div>
 
-              <div className="bg-[#F8FAFC] px-8 pb-7 pt-3 sm:px-10">
+              <div className="rounded-b-2xl bg-white px-8 pb-7 pt-3 sm:px-10">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
