@@ -487,24 +487,25 @@ const AdminArchiveDeclinedApplicants = () => {
   return (
     <AdminLayout>
       <main className="mx-auto w-full max-w-[1500px] px-1 py-8">
-        <button
-          type="button"
-          onClick={() => navigate(backPath)}
-          className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-black shadow-sm hover:bg-slate-50"
-        >
-          <Icon name="arrowLeft" />
-          Back
-        </button>
-
-        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
-          <header className="border-b border-slate-200 px-5 py-5">
-            <h1 className="text-[28px] leading-tight font-semibold text-gray-900">{jobTitle} – Declined Applicants</h1>
-            <p className="mt-2 text-sm text-slate-600">
+        <section className="mb-6 flex flex-col gap-4 rounded-[22px] border border-gray-300 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={() => navigate(backPath)}
+            className="inline-flex h-10 w-fit shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:bg-slate-50"
+          >
+            <Icon name="arrowLeft" />
+            Back
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-[28px] font-semibold leading-tight text-gray-900">{jobTitle} – Declined Applicants</h1>
+            <p className="mt-1 text-sm text-slate-600">
               {count} {count === 1 ? "applicant" : "applicants"} declined for {jobTitle}
             </p>
-          </header>
+          </div>
+        </section>
 
-          <div className={`grid items-center gap-3 border-b border-slate-200 p-4 [&_input]:!h-11 [&_select]:!h-11 ${hasActiveFilters ? "lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_auto]" : "lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]"}`}>
+        <section className="mb-6 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm">
+          <div className={`grid items-center gap-3 [&_input]:!h-11 [&_select]:!h-11 ${hasActiveFilters ? "lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_auto]" : "lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]"}`}>
             <label className="relative block">
               <span className="sr-only">Search declined applicants</span>
               <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -549,7 +550,9 @@ const AdminArchiveDeclinedApplicants = () => {
               </button>
             )}
           </div>
+        </section>
 
+        <section className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
           <div className={pageSize === 10 ? "overflow-x-auto overflow-y-visible" : "max-h-[812px] overflow-x-auto overflow-y-auto overscroll-auto"}> 
             <div className="min-w-[980px]">
               <div className="grid grid-cols-[1fr_1.35fr_1fr_1fr_0.9fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
