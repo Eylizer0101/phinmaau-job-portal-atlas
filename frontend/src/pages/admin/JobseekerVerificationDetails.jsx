@@ -1524,11 +1524,16 @@ const JobseekerVerificationDetails = () => {
             )}
           </div>
 
-          <section className="rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-[#2e66a6]">
-                <SvgIcon name="user" className="h-5 w-5" />
-                <h2 className="text-base font-bold">Job Seeker Information</h2>
+          <section className="overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white">
+            <div className="relative mb-6 flex flex-col gap-3 overflow-hidden bg-gradient-to-r from-[#e0f0ff] via-[#eef6ff] to-[#d9ebff] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="relative z-10 flex items-center gap-3 text-[#174b91]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2e66a6] to-[#4f9bdb] text-white shadow-sm" aria-hidden="true">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="7.5" r="4" />
+                    <path d="M4.5 20c0-4.2 3-6.7 7.5-6.7s7.5 2.5 7.5 6.7v1h-15v-1z" />
+                  </svg>
+                </span>
+                <h2 className="text-base font-bold sm:text-lg">Job Seeker Information</h2>
               </div>
 
               {canShowActionButtons ? (
@@ -1594,7 +1599,7 @@ const JobseekerVerificationDetails = () => {
               )}
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
+            <div className="grid gap-6 px-5 pb-6 sm:px-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
               <div className="space-y-3">
                 {infoRowsLeft.map(([label, value]) => (
                   <div
@@ -1656,18 +1661,20 @@ const JobseekerVerificationDetails = () => {
             </div>
           </section>
 
-          <section className="mt-5 rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              <SvgIcon name="document" className="h-5 w-5 text-[#2e66a6]" />
-              <h2 className="text-base font-bold text-[#2e66a6]">
+          <section className="mt-5 overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white">
+            <div className="flex flex-wrap items-center gap-3 bg-gradient-to-r from-[#072258] via-[#2d63a0] to-[#52b2db] px-5 py-4 text-white sm:px-6">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#2e66a6] shadow-sm" aria-hidden="true">
+                <SvgIcon name="document" className="h-5 w-5" />
+              </span>
+              <h2 className="text-base font-bold sm:text-lg">
                 Credentials
               </h2>
-              <span className="text-sm text-[#5B6472]">
+              <span className="text-sm text-white/95">
                 ({submittedCount}/{totalDocs} Submitted)
               </span>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+            <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4 xl:grid-cols-8">
               {documentTypes.map((docType, index) => {
                 const doc = documentDetails[docType.key] || {};
                 const hasFile = Boolean(doc.url);
@@ -1683,7 +1690,7 @@ const JobseekerVerificationDetails = () => {
                 return (
                   <article
                     key={docType.key}
-                    className="flex min-h-[165px] flex-col rounded-xl border border-[#D9E2EC] bg-white p-3"
+                    className="flex min-h-[165px] flex-col rounded-xl border border-[#D9E2EC] bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.035)]"
                   >
                     <div className="flex items-start gap-2">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#F1F5F9] text-[11px] font-semibold text-[#526273]">
