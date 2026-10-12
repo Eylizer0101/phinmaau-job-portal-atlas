@@ -1261,13 +1261,15 @@ const EmployerVerificationDetails = () => {
             )}
           </div>
 
-          <section className="rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
-            <div className="mb-6 flex items-center gap-2 text-[#2e66a6]">
-              <SvgIcon name="building" className="h-5 w-5" />
-              <h2 className="text-base font-bold">Company Information</h2>
+          <section className="overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+            <div className="flex min-h-[64px] items-center gap-3 bg-gradient-to-r from-[#eaf4ff] via-[#f2f8ff] to-[#e8f4ff] px-5 py-4 sm:px-6">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#dcecff] text-[#174b91]">
+                <SvgIcon name="building" className="h-5 w-5" />
+              </span>
+              <h2 className="text-base font-semibold text-[#123d81] sm:text-lg">Company Information</h2>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
+            <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
               <div className="space-y-3">
                 {employerInfoLeft
                   .filter(([label]) => label !== "Registration ID")
@@ -1288,7 +1290,7 @@ const EmployerVerificationDetails = () => {
                 ))}
               </div>
 
-              <div className="flex flex-col items-center justify-center text-center">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-[#f5f8fc] px-3 py-4 text-center">
                 <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-white">
                   {logoUrl && !logoFailed ? (
                     <img
@@ -1320,16 +1322,18 @@ const EmployerVerificationDetails = () => {
             </div>
           </section>
 
-          <section className="mt-5 rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              <SvgIcon name="doc" className="h-5 w-5 text-[#2e66a6]" />
-              <h2 className="text-base font-bold text-[#2e66a6]">Company Requirements</h2>
+          <section className="mt-5 overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+            <div className="flex min-h-[68px] flex-wrap items-center gap-3 bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-5 py-4 text-white sm:px-6">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white shadow-sm">
+                <SvgIcon name="doc" className="h-5 w-5" />
+              </span>
+              <h2 className="text-base font-semibold text-white sm:text-lg">Company Requirements</h2>
               {docsComplete ? (
-                <span className="text-sm text-[#5B6472]">(All required documents have been submitted.)</span>
+                <span className="text-sm text-white/90">(All required documents have been submitted.)</span>
               ) : null}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-5">
               {DOC_TYPES.map((docType, index) => {
                 const doc = docs?.[docType.key] || {};
                 const hasFile = Boolean(doc.url);
