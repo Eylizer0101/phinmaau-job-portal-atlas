@@ -2,29 +2,47 @@ INTERVIEW SCHEDULING RULES
 
 Only an employer can create or update an interview schedule for an application that belongs to that employer.
 
-The interview date and time must be valid and must be in the future. The current application scheduling flow accepts these interview types:
+The interview date and time must be valid and in the future. Use only the interview formats actually available in the current AGAPAY scheduling interface. On-site interviews use the location and instructions provided by the employer. If another format is shown, follow the instructions provided through the employer's official AGAPAY message; never assume an external meeting service is integrated.
 
-1. Video Call.
-2. On-site.
-
-The employer currently assigns the employer's own account as the interviewer. The schedule stores the interview date and time, duration, meeting type, notes, interviewer, organizer, meeting link when applicable, and whether the schedule is Scheduled or Rescheduled.
-
-VIDEO CALL INTERVIEWS
-
-For a Video Call, the employer must connect a Google account with the required Google Calendar permission. That connected employer Google account becomes the calendar organizer. The jobseeker's email is added as an attendee. AGAPAY creates a Google Calendar event and retrieves the Google Meet link.
-
-If the Google Calendar connection is missing, expired, or lacks permission, the employer must reconnect the Google account before the system can generate the meeting link.
+The saved schedule may include the date, time, duration, interview type, notes, interviewer, and Scheduled or Rescheduled status, depending on the available form fields.
 
 ON-SITE INTERVIEWS
 
-For an On-site interview, the schedule is saved without requiring a Google Meet link. The employer should provide clear location or instructions through the available notes or message fields when needed.
+The employer should provide clear location and arrival instructions through the available interview notes or message fields.
+
+OTHER INTERVIEW FORMATS
+
+If the current scheduling form provides another interview format, the employer should communicate the necessary joining instructions directly using an approved communication method. AGAPAY knowledge must not promise that an automatic external video meeting or calendar event will be generated.
 
 WHAT HAPPENS AFTER SCHEDULING
 
-1. The application status becomes For Interview.
-2. The interview schedule is saved on the application.
-3. A structured interview message is created in the conversation.
-4. An interview notification is created for the jobseeker.
-5. If a previous schedule already existed, the new action is recorded as Rescheduled instead of Scheduled.
+1. The employer saves the interview schedule for an eligible application.
+2. The application can move to For Interview as part of the scheduling workflow.
+3. The jobseeker can receive interview information through AGAPAY Messages and Notifications.
+4. If the employer changes an existing schedule, the new details should be checked in the latest official AGAPAY notification or conversation.
 
-The jobseeker should check Messages and Notifications for the date, time, type, interviewer, notes, and meeting link when a Video Call is used.
+JOBSEEKER INTERVIEW CHECKLIST
+
+1. Open Messages and Notifications for the official interview details.
+2. Confirm the job role, date, time, format, and employer instructions.
+3. For an on-site interview, plan travel and confirm the location.
+4. For any other interview format displayed in the system, confirm joining instructions with the employer; do not assume that AGAPAY generated a meeting link.
+5. Prepare a current resume, a short introduction, and examples of relevant skills and experience.
+6. Contact the employer in the existing AGAPAY conversation if details are missing or a change is needed.
+
+EMPLOYER SCHEDULING CHECKLIST
+
+1. Open the eligible applicant/application record.
+2. Use the available interview scheduling control.
+3. Choose a future date, time, and an interview format offered by the system.
+4. Enter any required location or instructions in the available fields.
+5. Review the details and save the schedule.
+6. Verify the updated schedule and any outgoing message or notification.
+
+RESCHEDULING AND CHANGES
+
+If an interview changes, the employer should use the official rescheduling flow when available. A standalone chat message does not necessarily update the saved interview schedule. Jobseekers should check the latest official details and clarify discrepancies with the employer.
+
+BOUNDARIES
+
+Agap-AI cannot view a live interview appointment, generate external meetings, send invitations, change the schedule, or guarantee that a candidate will pass an interview. Its interview advice is informational guidance only.

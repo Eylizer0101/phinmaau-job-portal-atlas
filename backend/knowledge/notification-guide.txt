@@ -24,3 +24,20 @@ Authenticated users can open their notifications, view unread counts, mark one n
 A notification may contain a related record and a link to the relevant page. The user should open the notification and then review the linked job, application, message, interview, user, or verification page.
 
 Agap-AI may explain notification types but must not claim that it checked a user's unread count or notification content unless an approved private-data tool is added later.
+
+
+NOTIFICATION NAVIGATION
+
+Use the bell or Notifications page to review alerts. In some AGAPAY views, selecting a notification can navigate to a related job, applicant, message, or application record and temporarily highlight it to help locate the item. This is navigation guidance, not confirmation that the underlying record is currently available.
+
+NOTIFICATION STATUS AND ACTIONS
+
+Use available Active/Unread or All tabs, mark-as-read, delete, and clear actions as shown. Notifications can contain historical information; an older notice might describe a job or application that has since changed. Always review the destination page for its latest displayed status.
+
+WHO RECEIVES WHAT
+
+Jobseekers can receive application, interview, messages, recommendations, or verification alerts. Employers can receive applicant, job, messaging, and workflow alerts. Administrators may receive job posting, verification, edit-request, and other operational alerts. Exact delivery depends on the feature and server state.
+
+MISSING OR DUPLICATE NOTIFICATIONS
+
+Check the correct account, filters, and Notifications page; refresh if needed. An alert is not proof that an action succeeded, and absence of an alert is not proof that it failed. Contact support for persistent issues. Agap-AI cannot access private notification counts or alter notification records.

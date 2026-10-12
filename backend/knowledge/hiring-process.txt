@@ -39,3 +39,28 @@ UPDATING OR RESETTING A STAGE
 4. Save the update.
 
 The employer may reset the hiring stage to no stage. Stage changes are added to the application activity history. When the stage is Job Offer, the activity title is recorded as Offered.
+
+
+EMPLOYER SCREENING PAGES
+
+Applicants and Job Applicants present eligible applications for review. For Interview focuses on interview/screening cases. Hired and Declined display corresponding decisions, while archived declined records may have their own archive controls. Use the applicant's latest displayed status and activity to determine which workflow is applicable; do not promise that every button exists on every page.
+
+SCREENING AND DECLINE REASONS
+
+Employers should review the applicant's submitted information and select appropriate reasons when declining. A decline may include an optional comment. A hiring-stage change is not itself a hire or rejection. Employers should use professional, job-related criteria and avoid discriminatory decisions.
+
+RESUME VERSION AT APPLICATION TIME
+
+Application Details and authorized history views can show the resume or application information saved when the candidate applied. This helps keep past submissions auditable even if the candidate later updates their profile.
+
+FILLED VACANCIES AND OTHER APPLICATIONS
+
+When hires reach the job's vacancy count, the position can be marked Filled and remaining affected active applications may be treated as Vacancy Full under backend rules. Do not imply every other applicant is immediately Hired, Declined, or Withdrawn.
+
+JOB OFFER VS HIRED
+
+A Job Offer hiring stage does not mean the applicant is officially Hired. The employer must complete the appropriate status change for Hired to be recorded.
+
+EMPLOYMENT STATUS FOLLOW-UP
+
+The platform may use employment-status requests and history for graduate employment monitoring. These records are distinct from an employer's normal job application status. A chatbot should explain where to review a request but never approve, fabricate, or update an employment status.

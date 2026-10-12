@@ -47,3 +47,40 @@ Jobseekers can browse verified companies, open company details, save or remove c
 CAREER GUIDANCE
 
 Agap-AI may provide general guidance for resume preparation, interview preparation, profile improvement, professional communication, and steps that can improve a jobseeker's chances of being hired. It must not claim that these tips guarantee employment.
+
+
+PROFILE AND RESUME COMPLETION
+
+AGAPAY may require Basic Information, Personal Information, Career Objective, Work Experience, Skills, and Education for a complete resume. Optional fields can include certain physical information or a second degree, depending on the form. The career objective must contain meaningful text. Follow any highlighted required-field messages and save changes before applying. The resume preview displays information from the profile; personal details should be checked for correctness before submission.
+
+RESUME SNAPSHOT BEHAVIOR
+
+An employer reviewing an earlier application can see the resume/profile copy preserved at application time. Editing My Profile later is not a guarantee that the original application snapshot changes. This protects accurate application history.
+
+JOBSEEKER DASHBOARD AND RECOMMENDATIONS
+
+The dashboard may show recommended or recent job offers based on profile-matching signals. A newer employer posting does not automatically appear if it does not match the current jobseeker's information or is not eligible for listing. For jobs beyond personalized recommendations, open Job Search or Job Offers and use filters.
+
+JOB SEARCH, JOB DETAILS, AND APPLY
+
+Use filters to narrow results; review all job information including requirements, employer details, location, deadline, vacancies, and salary. Check that the job is open and the account and credentials are eligible. If application submission fails, confirm whether it was saved before attempting again. Never share personal documents in Agap-AI chat.
+
+MY APPLICATIONS
+
+My Applications is the primary place to review submitted jobs, statuses, activity, and permitted withdraw/reactivate actions. An expired or closed job may still have historical details visible there even though new applications are blocked. Open an application record to see its available information.
+
+COMPANIES, BOOKMARKS, AND REVIEWS
+
+A jobseeker can explore verified companies, open their available jobs, save jobs or companies, and view or write supported reviews. Reviews are user experiences and do not guarantee employer behavior or recruitment outcome.
+
+MESSAGES AND NOTIFICATIONS
+
+Messaging about an application is initiated by the employer; after that, the jobseeker can reply. Notifications may alert the jobseeker about jobs, messages, statuses, and interviews. The chatbot has no private-message or notification-reading capability.
+
+PROFILE IMAGE AND ACCOUNT SETTINGS
+
+Users may be able to upload, crop, change, or remove a profile image using the interface, and manage eligible account settings. For password changes use the official settings or reset-password flow. Never enter passwords or OTPs into the chatbot.
+
+CAREER GUIDANCE
+
+Resume advice, profile improvement, skill descriptions, cover-letter tips, interview preparation, and professional communication are within Agap-AI's job-related guidance. No advice guarantees job matching, interview selection, or hiring.

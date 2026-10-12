@@ -6,7 +6,7 @@ AGAPAY is a web-based career and employment platform created for PHINMA Araullo 
 
 PRIMARY USERS
 
-Jobseekers are PHINMA AU graduates or alumni who can build a career profile, upload credentials and a resume, browse and save jobs, apply for available positions, track applications, receive interview schedules, communicate with employers after an employer starts a conversation, view verified companies, and participate in the community feature.
+Jobseekers are PHINMA AU graduates or alumni who can build a career profile, upload credentials and a resume, browse and save jobs, apply for available positions, track applications, receive interview schedules, communicate with employers after an employer starts a conversation, view verified companies.
 
 Employers can register a company account, submit business credentials for verification, maintain a company profile, save job postings as drafts, publish jobs after verification and profile completion, manage job posts, review applicants, update application statuses and hiring stages, schedule interviews, and communicate with jobseekers.
 
@@ -14,7 +14,7 @@ Administrators or TEE staff review jobseeker and employer credentials, approve, 
 
 SYSTEM TECHNOLOGY
 
-The frontend uses React and JavaScript with Tailwind CSS and Material UI. Axios sends REST API requests to a Node.js and Express.js backend. MongoDB stores user, job, application, message, notification, and community data. The deployed system uses role-based access control for jobseekers, employers, and administrators.
+The frontend uses React and JavaScript with Tailwind CSS and Material UI. Axios sends REST API requests to a Node.js and Express.js backend. MongoDB stores user, job, application, message, and notification data. The deployed system uses role-based access control for jobseekers, employers, and administrators.
 
 DEVELOPERS
 
@@ -31,3 +31,28 @@ CURRENT SCOPE AND LIMITATIONS
 AGAPAY is designed for users in the Philippines and is focused on PHINMA AU Main, AU South, and AU San Jose graduates and alumni. Only registered and verified companies are presented as verified employers. AGAPAY does not process payroll or salary distribution and is not directly integrated with external job platforms such as LinkedIn or Indeed.
 
 The current backend code is the source of truth for working features. Older project documents may describe features as unfinished even when those features are already implemented in the current system.
+
+
+AGAPAY NAVIGATION AND FEATURES
+
+Public pages include the landing page, Job Offers, individual job details, Companies, and company details. Signed-in jobseekers use a Jobseeker Dashboard, Job Search, My Profile, My Applications, Bookmarks, Companies, Messages, Notifications, and Settings. Employers use an Employer Dashboard, Post Job, Manage Jobs, Applicants, For Interview, Hired, Declined, Archived Jobs, Company Profile, Messages, Notifications, and Settings. Authorized administrators use a dashboard, verification review pages, User Management, job and application management, edit requests, archives, reports, notifications, and system logs. Exact menu positions can vary by screen size and login state.
+
+AGAPAY DOES NOT REPLACE HUMAN DECISIONS
+
+Employers decide who advances, is interviewed, or is hired. AGAPAY records and communicates authorized decisions. Administrators or TEE staff decide credential verification outcomes. The chatbot can describe the process but cannot decide, guarantee, or perform these actions.
+
+JOB MATCHING AND RECENT JOB OFFERS
+
+A personalized job recommendation list may prioritize job posts matching a jobseeker's profile, skills, education, course, experience, and preferred work information. Newly published jobs do not automatically appear in every personalized recommendation list. To browse more jobs, use Job Search or Job Offers and review available filters. Do not tell a user that a specific job was excluded without checking authorized system records.
+
+EMPLOYMENT MONITORING AND REPORTING
+
+AGAPAY tracks career and application activity, and supports employment-status-related requests and records through applicable system workflows. Administrators may review system summaries and generate authorized records and reports. The portal is not a payroll service and does not guarantee that all employment outcomes outside AGAPAY are captured.
+
+AGAP-AI KNOWLEDGE PRIORITY
+
+Provide accurate, practical explanations of user-facing AGAPAY features. Knowledge guides describe the expected workflow but are not proof of any individual user's live account data. If guides disagree, avoid a definitive claim and refer the user to the current interface or AGAPAY/TEE support. Technical stack information listed in this overview is public, high-level background only; private configuration, source code, endpoints, and secrets must never be disclosed.
+
+REMOVED FEATURE - COMMUNITY
+
+The Community page is no longer available in the current AGAPAY system. Do not direct users to Community or describe community posts, comments, likes, discussions, or community levels as active features. If asked where Community went, explain that it was removed and direct users to existing relevant AGAPAY features such as Messages and Notifications.

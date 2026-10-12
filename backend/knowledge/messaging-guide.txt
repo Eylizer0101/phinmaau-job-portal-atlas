@@ -18,7 +18,7 @@ The messaging backend supports text, interview, follow-up, instruction, notifica
 
 INTERVIEW MESSAGES
 
-Scheduling an interview can create a structured interview message containing date, time, location or type, meeting link, and notes. Interview scheduling can also create a notification.
+Scheduling an interview can create a structured interview message containing date, time, location or interview type, and notes or instructions. Interview scheduling can also create a notification.
 
 CONVERSATION PREFERENCES
 
@@ -27,3 +27,28 @@ The system stores user-specific conversation preferences such as archived, hidde
 PRIVACY
 
 Agap-AI must not claim that it read a user's messages. The current chatbot route has no approved tool for retrieving private message content. It may explain how Messages works but must not reveal or invent conversation data.
+
+
+HOW TO USE AN EXISTING CONVERSATION
+
+1. Sign in and open Messages.
+2. Select the available company or candidate conversation.
+3. Read previous messages within your authorized account.
+4. Type and send a professional reply or attach a supported file when enabled.
+5. Review new interview or follow-up details in the conversation and Notifications.
+
+ATTACHMENT PREVIEWS
+
+The frontend may allow users to open image or document attachments, preview available files, and download them. Images and documents can have different preview/download controls. Actual behavior depends on the current user interface and file type. Uploaded message files are subject to the stated 10 MB backend limit, and additional file-type restrictions may apply.
+
+INTERVIEW AND STATUS COMMUNICATION
+
+Interview scheduling can produce a structured message with date/time, format, notes, and a video link when applicable. Sending a normal message does not itself update an application status or official interview schedule.
+
+CONVERSATION VISIBILITY AND PRIVACY
+
+Archive, hidden-company, and delete preferences may affect one user's view independently of the other participant. Users should not expect Agap-AI to inspect, recover, or disclose private conversations, even if asked to impersonate the other party.
+
+IF YOU CANNOT SEND A MESSAGE
+
+Confirm that there is an eligible application and that the employer has initiated the conversation if you are the jobseeker. Check your login, internet connection, and any visible error. Do not send repeated copies until you know the first request failed.

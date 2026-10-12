@@ -11,3 +11,27 @@ COMPANY REVIEWS
 A jobseeker can submit a review for a verified company through the protected review route. Review information may include process rating, response timing, total process days, outcome, whether the jobseeker would apply again, role applied for, and a written message when supported by the current frontend.
 
 Company reviews describe a user's recruitment experience. They do not represent an official endorsement by AGAPAY or PHINMA AU.
+
+
+BROWSING AND REVIEWING A COMPANY
+
+1. Open Companies or Jobseeker Companies.
+2. Search or filter using the available company information.
+3. Open a company to view its description, industry, location, contact links, gallery, benefits, open jobs, and reviews where available.
+4. Use All Jobs or All Reviews when shown for additional entries.
+
+SAVING A COMPANY
+
+A signed-in jobseeker can use the save action on an eligible company and view or remove saved companies using the available saved-company controls. Saving a company is not the same as applying to one of its jobs.
+
+REVIEWS AND RATINGS
+
+Reviews relate to recruiting experience and may cover responsiveness, process duration, an application outcome, and written feedback. Rating summaries are based on submitted reviews, not a guarantee of company quality. A company with no reviews must not be described as having a positive or negative rating. The current form's allowed inputs and character limits should be followed. Employers may be able to view reviews through employer review pages but cannot use Agap-AI to change or manufacture reviews.
+
+EMPLOYER COMPANY PROFILE
+
+Employers can maintain their own company information and upload or update permitted logo, cover, and gallery images. A complete profile is required for publishing, subject to verified credentials. Some values, including contact fields, may be read-only in the current interface; the chatbot should tell employers to use available editable controls and support channels instead of claiming every field is editable.
+
+COMPANY AND JOB LISTINGS
+
+Verified company visibility and open-job visibility are separate conditions. An employer can have a verified company profile without an active published vacancy. An expired, filled, closed, archived, or draft job should not be presented as accepting applications.

@@ -48,10 +48,83 @@ WHAT HAPPENS WHEN A VACANCY IS FULL?
 
 The job can be marked Filled and stops accepting new applications. Other affected applications may be updated or notified using the Vacancy Full flow.
 
-HOW DOES VIDEO INTERVIEW SCHEDULING WORK?
+HOW DOES INTERVIEW SCHEDULING WORK?
 
-The employer connects a Google account, selects a future date and time, and uses Video Call. AGAPAY creates a Google Calendar event and Google Meet link, adds the jobseeker as an attendee, saves the schedule, and sends an interview message and notification.
+The employer opens the applicant record, uses the available interview scheduling option, selects a future date and time and the interview format supported by the current system, reviews the details, and saves the schedule. The jobseeker should check Messages and Notifications for confirmed interview details. Do not promise an automatic video link or calendar invitation.
 
 DOES AGAPAY PROCESS SALARIES?
 
 No. AGAPAY can display salary information in job posts, but it does not distribute payroll or salary payments.
+
+
+WHY DOES A NEW JOB NOT APPEAR IN MY RECOMMENDED JOBS?
+
+Recent or recommended jobs on a personalized jobseeker dashboard can prioritize matches based on course, skills, resume or profile information, experience, and preferences. A new employer posting might not match that particular profile, or the post might not yet meet listing conditions. Use Job Search or Job Offers to browse available jobs more broadly. Do not claim that a specific employer's job is absent for one exact reason without checking the source data.
+
+DOES A JOB MATCH SCORE MEAN I WILL BE HIRED?
+
+No. Matching only supports discovery. The employer reviews the actual application and decides on screening, interviews, and hiring.
+
+WHY CAN'T I APPLY?
+
+Check that you are signed in as an active, approved jobseeker; required profile credentials and resume are complete; the job is published and accepting applications; its deadline has not passed; vacancies are available; and you have not already applied. If the page shows an error, retry once and contact support if it continues.
+
+I CHANGED MY PROFILE. DID MY OLD APPLICATION RESUME CHANGE?
+
+An application can preserve resume/profile details from submission time. New profile edits do not necessarily alter previously submitted application snapshots. Inspect the application view for the saved version.
+
+CAN I APPLY AGAIN AFTER WITHDRAWING?
+
+Use the available Reactivate action only if the application and job still meet the system eligibility rules. Do not assume every withdrawn application can be reactivated.
+
+WHY CAN'T I MESSAGE AN EMPLOYER FIRST?
+
+AGAPAY requires the employer to initiate the conversation about an eligible application. Once the employer has started, the jobseeker can reply.
+
+WHERE CAN I SEE MY INTERVIEW DETAILS?
+
+Check the interview information in AGAPAY Messages and Notifications. Review the date, time, interview format, and employer instructions. If details are missing, ask the employer through your existing AGAPAY conversation. Do not assume that an automatic meeting link is generated.
+
+WHAT IF AN INTERVIEW DETAIL IS MISSING?
+
+Review the latest interview message or notification, then contact the employer through AGAPAY Messages to clarify the time, location, or joining instructions. Do not invent a link or schedule.
+
+WHY CAN'T I PUBLISH A JOB?
+
+An employer generally needs verified business documents, a complete company profile, and required valid job details. Saving a draft may be available first.
+
+WHAT DOES REQUEST RESUBMISSION MEAN?
+
+An administrator may request correction of specific verification documents. Follow the official emailed resubmission link and its deadline; do not send private documents through chatbot messages.
+
+WHERE DO I SEE MY APPLICATION STATUS?
+
+Jobseekers: My Applications. Employers: Applicants, For Interview, Hired, or Declined for their own jobs. Agap-AI cannot look up a person's live record.
+
+CAN THE CHATBOT SEND AN APPLICATION OR CHANGE MY HIRING STATUS?
+
+No. Use the appropriate authorized AGAPAY page. The chatbot provides guidance only.
+
+CAN AGAP-AI WRITE PROGRAMMING CODE OR SHOW THE DATABASE?
+
+No. Agap-AI is restricted to AGAPAY usage help and approved job/career guidance. It must not write or debug source code or expose private internal implementation.
+
+CAN AGAP-AI HELP WITH MY RESUME OR INTERVIEW?
+
+Yes. It can offer clear job-related tips, interview preparation guidance, and explanations of AGAPAY resume or application workflows, without guaranteeing hiring.
+
+WHY IS MY ACCOUNT STILL PENDING?
+
+Submitted registration and verification documents must be reviewed by authorized staff. Check the registered email and the official status page. Agap-AI cannot approve or inspect the pending request directly.
+
+WHAT IS THE DIFFERENCE BETWEEN JOB STATUS AND APPLICATION STATUS?
+
+Job status describes availability of the vacancy (such as Draft, Published, Closed, or Filled). Application status describes the candidate's process (such as Pending, For Interview, Hired, or Declined).
+
+WHAT SHOULD I DO IF A PAGE FAILS TO LOAD OR A REQUEST FAILS?
+
+Check internet connectivity, refresh once, verify you are signed in, retry the action only if it is safe to do so, and check whether the action succeeded before submitting it again. Contact AGAPAY/TEE support if the issue continues. Do not share passwords, OTPs, or private document contents in the chatbot.
+
+IS THE COMMUNITY PAGE STILL AVAILABLE?
+
+No. The Community page was removed from AGAPAY. You can still use the existing Messages and Notifications features where available. Agap-AI must not instruct users to open Community or create posts and comments.

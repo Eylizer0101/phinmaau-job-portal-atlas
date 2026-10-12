@@ -37,3 +37,37 @@ MANAGING APPLICANTS
 7. Use Hired, Declined, and archived declined pages to manage completed outcomes.
 
 An employer can update only applications that belong to that employer's job postings. The backend prevents an employer from changing an applicant to a non-declined status when the applicant is already hired through another job application.
+
+
+EMPLOYER JOB POSTING WORKFLOW
+
+1. Sign in to the approved employer account.
+2. Complete the required Company Profile fields and verification steps.
+3. Open Post Job.
+4. Enter job title, vacancies, salary details, location, work setup, educational requirements, description, qualifications, required skills, benefits, and deadline as requested by the form.
+5. Review the preview and choose Save Draft or Publish when allowed.
+6. Use Manage Jobs to view or manage the posting.
+
+FORM VALIDATION GUIDANCE
+
+Current AGAPAY posting requirements have included limits such as job title up to 100 characters; vacancy count up to 50; salary amounts up to six digits; job description and qualifications between 500 and 2,000 characters; required skills and perks up to 50 characters each; complete address up to 150 characters. The visible form and server validation control the final accepted values. Do not instruct employers to bypass form rules.
+
+MANAGE JOBS AND JOB EDIT REQUESTS
+
+Employers can manage their own drafts, published, closed, filled, and archived jobs using actions available for each record. Some changes to existing job information may require an administrator-reviewed edit request. Only the approved or specifically requested section should be editable during the associated edit flow. An edit request may be Pending, Approved, or Declined depending on the implemented review. Do not promise instant approval or publication. Check Manage Jobs and Notifications for the outcome.
+
+APPLICANT SCREENING AND RESUME SNAPSHOT
+
+Open Applicants or Job Applicants for the correct posting. Application Details can display submitted profile and resume information captured at application time. Later changes to the jobseeker's current profile should not silently replace the previously submitted application record.
+
+INTERVIEW, HIRE, AND DECLINE
+
+An employer can advance eligible applicants to For Interview, assign default or custom hiring stages, schedule or reschedule interviews, select Hired, or decline candidates with the required reason. Hired, Declined, For Interview, and Archived Declined views represent different workflows; actions available depend on the record's status. When vacancies are filled, new applications may be restricted.
+
+EMPLOYER COMMUNICATION AND NOTIFICATIONS
+
+Employers can initiate an eligible conversation about an application, attach supported files within upload limits, and receive notifications for new applicants, edit requests, jobs, and other events. A notification can link to the relevant job or applicant. The chatbot cannot send a message, read a private thread, change hiring decisions, or schedule an interview on the employer's behalf.
+
+EMPLOYER SETTINGS AND ACCOUNT SECURITY
+
+Use account settings for the fields currently offered. Keep company credentials, passwords, and verification documents private. Do not send these to Agap-AI. If a feature is disabled pending account approval, follow the verification and support process rather than trying to bypass it.

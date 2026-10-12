@@ -57,3 +57,24 @@ A jobseeker can reactivate an inactive application only when the related job is 
 STATUS NOTIFICATIONS AND HISTORY
 
 When an employer changes an application status, the backend records the change in the application activity history and creates an application-status notification for the jobseeker. The chatbot must not claim to know a user's current status unless it is connected to an approved account-data tool.
+
+
+WHERE TO CHECK THE APPLICATION STATUS
+
+Jobseeker: sign in, open My Applications, locate the submitted job, then read its displayed status and activity/details. Employer: open Applicants or the appropriate status-specific page for a job and review the applicant record. Agap-AI cannot look up or confirm a particular person's application status.
+
+APPLICATION ACTIVITY AND SNAPSHOT
+
+Applications can retain a copy of submitted resume or profile information at the time of application. Later edits to the jobseeker's live profile should not be presented as automatically changing a previously submitted application snapshot. Employers and authorized administrators may inspect the submitted copy through supported application detail/history views.
+
+WITHDRAWAL AND REACTIVATION CAUTIONS
+
+Withdrawal is initiated by the jobseeker using the actions shown in My Applications. The status must be eligible for the requested action. Do not promise that a withdrawn or inactive application can always be reactivated; job publication, deadline, capacity, archived state, and backend eligibility rules matter. A jobseeker may still be able to view historical job details for an application even when the job no longer accepts new candidates.
+
+HIRING STAGE IS NOT APPLICATION STATUS
+
+'For Interview' is an overall application status. 'Initial Interview', 'Assessment', 'Final Interview', 'Job Offer', or custom stages are employer-managed stages within that flow. A Job Offer stage by itself must not be described as a final Hired decision.
+
+WHAT IF THE STATUS LOOKS WRONG?
+
+Refresh the related page, confirm the correct application and account, inspect Notifications or Messages for an employer update, and contact the employer or AGAPAY/TEE support when appropriate. Never fabricate a reason for an individual status change.

@@ -39,3 +39,28 @@ Only jobseekers can save jobs. The job must exist, be published, active, and not
 RECOMMENDED JOBS
 
 Recommended jobs are calculated from profile keywords such as course, study field, education, skills, experience, projects, certifications, seminars, awards, affiliations, and preferred work information. A recommendation is an aid for discovery, not a hiring decision.
+
+
+JOB LISTING FILTERS AND DETAILS
+
+Job Search and Job Offers can show available published positions with filters such as keyword or title, location, employer, work arrangement, educational requirements, salary, experience, and other available criteria. Exact options depend on the screen. Job details may show title, employer, industry, job location, vacancies, deadline, salary details, qualifications, requirements, benefits, and work setup.
+
+WORK SETUP VS EDUCATIONAL REQUIREMENTS
+
+Work setup refers to where/how the work is performed, such as Remote, On-site, or Hybrid/Blended when offered. Educational Requirements describe study/qualification expectations. These are different fields, and users should not confuse them with job publication status.
+
+JOB APPLICATION DEADLINE AND VISIBILITY
+
+An expired application deadline can prevent new submissions, even if a previously submitted application remains visible in My Applications. Public listings and recommended lists may have different filters; check the specific job detail for current eligibility. Job postings can appear in employer history even after closure or archiving.
+
+EMPLOYER EDIT REQUESTS
+
+Some updates to job details require a submitted edit request and administrator review. The requested fields or section determine what can be edited. The request can be reviewed and Approved or Declined; the user should look in Manage Jobs and Notifications for the actual outcome. Agap-AI cannot approve or edit a job itself.
+
+BOOKMARKS AND JOB MATCHES
+
+Bookmarks are jobseeker-saved positions, not applications. Recommended jobs can be prioritized using user profile signals; not all newly posted jobs are guaranteed to appear in an individual's recommendation area. Browse Job Search or Job Offers for a wider selection.
+
+POSTING VALIDATIONS
+
+Job posting forms enforce required inputs and length or value limits. Employers should follow displayed field validation and correct any highlighted issues rather than bypassing them. Avoid inventing unsupported salaries, work mode options, or job availability.

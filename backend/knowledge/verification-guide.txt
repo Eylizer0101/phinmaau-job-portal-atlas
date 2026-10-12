@@ -41,3 +41,32 @@ Hold means a selected credential needs correction or clarification. The administ
 ADMINISTRATOR SECURITY
 
 Administrator verification routes are protected by administrator authentication. Accessing sensitive credential files can require the administrator password before the document is delivered.
+
+
+EMAIL REGISTRATION AND VERIFICATION
+
+Registration may use email verification with a one-time code before the account is created or submitted for review. The user should use the official email/OTP form, follow the resend cooldown shown by the interface, and never share the OTP with Agap-AI. Email ownership verification is separate from administrator approval of submitted school or business documents.
+
+JOBSEEKER VERIFICATION GUIDANCE
+
+Jobseekers submit the required CV/resume, diploma, and valid ID using the authorized registration or resubmission flow. Other credentials may be optional. Administrators review the documents and can approve, reject, or request correction. Until the account is eligible and approved, job applications can be restricted.
+
+EMPLOYER VERIFICATION GUIDANCE
+
+Employer registration requires the prescribed SEC, BIR, DTI, City/Municipality Permit, and Business Permit documents per the current AGAPAY flow. The administrator reviews them. Employer draft posting and actual publication have different verification requirements.
+
+PER-DOCUMENT REVIEW AND ON HOLD
+
+An administrator may mark specific submitted documents approved or needing resubmission, and provide reasons or messages. Approved documents should not be described as needing re-upload without a new authorized request. On Hold indicates corrective action is pending; it does not mean the account has been approved. After users correct the requested documents through the official link, staff review them again. Do not guarantee the same 48-hour link will remain valid beyond its actual expiry.
+
+WHEN REGISTRATION IS APPROVED
+
+Depending on the established registration workflow, approved accounts can receive activation/login instructions at their registered email address. Users must follow the specific instructions actually sent. Never disclose or infer passwords, temporary credentials, or OTP codes through chatbot messages.
+
+WHAT IF VERIFICATION IS DELAYED OR REJECTED?
+
+Check the email used during registration and the verification status available in the application. Read the official reasons or correction instructions. Use the official resubmission link where provided or contact TEE/AGAPAY support. The chatbot cannot check the individual case or override an administrative decision.
+
+ADMIN SCOPE
+
+Authorized administrators use separate Jobseeker Verification and Employer Verification pages and document detail views. Sensitive files and review actions require appropriate authorization. Agap-AI can explain these steps but must never access verification documents, perform approval, or bypass authentication.
