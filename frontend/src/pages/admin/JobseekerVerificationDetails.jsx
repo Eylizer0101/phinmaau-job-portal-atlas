@@ -1894,131 +1894,93 @@ const JobseekerVerificationDetails = () => {
       {showPasswordModal && (
         <div className="fixed inset-0 z-[60] overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/45" onClick={closePasswordModal} aria-hidden="true" />
             <div
-              className="fixed inset-0 bg-black/45"
-              onClick={closePasswordModal}
-              aria-hidden="true"
-            />
-
-            <div
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-black/15 bg-white shadow-2xl"
+              className="relative w-full max-w-[455px] overflow-hidden rounded-2xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="credential-password-title"
             >
-              <div className="p-6 sm:p-7">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
-                  <SvgIcon
-                    name={
-                      pendingCredentialAction?.action === "download"
-                        ? "download"
-                        : "eye"
-                    }
-                    className="h-6 w-6"
-                  />
-                </div>
-
-                <h3
-                  id="credential-password-title"
-                  className="mt-4 text-center text-2xl font-bold text-black"
-                >
-                  Enter Password
-                </h3>
-
-                <p className="mt-2 text-center text-sm leading-6 text-black/65">
-                  Enter your password to{" "}
-                  {pendingCredentialAction?.action === "download"
-                    ? "download"
-                    : pendingCredentialAction?.action === "view"
-                      ? "view"
-                      : "approve"}{" "}
-                  {pendingCredentialAction?.label || "this credential"}.
-                </p>
-
-                <div className="mt-5">
-                  <label
-                    htmlFor="credentialPassword"
-                    className="block text-sm font-semibold text-black"
-                  >
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="credentialPassword"
-                      type={showCredentialPassword ? "text" : "password"}
-                      value={credentialPassword}
-                      maxLength={25}
-                      onChange={(event) => {
-                        setCredentialPassword(event.target.value);
-                        setPasswordError("");
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          confirmCredentialAccess();
-                        }
-                      }}
-                      autoFocus
-                      disabled={passwordLoading}
-                      className={cn(
-                        "mt-2 h-11 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder-black/35",
-                        passwordError ? "border-black" : "border-black/20",
-                        UI.ring,
-                      )}
-                      placeholder="Enter your password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowCredentialPassword((value) => !value)
-                      }
-                      className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 text-black/55"
-                      aria-label={
-                        showCredentialPassword
-                          ? "Hide password"
-                          : "Show password"
-                      }
-                    >
-                      {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
+              <div className="px-6 pb-5 pt-7">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-[#E8F2FF] text-[#2e66a6]">
+                    <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="5" y="10" width="14" height="11" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                      <circle cx="12" cy="15" r="1" fill="currentColor" stroke="none" />
+                      <path d="M12 16v2" />
+                    </svg>
                   </div>
-
-                  {passwordError ? (
-                    <p
-                      className="mt-2 text-sm font-medium text-black"
-                      role="alert"
-                    >
-                      {passwordError}
+                  <div className="min-w-0 flex-1 text-left">
+                    <h3 id="credential-password-title" className="text-[21px] font-bold leading-7 text-[#111827]">Enter Password</h3>
+                    <p className="mt-1 text-[13px] leading-5 text-[#667085]">
+                      Enter your password to{" "}
+                      {pendingCredentialAction?.action === "download"
+                        ? "download"
+                        : pendingCredentialAction?.action === "view"
+                          ? "view"
+                          : "approve"}{" "}
+                      {pendingCredentialAction?.label || "this credential"}.
                     </p>
-                  ) : null}
+                  </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 border-t border-black/10 bg-white px-6 py-4">
-                <button
-                  type="button"
-                  onClick={closePasswordModal}
-                  disabled={passwordLoading}
-                  className={cn(
-                    "h-11 rounded-xl border border-black/20 bg-white text-sm font-semibold text-black hover:bg-black/5 disabled:opacity-50",
-                    UI.ring,
-                  )}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={confirmCredentialAccess}
-                  disabled={passwordLoading}
-                  className={cn(
-                    "flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white hover:bg-[#2e66a6]/90 disabled:opacity-50",
-                    UI.ring,
-                  )}
-                >
-                  {passwordLoading ? <Spinner /> : null}
-                  Confirm
-                </button>
+              <div className="border-t border-[#E2E8F0] px-6 pb-5 pt-5">
+                <label htmlFor="credentialPassword" className="block text-[11px] font-semibold uppercase tracking-[0.17em] text-[#667085]">Password</label>
+                <div className="relative mt-2">
+                  <input
+                    id="credentialPassword"
+                    type={showCredentialPassword ? "text" : "password"}
+                    value={credentialPassword}
+                    maxLength={25}
+                    onChange={(event) => {
+                      setCredentialPassword(event.target.value);
+                      setPasswordError("");
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        confirmCredentialAccess();
+                      }
+                    }}
+                    autoFocus
+                    disabled={passwordLoading}
+                    className={cn(
+                      "h-12 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-[#111827] placeholder-[#98A2B3]",
+                      passwordError ? "border-[#DC2626]" : "border-[#D0D5DD]",
+                      UI.ring
+                    )}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCredentialPassword((value) => !value)}
+                    disabled={passwordLoading}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#667085] disabled:opacity-50"
+                    aria-label={showCredentialPassword ? "Hide password" : "Show password"}
+                    title={showCredentialPassword ? "Hide password" : "Show password"}
+                  >
+                    {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {passwordError ? <p className="mt-2 text-sm font-medium text-[#B42318]" role="alert">{passwordError}</p> : null}
+                <div className="mt-7 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closePasswordModal}
+                    disabled={passwordLoading}
+                    className={cn("h-11 min-w-[112px] rounded-xl border border-[#D0D5DD] bg-white px-5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50", UI.ring)}
+                  >Cancel</button>
+                  <button
+                    type="button"
+                    onClick={confirmCredentialAccess}
+                    disabled={passwordLoading}
+                    className={cn("flex h-11 min-w-[132px] items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white hover:bg-[#255587] disabled:opacity-50", UI.ring)}
+                  >
+                    {passwordLoading ? <Spinner /> : null}
+                    Confirm
+                  </button>
+                </div>
               </div>
             </div>
           </div>

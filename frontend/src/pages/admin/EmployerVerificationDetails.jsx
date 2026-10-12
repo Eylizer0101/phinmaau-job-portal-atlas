@@ -1516,33 +1516,26 @@ const EmployerVerificationDetails = () => {
       {showPasswordModal && (
         <div className="fixed inset-0 z-[60] overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black/45"
-              onClick={closePasswordModal}
-              aria-hidden="true"
-            />
-
+            <div className="fixed inset-0 bg-black/45" onClick={closePasswordModal} aria-hidden="true" />
             <div
               className="relative w-full max-w-[455px] overflow-hidden rounded-2xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="employer-credential-password-title"
             >
-              <div className="px-6 pb-6 pt-7 sm:px-7">
-                <div className="flex items-center gap-5">
-                  <span className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-[#E9F2FC] text-[#2e66a6]" aria-hidden="true">
-                    <svg className="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <div className="px-6 pb-5 pt-7">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-[#E8F2FF] text-[#2e66a6]">
+                    <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <rect x="5" y="10" width="14" height="11" rx="2" />
                       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                       <circle cx="12" cy="15" r="1" fill="currentColor" stroke="none" />
                       <path d="M12 16v2" />
                     </svg>
-                  </span>
+                  </div>
                   <div className="min-w-0 flex-1 text-left">
-                    <h3 id="employer-credential-password-title" className="text-[21px] font-bold leading-7 text-[#101828]">
-                      Enter Password
-                    </h3>
-                    <p className="mt-1 text-sm leading-5 text-[#667085]">
+                    <h3 id="employer-credential-password-title" className="text-[21px] font-bold leading-7 text-[#111827]">Enter Password</h3>
+                    <p className="mt-1 text-[13px] leading-5 text-[#667085]">
                       Enter your password to{" "}
                       {pendingCredentialAction?.action === "download"
                         ? "download"
@@ -1553,64 +1546,58 @@ const EmployerVerificationDetails = () => {
                     </p>
                   </div>
                 </div>
-
-                <div className="mt-7">
-                  <label htmlFor="employerCredentialPassword" className="block text-[11px] font-bold uppercase tracking-[0.14em] text-[#667085]">
-                    Password
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="employerCredentialPassword"
-                      type={showCredentialPassword ? "text" : "password"}
-                      value={credentialPassword}
-                      maxLength={25}
-                      onChange={(event) => {
-                        setCredentialPassword(event.target.value);
-                        setPasswordError("");
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          confirmCredentialAccess();
-                        }
-                      }}
-                      autoFocus
-                      disabled={passwordLoading}
-                      className={cn(
-                        "h-12 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder:text-[#98A2B3]",
-                        passwordError ? "border-red-400" : "border-[#D0D5DD]",
-                        UI.ring
-                      )}
-                      placeholder="Enter your password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCredentialPassword((value) => !value)}
-                      disabled={passwordLoading}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#667085] disabled:opacity-50"
-                      aria-label={showCredentialPassword ? "Hide password" : "Show password"}
-                      title={showCredentialPassword ? "Hide password" : "Show password"}
-                    >
-                      {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  </div>
-                  {passwordError ? <p className="mt-2 text-sm font-medium text-red-600" role="alert">{passwordError}</p> : null}
+              </div>
+              <div className="border-t border-[#E2E8F0] px-6 pb-5 pt-5">
+                <label htmlFor="employerCredentialPassword" className="block text-[11px] font-semibold uppercase tracking-[0.17em] text-[#667085]">Password</label>
+                <div className="relative mt-2">
+                  <input
+                    id="employerCredentialPassword"
+                    type={showCredentialPassword ? "text" : "password"}
+                    value={credentialPassword}
+                    maxLength={25}
+                    onChange={(event) => {
+                      setCredentialPassword(event.target.value);
+                      setPasswordError("");
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        confirmCredentialAccess();
+                      }
+                    }}
+                    autoFocus
+                    disabled={passwordLoading}
+                    className={cn(
+                      "h-12 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-[#111827] placeholder-[#98A2B3]",
+                      passwordError ? "border-[#DC2626]" : "border-[#D0D5DD]",
+                      UI.ring
+                    )}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCredentialPassword((value) => !value)}
+                    disabled={passwordLoading}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#667085] disabled:opacity-50"
+                    aria-label={showCredentialPassword ? "Hide password" : "Show password"}
+                    title={showCredentialPassword ? "Hide password" : "Show password"}
+                  >
+                    {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
                 </div>
-
-                <div className="mt-8 flex items-center justify-end gap-3">
+                {passwordError ? <p className="mt-2 text-sm font-medium text-[#B42318]" role="alert">{passwordError}</p> : null}
+                <div className="mt-7 flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={closePasswordModal}
                     disabled={passwordLoading}
-                    className={cn("h-11 min-w-[115px] rounded-xl border border-[#D0D5DD] bg-white px-4 text-sm font-semibold text-[#101828] hover:bg-[#F8FAFC] disabled:opacity-50", UI.ring)}
-                  >
-                    Cancel
-                  </button>
+                    className={cn("h-11 min-w-[112px] rounded-xl border border-[#D0D5DD] bg-white px-5 text-sm font-semibold text-[#111827] hover:bg-[#F8FAFC] disabled:opacity-50", UI.ring)}
+                  >Cancel</button>
                   <button
                     type="button"
                     onClick={confirmCredentialAccess}
                     disabled={passwordLoading}
-                    className={cn("flex h-11 min-w-[135px] items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#255587] disabled:opacity-50", UI.ring)}
+                    className={cn("flex h-11 min-w-[132px] items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white hover:bg-[#255587] disabled:opacity-50", UI.ring)}
                   >
                     {passwordLoading ? <Spinner /> : null}
                     Confirm
