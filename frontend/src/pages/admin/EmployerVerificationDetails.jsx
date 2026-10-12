@@ -1262,11 +1262,11 @@ const EmployerVerificationDetails = () => {
           </div>
 
           <section className="overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
-            <div className="flex min-h-[64px] items-center gap-3 bg-gradient-to-r from-[#eaf4ff] via-[#f2f8ff] to-[#e8f4ff] px-5 py-4 sm:px-6">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#dcecff] text-[#174b91]">
+            <div className="flex min-h-[64px] items-center gap-3 bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-5 py-4 text-white sm:px-6">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/15 text-white shadow-sm">
                 <SvgIcon name="building" className="h-5 w-5" />
               </span>
-              <h2 className="text-base font-semibold text-[#123d81] sm:text-lg">Company Information</h2>
+              <h2 className="text-base font-semibold text-white sm:text-lg">Company Information</h2>
             </div>
 
             <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
