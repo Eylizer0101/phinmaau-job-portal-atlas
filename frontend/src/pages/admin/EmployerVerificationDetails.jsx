@@ -1380,7 +1380,7 @@ const EmployerVerificationDetails = () => {
                       <img
                         src={hasFile ? "/images/RedDocumentIcon.png" : "/images/NoDocumentSubmit.png"}
                         alt=""
-                        className="h-9 w-9 shrink-0 object-contain"
+                        className={cn("h-9 w-9 shrink-0 object-contain", !hasFile && "scale-[1.35]")}
                         aria-hidden="true"
                       />
                       <div className="min-w-0">
