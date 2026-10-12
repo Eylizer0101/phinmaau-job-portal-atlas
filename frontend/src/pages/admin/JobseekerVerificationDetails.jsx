@@ -1527,7 +1527,7 @@ const JobseekerVerificationDetails = () => {
           <section className="overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white">
             <div className="relative mb-6 flex flex-col gap-3 overflow-hidden bg-gradient-to-r from-[#072258] via-[#2d63a0] to-[#52b2db] px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div className="relative z-10 flex items-center gap-3 text-white">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2e66a6] to-[#4f9bdb] text-white shadow-sm" aria-hidden="true">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-sm" aria-hidden="true">
                   <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="12" cy="7.5" r="4" />
                     <path d="M4.5 20c0-4.2 3-6.7 7.5-6.7s7.5 2.5 7.5 6.7v1h-15v-1z" />
@@ -1663,7 +1663,7 @@ const JobseekerVerificationDetails = () => {
 
           <section className="mt-5 overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white">
             <div className="flex flex-wrap items-center gap-3 bg-gradient-to-r from-[#072258] via-[#2d63a0] to-[#52b2db] px-5 py-4 text-white sm:px-6">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#2e66a6] shadow-sm" aria-hidden="true">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-sm" aria-hidden="true">
                 <SvgIcon name="document" className="h-5 w-5" />
               </span>
               <h2 className="text-base font-bold sm:text-lg">
