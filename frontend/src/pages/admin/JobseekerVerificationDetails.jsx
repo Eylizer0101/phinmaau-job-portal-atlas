@@ -1683,8 +1683,16 @@ const JobseekerVerificationDetails = () => {
                 ).toLowerCase();
                 const credentialApproved = credentialStatus === "approved" || doc.checked;
                 const credentialNeedsAction = ["hold", "rejected", "action_needed"].includes(credentialStatus);
-                const fileName =
-                  doc.filename || getFileNameFromUrl(doc.url, docType.label);
+                const displayFileName = {
+                  validId: "Valid_ID",
+                  cv: "Resume",
+                  diploma: "Diploma",
+                  tor: "TOR",
+                  sss: "SSS",
+                  philhealth: "PhilHealth",
+                  pagibig: "Pag_IBIG",
+                  tin: "TIN"
+                }[docType.key] || docType.label;
                 const fileSize = formatFileSize(doc.fileSize);
 
                 return (
@@ -1711,12 +1719,12 @@ const JobseekerVerificationDetails = () => {
                         />
                       </div>
 
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p
                           className="truncate text-[11px] font-semibold text-black"
-                          title={fileName}
+                          title={hasFile ? displayFileName : "No file"}
                         >
-                          {hasFile ? fileName : "No file"}
+                          {hasFile ? displayFileName : "No file"}
                         </p>
                         {fileSize ? (
                           <p className="mt-1 text-[10px] text-[#7A8492]">

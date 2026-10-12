@@ -1340,7 +1340,13 @@ const EmployerVerificationDetails = () => {
                 const credentialStatus = String(doc.status || "").toLowerCase();
                 const credentialApproved = doc.checked === true || credentialStatus === "approved";
                 const credentialOnHold = credentialStatus === "hold";
-                const fileName = doc.filename || getFileName(doc.url || "") || docType.label;
+                const displayFileName = {
+                  secRegistration: "SEC_Registration",
+                  birRegistration: "BIR_Registration",
+                  dtiRegistration: "DTI_Registration",
+                  cityPermit: "City_Municipality_Permit",
+                  businessPermit: "Business_Permit"
+                }[docType.key] || docType.label;
                 const fileSize = doc.fileSize
                   ? doc.fileSize < 1024 * 1024
                     ? `${(doc.fileSize / 1024).toFixed(0)} KB`
@@ -1383,9 +1389,9 @@ const EmployerVerificationDetails = () => {
                         className={cn("h-9 w-9 shrink-0 object-contain", !hasFile && "scale-[1.35]")}
                         aria-hidden="true"
                       />
-                      <div className="min-w-0">
-                        <p className="truncate text-[11px] font-semibold text-black" title={fileName}>
-                          {hasFile ? fileName : "No file"}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[11px] font-semibold text-black" title={hasFile ? displayFileName : "No file"}>
+                          {hasFile ? displayFileName : "No file"}
                         </p>
                         {fileSize ? <p className="mt-1 text-[10px] text-[#7A8492]">({fileSize})</p> : null}
                       </div>
