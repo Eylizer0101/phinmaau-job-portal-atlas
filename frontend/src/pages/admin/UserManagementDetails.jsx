@@ -1523,7 +1523,7 @@ const UserManagementDetails = () => {
       <section className="flex min-h-[620px] min-w-0 flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <img src="/images/RecentActivityIcon.png" alt="Recent Activity" className="h-12 w-12 shrink-0 object-contain" />
+            <img src="/images/RecentActivityIcon.png" alt="Recent Activity" className="h-16 w-16 shrink-0 object-contain" />
             <div>
               <h2 className="text-lg font-semibold text-slate-950">{showAllActivity ? "All Activity" : "Recent Activity"}</h2>
               <p className="mt-0.5 text-xs text-slate-500">Track this user's activities and changes in the system.</p>
