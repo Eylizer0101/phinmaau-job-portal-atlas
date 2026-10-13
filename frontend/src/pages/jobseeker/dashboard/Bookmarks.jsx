@@ -211,7 +211,7 @@ const ReviewerAvatar = ({ src, name }) => {
 };
 
 const UI = {
-  page: 'bg-[#FFFFFF] min-h-screen',
+  page: 'bg-transparent min-h-screen',
   container:
     'relative left-1/2 right-1/2 w-[min(96vw,1440px)] max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8 pb-10',
   card: 'bg-[#FFFFFF] border border-black/10 rounded-2xl shadow-sm w-full',

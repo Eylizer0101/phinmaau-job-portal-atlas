@@ -220,7 +220,7 @@ const getExperienceDisplayLabel = (value) => {
 };
 
 const UI = {
-  page: 'bg-white min-h-screen',
+  page: 'bg-transparent min-h-screen',
 
   container:
     'mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6 lg:px-8',
@@ -1336,7 +1336,7 @@ const JobDetails = () => {
   if (error) {
     return (
       <JobSeekerLayout>
-        <div className={UI.page}>
+        <div className="bg-transparent">
           <div className={UI.container}>
             <div className={`${UI.card} ${UI.pad} text-center`}>
               <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
