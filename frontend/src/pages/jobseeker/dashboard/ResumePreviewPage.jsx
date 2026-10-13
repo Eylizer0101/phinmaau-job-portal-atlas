@@ -785,6 +785,7 @@ const ResumePreviewPage = () => {
         .resume-declaration {
           margin-top: auto;
           padding-top: 11px;
+          transform: translateY(12px);
           width: 100%;
           break-inside: avoid;
         }

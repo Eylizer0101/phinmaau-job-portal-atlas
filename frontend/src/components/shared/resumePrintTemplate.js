@@ -1118,20 +1118,20 @@ const alignDeclarationToLastPageBottom = (paper) => {
   inner.style.minHeight = 'auto';
   inner.style.display = 'block';
   declaration.style.paddingTop = '0';
-  declaration.style.marginTop = '11px';
+  declaration.style.marginTop = '30px';
 
   const paperRect = paper.getBoundingClientRect();
   const declarationRect = declaration.getBoundingClientRect();
   if (!paperRect.width || !declarationRect.height) return;
 
   const pageHeight = paperRect.width * (297 / 210);
-  const bottomInset = paperRect.width * (12 / 210);
+  const bottomInset = paperRect.width * (7 / 210);
   const currentBottom = declarationRect.bottom - paperRect.top;
   const lastPage = Math.max(1, Math.ceil((currentBottom + bottomInset) / pageHeight));
   const targetBottom = (lastPage * pageHeight) - bottomInset - 2;
   const extraSpace = Math.max(0, targetBottom - currentBottom);
 
-  declaration.style.marginTop = `${11 + extraSpace}px`;
+  declaration.style.marginTop = `${30 + extraSpace}px`;
 };
 
 export const openResumePrintWindow = async (resumeData = {}) => {
