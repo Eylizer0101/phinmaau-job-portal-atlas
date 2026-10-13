@@ -2080,6 +2080,9 @@ const AdminDashboard = () => {
         },
         {
           responseType: "blob",
+          // PDF generation can take longer on a cold Render/Puppeteer instance.
+          // Keep the extended timeout scoped to AGAPAY Reports only.
+          ...(isAgapayReport ? { timeout: 180000 } : {}),
           headers: { "x-admin-password": exportPassword },
         },
       );
@@ -2107,7 +2110,11 @@ const AdminDashboard = () => {
     } catch (err) {
       let message = "Unable to export records.";
 
-      if (err?.response?.data instanceof Blob) {
+      if (err?.code === "ECONNABORTED") {
+        message = "The report took too long to generate. Please try again.";
+      } else if (!err?.response) {
+        message = "Unable to connect to the server. Please try again.";
+      } else if (err?.response?.data instanceof Blob) {
         try {
           const payload = JSON.parse(await err.response.data.text());
           message = payload?.message || message;
