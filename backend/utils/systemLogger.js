@@ -91,10 +91,26 @@ const getResponseEntity = (payload = {}) => {
   );
 };
 
-const getChangedFields = (body = {}) =>
-  Object.keys(body || {})
-    .filter((key) => !SENSITIVE_KEY_PATTERN.test(key))
-    .slice(0, 20);
+// Store changed FIELD NAMES only, including safe nested jobseeker resume fields.
+// Never store field values or names that reveal protected credentials/documents.
+const getChangedFields = (body = {}) => {
+  const fields = [];
+  const visit = (value, prefix = '', depth = 0) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || depth > 3) return;
+    for (const [key, child] of Object.entries(value)) {
+      if (fields.length >= 20) break;
+      const field = prefix ? `${prefix}.${key}` : key;
+      if (SENSITIVE_KEY_PATTERN.test(field)) continue;
+      if (child && typeof child === 'object' && !Array.isArray(child)) {
+        visit(child, field, depth + 1);
+      } else {
+        fields.push(cleanText(field, 120));
+      }
+    }
+  };
+  visit(body);
+  return fields;
+};
 
 const getSafeRequestedValues = (body = {}) => {
   const values = {};
@@ -154,14 +170,28 @@ const rule = (action, actionLabel, module, targetType, successDescription, optio
   ...options,
 });
 
-const resolveAuditDefinition = (method, pathValue) => {
+const resolveAuditDefinition = (method, pathValue, queryParams = {}) => {
   const path = String(pathValue || '').replace(/\?.*$/, '');
 
   if (path.startsWith('/api/admin/system-logs')) return null;
   if (path.startsWith('/api/messages') || path.startsWith('/api/chatbot') || path.startsWith('/api/notifications')) return null;
+  // Logging an actual filtered query (not merely opening Filter Records).
+  if (method === 'GET' && path === '/api/admin/filter-records') {
+    const hasActiveFilter = Object.entries(queryParams || {}).some(([key, value]) =>
+      !['page', 'limit', 'sort'].includes(key) &&
+      String(value ?? '').trim() !== '' &&
+      !['all', 'overall'].includes(String(value ?? '').trim().toLowerCase())
+    );
+    return hasActiveFilter
+      ? rule('admin.records_filtered', 'Filter Records', 'Reports', 'Filtered records', 'Applied record filters.')
+      : null;
+  }
   if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return null;
 
   // Authentication and account settings
+  if (method === 'POST' && path === '/api/auth/logout') {
+    return rule('auth.logout', 'Sign Out', 'Authentication', 'Session', 'Signed out of the system.', { securityEvent: true });
+  }
   if (method === 'POST' && path === '/api/auth/login') {
     return rule('auth.login', 'Account login', 'Authentication', 'Session', 'Signed in to the system.', {
       fallbackTarget: 'User session',
@@ -226,6 +256,68 @@ const resolveAuditDefinition = (method, pathValue) => {
   }
   if (path.includes('/settings/verify-phone')) {
     return rule('settings.phone_changed', 'Phone number changed', 'Settings', 'Account', 'Verified and changed the account phone number.', { securityEvent: true });
+  }
+
+  // User profile fields and account settings. Persist only field names, never entered values.
+  if (method === 'PUT' && path === '/api/auth/update-user-profile') {
+    return rule('profile.updated', 'Jobseeker profile updated', 'Profile', 'Jobseeker profile', 'Updated profile fields.');
+  }
+  if (method === 'PUT' && path === '/api/auth/salary-expectation') {
+    return rule('profile.salary_expectation_updated', 'Salary expectation updated', 'Profile', 'Jobseeker profile', 'Updated salary expectations.');
+  }
+  if (method === 'PUT' && path === '/api/auth/update-notifications') {
+    return rule('settings.notifications_updated', 'Notification settings updated', 'Settings', 'Settings', 'Updated notification settings.');
+  }
+
+  // Saved jobs and companies. Reads and checks are deliberately excluded.
+  if (method === 'POST' && /^\/api\/jobs\/saved\/[^/]+$/.test(path)) {
+    return rule('job.saved', 'Saved Job', 'Bookmarks', 'Job', 'Saved a job.');
+  }
+  if (method === 'DELETE' && /^\/api\/jobs\/saved\/[^/]+$/.test(path)) {
+    return rule('job.unsaved', 'Removed Saved Job', 'Bookmarks', 'Job', 'Removed a saved job.');
+  }
+  if (method === 'POST' && /^\/api\/companies\/saved\/[^/]+$/.test(path)) {
+    return rule('company.saved', 'Saved Company', 'Bookmarks', 'Company', 'Saved a company.');
+  }
+  if (method === 'DELETE' && /^\/api\/companies\/saved\/[^/]+$/.test(path)) {
+    return rule('company.unsaved', 'Removed Saved Company', 'Bookmarks', 'Company', 'Removed a saved company.');
+  }
+  if (method === 'DELETE' && path === '/api/companies/saved') {
+    return rule('company.saved_cleared', 'Cleared Saved Companies', 'Bookmarks', 'Company', 'Cleared saved companies.');
+  }
+
+  // Employment-status request/decision lifecycle.
+  if (method === 'POST' && /^\/api\/applications\/[^/]+\/employment-status-request$/.test(path)) {
+    return rule('employment.requested', 'Employment Status Request', 'Employment', 'Application', 'Submitted an employment status request.');
+  }
+  if (method === 'PUT' && /^\/api\/applications\/[^/]+\/employment-status-request\/review$/.test(path)) {
+    return rule('employment.reviewed', 'Employment Status Update', 'Employment', 'Application', 'Employer reviewed an employment status request.');
+  }
+  if (method === 'PUT' && /^\/api\/applications\/[^/]+\/employment-status$/.test(path)) {
+    return rule('employment.updated', 'Employment Status Update', 'Employment', 'Application', 'Employer updated an employment status.');
+  }
+  if (method === 'PUT' && /^\/api\/applications\/[^/]+\/employment-status\/check$/.test(path)) {
+    return rule('employment.confirmed', 'Employment Status Confirmed', 'Employment', 'Application', 'Jobseeker confirmed an employment status.');
+  }
+  if (method === 'PUT' && /^\/api\/applications\/admin\/employment-status-requests\/[^/]+\/(approve|decline|finalize)$/.test(path)) {
+    return rule('employment.finalized', 'Employment Status Finalized', 'Employment', 'Application', 'Admin finalized an employment status request.');
+  }
+
+  // Admin export actions: these routes are authenticated and password protected.
+  if (method === 'POST' && path === '/api/admin/exports/excel') {
+    return rule('admin.records_exported', 'Export All Records', 'Reports', 'Records', 'Exported all records to Excel.');
+  }
+  if (method === 'POST' && /^\/api\/admin\/filter-records\/export\/(excel|pdf)$/.test(path)) {
+    return rule('admin.filtered_exported', 'Filter Records Export', 'Reports', 'Filtered records', 'Exported filtered records.');
+  }
+  if (method === 'POST' && path === '/api/admin/exports/report/pdf') {
+    return rule('admin.report_exported', 'AGAPAY Reports', 'Reports', 'Report', 'Generated an AGAPAY report.');
+  }
+  if (method === 'PATCH' && /^\/api\/job-edit-requests\/admin\/[^/]+\/approve$/.test(path)) {
+    return rule('job.edit_approved', 'Approve Edit Request – Posted Job', 'Job Management', 'Job edit request', 'Approved a posted job edit request.');
+  }
+  if (method === 'PATCH' && /^\/api\/job-edit-requests\/admin\/[^/]+\/decline$/.test(path)) {
+    return rule('job.edit_declined', 'Decline Edit Request – Posted Job', 'Job Management', 'Job edit request', 'Declined a posted job edit request.');
   }
 
   // Admin user management and verification
@@ -360,7 +452,7 @@ const resolveAuditDefinition = (method, pathValue) => {
 
   // Company reviews are retained as a meaningful public-facing action. Saves are excluded as low-risk noise.
   if (/^\/api\/companies\/verified\/[^/]+\/reviews$/.test(path) && method === 'POST') {
-    return rule('company.review_submitted', 'Company review submitted', 'Company', 'Company review', 'Submitted a company review.');
+    return rule('application.process_rated', 'Rate Application Process', 'Company', 'Company review', 'Rated the application process.');
   }
 
   return null;
@@ -401,7 +493,7 @@ const systemAuditMiddleware = (req, res, next) => {
   const startedAt = Date.now();
   const method = String(req.method || '').toUpperCase();
   const path = String(req.originalUrl || req.url || '').replace(/\?.*$/, '');
-  const definition = resolveAuditDefinition(method, path);
+  const definition = resolveAuditDefinition(method, path, req.query);
 
   if (!definition) return next();
 
@@ -464,6 +556,7 @@ const systemAuditMiddleware = (req, res, next) => {
       req.params?.applicationId,
       req.params?.postId,
       req.params?.commentId,
+      req.params?.companyId,
       getIdFromPath(path)
     );
     const success = res.statusCode >= 200 && res.statusCode < 400;
@@ -473,12 +566,15 @@ const systemAuditMiddleware = (req, res, next) => {
     const metadata = {
       changedFields: getChangedFields(req.body || {}),
       ...(Object.keys(requestedValues).length ? { requestedValues } : {}),
+      ...(definition.action === 'admin.records_filtered' ? { filterFields: Object.keys(req.query || {}).filter((key) => !['page', 'limit', 'sort'].includes(key)).slice(0, 20) } : {}),
       ...(errorMessage ? { errorMessage } : {}),
       ...(definition.securityEvent ? { securityEvent: true } : {}),
     };
 
+    const fieldSummary = ['profile.updated', 'profile.salary_expectation_updated'].includes(definition.action) && metadata.changedFields.length
+      ? ` Changed fields: ${metadata.changedFields.join(', ')}.` : '';
     const description = success
-      ? definition.successDescription
+      ? definition.successDescription + fieldSummary
       : `${definition.actionLabel} failed${errorMessage ? `: ${errorMessage}` : '.'}`;
 
     void createSystemLog({

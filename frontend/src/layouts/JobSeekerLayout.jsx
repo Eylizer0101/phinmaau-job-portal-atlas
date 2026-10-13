@@ -554,8 +554,18 @@ const JobSeekerLayout = ({ children }) => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (isLoggingOut) return;
+
+    // Capture a real authenticated Sign Out action before clearing local credentials.
+    // Network failure should never prevent the user from leaving the account.
+    try {
+      await api.post('/auth/logout');
+    } catch (auditError) {
+      console.warn('Sign Out audit request failed:', auditError?.message || auditError);
+    }
+
+
 
     try {
       setIsLoggingOut(true);

@@ -104,6 +104,9 @@ router.post(
 // -------------------------------
 // CURRENT USER + PROFILES
 // -------------------------------
+// Audit the authenticated Sign Out before the frontend clears its local session.
+router.post('/logout', protect, (req, res) => res.status(200).json({ success: true }));
+
 router.get('/me', protect, authController.getCurrentUser);
 
 router.put('/update-profile', protect, authController.updateProfile);
