@@ -691,6 +691,7 @@ const JobseekerVerificationDetails = () => {
   const [approvalPassword, setApprovalPassword] = useState("");
   const approvalPasswordRef = useRef("");
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showDeclineReasonModal, setShowDeclineReasonModal] = useState(false);
 
   const API_BASE = api?.defaults?.baseURL || "";
   const buildFileUrl = (url) => {
@@ -1257,7 +1258,7 @@ const JobseekerVerificationDetails = () => {
     const s = (status || "not_submitted").toLowerCase();
     if (s === "verified") return <Badge variant="success">Approved</Badge>;
     if (s === "pending") return <Badge variant="warning">Pending</Badge>;
-    if (s === "rejected") return <Badge variant="danger">Declined</Badge>;
+    if (s === "rejected") return <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Application Declined</span>;
     if (s === "hold") return <Badge variant="warning">On Hold</Badge>;
     return <Badge variant="neutral">Not Submitted</Badge>;
   };
@@ -1384,6 +1385,7 @@ const JobseekerVerificationDetails = () => {
   const overallStatus = verificationSummary.overallStatus || "not_submitted";
   const isApproved = overallStatus === "verified";
   const isRejected = overallStatus === "rejected";
+  const declineDetails = verificationSummary;
   const followUpDocumentTypes = ["sss", "philhealth", "pagibig", "tin"];
   const hasPendingFollowUpCredential = followUpDocumentTypes.some((docType) => {
     const document = documentDetails[docType] || {};
@@ -1524,12 +1526,17 @@ const JobseekerVerificationDetails = () => {
               <div className="flex items-center gap-2">
                 {getStatusBadge(overallStatus)}
                 {isRejected ? (
+                  <button type="button" onClick={() => setShowDeclineReasonModal(true)} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 text-sm font-semibold text-amber-800 hover:bg-amber-100", UI.ring)}>
+                    <SvgIcon name="eye" className="h-4 w-4" /> View Decline Reason
+                  </button>
+                ) : null}
+                {isRejected ? (
                   <button
                     type="button"
                     onClick={() => setShowRestoreModal(true)}
                     disabled={actionLoading}
                     className={cn(
-                      "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
+                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587]",
                       UI.ring,
                     )}
                   >
@@ -1608,7 +1615,7 @@ const JobseekerVerificationDetails = () => {
                         UI.ring,
                       )}
                     >
-                      Restore
+                      <SvgIcon name="restore" className="h-4 w-4" /> Restore
                     </button>
                   ) : null}
                 </div>
@@ -1814,6 +1821,35 @@ const JobseekerVerificationDetails = () => {
           </section>
         </div>
       </div>
+
+      {showDeclineReasonModal && isRejected && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/55 px-4 py-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowDeclineReasonModal(false); }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="verification-decline-reason-title" className="w-full max-w-[520px] overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-gradient-to-r from-[#0c3268] to-[#42a9d1] px-5 py-4 text-white">
+              <h3 id="verification-decline-reason-title" className="flex items-center gap-2 text-base font-semibold"><SvgIcon name="x" className="h-5 w-5" /> Reason for Decline</h3>
+              <button type="button" aria-label="Close decline reason" onClick={() => setShowDeclineReasonModal(false)} className="rounded-lg p-1 hover:bg-white/15"><span className="text-xl leading-none">×</span></button>
+            </div>
+            <div className="space-y-5 px-5 py-5">
+              <div className="flex items-center gap-3 rounded-xl bg-slate-100 px-3 py-3">
+                <img src="/images/phinma-logo.png" alt="Admin logo" className="h-11 w-11 shrink-0 rounded-full bg-white object-contain p-1" />
+                <div className="min-w-0"><p className="text-sm font-semibold text-slate-900">System Admin</p>
+                  <p className="text-xs text-slate-500">Declined {declineDetails?.rejectedAt && !Number.isNaN(new Date(declineDetails.rejectedAt).getTime()) ? new Date(declineDetails.rejectedAt).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</p>
+                </div>
+              </div>
+              <div><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Reasons</p>
+                <div className="flex flex-wrap gap-2">{(Array.isArray(declineDetails?.rejectionReasons) ? declineDetails.rejectionReasons.filter(Boolean) : []).length ? declineDetails.rejectionReasons.filter(Boolean).map((reason, index) => <span key={`${reason}-${index}`} className="rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-medium text-red-700">{reason}</span>) : <span className="text-sm text-slate-500">No specific reasons recorded.</span>}</div>
+              </div>
+              <div><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Reason for Declining</p>
+                <div className="whitespace-pre-wrap rounded-xl border-l-4 border-amber-500 bg-amber-50 px-4 py-4 text-sm leading-6 text-slate-800">{declineDetails?.rejectionMessage || 'No additional explanation recorded.'}</div>
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button type="button" onClick={() => setShowDeclineReasonModal(false)} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Close</button>
+              <button type="button" onClick={() => { setShowDeclineReasonModal(false); setShowRestoreModal(true); }} className="inline-flex items-center gap-2 rounded-lg bg-[#2e66a6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#255587]"><SvgIcon name="restore" className="h-4 w-4" /> Restore</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showRestoreModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
