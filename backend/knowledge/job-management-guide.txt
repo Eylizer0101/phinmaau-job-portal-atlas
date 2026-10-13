@@ -64,3 +64,6 @@ Bookmarks are jobseeker-saved positions, not applications. Recommended jobs can 
 POSTING VALIDATIONS
 
 Job posting forms enforce required inputs and length or value limits. Employers should follow displayed field validation and correct any highlighted issues rather than bypassing them. Avoid inventing unsupported salaries, work mode options, or job availability.
+
+PUBLISHED JOB EDIT WINDOW
+The employer may directly edit a published job within the first hour of publication. After that, the backend locks editing unless temporary permission is active. A locked post needs an administrator-reviewed edit request specifying exactly which sections need changing, along with a reason of no more than 500 characters. One pending request per job is allowed. The current system has explicit Job Details, Requirements & Qualifications, Skills & Benefits, Work Locations, Salary, and Deadline edit sections. Approved access does not authorize editing sections outside the approved request.

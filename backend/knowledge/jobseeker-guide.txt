@@ -67,7 +67,7 @@ Use filters to narrow results; review all job information including requirements
 
 MY APPLICATIONS
 
-My Applications is the primary place to review submitted jobs, statuses, activity, and permitted withdraw/reactivate actions. An expired or closed job may still have historical details visible there even though new applications are blocked. Open an application record to see its available information.
+My Applications is the primary place to review submitted jobs, statuses, activity, and permitted withdrawal actions. An expired or closed job may still have historical details visible there even though new applications are blocked. Open an application record to see its available information.
 
 COMPANIES, BOOKMARKS, AND REVIEWS
 
@@ -84,3 +84,6 @@ Users may be able to upload, crop, change, or remove a profile image using the i
 CAREER GUIDANCE
 
 Resume advice, profile improvement, skill descriptions, cover-letter tips, interview preparation, and professional communication are within Agap-AI's job-related guidance. No advice guarantees job matching, interview selection, or hiring.
+
+WITHDRAWING AN APPLICATION (CURRENT BACKEND)
+An eligible application can be withdrawn from My Applications. Withdrawal is permanent: the current backend rejects reactivation/restoration. The earlier resume snapshot remains attached to the application history. Do not tell the user to tap Reactivate or apply again to the same job as a workaround.

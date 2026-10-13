@@ -43,7 +43,7 @@ The frontend may allow users to open image or document attachments, preview avai
 
 INTERVIEW AND STATUS COMMUNICATION
 
-Interview scheduling can produce a structured message with date/time, format, notes, and a video link when applicable. Sending a normal message does not itself update an application status or official interview schedule.
+Interview scheduling can produce a structured message with date/time, format, notes, and employer-provided instructions when applicable. Do not claim that AGAPAY automatically generates an external meeting link. Sending a normal message does not itself update an application status or official interview schedule.
 
 CONVERSATION VISIBILITY AND PRIVACY
 
@@ -52,3 +52,6 @@ Archive, hidden-company, and delete preferences may affect one user's view indep
 IF YOU CANNOT SEND A MESSAGE
 
 Confirm that there is an eligible application and that the employer has initiated the conversation if you are the jobseeker. Check your login, internet connection, and any visible error. Do not send repeated copies until you know the first request failed.
+
+WHEN CAN EMPLOYERS INITIATE MESSAGES?
+An employer cannot message an arbitrary jobseeker without an eligible application linking those accounts. Once that application exists, the employer can send the first message. The jobseeker must wait for the employer's first message before replying. An ordinary message does not itself change the official hiring stage or job application status.

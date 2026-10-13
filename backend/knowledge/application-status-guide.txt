@@ -52,7 +52,7 @@ Vacancy Full means the position no longer has an available slot. This status can
 
 REACTIVATING AN APPLICATION
 
-A jobseeker can reactivate an inactive application only when the related job is still published, active, accepting applications, and not full. The system restores the application's last active status when that value is Pending, For Interview, or Hired; otherwise it restores Pending.
+The current backend permanently blocks application reactivation. The /reactivate action returns WITHDRAWAL_PERMANENT: "Withdrawn applications are permanent and cannot be reactivated or restored." A withdrawn application remains in My Applications as history. Do not instruct the jobseeker to reactivate, restore, or resubmit the same application as if it were allowed.
 
 STATUS NOTIFICATIONS AND HISTORY
 
@@ -69,7 +69,7 @@ Applications can retain a copy of submitted resume or profile information at the
 
 WITHDRAWAL AND REACTIVATION CAUTIONS
 
-Withdrawal is initiated by the jobseeker using the actions shown in My Applications. The status must be eligible for the requested action. Do not promise that a withdrawn or inactive application can always be reactivated; job publication, deadline, capacity, archived state, and backend eligibility rules matter. A jobseeker may still be able to view historical job details for an application even when the job no longer accepts new candidates.
+Withdrawal is initiated by the jobseeker using the actions shown in My Applications. The status must be eligible for the requested action. The current backend does not permit reactivation. Do not advise using a Reactivate button or a workaround, even if an older UI or route still refers to reactivation. A jobseeker may still be able to view historical job details for an application even when the job no longer accepts new candidates.
 
 HIRING STAGE IS NOT APPLICATION STATUS
 
@@ -78,3 +78,6 @@ HIRING STAGE IS NOT APPLICATION STATUS
 WHAT IF THE STATUS LOOKS WRONG?
 
 Refresh the related page, confirm the correct application and account, inspect Notifications or Messages for an employer update, and contact the employer or AGAPAY/TEE support when appropriate. Never fabricate a reason for an individual status change.
+
+CURRENT QA RULE: WITHDRAWAL IS PERMANENT
+If a user asks "How do I reactivate my withdrawn application?", explain that the current AGAPAY backend does not allow reactivation or restoration after withdrawal. They may still review the historical application through My Applications. Never invent a restore procedure.

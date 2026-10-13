@@ -65,7 +65,7 @@ const JOBSEEKER_GUIDES = [
   {
     keywords: ['apply', 'application', 'apply for a job', 'submit application'],
     answer:
-      'To apply for a job:\n\n1. Sign in to your jobseeker account.\n2. Complete your profile and upload an updated resume.\n3. Open Job Offers.\n4. Search for a position that matches your skills.\n5. Open the job details and review the requirements.\n6. Select Apply Now.\n7. Review the information that will be submitted.\n8. Submit your application.\n9. Check My Applications for status updates.',
+      'To apply for a job:\n\n1. Sign in to your jobseeker account.\n2. Complete your required resume sections and ensure that Profile Credentials includes a CV or resume.\n3. Open Job Offers.\n4. Search for a position that matches your skills.\n5. Open the job details and review the requirements.\n6. Select Apply Now.\n7. Review the information that will be submitted.\n8. Submit your application.\n9. Check My Applications for status updates.',
   },
   {
     keywords: ['complete my profile', 'update my profile', 'profile completion', 'jobseeker profile'],
@@ -285,7 +285,19 @@ const isAgapaySystemQuestion = (message) => {
   const normalized = normalizeText(message);
   if (!normalized) return false;
 
-  return AGAPAY_SYSTEM_PHRASES.some((phrase) => normalized.includes(phrase));
+  // Allow natural phrasings of AGAPAY actions, not just fixed suggested-question text.
+  // E.g. "Can I reactivate my withdrawn application?" must use system knowledge.
+  return AGAPAY_SYSTEM_PHRASES.some((phrase) => normalized.includes(phrase)) ||
+    /\b(?:reactivat|withdraw|bookmark|resubmit|verif|publish|archiv|restore|applicat|notif|hiring stage|job match|job search|job post|my resume|company review)\w*\b/.test(normalized);
+};
+
+// If AI is unavailable, provide the actual retrieved AGAPAY guide instead of a loosely
+// keyword-matched canned answer that can contradict current backend behavior.
+const findVerifiedKnowledgeAnswer = (knowledge) => {
+  if (!knowledge?.matched || !Array.isArray(knowledge.snippets) || !knowledge.snippets.length) return UNKNOWN_REPLY;
+  const best = knowledge.snippets[0];
+  const text = String(best?.text || '').trim();
+  return text ? text.slice(0, 1800) : UNKNOWN_REPLY;
 };
 
 const findStaticAnswer = (message, role) => {
@@ -348,7 +360,7 @@ Rules:
 5. Only assist with AGAPAY navigation, approved AGAPAY knowledge, or practical jobseeker/employer career guidance. Refuse unrelated general questions, schoolwork, general programming, and general trivia.
 6. Offer useful general resume writing, realistic sample interview answers, lists of common interview questions, mock interviews (one question at a time), cover-letter help, workplace communication and hiring guidance without inventing AGAPAY features. These questions need not say AGAPAY explicitly. Give tailored examples when the user shares a role. Follow short contextual follow-up questions naturally.
 7. Never invent an AGAPAY button, page, status, policy, feature, rule, or result.
-8. If an AGAPAY-specific detail is not confirmed by the official knowledge, clearly say that it is not confirmed and direct the user to the relevant page or TEE support.
+8. If an AGAPAY-specific detail is not confirmed by the official knowledge, clearly say that it is not confirmed and direct the user to the relevant page or TEE support. Never use older generic instructions to override a current backend restriction. Withdrawal is permanent in the current system; a withdrawn job application cannot be reactivated.
 9. Never claim that you checked private account data, application status, messages, notifications, interview schedules, or database records.
 10. Do not request passwords, temporary passwords, API keys, payment details, government ID numbers, private documents, or other sensitive information.
 11. Do not perform account changes, application actions, status changes, job actions, or message actions.
@@ -578,7 +590,7 @@ exports.sendChatbotMessage = async (req, res) => {
           maxScore: 0,
         };
 
-    if (questionScope === 'system' && !knowledge.matched && !isDeveloperQuestion(message) && !isCareerQuestion(message)) {
+    if (questionScope === 'system' && !knowledge.matched) {
       return res.json({ success: true, mode: 'knowledge-fallback', reply: UNKNOWN_REPLY, knowledgeSources: [] });
     }
 
@@ -587,7 +599,7 @@ exports.sendChatbotMessage = async (req, res) => {
         success: true,
         mode: 'static',
         scope: questionScope,
-        reply: findStaticAnswer(message, role),
+        reply: questionScope === 'system' ? findVerifiedKnowledgeAnswer(knowledge) : findStaticAnswer(message, role),
         knowledgeSources: knowledge.sources,
       });
     }
@@ -620,7 +632,7 @@ exports.sendChatbotMessage = async (req, res) => {
         success: true,
         mode: 'static-fallback',
         scope: questionScope,
-        reply: findStaticAnswer(message, role),
+        reply: questionScope === 'system' ? findVerifiedKnowledgeAnswer(knowledge) : findStaticAnswer(message, role),
         knowledgeSources: knowledge.sources,
       });
     }

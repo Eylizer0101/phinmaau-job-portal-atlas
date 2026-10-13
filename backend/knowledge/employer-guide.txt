@@ -71,3 +71,9 @@ Employers can initiate an eligible conversation about an application, attach sup
 EMPLOYER SETTINGS AND ACCOUNT SECURITY
 
 Use account settings for the fields currently offered. Keep company credentials, passwords, and verification documents private. Do not send these to Agap-AI. If a feature is disabled pending account approval, follow the verification and support process rather than trying to bypass it.
+
+EXACT EDIT REQUEST RULE (VERIFIED FROM BACKEND)
+For a published job, regular editing is available during its first hour after publication. Once the first hour has passed, a locked published post requires an employer edit request unless the job has an active temporary approved editing window. In Manage Jobs, request permission and select one or more sections: Job Details, Requirements & Qualifications, Skills & Benefits, Work Locations, Salary, Deadline. Explain why editing is needed (maximum 500 characters), then submit for administrator review. Only one pending request can exist per job. Approved editing must be confined to the authorized requested sections; an approved edit is not automatic publication or permission to change unrelated fields. Do not guarantee approval.
+
+WHO CAN MESSAGE FIRST
+The employer can initiate a conversation only when an application exists involving that employer and jobseeker. A jobseeker can reply after the employer's first message, but cannot start a new thread.

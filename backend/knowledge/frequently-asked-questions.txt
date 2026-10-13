@@ -42,7 +42,7 @@ Yes. A jobseeker can withdraw an active application. The system stores the last 
 
 CAN AN INACTIVE APPLICATION BE REACTIVATED?
 
-Yes, when the job is still active, published, accepting applications, and not full. The system restores the last active status when possible.
+No. The current application controller rejects reactivation with WITHDRAWAL_PERMANENT. Withdrawal is permanent and the application cannot be restored. The jobseeker can still review the application history in My Applications.
 
 WHAT HAPPENS WHEN A VACANCY IS FULL?
 
@@ -75,7 +75,7 @@ An application can preserve resume/profile details from submission time. New pro
 
 CAN I APPLY AGAIN AFTER WITHDRAWING?
 
-Use the available Reactivate action only if the application and job still meet the system eligibility rules. Do not assume every withdrawn application can be reactivated.
+No. The backend rejects attempts to reactivate withdrawn applications. Do not promise that a Reactivate option will work.
 
 WHY CAN'T I MESSAGE AN EMPLOYER FIRST?
 
