@@ -627,33 +627,33 @@ const AdminEmployerJobEditRequestReview = () => {
                 {confirmation === 'approve' ? <UnlockKeyhole size={23} /> : <ShieldAlert size={23} />}
               </span>
               <div>
-                <h2 id="decision-title" className="text-lg font-semibold text-gray-900">
+                <h2 id="decision-title" className={`${confirmation === 'decline' ? 'text-xl' : 'text-lg'} font-semibold text-gray-900`}>
                   {confirmation === 'approve' ? 'Approve & Unlock Edit Request?' : 'Decline Edit Request?'}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-600">
+                <p className={`mt-2 ${confirmation === 'decline' ? 'text-base' : 'text-sm'} leading-6 text-gray-600`}>
                   {confirmation === 'approve'
                     ? 'The employer will be able to edit this job post for one hour.'
-                    : 'The employer’s edit request will be declined and the job post will remain locked.'}
+                    : <>You are about to decline the employer’s request to edit this job post.<br />Please select a reason below so they can be informed.</>}
                 </p>
               </div>
             </div>
             {confirmation === 'decline' && (
               <div className="mt-5 space-y-4">
                 <div>
-                  <p className="mb-2 text-xs font-semibold text-[#17375e]">Reason for Decline <span className="text-red-600">*</span></p>
+                  <p className="mb-2 text-sm font-semibold text-[#17375e]">Reason for Decline <span className="text-red-600">*</span></p>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {EDIT_REQUEST_DECLINE_REASONS.map((reason) => (
-                      <label key={reason.label} className={`flex min-h-[76px] cursor-pointer items-start gap-2 rounded-lg border p-3 transition ${declineReason === reason.label ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                      <label key={reason.label} className={`flex min-h-[88px] cursor-pointer items-start gap-2 rounded-lg border p-3 transition ${declineReason === reason.label ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
                         <input type="radio" name="edit-request-decline-reason" className="mt-0.5 accent-blue-600" checked={declineReason === reason.label} onChange={() => setDeclineReason(reason.label)} />
-                        <span className="min-w-0"><span className="block text-xs font-semibold text-slate-800">{reason.label}</span><span className="mt-1 block text-[11px] leading-4 text-slate-500">{reason.description}</span></span>
+                        <span className="min-w-0"><span className="block text-sm font-semibold text-slate-800">{reason.label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{reason.description}</span></span>
                       </label>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="edit-request-decline-comment" className="mb-2 block text-xs font-semibold text-[#17375e]">Additional Notes <span className="text-red-600">*</span></label>
+                  <label htmlFor="edit-request-decline-comment" className="mb-2 block text-sm font-semibold text-[#17375e]">Additional Notes <span className="text-red-600">*</span></label>
                   <textarea id="edit-request-decline-comment" rows={3} maxLength={150} value={declineComment} onChange={(event) => setDeclineComment(event.target.value.slice(0, 150))} placeholder="Provide more details about the reason." className="w-full resize-none rounded-lg border border-slate-200 p-3 text-sm text-gray-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
-                  <div className="text-right text-xs text-slate-500">{declineComment.length}/150</div>
+                  <div className="text-right text-sm text-slate-500">{declineComment.length}/150</div>
                 </div>
               </div>
             )}
@@ -677,7 +677,7 @@ const AdminEmployerJobEditRequestReview = () => {
                 <Check size={25} strokeWidth={3} />
               </span>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">{success.title}</h2>
+            <h2 className={`${confirmation === 'decline' ? 'text-xl' : 'text-lg'} font-semibold text-gray-900`}>{success.title}</h2>
             <p className="mt-2 text-sm text-gray-600">{success.message}</p>
           </div>
         </div>
