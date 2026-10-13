@@ -346,6 +346,22 @@ exports.declineRequest = async (req, res) => {
       });
     }
 
+    const declineReason = String(req.body?.declineReason || '').trim();
+    const declineComment = String(req.body?.declineComment || '').trim();
+    const allowedDeclineReasons = [
+      'Incomplete Information',
+      'Does Not Follow Guidelines',
+      'Job Details Changed',
+      'Unreasonable or Invalid Changes',
+      'Other',
+    ];
+    if (!allowedDeclineReasons.includes(declineReason)) {
+      return res.status(400).json({ success: false, message: 'Select a valid reason for declining.' });
+    }
+    if (!declineComment || declineComment.length > 150) {
+      return res.status(400).json({ success: false, message: 'Additional notes are required and must not exceed 150 characters.' });
+    }
+
     request.status = 'rejected';
     request.reviewedBy = req.user._id;
     request.reviewedAt = new Date();
@@ -355,20 +371,22 @@ exports.declineRequest = async (req, res) => {
     await Notification.create({
       user: request.employer,
       type: 'system',
-      title: 'Edit Request Cancelled',
-      message: `Your request to edit “${request.job.title || 'Untitled Job'}” was declined.`,
+      title: 'Edit Request Declined',
+      message: `Your request to edit “${request.job.title || 'Untitled Job'}” was declined. Reason: ${declineReason}. Admin comment: ${declineComment}`,
       relatedId: request.job._id,
       relatedModel: 'Job',
       link: `/employer/manage-jobs?job=${request.job._id}`,
       metadata: {
         requestId: request._id,
         jobId: request.job._id,
+        declineReason,
+        declineComment,
       },
     });
 
     return res.json({
       success: true,
-      message: 'The employer’s edit request was cancelled.',
+      message: 'The employer’s edit request was declined.',
       request: serializeRequest(request),
     });
   } catch (error) {

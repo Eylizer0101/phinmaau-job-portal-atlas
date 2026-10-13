@@ -16,6 +16,14 @@ import api from '../../services/api';
 import { BookmarksSvgIcon, JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
 
 
+const EDIT_REQUEST_DECLINE_REASONS = [
+  { label: 'Incomplete Information', description: 'The changes provided are missing required details.' },
+  { label: 'Does Not Follow Guidelines', description: 'The requested changes are not aligned with our posting standards.' },
+  { label: 'Job Details Changed', description: 'The changes may affect the job’s eligibility or visibility.' },
+  { label: 'Unreasonable or Invalid Changes', description: 'The requested changes are unclear, invalid, or not appropriate.' },
+  { label: 'Other', description: 'Choose this if the reason is not listed above.' },
+];
+
 const AGAPAY_ADMIN_EDIT_REQUEST_REVIEW_FILTERS_KEY = "agapay:admin:edit-request-review:filters";
 
 const readAgapayAdminEditRequestReviewFiltersState = () => {
@@ -209,6 +217,8 @@ const AdminEmployerJobEditRequestReview = () => {
   const [dateTo, setDateTo] = useState('');
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
+  const [declineReason, setDeclineReason] = useState('');
+  const [declineComment, setDeclineComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(null);
 
@@ -344,15 +354,19 @@ const AdminEmployerJobEditRequestReview = () => {
 
   const submitDecision = async () => {
     if (!confirmation || submitting || request?.status !== 'pending') return;
+    if (confirmation === 'decline' && (!declineReason || !declineComment.trim() || declineComment.trim().length > 150)) return;
 
     try {
       setSubmitting(true);
       setError('');
       const endpoint = confirmation === 'approve' ? 'approve' : 'decline';
-      const { data } = await api.patch(`/job-edit-requests/admin/${request._id}/${endpoint}`);
+      const declinePayload = confirmation === 'decline' ? { declineReason, declineComment: declineComment.trim() } : {};
+      const { data } = await api.patch(`/job-edit-requests/admin/${request._id}/${endpoint}`, declinePayload);
       setRequest((current) => ({ ...current, ...data?.request }));
       setRequestHistory((items) => items.map((item) => item._id === request._id ? { ...item, ...data?.request } : item));
       setConfirmation(null);
+      setDeclineReason('');
+      setDeclineComment('');
       setStatus('all');
       setSuccess(
         confirmation === 'approve'
@@ -361,8 +375,8 @@ const AdminEmployerJobEditRequestReview = () => {
               message: 'The employer can now edit the job post.',
             }
           : {
-              title: 'Edit Request Cancelled',
-              message: 'The employer’s edit request was cancelled.',
+              title: 'Edit Request Declined',
+              message: 'The employer’s edit request was declined.',
             }
       );
     } catch (requestError) {
@@ -607,7 +621,7 @@ const AdminEmployerJobEditRequestReview = () => {
 
       {confirmation && (
         <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true" aria-labelledby="decision-title">
-          <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
+          <div className={`w-full ${confirmation === 'decline' ? 'max-w-3xl' : 'max-w-md'} max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl`}>
             <div className="flex items-start gap-4">
               <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${confirmation === 'approve' ? 'bg-[#e8f1ff] text-[#2e66a6]' : 'bg-red-50 text-red-600'}`}>
                 {confirmation === 'approve' ? <UnlockKeyhole size={23} /> : <ShieldAlert size={23} />}
@@ -619,15 +633,35 @@ const AdminEmployerJobEditRequestReview = () => {
                 <p className="mt-2 text-sm leading-6 text-gray-600">
                   {confirmation === 'approve'
                     ? 'The employer will be able to edit this job post for one hour.'
-                    : 'The employer’s edit request will be cancelled and the job post will remain locked.'}
+                    : 'The employer’s edit request will be declined and the job post will remain locked.'}
                 </p>
               </div>
             </div>
+            {confirmation === 'decline' && (
+              <div className="mt-5 space-y-4">
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-[#17375e]">Reason for Decline <span className="text-red-600">*</span></p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {EDIT_REQUEST_DECLINE_REASONS.map((reason) => (
+                      <label key={reason.label} className={`flex min-h-[76px] cursor-pointer items-start gap-2 rounded-lg border p-3 transition ${declineReason === reason.label ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                        <input type="radio" name="edit-request-decline-reason" className="mt-0.5 accent-blue-600" checked={declineReason === reason.label} onChange={() => setDeclineReason(reason.label)} />
+                        <span className="min-w-0"><span className="block text-xs font-semibold text-slate-800">{reason.label}</span><span className="mt-1 block text-[11px] leading-4 text-slate-500">{reason.description}</span></span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="edit-request-decline-comment" className="mb-2 block text-xs font-semibold text-[#17375e]">Additional Notes <span className="text-red-600">*</span></label>
+                  <textarea id="edit-request-decline-comment" rows={3} maxLength={150} value={declineComment} onChange={(event) => setDeclineComment(event.target.value.slice(0, 150))} placeholder="Provide more details about the reason." className="w-full resize-none rounded-lg border border-slate-200 p-3 text-sm text-gray-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                  <div className="text-right text-xs text-slate-500">{declineComment.length}/150</div>
+                </div>
+              </div>
+            )}
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setConfirmation(null)} disabled={submitting} className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
                 Cancel
               </button>
-              <button type="button" onClick={submitDecision} disabled={submitting} className={`rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 ${confirmation === 'approve' ? 'bg-[#2e66a6] hover:bg-[#25578f]' : 'bg-red-600 hover:bg-red-700'}`}>
+              <button type="button" onClick={submitDecision} disabled={submitting || (confirmation === 'decline' && (!declineReason || !declineComment.trim()))} className={`rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 ${confirmation === 'approve' ? 'bg-[#2e66a6] hover:bg-[#25578f]' : 'bg-red-600 hover:bg-red-700'}`}>
                 {submitting ? 'Processing...' : confirmation === 'approve' ? 'Approve & Unlock' : 'Decline Request'}
               </button>
             </div>
