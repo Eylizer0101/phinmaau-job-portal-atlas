@@ -1958,7 +1958,7 @@ const JobSeekerDashboard = () => {
           <div className={`bg-white rounded-3xl shadow-sm border border-[#D9E3F2] overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col ${TOP_CARD_HEIGHT}`}>
             <div className="px-6 py-5 border-b border-[#D9E3F2] flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-lg font-bold text-black">Recent Job Offers</h3>
+                <h3 className="text-lg font-bold text-black">Job Offers</h3>
               </div>
               <button
                 type="button"
