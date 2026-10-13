@@ -3475,54 +3475,42 @@ const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
   const levels = [
     {
       title: 'Basic',
-      subtitle: 'Basic knowledge / Fundamental awareness',
+      subtitle: 'Fundamental Understanding',
       paragraphs: [
-        'You have a common knowledge or an understanding of basic techniques and concepts.',
-        'Focus is on learning.',
+        'You have a basic understanding of the skill and are familiar with its essential concepts and tools. You are still learning how to apply it and may need guidance when completing tasks.',
+        'Focus: Learning the fundamentals.',
       ],
     },
     {
       title: 'Novice',
-      subtitle: 'Limited experience',
+      subtitle: 'Beginning Practical Experience',
       paragraphs: [
-        'You have the level of experience gained in a classroom and/or experimental scenarios or as a trainee-on-the-job. You are expected to need help when performing this skill.',
-        'Focus is on developing through on-the-job experience.',
-        'You understand and can discuss terminology, concepts, principles, and issues related to this competency.',
-        'You utilize the full range of reference and resource materials in this competency.',
+        'You have started applying the skill through coursework, training, personal projects, or entry-level tasks. You can handle simple activities but may need assistance with unfamiliar or complex situations.',
+        'Focus: Building experience and confidence.',
       ],
     },
     {
       title: 'Intermediate',
-      subtitle: 'Practical application',
+      subtitle: 'Independent Application',
       paragraphs: [
-        'You are able to successfully complete tasks in this competency as requested. Help from an expert may be required from time to time, but you can usually perform this skill independently.',
-        'Focus is on applying and enhancing knowledge or skill.',
-        'You have applied this competency to situations occasionally while needing minimal guidance to perform successfully.',
-        'You understand and can discuss the application and implications of changes to processes, policies, and procedures in this area.',
+        'You can perform common tasks using this skill independently and solve routine problems. You may occasionally need guidance when dealing with advanced requirements or unfamiliar challenges.',
+        'Focus: Applying and improving your skills.',
       ],
     },
     {
       title: 'Advanced',
-      subtitle: 'Applied Theory',
+      subtitle: 'Strong Practical Expertise',
       paragraphs: [
-        'You can perform the actions associated with this skill without assistance. You are certainly recognized within your immediate organization as a person to ask when difficult questions arise regarding this skill.',
-        'Focus is on broad organizational/professional issues.',
-        'You have consistently provided practical/relevant ideas and perspectives on process or practice improvements which may be implemented easily.',
-        'You are capable of coaching others in the application of this competency by translating complex nuances relating to this competency into easy to understand terms.',
-        'You participate in senior level discussions regarding this competency.',
-        'You assist in the development of reference and resource materials in this competency.',
+        'You can handle complex tasks independently, identify effective solutions, and adapt your knowledge to challenging situations. You can also share your expertise and guide others when needed.',
+        'Focus: Solving complex problems and supporting others.',
       ],
     },
     {
       title: 'Expert',
-      subtitle: 'Recognized Authority',
+      subtitle: 'Extensive Knowledge and Mastery',
       paragraphs: [
-        'You are known as an expert in this area. You can provide guidance, troubleshoot, and answer questions related to this area of expertise and the field where the skill is used.',
-        'Focus is strategic.',
-        'You have demonstrated consistent excellence in applying this competency across multiple projects and/or organizations.',
-        'You are considered the go to person in this area within and/or outside organizations.',
-        'You create new applications for and/or lead the development of reference and resource materials for this competency.',
-        'You are able to diagram or explain the relevant process elements and issues in relation to organizational issues and trends in sufficient detail during discussions and presentations, to foster a greater understanding among internal and external colleagues and constituents.',
+        'You demonstrate extensive knowledge and consistently deliver high-quality results. You can address highly complex challenges, develop better approaches, and mentor others in using the skill effectively.',
+        'Focus: Mastery, innovation, and leadership.',
       ],
     },
   ];
@@ -3535,7 +3523,7 @@ const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
             <div>
               <h2 id="skill-proficiency-title" className="text-[21px] font-bold text-black">Skill Proficiency Description</h2>
               <p className="mt-4 text-[15px] leading-6 text-[#4b5563]">
-                Our skills proficiency level is based on the NIH Proficiency Scale which is used to measure one's ability to demonstrate competency on the job. The scale captures a wide range of ability levels and organizes them into five steps.
+                AGAPAY uses a five-level skill proficiency scale to help graduates assess their abilities based on their knowledge, practical experience, and confidence in performing tasks. Each level represents a different stage of skill development, from basic understanding to expert-level mastery.
               </p>
             </div>
 
