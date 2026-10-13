@@ -1274,7 +1274,7 @@ const JobseekerVerificationDetails = () => {
     const s = (status || "not_submitted").toLowerCase();
     if (s === "verified") return <Badge variant="success">Approved</Badge>;
     if (s === "pending") return <Badge variant="warning">Pending</Badge>;
-    if (s === "rejected") return <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-bold text-red-700"><SvgIcon name="declined" className="mr-1.5 h-4 w-4" />Application Declined</span>;
+    if (s === "rejected") return <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-bold text-red-700"><SvgIcon name="declined" className="mr-1.5 h-4 w-4" />Declined</span>;
     if (s === "hold") return <Badge variant="warning">On Hold</Badge>;
     return <Badge variant="neutral">Not Submitted</Badge>;
   };
