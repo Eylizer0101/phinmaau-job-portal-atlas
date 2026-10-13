@@ -1565,6 +1565,19 @@ const MyApplications = () => {
                   const employmentStatus = String(application.employmentStatus || 'active').toLowerCase();
                   const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
                   const employerRequestDecision = String(application.employmentStatusRequest?.employerResponse?.decision || 'pending').toLowerCase();
+                  const approvedEmploymentEnd = statusValue === 'hired' && (
+                    employmentRequestStatus === 'approved' ||
+                    (employmentRequestStatus === 'reviewed' && employerRequestDecision === 'approved') ||
+                    (employmentStatus === 'inactive' && Boolean(application.employmentEndReason))
+                  );
+                  const approvedEndReason = String(
+                    application.employmentEndReason || application.employmentStatusRequest?.reason || ''
+                  ).toLowerCase();
+                  const employmentEndLabel = approvedEmploymentEnd
+                    ? approvedEndReason === 'contract_ended' ? 'Contract Ended'
+                      : approvedEndReason === 'employment_ended' ? 'Employment Ended' : ''
+                    : '';
+
                   const canRequestEmploymentChange = statusValue === 'hired' && employmentStatus !== 'inactive';
                   const statusRequestDeclineReason = String(
                     application.employmentStatusRequest?.employerResponse?.declineReason ||
@@ -1607,7 +1620,7 @@ const MyApplications = () => {
                                   name={statusIconName}
                                   className={`${statusIconName === 'calendar' ? 'h-[18px] w-[18px]' : 'h-4 w-4'} flex-shrink-0`}
                                 />
-                                {statusText}
+                                {statusText}{employmentEndLabel ? ` – ${employmentEndLabel}` : ''}
                               </span>
                             </div>
 

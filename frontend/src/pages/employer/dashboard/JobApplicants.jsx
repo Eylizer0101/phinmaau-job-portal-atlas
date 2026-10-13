@@ -226,11 +226,33 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
     ? Math.min(1, courseHits.length / Math.min(courseWords.length, 4))
     : 0;
 
+  // Use the same job-to-applicant criteria across lists and Application Summary.
+  // A changed job post is scored from its current values, not an earlier saved percentage.
+  const preferredMode = normalizeMatchText(profile.preferredWorkMode);
+  const requiredMode = normalizeMatchText(job.workMode || job.workArrangement || job.workSetup);
+  const workModeRatio = !requiredMode ? 0.5 : preferredMode && (
+    preferredMode === requiredMode ||
+    (requiredMode.includes('remote') && (preferredMode.includes('remote') || preferredMode.includes('home'))) ||
+    (requiredMode.includes('home') && (preferredMode.includes('home') || preferredMode.includes('remote'))) ||
+    (requiredMode.includes('onsite') && (preferredMode.includes('onsite') || preferredMode.includes('on site'))) ||
+    (requiredMode.includes('hybrid') && preferredMode.includes('hybrid'))
+  ) ? 1 : 0;
+  const requestedType = normalizeMatchText(job.jobType);
+  const preferredType = normalizeMatchText(profile.employmentType);
+  const employmentTypeRatio = !requestedType ? 0.5 : requestedType && preferredType &&
+    (requestedType === preferredType || requestedType.includes(preferredType) || preferredType.includes(requestedType)) ? 1 : 0;
+  const requestedLocation = normalizeMatchText(job.location || '');
+  const preferredLocation = normalizeMatchText(profile.address || profile.currentAddress || '');
+  const locationRatio = !requestedLocation ? 0.5 : requestedLocation && preferredLocation &&
+    (requestedLocation.includes(preferredLocation) || preferredLocation.includes(requestedLocation)) ? 1 : 0;
   const score = Math.round(
-    skillRatio * 45 +
-    educationRatio * 20 +
-    experienceRatio * 20 +
-    courseRatio * 15
+    skillRatio * 35 +
+    educationRatio * 18 +
+    experienceRatio * 17 +
+    courseRatio * 10 +
+    workModeRatio * 10 +
+    employmentTypeRatio * 5 +
+    locationRatio * 5
   );
 
   return Math.max(0, Math.min(100, score));

@@ -719,7 +719,7 @@ const resumeStyles = `
   }
 
   .resume-declaration {
-    margin-top: 8px;
+    margin-top: 24px;
     padding-top: 0;
     width: 100%;
     break-inside: avoid;
