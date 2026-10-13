@@ -75,6 +75,24 @@ const UI = {
 // ======================= ICONS =======================
 const SvgIcon = ({ name, className = "w-5 h-5" }) => {
   const icons = {
+    declined: (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m9 9 6 6M15 9l-6 6" />
+      </svg>
+    ),
+    declineReason: (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M5 5.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 3v-4.4a2 2 0 0 1-1-1.6v-8a2 2 0 0 1 2-2Z" />
+        <path d="M12 9v3.5M12 15.5h.01" />
+      </svg>
+    ),
+    shieldDecline: (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 2.5 19.5 5v6.5c0 4.5-3 7.7-7.5 10-4.5-2.3-7.5-5.5-7.5-10V5L12 2.5Z" />
+        <path d="M12 8v5M12 16.5h.01" />
+      </svg>
+    ),
     back: (
       <svg
         className={className}
@@ -132,12 +150,10 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     restore: (
-      <img
-        src="/images/restorist.png"
-        alt=""
-        className={`${className} scale-125 object-contain`}
-        aria-hidden="true"
-      />
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3.5 10V4.5L9 10H3.5Z" />
+        <path d="M4.3 10a8.5 8.5 0 1 1-.1 5.1" />
+      </svg>
     ),
     x: (
       <svg
@@ -1258,7 +1274,7 @@ const JobseekerVerificationDetails = () => {
     const s = (status || "not_submitted").toLowerCase();
     if (s === "verified") return <Badge variant="success">Approved</Badge>;
     if (s === "pending") return <Badge variant="warning">Pending</Badge>;
-    if (s === "rejected") return <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Application Declined</span>;
+    if (s === "rejected") return <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-bold text-red-700"><SvgIcon name="declined" className="mr-1.5 h-4 w-4" />Application Declined</span>;
     if (s === "hold") return <Badge variant="warning">On Hold</Badge>;
     return <Badge variant="neutral">Not Submitted</Badge>;
   };
@@ -1527,7 +1543,7 @@ const JobseekerVerificationDetails = () => {
                 {getStatusBadge(overallStatus)}
                 {isRejected ? (
                   <button type="button" onClick={() => setShowDeclineReasonModal(true)} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 text-sm font-semibold text-amber-800 hover:bg-amber-100", UI.ring)}>
-                    <SvgIcon name="eye" className="h-4 w-4" /> View Decline Reason
+                    <SvgIcon name="declineReason" className="h-4 w-4" /> View Decline Reason
                   </button>
                 ) : null}
                 {isRejected ? (
@@ -1540,7 +1556,7 @@ const JobseekerVerificationDetails = () => {
                       UI.ring,
                     )}
                   >
-                    Restore
+                    <SvgIcon name="restore" className="h-4 w-4" /> Restore
                   </button>
                 ) : null}
               </div>
@@ -1826,7 +1842,7 @@ const JobseekerVerificationDetails = () => {
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/55 px-4 py-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowDeclineReasonModal(false); }}>
           <div role="dialog" aria-modal="true" aria-labelledby="verification-decline-reason-title" className="w-full max-w-[520px] overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between bg-gradient-to-r from-[#0c3268] to-[#42a9d1] px-5 py-4 text-white">
-              <h3 id="verification-decline-reason-title" className="flex items-center gap-2 text-base font-semibold"><SvgIcon name="x" className="h-5 w-5" /> Reason for Decline</h3>
+              <h3 id="verification-decline-reason-title" className="flex items-center gap-2 text-base font-semibold"><SvgIcon name="shieldDecline" className="h-5 w-5" /> Reason for Decline</h3>
               <button type="button" aria-label="Close decline reason" onClick={() => setShowDeclineReasonModal(false)} className="rounded-lg p-1 hover:bg-white/15"><span className="text-xl leading-none">×</span></button>
             </div>
             <div className="space-y-5 px-5 py-5">
