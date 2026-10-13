@@ -1339,11 +1339,11 @@ const JobDetails = () => {
         <div className="bg-transparent">
           <div className={UI.container}>
             <div className={`${UI.card} ${UI.pad} text-center`}>
-              <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
+              <div className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
                 <img
                   src="/images/banners/WarningAlertIcon.png"
                   alt="Warning"
-                  className="w-14 h-14 object-contain"
+                  className="w-20 h-20 object-contain"
                 />
               </div>
 
