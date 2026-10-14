@@ -398,7 +398,7 @@ const AdminLayout = ({ children }) => {
           {
             name: "Employer",
             path: "/admin/employer-verification",
-            icon: "M3 21h18M5 21V5a2 2 0 012-2h6a2 2 0 012 2v16m0-12h4a2 2 0 012 2v10M9 7h2m-2 4h2m-2 4h2",
+            icon: "M3.75 21h16.5M5.25 21V3h13.5v18M9 7h1.5M9 11h1.5m3-4H15m-1.5 4H15M9 21v-4.5h6V21",
           },
           {
             name: "Request Edit",
