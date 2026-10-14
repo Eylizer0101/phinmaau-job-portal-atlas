@@ -1856,7 +1856,7 @@ const JobseekerVerificationDetails = () => {
                 <div className="flex flex-wrap gap-2">{(Array.isArray(declineDetails?.rejectionReasons) ? declineDetails.rejectionReasons.filter(Boolean) : []).length ? declineDetails.rejectionReasons.filter(Boolean).map((reason, index) => <span key={`${reason}-${index}`} className="rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-medium text-red-700">{reason}</span>) : <span className="text-sm text-slate-500">No specific reasons recorded.</span>}</div>
               </div>
               <div><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Reason for Declining</p>
-                <div className="whitespace-pre-wrap rounded-xl border-l-4 border-amber-500 bg-white px-4 py-4 text-sm leading-6 text-slate-800">{declineDetails?.rejectionMessage || 'No additional explanation recorded.'}</div>
+                <div className="whitespace-pre-wrap rounded-xl bg-[#FFFBEB] px-4 py-4 text-sm leading-6 text-slate-800">{declineDetails?.rejectionMessage || 'No additional explanation recorded.'}</div>
               </div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 px-5 py-4">
