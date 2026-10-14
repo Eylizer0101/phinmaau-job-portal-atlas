@@ -1877,7 +1877,7 @@ const JobseekerVerificationDetails = () => {
               <div className="min-w-0 flex-1">
                 <h3 id="restore-jobseeker-title" className="text-base font-bold leading-5 text-black">Restore {jobseeker?.fullName || "Job Seeker"}?</h3>
                 <p className="mt-1.5 text-sm leading-5 text-[#667085]">
-                  Are you sure you want to restore <strong className="text-black">{jobseeker?.fullName || "this Job Seeker"}</strong>? The Job Seeker will return to the active verification list for review.
+                  Are you sure you want to restore {jobseeker?.fullName ? <strong className="text-black">{jobseeker.fullName}?</strong> : <>this <strong className="text-black">Job Seeker?</strong></>} The Job Seeker will return to the active verification list for review.
                 </p>
               </div>
             </div>
