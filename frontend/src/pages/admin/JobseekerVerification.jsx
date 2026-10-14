@@ -683,7 +683,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
   const openJobseekerDetails = (jobseekerId, archived = false) => {
     navigate(`/admin/jobseeker-verification/${jobseekerId}${archived ? "?archived=1" : ""}`, {
       state: {
-        backPath: `${location.pathname}${location.search || ""}`,
+        backPath: `${location.pathname}${archived ? "?archived=1" : ""}`,
         backLabel: pageTitle,
       },
     });

@@ -820,7 +820,7 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
   const openEmployerDetails = (employerId, archived = false) => {
     navigate(`/admin/employer-verification/${employerId}${archived ? "?archived=1" : ""}`, {
       state: {
-        backPath: `${location.pathname}${location.search || ""}`,
+        backPath: `${location.pathname}${archived ? "?archived=1" : ""}`,
         backLabel: pageTitle,
       },
     });
@@ -1424,7 +1424,7 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                             </div>
 
                             <div className="mt-4 flex justify-end gap-2">
-                              <IconButton label={`View ${companyName}`} onClick={() => openEmployerDetails(item._id, false)} className="h-10 w-10 rounded-xl border-slate-200 text-slate-600 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white">
+                              <IconButton label={`View ${companyName}`} onClick={() => openEmployerDetails(item._id, archiveMode)} className="h-10 w-10 rounded-xl border-slate-200 text-slate-600 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white">
                                 <Icon name="eye" className="h-4 w-4" />
                               </IconButton>
 
