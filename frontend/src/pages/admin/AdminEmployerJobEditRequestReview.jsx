@@ -643,9 +643,9 @@ const AdminEmployerJobEditRequestReview = () => {
                   <p className="mb-2 text-sm font-semibold text-[#17375e]">Reason for Decline <span className="text-red-600">*</span></p>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {EDIT_REQUEST_DECLINE_REASONS.map((reason) => (
-                      <label key={reason.label} className={`flex h-full min-h-[110px] cursor-pointer items-start gap-2 rounded-lg border p-3 transition ${declineReason === reason.label ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                      <label key={reason.label} className={`flex h-full min-h-[110px] cursor-pointer items-start gap-2 rounded-lg border p-3 transition ${reason.label === 'Unreasonable or Invalid Changes' ? 'lg:relative lg:z-10 lg:w-[calc(100%+90px)]' : reason.label === 'Other' ? 'lg:translate-x-[90px]' : ''} ${declineReason === reason.label ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
                         <input type="radio" name="edit-request-decline-reason" className="mt-0.5 accent-blue-600" checked={declineReason === reason.label} onChange={() => setDeclineReason(reason.label)} />
-                        <span className="min-w-0"><span className="block text-sm font-semibold text-slate-800">{reason.label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{reason.description}</span></span>
+                        <span className="min-w-0"><span className={`block text-sm font-semibold text-slate-800 ${reason.label === 'Unreasonable or Invalid Changes' ? 'lg:whitespace-nowrap' : ''}`}>{reason.label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{reason.description}</span></span>
                       </label>
                     ))}
                   </div>
