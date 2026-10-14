@@ -1295,7 +1295,9 @@ const EmployerVerificationDetails = () => {
           <section className="overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
             <div className="flex min-h-[64px] items-center gap-3 bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db] px-5 py-4 text-white sm:px-6">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/15 text-white shadow-sm">
-                <SvgIcon name="building" className="h-5 w-5" />
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" d="M3.75 21h16.5M5.25 21V3h13.5v18M9 7h1.5M9 11h1.5m3-4H15m-1.5 4H15M9 21v-4.5h6V21" />
+                </svg>
               </span>
               <h2 className="text-base font-semibold text-white sm:text-lg">Company Information</h2>
             </div>
