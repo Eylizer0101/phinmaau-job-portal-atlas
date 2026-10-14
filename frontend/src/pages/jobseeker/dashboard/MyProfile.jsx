@@ -3542,7 +3542,7 @@ const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
           {levels.map((level) => (
             <section key={level.title}>
               <h3 className="text-[18px] font-bold text-black">{level.title}</h3>
-              <div className="mt-1 text-[15px] font-bold italic text-[#008f80]">{level.subtitle}</div>
+              <div className="mt-1 text-[15px] font-bold not-italic text-[#008f80]">{level.subtitle}</div>
               <div className="mt-2 space-y-5 text-[15px] leading-7 text-[#4b5563]">
                 {level.paragraphs.map((paragraph, index) => (
                   <p key={`${level.title}-${index}`}>{paragraph}</p>

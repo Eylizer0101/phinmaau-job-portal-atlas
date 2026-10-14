@@ -5304,10 +5304,12 @@ exports.downloadResume = async (req, res) => {
       if (!paperRect.width || !declarationRect.height) return;
 
       const pageHeight = paperRect.width * (297 / 210);
-      const bottomInset = paperRect.width * (12 / 210);
+      const bottomInset = paperRect.width * (13 / 210);
       const currentBottom = declarationRect.bottom - paperRect.top;
       const lastPage = Math.max(1, Math.ceil((currentBottom + bottomInset) / pageHeight));
-      const targetBottom = (lastPage * pageHeight) - bottomInset;
+      // Leave a small safety gap: Chromium can otherwise round a boundary-aligned
+      // declaration onto an otherwise empty next PDF page.
+      const targetBottom = (lastPage * pageHeight) - bottomInset - 6;
       const extraSpace = Math.max(0, targetBottom - currentBottom);
 
       declaration.style.marginTop = `${11 + extraSpace}px`;

@@ -1125,10 +1125,12 @@ const alignDeclarationToLastPageBottom = (paper) => {
   if (!paperRect.width || !declarationRect.height) return;
 
   const pageHeight = paperRect.width * (297 / 210);
-  const bottomInset = paperRect.width * (7 / 210);
+  const bottomInset = paperRect.width * (9 / 210);
   const currentBottom = declarationRect.bottom - paperRect.top;
   const lastPage = Math.max(1, Math.ceil((currentBottom + bottomInset) / pageHeight));
-  const targetBottom = (lastPage * pageHeight) - bottomInset - 2;
+  // Keep the declaration comfortably inside its page, not on the exact A4 boundary.
+  // HTML-to-canvas/PDF conversion can otherwise round a few pixels onto a blank page.
+  const targetBottom = (lastPage * pageHeight) - bottomInset - 6;
   const extraSpace = Math.max(0, targetBottom - currentBottom);
 
   declaration.style.marginTop = `${30 + extraSpace}px`;

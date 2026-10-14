@@ -1267,7 +1267,7 @@ const EmployerVerificationDetails = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                {isRejected ? <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-bold text-red-700"><SvgIcon name="declined" className="mr-1.5 h-4 w-4" />Registration Declined</span> : statusBadge(overallStatus)}
+                {!isRejected && statusBadge(overallStatus)}
                 {isRejected ? (
                   <button type="button" onClick={() => setShowDeclineReasonModal(true)} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 text-sm font-semibold text-amber-800 hover:bg-amber-100", UI.ring)}>
                     <SvgIcon name="declineReason" className="h-4 w-4" /> View Decline Reason
@@ -1493,11 +1493,11 @@ const EmployerVerificationDetails = () => {
                   <p className="text-xs text-slate-500">Declined {declineDetails?.rejectedAt && !Number.isNaN(new Date(declineDetails.rejectedAt).getTime()) ? new Date(declineDetails.rejectedAt).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</p>
                 </div>
               </div>
-              <div><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Reasons</p>
+              <div><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Reason</p>
                 <div className="flex flex-wrap gap-2">{(Array.isArray(declineDetails?.rejectionReasons) ? declineDetails.rejectionReasons.filter(Boolean) : []).length ? declineDetails.rejectionReasons.filter(Boolean).map((reason, index) => <span key={`${reason}-${index}`} className="rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-medium text-red-700">{reason}</span>) : <span className="text-sm text-slate-500">No specific reasons recorded.</span>}</div>
               </div>
               <div><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Reason for Declining</p>
-                <div className="whitespace-pre-wrap rounded-xl border-l-4 border-amber-500 bg-amber-50 px-4 py-4 text-sm leading-6 text-slate-800">{declineDetails?.rejectionMessage || 'No additional explanation recorded.'}</div>
+                <div className="whitespace-pre-wrap rounded-xl border-l-4 border-amber-500 bg-white px-4 py-4 text-sm leading-6 text-slate-800">{declineDetails?.rejectionMessage || 'No additional explanation recorded.'}</div>
               </div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 px-5 py-4">
