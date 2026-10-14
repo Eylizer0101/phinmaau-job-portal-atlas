@@ -128,3 +128,6 @@ Check internet connectivity, refresh once, verify you are signed in, retry the a
 IS THE COMMUNITY PAGE STILL AVAILABLE?
 
 No. The Community page was removed from AGAPAY. You can still use the existing Messages and Notifications features where available. Agap-AI must not instruct users to open Community or create posts and comments.
+
+HOW TO APPLY AND WHAT SHOULD I DO FIRST?
+First sign in to your approved AGAPAY Jobseeker account. Complete the required My Profile resume sections and make sure your CV is available under Profile Credentials. Then open Job Offers or Job Search, review a job in Job Details, select Apply Now, check the submission information, and submit. Track the result under My Applications. AGAPAY does not require using LinkedIn, Indeed, or a cover letter as part of these steps.

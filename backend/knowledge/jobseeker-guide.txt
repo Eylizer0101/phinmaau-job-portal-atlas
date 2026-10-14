@@ -30,7 +30,7 @@ HOW TO APPLY FOR A JOB
 4. Search or filter jobs by available information such as keyword, location, field, salary, employment type, experience, education, or work mode.
 5. Open the job details and review the description, requirements, deadline, vacancies, skills, location, salary information, and employer details.
 6. Select Apply Now.
-7. Review the information being submitted and add a cover letter when available.
+7. Review the application information presented in AGAPAY before submission.
 8. Submit the application.
 9. Open My Applications to track progress.
 
@@ -83,7 +83,10 @@ Users may be able to upload, crop, change, or remove a profile image using the i
 
 CAREER GUIDANCE
 
-Resume advice, profile improvement, skill descriptions, cover-letter tips, interview preparation, and professional communication are within Agap-AI's job-related guidance. No advice guarantees job matching, interview selection, or hiring.
+Resume guidance within My Profile, profile improvement, skill descriptions, interview preparation, and professional communication related to AGAPAY applications are within Agap-AI's scope. No advice guarantees job matching, interview selection, or hiring.
 
 WITHDRAWING AN APPLICATION (CURRENT BACKEND)
 An eligible application can be withdrawn from My Applications. Withdrawal is permanent: the current backend rejects reactivation/restoration. The earlier resume snapshot remains attached to the application history. Do not tell the user to tap Reactivate or apply again to the same job as a workaround.
+
+AGAPAY-ONLY APPLY ANSWER
+When asked "how to apply", "how to apply and what should I do first", or similar, begin with an active verified Jobseeker account and a completed profile/CV in Profile Credentials. Direct the user to Job Offers or Job Search, Job Details, Apply Now, and My Applications. Never replace these steps with searching external job advertisements, setting up LinkedIn, writing a cover letter, or updating profiles outside AGAPAY.
