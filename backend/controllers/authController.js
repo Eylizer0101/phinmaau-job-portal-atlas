@@ -4215,7 +4215,7 @@ exports.requestPhoneChangeVerification = async (req, res) => {
     await user.save();
     return res.status(200).json({ success: true, message: 'Verification code sent to your new mobile number.', pendingPhoneNumber: newPhone });
   } catch (error) {
-    console.error('Infobip mobile OTP request failed:', error.status || '', error.safeMessage || error.message);
+    console.error('Infobip mobile OTP request failed:', error.status || '', error.providerCode || error.code || 'UNSPECIFIED');
     return res.status(error.status === 429 ? 429 : 502).json({ success: false, message: error.safeMessage || 'We could not send the SMS verification code. Please try again later.' });
   }
 };
@@ -4241,7 +4241,7 @@ exports.resendPhoneVerificationCode = async (req, res) => {
     await user.save();
     return res.status(200).json({ success: true, message: 'A new mobile verification code has been sent.' });
   } catch (error) {
-    console.error('Infobip mobile OTP resend failed:', error.status || '', error.safeMessage || error.message);
+    console.error('Infobip mobile OTP resend failed:', error.status || '', error.providerCode || error.code || 'UNSPECIFIED');
     return res.status(error.status === 429 ? 429 : 502).json({ success: false, message: error.safeMessage || 'We could not resend the SMS verification code. Please try again later.' });
   }
 };
@@ -4273,7 +4273,7 @@ exports.verifyPhoneChangeCode = async (req, res) => {
     if (!updatedUser) return res.status(409).json({ success: false, message: 'Your verification request has changed. Please start again.' });
     return res.status(200).json({ success: true, message: 'Mobile number verified successfully.', user: updatedUser });
   } catch (error) {
-    console.error('Infobip mobile OTP verification failed:', error.status || '', error.safeMessage || error.message);
+    console.error('Infobip mobile OTP verification failed:', error.status || '', error.providerCode || error.code || 'UNSPECIFIED');
     return res.status(error.status === 429 ? 429 : 502).json({ success: false, message: error.safeMessage || 'We could not verify your code. Please try again later.' });
   }
 };

@@ -41,9 +41,21 @@ const infobipRequest = async (path, data) => {
         let parsed = {};
         try { parsed = JSON.parse(text); } catch (_) { /* Unstructured upstream error */ }
         if (response.statusCode >= 200 && response.statusCode < 300) return resolve(parsed);
-        const error = new Error(`Infobip API returned status ${response.statusCode}: ${String(parsed.requestError?.serviceException?.text || parsed.errorMessage || '').slice(0, 160)}`);
+        // Log only a provider status/code, never the API key, phone number, or OTP.
+        const providerCode = String(
+          parsed.requestError?.serviceException?.messageId ||
+          parsed.requestError?.serviceException?.errorCode ||
+          parsed.requestError?.serviceException?.code ||
+          parsed.errorCode ||
+          parsed.code ||
+          'UNKNOWN'
+        ).replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 60);
+        const error = new Error(`Infobip SMS request failed (HTTP ${response.statusCode}, provider code ${providerCode}).`);
         error.status = response.statusCode;
-        error.safeMessage = response.statusCode === 429 ? 'Too many SMS requests. Please wait before trying again.' : 'SMS verification could not be completed. Please try again later.';
+        error.providerCode = providerCode;
+        error.safeMessage = response.statusCode === 429
+          ? 'Too many SMS requests. Please wait before trying again.'
+          : 'SMS verification could not be completed. Please try again later.';
         return reject(error);
       });
     });
