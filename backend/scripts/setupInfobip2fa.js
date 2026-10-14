@@ -1,6 +1,7 @@
 // One-time setup: run locally with INFOBIP_API_KEY and INFOBIP_BASE_URL in the environment.
 // It only creates an Infobip 2FA application and SMS message template; it does NOT send SMS.
 const https = require('https');
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const key = process.env.INFOBIP_API_KEY;
 const base = process.env.INFOBIP_BASE_URL;
 if (!key || !base) { console.error('Set INFOBIP_API_KEY and INFOBIP_BASE_URL before running.'); process.exit(1); }
