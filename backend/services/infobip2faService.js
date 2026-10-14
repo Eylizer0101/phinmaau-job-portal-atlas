@@ -67,7 +67,8 @@ const infobipRequest = async (path, data) => {
 
 const sendPin = async (phone) => {
   const { applicationId, messageId } = configured();
-  const response = await infobipRequest('/2fa/2/pin', { applicationId, messageId, from: 'Infobip 2FA', to: phone.replace(/^\+/, '') });
+  const sender = String(process.env.INFOBIP_SMS_SENDER || 'InfoSMS').trim();
+  const response = await infobipRequest('/2fa/2/pin?ncNeeded=false', { applicationId, messageId, from: sender, to: phone.replace(/^\+/, '') });
   if (!response.pinId) throw new Error('Infobip did not return a PIN ID.');
   return { pinId: response.pinId };
 };
