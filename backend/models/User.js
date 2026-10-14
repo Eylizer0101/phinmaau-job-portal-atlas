@@ -582,6 +582,8 @@ const userSchema = new mongoose.Schema(
 
       pendingPhoneNumber: { type: String, default: '', trim: true },
       phoneOtpHash: { type: String, default: '' },
+      phoneOtpPinId: { type: String, default: '' },
+      phoneOtpAttempts: { type: Number, default: 0 },
       phoneOtpExpiresAt: { type: Date, default: null },
       phoneOtpRequestedAt: { type: Date, default: null },
     },

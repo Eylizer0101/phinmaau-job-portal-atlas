@@ -1,5 +1,6 @@
 // BACKEND/controllers/authController.js
 const User = require('../models/User');
+const { sendPin, verifyPin } = require('../services/infobip2faService');
 const PendingEmailVerification = require('../models/PendingEmailVerification');
 const Notification = require('../models/Notification');
 const notificationController = require('./notificationController');
@@ -4160,56 +4161,62 @@ exports.verifyEmailChangeCode = async (req, res) => {
   }
 };
 
+// Infobip 2FA: change the registered mobile only after the provider verifies the PIN.
+const PHONE_OTP_COOLDOWN_MS = 180 * 1000;
+const PHONE_OTP_MAX_ATTEMPTS = 5;
+const cleanLocalPhone = (value) => {
+  const valueText = String(value || '').trim();
+  if (/^09\d{9}$/.test(valueText)) return valueText;
+  if (/^\+639\d{9}$/.test(valueText)) return `0${valueText.slice(3)}`;
+  return '';
+};
+const phoneChangeState = (user) => user.settingsVerification?.toObject?.() || user.settingsVerification || {};
+const isPhoneCooldownActive = (state) =>
+  state.phoneOtpRequestedAt && Date.now() - new Date(state.phoneOtpRequestedAt).getTime() < PHONE_OTP_COOLDOWN_MS;
+const phoneAlreadyRegistered = async (number, userId) => User.exists({
+  _id: { $ne: userId },
+  $or: [
+    { registrationContactNumber: number },
+    { 'jobSeekerProfile.phoneNumber': number },
+    { 'employerProfile.mobileNumber': number },
+  ],
+});
+const resetPhoneState = (state) => ({
+  ...state,
+  pendingPhoneNumber: '',
+  phoneOtpHash: '',
+  phoneOtpPinId: '',
+  phoneOtpExpiresAt: null,
+  phoneOtpRequestedAt: null,
+  phoneOtpAttempts: 0,
+});
+
 exports.requestPhoneChangeVerification = async (req, res) => {
   try {
-    const { phoneNumber } = req.body;
-    const localPhoneNumber = String(phoneNumber || '').trim();
-
-    if (!/^09\d{9}$/.test(localPhoneNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.'
-      });
-    }
-
-    const cleanPhone = normalizePhoneNumber(localPhoneNumber);
-
-    if (!cleanPhone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.'
-      });
-    }
-
+    const newPhone = cleanLocalPhone(req.body?.phoneNumber);
+    if (!newPhone) return res.status(400).json({ success: false, message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.' });
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const code = generateNumericOtp();
-    const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
-
-    await sendBrevoSms({
-      to: cleanPhone,
-      message: `Your AGAPAY mobile verification code is ${code}. This code expires in ${SETTINGS_OTP_EXPIRES_MINUTES} minutes.`,
-    });
-
+    const currentPhone = cleanLocalPhone(user.role === 'employer' ? user.employerProfile?.mobileNumber : user.jobSeekerProfile?.phoneNumber);
+    if (newPhone === currentPhone) return res.status(400).json({ success: false, message: 'Please enter a different mobile number.' });
+    if (await phoneAlreadyRegistered(newPhone, user._id)) return res.status(409).json({ success: false, message: 'Contact Number is already registered.' });
+    const state = phoneChangeState(user);
+    if (isPhoneCooldownActive(state)) return res.status(429).json({ success: false, message: 'Please wait 3 minutes before requesting another verification code.' });
+    const result = await sendPin(normalizePhoneNumber(newPhone));
     user.settingsVerification = {
-      ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
-      pendingPhoneNumber: cleanPhone,
-      phoneOtpHash: hashToken(code),
-      phoneOtpExpiresAt: expiresAt,
+      ...state,
+      pendingPhoneNumber: newPhone,
+      phoneOtpHash: '', // Old Brevo OTPs must not be accepted by this flow.
+      phoneOtpPinId: result.pinId,
+      phoneOtpExpiresAt: new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000),
       phoneOtpRequestedAt: new Date(),
-      phoneVerified: Boolean(
-        user.settingsVerification?.phoneVerified ||
-        (isApprovedJobseekerAccount(user) && hasRegisteredJobseekerPhone(user))
-      ),
+      phoneOtpAttempts: 0,
     };
-
     await user.save();
-
-    return res.status(200).json({ success: true, message: 'Verification code sent to your mobile number.', pendingPhoneNumber: cleanPhone });
+    return res.status(200).json({ success: true, message: 'Verification code sent to your new mobile number.', pendingPhoneNumber: newPhone });
   } catch (error) {
-    console.error('Error requesting phone verification:', error);
-    return res.status(500).json({ success: false, message: 'We couldn\'t send the verification code. Please try again later.' });
+    console.error('Infobip mobile OTP request failed:', error.status || '', error.safeMessage || error.message);
+    return res.status(error.status === 429 ? 429 : 502).json({ success: false, message: error.safeMessage || 'We could not send the SMS verification code. Please try again later.' });
   }
 };
 
@@ -4217,83 +4224,57 @@ exports.resendPhoneVerificationCode = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const targetPhone = normalizePhoneNumber(
-      user.settingsVerification?.pendingPhoneNumber ||
-      (user.role === 'employer' ? user.employerProfile?.mobileNumber : user.jobSeekerProfile?.phoneNumber)
-    );
-    if (!targetPhone) return res.status(400).json({ success: false, message: 'No mobile number available for verification.' });
-
-    const code = generateNumericOtp();
-    const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
-
+    const state = phoneChangeState(user);
+    const pendingPhone = cleanLocalPhone(state.pendingPhoneNumber);
+    if (!pendingPhone) return res.status(400).json({ success: false, message: 'Please enter a new mobile number first.' });
+    if (isPhoneCooldownActive(state)) return res.status(429).json({ success: false, message: 'Please wait 3 minutes before requesting another verification code.' });
+    if (await phoneAlreadyRegistered(pendingPhone, user._id)) return res.status(409).json({ success: false, message: 'Contact Number is already registered.' });
+    const result = await sendPin(normalizePhoneNumber(pendingPhone));
     user.settingsVerification = {
-      ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
-      pendingPhoneNumber: user.settingsVerification?.pendingPhoneNumber || targetPhone,
-      phoneOtpHash: hashToken(code),
-      phoneOtpExpiresAt: expiresAt,
+      ...state,
+      phoneOtpHash: '',
+      phoneOtpPinId: result.pinId,
+      phoneOtpExpiresAt: new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000),
       phoneOtpRequestedAt: new Date(),
+      phoneOtpAttempts: 0,
     };
-
     await user.save();
-
-    await sendBrevoSms({
-      to: targetPhone,
-      message: `Your AGAPAY mobile verification code is ${code}. This code expires in ${SETTINGS_OTP_EXPIRES_MINUTES} minutes.`,
-    });
-
-    return res.status(200).json({ success: true, message: 'Mobile verification code sent.' });
+    return res.status(200).json({ success: true, message: 'A new mobile verification code has been sent.' });
   } catch (error) {
-    console.error('Error resending phone verification:', error);
-    return res.status(500).json({ success: false, message: 'We couldn\'t resend the verification code. Please try again later.' });
+    console.error('Infobip mobile OTP resend failed:', error.status || '', error.safeMessage || error.message);
+    return res.status(error.status === 429 ? 429 : 502).json({ success: false, message: error.safeMessage || 'We could not resend the SMS verification code. Please try again later.' });
   }
 };
 
 exports.verifyPhoneChangeCode = async (req, res) => {
   try {
-    const { code } = req.body;
-    if (!code || !String(code).trim()) return res.status(400).json({ success: false, message: 'Verification code is required.' });
-
+    const code = String(req.body?.code || '').trim();
+    if (!/^\d{4,8}$/.test(code)) return res.status(400).json({ success: false, message: 'Please enter a valid numeric verification code.' });
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const verification = user.settingsVerification || {};
-    if (!verification.phoneOtpHash || !verification.phoneOtpExpiresAt) {
-      return res.status(400).json({ success: false, message: 'Please request a mobile verification code first.' });
-    }
-
-    if (new Date(verification.phoneOtpExpiresAt).getTime() < Date.now()) {
-      return res.status(400).json({ success: false, message: 'Verification code has expired. Please resend code.' });
-    }
-
-    if (hashToken(String(code).trim()) !== verification.phoneOtpHash) {
-      return res.status(400).json({ success: false, message: 'Invalid verification code.' });
-    }
-
-    if (user.role === 'employer') {
-      if (!user.employerProfile) user.employerProfile = {};
-      user.employerProfile.mobileNumber = verification.pendingPhoneNumber || user.employerProfile.mobileNumber || '';
-    } else {
-      if (!user.jobSeekerProfile) user.jobSeekerProfile = {};
-      user.jobSeekerProfile.phoneNumber = verification.pendingPhoneNumber || user.jobSeekerProfile.phoneNumber || '';
-    }
-
-    user.settingsVerification = {
-      ...(verification.toObject?.() || verification),
-      phoneVerified: true,
-      pendingPhoneNumber: '',
-      phoneOtpHash: '',
-      phoneOtpExpiresAt: null,
-      phoneOtpRequestedAt: null,
-    };
-
-    await user.save();
-
-    const updatedUser = await User.findById(user._id).select('-password');
+    const state = phoneChangeState(user);
+    const pendingPhone = cleanLocalPhone(state.pendingPhoneNumber);
+    if (!pendingPhone || !state.phoneOtpPinId) return res.status(400).json({ success: false, message: 'Please request a new mobile verification code first.' });
+    if (!state.phoneOtpExpiresAt || new Date(state.phoneOtpExpiresAt).getTime() <= Date.now()) return res.status(400).json({ success: false, message: 'Verification code expired. Please request a new code.' });
+    if (Number(state.phoneOtpAttempts || 0) >= PHONE_OTP_MAX_ATTEMPTS) return res.status(429).json({ success: false, message: 'Too many incorrect attempts. Please request a new code.' });
+    // Persist attempt count BEFORE asking Infobip, including when verification fails.
+    const attempt = await User.updateOne({ _id: user._id, 'settingsVerification.phoneOtpPinId': state.phoneOtpPinId, 'settingsVerification.phoneOtpAttempts': { $lt: PHONE_OTP_MAX_ATTEMPTS } }, { $inc: { 'settingsVerification.phoneOtpAttempts': 1 } });
+    if (!attempt.modifiedCount) return res.status(429).json({ success: false, message: 'Too many verification attempts. Please request a new code.' });
+    const result = await verifyPin(state.phoneOtpPinId, code);
+    if (!result.verified) return res.status(400).json({ success: false, message: 'Incorrect verification code. Please try again.' });
+    if (await phoneAlreadyRegistered(pendingPhone, user._id)) return res.status(409).json({ success: false, message: 'Contact Number is already registered.' });
+    const phoneField = user.role === 'employer' ? 'employerProfile.mobileNumber' : 'jobSeekerProfile.phoneNumber';
+    // Atomic update also makes a successfully consumed code unusable again.
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: user._id, 'settingsVerification.phoneOtpPinId': state.phoneOtpPinId, 'settingsVerification.pendingPhoneNumber': pendingPhone },
+      { $set: { [phoneField]: pendingPhone, 'settingsVerification.phoneVerified': true, 'settingsVerification.pendingPhoneNumber': '', 'settingsVerification.phoneOtpHash': '', 'settingsVerification.phoneOtpPinId': '', 'settingsVerification.phoneOtpExpiresAt': null, 'settingsVerification.phoneOtpRequestedAt': null, 'settingsVerification.phoneOtpAttempts': 0 } },
+      { new: true, runValidators: true }
+    ).select('-password');
+    if (!updatedUser) return res.status(409).json({ success: false, message: 'Your verification request has changed. Please start again.' });
     return res.status(200).json({ success: true, message: 'Mobile number verified successfully.', user: updatedUser });
   } catch (error) {
-    console.error('Error verifying phone code:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error verifying mobile number.' });
+    console.error('Infobip mobile OTP verification failed:', error.status || '', error.safeMessage || error.message);
+    return res.status(error.status === 429 ? 429 : 502).json({ success: false, message: error.safeMessage || 'We could not verify your code. Please try again later.' });
   }
 };
 
