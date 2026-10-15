@@ -89,7 +89,16 @@ const JobSeekerLayout = ({ children }) => {
 
   // Notifications
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationCountKey = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return `agapay:notification-count:${user._id || user.id || 'jobseeker'}`;
+    } catch { return 'agapay:notification-count:jobseeker'; }
+  })();
+  const [unreadCount, setUnreadCount] = useState(() => {
+    try { return Math.max(0, Number(sessionStorage.getItem(notificationCountKey)) || 0); }
+    catch { return 0; }
+  });
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDeleteConfirmation, setNotificationDeleteConfirmation] = useState(null);
@@ -421,13 +430,18 @@ const JobSeekerLayout = ({ children }) => {
     if (showLogoutModal) closeLogoutModal();
   }, isNotificationOpen || isProfileOpen || isMobileMenuOpen || showLogoutModal);
 
+  useEffect(() => {
+    try { sessionStorage.setItem(notificationCountKey, String(unreadCount)); }
+    catch { /* Keep the navigation usable without sessionStorage. */ }
+  }, [notificationCountKey, unreadCount]);
+
   const fetchNotifications = async () => {
     try {
       setNotificationLoading(true);
       const response = await api.get('/notifications', { params: { page: 1, limit: 5 } });
       if (response.data.success) {
         setNotifications(response.data.notifications || []);
-        setUnreadCount(response.data.unreadCount || 0);
+        setUnreadCount(Math.max(0, Number(response.data.unreadCount) || 0));
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -497,6 +511,23 @@ const JobSeekerLayout = ({ children }) => {
 
     setIsNotificationOpen(false);
   };
+
+  useEffect(() => {
+    // A route transition may remount the layout; keep the cached badge visible
+    // while asynchronously reconciling with the authoritative unread count.
+    fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const refreshBell = () => fetchNotifications();
+    window.addEventListener('notifications:updated', refreshBell);
+    window.addEventListener('focus', refreshBell);
+    return () => {
+      window.removeEventListener('notifications:updated', refreshBell);
+      window.removeEventListener('focus', refreshBell);
+    };
+  }, []);
 
   const handleMarkAsRead = async (notificationId) => {
     try {

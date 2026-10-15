@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
+import openSubmittedResumePreview from '../../../components/jobseeker/openSubmittedResumePreview';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
@@ -793,6 +794,8 @@ const JobDetails = () => {
   const [applyChecking, setApplyChecking] = useState(false);
 
   const [hasApplied, setHasApplied] = useState(false);
+  const [submittedApplicationId, setSubmittedApplicationId] = useState('');
+  const [hasSubmittedResumeSnapshot, setHasSubmittedResumeSnapshot] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState('');
 
   const [isSaved, setIsSaved] = useState(false);
@@ -986,6 +989,8 @@ const JobDetails = () => {
 
       if (response.data.success) {
         setHasApplied(Boolean(response.data.hasApplied));
+        setSubmittedApplicationId(response.data.application?._id || '');
+        setHasSubmittedResumeSnapshot(Boolean(response.data.application?.hasSubmittedResumeSnapshot));
         if (response.data.application?.status) {
           setApplicationStatus(response.data.application.status);
         } else if (response.data.hasApplied) {
@@ -1538,6 +1543,19 @@ const JobDetails = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full lg:w-[260px] shrink-0">
+                  {hasApplied && hasSubmittedResumeSnapshot && submittedApplicationId && (
+                    <button type="button"
+                      onClick={async () => {
+                        try {
+                          await openSubmittedResumePreview(submittedApplicationId, navigate, `/jobseeker/job-details/${id}`);
+                        } catch (error) {
+                          setToastWithAutoClear('error', error?.response?.data?.message || error.message || 'Unable to open submitted resume.');
+                        }
+                      }}
+                      className={`${UI.btnBase} ${UI.btnPrimary} ${UI.ring} ${UI.btnLg} w-full`}>
+                      View Submitted Resume
+                    </button>
+                  )}
                   <button
                     onClick={handleApplyClick}
                     disabled={isApplyDisabled || applyChecking}

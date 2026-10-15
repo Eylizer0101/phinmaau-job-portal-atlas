@@ -1767,15 +1767,25 @@ const Bookmarks = () => {
     initialBookmarksParams.get('tab') === 'companies' ? 'companies' : 'jobs'
   );
 
+  const savedSelectionKey = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return `agapay:bookmarks:selection:${user._id || user.id || 'jobseeker'}`;
+    } catch { return 'agapay:bookmarks:selection:jobseeker'; }
+  })();
+  const rememberedSelection = (() => {
+    try { return JSON.parse(sessionStorage.getItem(savedSelectionKey) || '{}'); }
+    catch { return {}; }
+  })();
   const [savedJobs, setSavedJobs] = useState([]);
-  const [selectedJobId, setSelectedJobId] = useState(() => initialBookmarksParams.get('job') || '');
+  const [selectedJobId, setSelectedJobId] = useState(() => initialBookmarksParams.get('job') || rememberedSelection.job || '');
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState('');
   const [toast, setToast] = useState({ type: '', message: '' });
   const [jobSaveToast, setJobSaveToast] = useState({ show: false, message: '' });
 
   const [savedCompanies, setSavedCompanies] = useState([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState(() => rememberedSelection.company || '');
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [removingCompanyId, setRemovingCompanyId] = useState('');
   const [activeCompanyTab, setActiveCompanyTab] = useState('about');
@@ -2165,6 +2175,11 @@ const Bookmarks = () => {
       setRemovingCompanyId('');
     }
   }, [removeCompanyModal.companyId, savedCompanies, selectedCompanyId, setToastMessage, showJobSaveToast]);
+
+  useEffect(() => {
+    try { sessionStorage.setItem(savedSelectionKey, JSON.stringify({ job: selectedJobId, company: selectedCompanyId })); }
+    catch { /* Browsers may disable session storage. */ }
+  }, [savedSelectionKey, selectedJobId, selectedCompanyId]);
 
   const selectedJob = useMemo(() => savedJobs.find((job) => job._id === selectedJobId) || null, [savedJobs, selectedJobId]);
 
@@ -3051,7 +3066,13 @@ const Bookmarks = () => {
               <button
                 type="button"
                 className={`${UI.tabBase} ${activeSection === 'companies' ? UI.tabActive : UI.tabInactive}`}
-                onClick={() => setActiveSection('companies')}
+                onClick={() => {
+                  setActiveSection('companies');
+                  const params = new URLSearchParams(location.search);
+                  params.set('tab', 'companies');
+                  params.delete('job');
+                  navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+                }}
                 aria-current={activeSection === 'companies' ? 'page' : undefined}
               >
                 Companies

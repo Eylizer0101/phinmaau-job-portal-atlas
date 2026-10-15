@@ -173,6 +173,7 @@ const NotificationsPage = () => {
         );
         if (filter === 'unread') setTotalNotifications((prev) => Math.max(0, prev - 1));
         setUnreadCount((prev) => Math.max(0, prev - 1));
+        window.dispatchEvent(new Event('notifications:updated'));
       }
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -199,6 +200,7 @@ const NotificationsPage = () => {
         );
         if (filter === 'unread') setTotalNotifications(0);
         setUnreadCount(0);
+        window.dispatchEvent(new Event('notifications:updated'));
       }
     } catch (error) {
       console.error('Error marking all as read:', error);

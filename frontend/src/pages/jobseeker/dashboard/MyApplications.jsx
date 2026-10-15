@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import api from '../../../services/api';
+import openSubmittedResumePreview from '../../../components/jobseeker/openSubmittedResumePreview';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Pagination from '../../../components/shared/Pagination';
 import { FaCheckCircle } from 'react-icons/fa';
@@ -539,12 +540,38 @@ const MyApplications = () => {
     return formatPesoRange(job?.salaryMin, job?.salaryMax) || 'Salary not specified';
   };
 
+  const [viewClock, setViewClock] = useState(Date.now());
+  useEffect(() => {
+    const clock = window.setInterval(() => setViewClock(Date.now()), 60000);
+    return () => window.clearInterval(clock);
+  }, []);
+
+  const formatViewedTime = (value) => {
+    if (!value) return '';
+    const time = new Date(value).getTime();
+    if (!Number.isFinite(time)) return '';
+    const elapsed = Math.max(0, viewClock - time);
+    const units = [[31536000000, 'year'], [2592000000, 'month'], [604800000, 'week'], [86400000, 'day'], [3600000, 'hour'], [60000, 'minute']];
+    const matched = units.find(([duration]) => elapsed >= duration);
+    if (!matched) return 'just now';
+    const amount = Math.floor(elapsed / matched[0]);
+    return `${amount} ${matched[1]}${amount === 1 ? '' : 's'} ago`;
+  };
+
+  const handleSubmittedResume = async (applicationId) => {
+    try {
+      await openSubmittedResumePreview(applicationId, navigate, '/jobseeker/my-applications');
+    } catch (error) {
+      setError(error?.response?.data?.message || error.message || 'Unable to open the submitted resume.');
+    }
+  };
+
   const getPendingDisplayState = (application) => {
     const statusValue = String(application?.status || '').toLowerCase();
 
     if (statusValue === 'pending') {
       return {
-        text: application?.isViewedByEmployer ? 'Pending – Under Review' : 'Pending',
+        text: 'Pending',
         badgeClass: 'text-amber-700',
       };
     }
@@ -1623,6 +1650,11 @@ const MyApplications = () => {
                                 {statusText}{employmentEndLabel ? ` – ${employmentEndLabel}` : ''}
                               </span>
                             </div>
+                            {application.isViewedByEmployer && application.viewedAt && (
+                              <p className="mt-1 text-xs text-[#2e66a6]">
+                                Application viewed · {formatViewedTime(application.viewedAt)}
+                              </p>
+                            )}
 
                             <div className={`mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm ${UI.textSecondary}`}>
                               <span className="inline-flex min-w-0 items-center gap-1.5" title={companyName}>
@@ -1718,6 +1750,12 @@ const MyApplications = () => {
                               </button>
                             )}
 
+                            {application.hasSubmittedResumeSnapshot && (
+                              <button type="button" onClick={() => handleSubmittedResume(application._id)}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}>
+                                <SvgIcon name="file" className="w-4 h-4" /> View Submitted Resume
+                              </button>
+                            )}
                             {jobId ? (
                               <Link
                                 to={`/jobseeker/job-details/${jobId}`}

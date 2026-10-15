@@ -3776,13 +3776,26 @@ const ProfileEditModal = ({
           {educationRows.map((entry, index) => (
             <div key={`education-entry-${index}`} className="space-y-4">
               <div className="space-y-4">
-                <Select
-                  label="Educational Attainment *"
-                  value={entry.level || entry.educationalAttainment}
-                  onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)}
-                  options={EDUCATION_LEVEL_OPTIONS}
-                  placeholder="Select educational attainment"
-                />
+                <div className="space-y-2">
+                  <label htmlFor={`education-level-${index}`} className="block text-sm font-medium text-gray-700">
+                    Educational Attainment <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id={`education-level-${index}`}
+                    type="text"
+                    list={`educational-attainment-options-${index}`}
+                    value={entry.level || entry.educationalAttainment || ''}
+                    onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)}
+                    placeholder="Type or select educational attainment"
+                    maxLength={100}
+                    required
+                    autoComplete="off"
+                    className="w-full rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-base text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                  />
+                  <datalist id={`educational-attainment-options-${index}`}>
+                    {EDUCATION_LEVEL_OPTIONS.map((option) => <option key={option} value={option} />)}
+                  </datalist>
+                </div>
 
                 <Input
                   label="School / University *"

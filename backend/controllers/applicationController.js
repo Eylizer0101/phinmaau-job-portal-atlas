@@ -1329,7 +1329,7 @@ exports.getMyApplications = async (req, res) => {
     }
 
     const applications = await Application.find(baseFilter)
-      .select('_id job jobseeker employer status lastActiveStatus withdrawalCount withdrawnAt withdrawnBy appliedAt reviewedAt notes employmentStatus hiredAt employmentStatusCheckedAt employmentEndReason employmentEndedAt employmentUpdatedBy employmentStatusRequest declineReason declineComment declinedFrom isDeclinedArchived declinedArchivedAt interviewSchedule hiringStage hiringStages customHiringStages hiddenDefaultHiringStages activityHistory createdAt updatedAt')
+      .select('_id job jobseeker employer status lastActiveStatus withdrawalCount withdrawnAt withdrawnBy appliedAt reviewedAt notes employmentStatus hiredAt employmentStatusCheckedAt employmentEndReason employmentEndedAt employmentUpdatedBy employmentStatusRequest isViewedByEmployer viewedAt resumeSnapshotVersion resumeSnapshotCreatedAt declineReason declineComment declinedFrom isDeclinedArchived declinedArchivedAt interviewSchedule hiringStage hiringStages customHiringStages hiddenDefaultHiringStages activityHistory createdAt updatedAt')
       .populate({
         path: 'job',
         select: 'title companyName location jobType workMode salaryMin salaryMax hideSalary applicationDeadline companyLogo experienceLevel openToFreshGraduates status isActive isPublished isArchived'
@@ -1346,6 +1346,7 @@ exports.getMyApplications = async (req, res) => {
       .lean();
 
     applications.forEach((app) => {
+      app.hasSubmittedResumeSnapshot = Boolean(app.resumeSnapshotVersion || app.resumeSnapshotCreatedAt);
       const loc = String(app?.job?.location || '').trim();
       if (!loc || loc === 'Not specified') {
         const fallback = buildCompanyLocation(app?.employer?.employerProfile);
@@ -3770,6 +3771,7 @@ exports.checkIfApplied = async (req, res) => {
         jobseeker: req.user._id
       })
         .sort({ updatedAt: -1 })
+        .select('_id job status resumeSnapshotVersion resumeSnapshotCreatedAt')
         .populate({
           path: 'job',
           select: 'title companyName companyLogo'
@@ -3804,7 +3806,7 @@ exports.checkIfApplied = async (req, res) => {
     res.status(200).json({
       success: true,
       hasApplied: !!application,
-      application: application || null,
+      application: application ? { ...application.toObject(), hasSubmittedResumeSnapshot: Boolean(application.resumeSnapshotVersion || application.resumeSnapshotCreatedAt) } : null,
       jobAvailability: {
         isClosed,
         isFullyFilled,
