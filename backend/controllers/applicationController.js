@@ -145,7 +145,7 @@ const attachEmploymentStatus = async (applications = []) => {
   const hiredApplications = await Application.find({
     jobseeker: { $in: jobseekerIds },
     status: 'hired',
-    employmentStatus: { $ne: 'inactive' },
+    employmentStatus: 'active',
   })
     .populate({
       path: 'job',
@@ -168,15 +168,17 @@ const attachEmploymentStatus = async (applications = []) => {
     const plain = application?.toObject ? application.toObject() : application;
     const jobseekerId = String(plain?.jobseeker?._id || plain?.jobseeker || '');
     const currentApplicationId = String(plain?._id || '');
-    const currentJobId = String(plain?.job?._id || plain?.job || '');
+    const currentEmployerId = String(plain?.employer?._id || plain?.employer || plain?.job?.employer?._id || plain?.job?.employer || '');
 
     const otherHiredApplication = (hiredByJobseeker.get(jobseekerId) || []).find((hiredApplication) => {
       const hiredApplicationId = String(hiredApplication?._id || '');
-      const hiredJobId = String(hiredApplication?.job?._id || hiredApplication?.job || '');
+      const hiredEmployerId = String(hiredApplication?.employer?._id || hiredApplication?.employer || hiredApplication?.job?.employer?._id || hiredApplication?.job?.employer || '');
 
+      // Different job titles at the same employer are not another-company employment.
       return (
         hiredApplicationId !== currentApplicationId &&
-        hiredJobId !== currentJobId
+        Boolean(currentEmployerId && hiredEmployerId) &&
+        hiredEmployerId !== currentEmployerId
       );
     });
 
@@ -3249,9 +3251,9 @@ exports.updateApplicationStatus = async (req, res) => {
       const otherActiveEmployment = await Application.exists({
         _id: { $ne: application._id },
         jobseeker: application.jobseeker,
-        job: { $ne: application.job?._id || application.job },
+        employer: { $ne: application.employer },
         status: 'hired',
-        employmentStatus: { $ne: 'inactive' }
+        employmentStatus: 'active'
       });
 
       if (otherActiveEmployment) {
