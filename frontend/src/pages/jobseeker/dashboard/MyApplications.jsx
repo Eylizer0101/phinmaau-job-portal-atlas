@@ -1744,7 +1744,7 @@ const MyApplications = () => {
                             {jobId ? (
                               <Link
                                 to={`/jobseeker/job-details/${jobId}`}
-                                state={{ sourcePage: 'myapplications' }}
+                                state={{ sourcePage: 'myapplications', returnTo: `${location.pathname}${location.search}`, returnState: location.state }}
                                 className={`${UI.btnBase} ${UI.btnMd} w-[100px] ${UI.btnInfo} ${UI.ring}`}
                               >
                                 <SvgIcon name="eye" className="w-4 h-4" />

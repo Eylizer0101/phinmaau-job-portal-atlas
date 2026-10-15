@@ -5302,8 +5302,14 @@ const MyProfile = () => {
       verificationDocs,
     };
 
-    sessionStorage.setItem('resumePreviewData', JSON.stringify(resumeData));
-    navigate('/jobseeker/my-profile/preview-resume');
+    sessionStorage.setItem('resumePreviewData', JSON.stringify({
+      ...resumeData,
+      returnTo: `${location.pathname}${location.search}`,
+      returnState: location.state,
+    }));
+    navigate('/jobseeker/my-profile/preview-resume', {
+      state: { returnTo: `${location.pathname}${location.search}`, returnState: location.state },
+    });
   };
 
   const handlePreviewResume = () => {

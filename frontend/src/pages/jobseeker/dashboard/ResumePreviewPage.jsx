@@ -308,8 +308,8 @@ const ResumePreviewPage = () => {
   const userData = storedData?.userData || {};
   const formData = storedData?.formData || {};
   const profileImage = userData?.profileImage || formData?.profileImage || '';
-  const returnTo = storedData?.returnTo || '/jobseeker/my-profile';
-  const returnState = storedData?.returnState;
+  const returnTo = location.state?.returnTo || storedData?.returnTo || '/jobseeker/my-profile';
+  const returnState = location.state?.returnState ?? storedData?.returnState;
   const viewerMode = storedData?.viewerMode || 'jobseeker';
   const isEmployerPreview = viewerMode === 'employer';
   const isAdminPreview = viewerMode === 'admin';

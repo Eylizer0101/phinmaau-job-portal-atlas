@@ -3755,7 +3755,7 @@ const Bookmarks = () => {
                                     job={job}
                                     onViewDetails={() =>
                                       navigate(`/jobseeker/job-details/${jobId}`, {
-                                        state: { sourcePage: 'bookmarks' },
+                                        state: { sourcePage: 'bookmarks', returnTo: `${location.pathname}${location.search}`, returnState: location.state },
                                       })
                                     }
                                     onApply={handleApplyFromCompanyJob}

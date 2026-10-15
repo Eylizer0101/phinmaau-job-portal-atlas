@@ -838,30 +838,40 @@ const JobDetails = () => {
   }, []);
 
   const handleBackButton = useCallback(() => {
+    // Prefer an explicit same-site return path so filters, tabs, and selections survive.
+    if (typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+      const returnState = location.state?.returnState || {};
+      const notificationState = sourcePage === 'notification-dropdown'
+        ? { reopenNotifications: true, notificationScrollTop: location.state?.notificationScrollTop || 0 }
+        : sourcePage === 'notifications'
+          ? { restoreNotificationList: true }
+          : {};
+      navigate(returnTo, { state: { ...returnState, ...notificationState } });
+      return;
+    }
+
     if (sourcePage === 'myapplications') {
       navigate('/jobseeker/my-applications');
       return;
     }
-
+    if (sourcePage === 'bookmarks') {
+      navigate('/jobseeker/bookmarks?tab=jobs');
+      return;
+    }
     if (sourcePage === 'notifications') {
       navigate('/jobseeker/notifications', { state: { restoreNotificationList: true } });
       return;
     }
-
-    if (sourcePage === 'notification-dropdown' && returnTo) {
-      navigate(returnTo, { state: { reopenNotifications: true, notificationScrollTop: location.state?.notificationScrollTop || 0 } });
+    if (sourcePage === 'notification-dropdown') {
+      navigate('/jobseeker/my-applications');
       return;
     }
 
-    const restoreFilters =
-      sourcePage === 'jobsearch' && location.state?.jobSearchFilters
-        ? location.state.jobSearchFilters
-        : null;
-
+    const restoreFilters = sourcePage === 'jobsearch' && location.state?.jobSearchFilters
+      ? location.state.jobSearchFilters
+      : null;
     navigate('/jobseeker/job-search', {
-      state: restoreFilters
-        ? { restoreJobSearchFilters: restoreFilters }
-        : null,
+      state: restoreFilters ? { restoreJobSearchFilters: restoreFilters } : null,
     });
   }, [location.state, navigate, returnTo, sourcePage]);
 
@@ -1405,11 +1415,13 @@ const JobDetails = () => {
                 Back to {
                   sourcePage === 'myapplications'
                     ? 'My Applications'
-                    : sourcePage === 'notifications'
-                      ? 'Notifications'
-                      : sourcePage === 'notification-dropdown'
-                        ? 'Previous Page'
-                        : 'Job Search'
+                    : sourcePage === 'bookmarks'
+                      ? 'Bookmarks'
+                      : sourcePage === 'notifications'
+                        ? 'Notifications'
+                        : sourcePage === 'notification-dropdown' || returnTo
+                          ? 'Previous Page'
+                          : 'Job Search'
                 }
               </button>
             </div>
