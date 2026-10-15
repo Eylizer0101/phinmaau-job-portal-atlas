@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import api from '../../../services/api';
-import openSubmittedResumePreview from '../../../components/jobseeker/openSubmittedResumePreview';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Pagination from '../../../components/shared/Pagination';
 import { FaCheckCircle } from 'react-icons/fa';
@@ -556,14 +555,6 @@ const MyApplications = () => {
     if (!matched) return 'just now';
     const amount = Math.floor(elapsed / matched[0]);
     return `${amount} ${matched[1]}${amount === 1 ? '' : 's'} ago`;
-  };
-
-  const handleSubmittedResume = async (applicationId) => {
-    try {
-      await openSubmittedResumePreview(applicationId, navigate, '/jobseeker/my-applications');
-    } catch (error) {
-      setError(error?.response?.data?.message || error.message || 'Unable to open the submitted resume.');
-    }
   };
 
   const getPendingDisplayState = (application) => {
@@ -1649,12 +1640,12 @@ const MyApplications = () => {
                                 />
                                 {statusText}{employmentEndLabel ? ` – ${employmentEndLabel}` : ''}
                               </span>
+                              {statusValue === 'pending' && application.isViewedByEmployer && application.viewedAt && (
+                                <span className="inline-flex items-center whitespace-nowrap text-xs text-[#2e66a6]">
+                                  – Application viewed · {formatViewedTime(application.viewedAt)}
+                                </span>
+                              )}
                             </div>
-                            {application.isViewedByEmployer && application.viewedAt && (
-                              <p className="mt-1 text-xs text-[#2e66a6]">
-                                Application viewed · {formatViewedTime(application.viewedAt)}
-                              </p>
-                            )}
 
                             <div className={`mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm ${UI.textSecondary}`}>
                               <span className="inline-flex min-w-0 items-center gap-1.5" title={companyName}>
@@ -1750,12 +1741,6 @@ const MyApplications = () => {
                               </button>
                             )}
 
-                            {application.hasSubmittedResumeSnapshot && (
-                              <button type="button" onClick={() => handleSubmittedResume(application._id)}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}>
-                                <SvgIcon name="file" className="w-4 h-4" /> View Submitted Resume
-                              </button>
-                            )}
                             {jobId ? (
                               <Link
                                 to={`/jobseeker/job-details/${jobId}`}
