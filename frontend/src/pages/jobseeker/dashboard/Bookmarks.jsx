@@ -3322,8 +3322,7 @@ const Bookmarks = () => {
                                 onClick={() => handleRemoveSavedJob(selectedJob._id)}
                                 disabled={removingId === selectedJob._id}
                                 aria-label={`Remove ${selectedJob.title} from saved jobs`}
-                                title="Saved — click to remove"
-                                className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} w-full text-[#2e66a6]`}
+                                className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} w-full cursor-pointer text-[#2e66a6] !transition-none !transform-none hover:!transform-none active:!transform-none`}
                               >
                                 {removingId === selectedJob._id ? (
                                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6]/25 border-t-[#2e66a6] motion-reduce:animate-none" />
