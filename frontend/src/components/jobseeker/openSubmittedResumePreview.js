@@ -2,7 +2,7 @@ import api from '../../services/api';
 
 // Reuse the same submitted resume snapshot preview as the Admin application page.
 // Never rebuild historical application resumes from the current editable profile.
-const openSubmittedResumePreview = async (applicationId, navigate, returnTo) => {
+const openSubmittedResumePreview = async (applicationId, navigate, returnTo, returnState = null) => {
   const response = await api.get(`/applications/${applicationId}`);
   const application = response.data?.application;
   const snapshot = application?.resumeSnapshot;
@@ -26,9 +26,10 @@ const openSubmittedResumePreview = async (applicationId, navigate, returnTo) => 
     formData,
     workExperiences: snapshot.workExperiences || formData.workExperiences || formData.workExperience || [],
     returnTo,
+    returnState,
     viewerMode: 'jobseeker',
   }));
-  navigate('/jobseeker/my-profile/preview-resume');
+  navigate('/jobseeker/my-profile/preview-resume', { state: { returnTo, returnState } });
 };
 
 export default openSubmittedResumePreview;

@@ -1559,7 +1559,7 @@ const JobDetails = () => {
                     <button type="button"
                       onClick={async () => {
                         try {
-                          await openSubmittedResumePreview(submittedApplicationId, navigate, `/jobseeker/job-details/${id}`);
+                          await openSubmittedResumePreview(submittedApplicationId, navigate, `/jobseeker/job-details/${id}`, location.state);
                         } catch (error) {
                           setToastWithAutoClear('error', error?.response?.data?.message || error.message || 'Unable to open submitted resume.');
                         }
