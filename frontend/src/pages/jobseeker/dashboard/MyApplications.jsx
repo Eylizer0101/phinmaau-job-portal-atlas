@@ -1641,7 +1641,7 @@ const MyApplications = () => {
                                 {statusText}{employmentEndLabel ? ` – ${employmentEndLabel}` : ''}
                               </span>
                               {statusValue === 'pending' && application.isViewedByEmployer && application.viewedAt && (
-                                <span className="inline-flex items-center whitespace-nowrap text-xs text-[#2e66a6]">
+                                <span className="inline-flex items-center whitespace-nowrap text-sm text-[#2e66a6]">
                                   – Application viewed · {formatViewedTime(application.viewedAt)}
                                 </span>
                               )}
