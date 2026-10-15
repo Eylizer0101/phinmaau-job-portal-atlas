@@ -2887,7 +2887,10 @@ const Bookmarks = () => {
     [navigate, savedJobs, savingJobId, setToastMessage, showJobSaveToast]
   );
 
-  const mainActionLoading = Boolean(selectedJob) && !appliedCheckError && (checkingApplied || !applicationStateReady);
+  // Keep the selected job's action stable while other saved jobs are rechecked.
+  // An already-resolved selected job should not flash into a disabled/loading
+  // state every time the background application-status request runs.
+  const mainActionLoading = Boolean(selectedJob) && !appliedCheckError && !applicationStateReady;
   const selectedJobPostingStatus = selectedJob
     ? String(selectedJob.postingStatus || getJobPostingStatus(selectedJob)).toLowerCase()
     : 'unavailable';
@@ -3303,7 +3306,7 @@ const Bookmarks = () => {
                                   : mainActionLoading
                                   ? 'bg-black/5 text-black/50 border border-black/10'
                                   : UI.btnPrimary
-                              } ${UI.ring} w-full`}
+                              } ${UI.ring} w-full ${mainActionLoading || !isJobActive(selectedJob) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                             >
                               {mainActionLoading ? (
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/60 motion-reduce:animate-none" />
