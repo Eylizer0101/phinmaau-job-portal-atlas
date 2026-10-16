@@ -1749,7 +1749,7 @@ const AdminJobApplicants = () => {
                             <img
                               src={resolveApplicantImage(user)}
                               alt={name}
-                              className="h-12 w-12 shrink-0 rounded-full object-cover"
+                              className="h-20 w-20 shrink-0 rounded-full object-cover"
                               onError={(event) => {
                                 event.currentTarget.onerror = null;
                                 event.currentTarget.src = "/images/profile.png";

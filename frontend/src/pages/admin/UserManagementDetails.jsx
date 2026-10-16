@@ -1010,11 +1010,14 @@ const UserManagementDetails = () => {
 
     return items
       .filter((item) => item.occurredAt)
-      .sort(
-        (first, second) =>
-          new Date(second.occurredAt).getTime() -
-          new Date(first.occurredAt).getTime()
-      );
+      .sort((first, second) => {
+        const isRegistration = (item) =>
+          /(?:register|registration)/i.test(`${item.type || ""} ${item.title || ""}`);
+        const firstRegistration = isRegistration(first);
+        const secondRegistration = isRegistration(second);
+        if (firstRegistration !== secondRegistration) return firstRegistration ? 1 : -1;
+        return new Date(second.occurredAt).getTime() - new Date(first.occurredAt).getTime();
+      });
   }, [applications, profile, user?.activityLogs, user?.updatedAt]);
 
   // Filter the existing activity sources without changing their underlying records.
