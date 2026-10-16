@@ -23,7 +23,6 @@ import {
 import api from "../../services/api";
 
 import {
-  FaAward,
   FaBookOpen,
   FaBriefcase,
   FaCheckCircle,
@@ -1436,38 +1435,6 @@ const RecruitmentCardTitle = ({ icon: Icon, title, subtitle }) => (
   </div>
 );
 
-const ApplicationProcessDurationCard = ({ data = {} }) => {
-  const rows = Array.isArray(data?.buckets) ? data.buckets : [];
-  return (
-    <section className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm xl:col-span-6">
-      <RecruitmentCardTitle
-        icon={FaWaveSquare}
-        title="Application Processing Time"
-        subtitle="Average time from application to hire"
-      />
-      <div className="grid gap-4 lg:grid-cols-[180px_1fr]">
-        <div className="space-y-3">
-          <div className="rounded-xl bg-[#2e66a6]/5 p-4 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Average Time to Hire</p>
-            <p className="mt-1 text-3xl font-extrabold text-[#2e66a6]">{numberFormat.format(Number(data?.averageDays || 0))} days</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-slate-50 p-3 text-center">
-              <p className="text-[10px] font-bold text-slate-500">Shortest</p>
-              <p className="mt-1 text-sm font-extrabold text-slate-800">{numberFormat.format(Number(data?.shortestDays || 0))} days</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-3 text-center">
-              <p className="text-[10px] font-bold text-slate-500">Longest</p>
-              <p className="mt-1 text-sm font-extrabold text-slate-800">{numberFormat.format(Number(data?.longestDays || 0))} days</p>
-            </div>
-          </div>
-        </div>
-        <VerticalBars data={rows} maxItems={5} />
-      </div>
-    </section>
-  );
-};
-
 const WithdrawalStageCard = ({ data = [] }) => {
   const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0);
   return (
@@ -1486,17 +1453,6 @@ const WithdrawalStageCard = ({ data = [] }) => {
     </section>
   );
 };
-
-const ApplicationsBeforeHireCard = ({ data = [] }) => (
-  <section className="min-w-0 rounded-[22px] border border-gray-300 bg-white p-4 shadow-sm xl:col-span-6">
-    <RecruitmentCardTitle
-      icon={FaListOl}
-      title="Applications Before Hire"
-      subtitle="Average number of applications submitted before being hired."
-    />
-    <VerticalBars data={data} maxItems={4} />
-  </section>
-);
 
 const HireRateByCampusCard = ({ data = [] }) => {
   const rows = Array.isArray(data) ? data : [];
@@ -2583,7 +2539,6 @@ const AdminDashboard = () => {
             </ChartCard>
             <WithdrawalStageCard data={sections.applications?.withdrawalByStage || []} />
 
-            <ApplicationsBeforeHireCard data={sections.applications?.applicationsBeforeHire || []} />
             <HireRateByCampusCard data={sections.applications?.hireRateByCampus || []} />
 
             <ChartCard
@@ -2594,7 +2549,6 @@ const AdminDashboard = () => {
             >
               <VerticalBars data={sections.applications?.employmentStatus} maxItems={6} />
             </ChartCard>
-            <ApplicationProcessDurationCard data={sections.applications?.applicationProcessDuration} />
           </div>
         ) : null}
 
@@ -2623,21 +2577,6 @@ const AdminDashboard = () => {
               icon={FaUser}
             >
               <DonutChart data={sections.users?.genders} showPercentage />
-            </ChartCard>
-            <ChartCard
-              title="How Soon Can They Start?"
-              subtitle="Applicant start availability"
-              className="xl:col-span-6"
-              icon={FaAward}
-            >
-              <VerticalBars data={sections.users?.availabilities} maxItems={5} />
-            </ChartCard>
-            <ChartCard
-              title="Relocation Preference"
-              subtitle="Job seekers' willingness to relocate"
-              className="xl:col-span-6"
-            >
-              <HorizontalBars data={sections.users?.relocation} maxItems={5} centered />
             </ChartCard>
             <ChartCard
               title="Experience Level"
