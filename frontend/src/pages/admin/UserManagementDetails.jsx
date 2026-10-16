@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
@@ -1205,6 +1205,34 @@ const UserManagementDetails = () => {
   );
 
   const ResumePreview = () => {
+    const resumeArticleRef = useRef(null);
+    const educationSectionRef = useRef(null);
+    const [previewHeight, setPreviewHeight] = useState(null);
+
+    useEffect(() => {
+      const article = resumeArticleRef.current;
+      if (!article) return undefined;
+
+      const updatePreviewHeight = () => {
+        const education = educationSectionRef.current;
+        // Show Objective, Personal Information, Work Experience, and Skills in full.
+        // Fade only within Education (or at the end if Education is absent).
+        const height = education
+          ? education.getBoundingClientRect().top - article.getBoundingClientRect().top + 115
+          : article.scrollHeight + 32;
+        setPreviewHeight((previous) => Math.abs((previous ?? 0) - height) > 1 ? height : previous);
+      };
+
+      updatePreviewHeight();
+      const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updatePreviewHeight) : null;
+      observer?.observe(article);
+      window.addEventListener("resize", updatePreviewHeight);
+      return () => {
+        observer?.disconnect();
+        window.removeEventListener("resize", updatePreviewHeight);
+      };
+    }, []);
+
     const avatarUrl = getFileUrl(user?.profileImage);
     const initials = fullName
       .split(/\s+/)
@@ -1215,21 +1243,8 @@ const UserManagementDetails = () => {
 
     return (
       <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#d8e2ee] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <div />
-
-          <button
-            type="button"
-            onClick={handleOpenResumeFullView}
-            className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-[15px]"
-          >
-            <Icon name="eye" className="h-4 w-4" />
-            Full Resume
-          </button>
-        </div>
-
-        <div className="relative max-h-[800px] overflow-hidden px-5 py-7 sm:px-8 lg:px-10">
-          <article className="mx-auto w-full bg-white font-serif text-[12px] leading-[1.45] text-black sm:text-[13px]">
+        <div className="relative overflow-hidden px-5 py-7 sm:px-8 lg:px-10" style={previewHeight !== null ? { height: `${previewHeight + 56}px` } : undefined}>
+          <article ref={resumeArticleRef} className="mx-auto w-full bg-white font-serif text-[12px] leading-[1.45] text-black sm:text-[13px]">
             <header className="relative flex min-h-[120px] flex-col items-center justify-center pb-6 pr-0 text-center sm:pr-[132px]">
               <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em] sm:text-[31px]">
                 {fullName}
@@ -1357,7 +1372,7 @@ const UserManagementDetails = () => {
             ) : null}
 
             {meaningfulEducationEntries.length ? (
-              <section className="pt-5">
+              <section ref={educationSectionRef} className="pt-5">
                 <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Education
                 </h3>
@@ -1493,6 +1508,14 @@ const UserManagementDetails = () => {
             ) : null}
           </article>
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-white/0 via-white/70 to-white" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={handleOpenResumeFullView}
+            className="absolute bottom-3 right-5 z-10 inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-sm font-semibold text-[#174b91] shadow-sm transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:right-8 sm:text-[15px]"
+          >
+            <Icon name="eye" className="h-4 w-4" />
+            Full Resume
+          </button>
         </div>
       </section>
     );

@@ -151,8 +151,8 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
     ),
     restore: (
       <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M3.5 10V4.5L9 10H3.5Z" />
-        <path d="M4.3 10a8.5 8.5 0 1 1-.1 5.1" />
+        <path d="M3 10h6V4" />
+        <path d="M4.93 19.07A9 9 0 1 0 12 3a9 9 0 0 0-7.07 3.43L3 10" />
       </svg>
     ),
     x: (
@@ -1627,7 +1627,7 @@ const JobseekerVerificationDetails = () => {
                       onClick={() => setShowRestoreModal(true)}
                       disabled={actionLoading}
                       className={cn(
-                        "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
+                        "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587]",
                         UI.ring,
                       )}
                     >

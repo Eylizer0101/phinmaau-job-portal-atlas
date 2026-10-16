@@ -72,12 +72,10 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
 
   if (name === "restore") {
     return (
-      <img
-        src="/images/restorist.png"
-        alt=""
-        className={`${className} scale-125 object-contain`}
-        aria-hidden="true"
-      />
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 10h6V4" />
+        <path d="M4.93 19.07A9 9 0 1 0 12 3a9 9 0 0 0-7.07 3.43L3 10" />
+      </svg>
     );
   }
 
@@ -1160,7 +1158,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                                 <button
                                   type="button"
                                   onClick={() => openJobseekerDetails(item._id, archiveMode)}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white transition hover:bg-[#255587] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   title="View"
                                   aria-label={`View ${fullName}`}
                                 >
@@ -1171,7 +1169,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                                     type="button"
                                     onClick={() => setRestoreTarget(item)}
                                     disabled={restoringId === item._id}
-                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white transition hover:bg-[#255587] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
                                     title="Restore"
                                     aria-label={`Restore ${fullName}`}
                                   >
@@ -1240,7 +1238,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                               <button
                                 type="button"
                                 onClick={() => openJobseekerDetails(item._id, archiveMode)}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white transition hover:bg-[#255587] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                 title="View"
                                 aria-label={`View ${fullName}`}
                               >
@@ -1253,7 +1251,7 @@ const JobseekerVerification = ({ pageTitle = "Jobseeker Verification", showDashb
                                   leftIcon={<Icon name="restore" className="h-4 w-4" />}
                                   onClick={() => setRestoreTarget(item)}
                                   disabled={restoringId === item._id}
-                                  className="h-10 w-10 !gap-0 !rounded-xl !border-slate-200 !p-0 !text-slate-600 hover:!border-[#2e66a6] hover:!bg-[#2e66a6] hover:!text-white"
+                                  className="h-10 w-10 !gap-0 !rounded-xl !border-[#2e66a6] !bg-[#2e66a6] !p-0 !text-white hover:!bg-[#255587]"
                                   title="Restore"
                                   aria-label={`Restore ${fullName}`}
                                 />
