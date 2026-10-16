@@ -708,15 +708,13 @@ const AdminArchive = () => {
         entry.account?.inactiveAt ||
         entry.latestArchivedAt ||
         null;
-      const lastActiveDate = new Date(lastActive || "");
-      const archivedDate = new Date(archivedAt || "");
-      const inactivityDays =
-        Number.isNaN(lastActiveDate.getTime()) || Number.isNaN(archivedDate.getTime())
-          ? null
-          : Math.max(
-              0,
-              Math.floor((archivedDate.getTime() - lastActiveDate.getTime()) / 86400000)
-            );
+      const lastActiveDate = new Date(lastActive || 0);
+      const inactivityDays = Number.isNaN(lastActiveDate.getTime())
+        ? 0
+        : Math.max(
+            0,
+            Math.floor((Date.now() - lastActiveDate.getTime()) / 86400000)
+          );
 
       navigate(`/admin/users/${entry.accountId}?archive=1`, {
         state: {

@@ -1742,20 +1742,28 @@ const UserManagementDetails = () => {
         String(user.status || "").toLowerCase() === "inactive" &&
         user.isActive === false));
 
+  // Display-only historical sample for the Toyota Nueva Ecija capstone demo.
+  // This is NOT the user's actual login/archive history and does not update the database.
+  const isToyotaArchiveDemo =
+    isInactiveEmployerArchive && String(userId).toLowerCase() === "6ab0b3bc34892c49558af259";
+  const displayedArchiveLastActive = isToyotaArchiveDemo ? "2025-10-15T12:00:00+08:00" : archiveLastActive;
+  const displayedArchiveDate = isToyotaArchiveDemo ? "2026-10-16T12:00:00+08:00" : archiveDate;
+  const displayedInactivityDays = isToyotaArchiveDemo ? 366 : archiveInactivityDays;
+
   const archiveBanner = isInactiveEmployerArchive ? (
     <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm font-bold">Account marked as inactive</p>
+        <p className="text-sm font-bold">Account marked as inactive{isToyotaArchiveDemo ? " (Demo Data)" : ""}</p>
         <p className="mt-0.5 text-xs text-rose-600">
-          Archived on {formatDate(archiveDate)} due to prolonged inactivity.
+          Archived on {formatDate(displayedArchiveDate)} due to prolonged inactivity.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
         <span className="rounded-full border border-rose-200 bg-white px-3 py-1.5">
-          Last Active: {formatDate(archiveLastActive)}
+          Last Active: {formatDate(displayedArchiveLastActive)}
         </span>
         <span className="rounded-full border border-rose-200 bg-white px-3 py-1.5">
-          Total Inactivity: {archiveInactivityDays === null ? "—" : `${archiveInactivityDays} days`}
+          Total Inactivity: {displayedInactivityDays === null ? "—" : `${displayedInactivityDays} days`}
         </span>
       </div>
     </div>
