@@ -41,8 +41,7 @@ const MainLandingPage = () => {
           .filter(
             (company) =>
               company?._id &&
-              String(company?.companyName || "").trim() &&
-              String(company?.companyLogo || "").trim()
+              String(company?.companyName || "").trim()
           )
           .map((company) => ({
             id: company._id,
