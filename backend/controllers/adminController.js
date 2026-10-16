@@ -7271,7 +7271,7 @@ exports.exportAdminAgapayReportPdf = async (req, res) => {
     const totalHireRate = totalApplications ? (totalHired / totalApplications) * 100 : 0;
 
     const formatInteger = (value) => Number(value || 0).toLocaleString('en-US');
-    const formatRate = (value) => `${Number(value || 0).toFixed(2).replace(/\.00$/, '')}%`;
+    const formatRate = (value) => `${Number(value || 0).toFixed(1)}%`;
     const reportDate = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Manila',
       year: 'numeric',
