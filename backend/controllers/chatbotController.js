@@ -339,6 +339,51 @@ const getRoleRestrictedAnswer = (message, role) => {
   return null;
 };
 
+// Fixed responses for the requested role-specific FAQ questions.
+// Handle these before approximate workflow matching and AI generation.
+const getExactFaqAnswer = (message, role) => {
+  const question = normalizeText(message);
+  if (role === 'employer' && question === 'how can i edit my job post') {
+    return 'To edit your job post, follow these steps:\n\n' +
+      '1. Click the Edit Icon – Open your job post and click the Edit icon.\n\n' +
+      '2. Submit an Edit Request – Send an edit request to the administrator.\n\n' +
+      '3. Select the Section to Modify – Choose the section you want to edit.\n\n' +
+      '4. Provide a Clear Reason – Explain why you need to make the requested changes.\n\n' +
+      '5. Review and Submit – Review your edit request carefully before submitting it.\n\n' +
+      '6. Wait for Admin Approval – The administrator will review your request and determine whether the changes can be approved.';
+  }
+  if (role !== 'jobseeker') return null;
+  const answers = {
+    'how can i improve my job seeker ranking':
+      'To improve your job seeker ranking, follow these steps:\n\n' +
+      '1. Complete Your Resume Profile – Make sure all required sections of your resume are complete.\n\n' +
+      '2. Provide Accurate Information – Enter accurate and relevant information to the best of your knowledge.\n\n' +
+      '3. Include Your Educational Background – Provide your education details and qualifications.\n\n' +
+      '4. Highlight Your Skills and Work Experience – Include your relevant skills, work experience, and certifications.\n\n' +
+      '5. Keep Your Profile Updated – Regularly update your resume to improve your visibility to employers and increase your chances of being hired.',
+    'how can i rate a company on agapay':
+      'You can rate a company by completing the Application Rating process. Follow these steps:\n\n' +
+      'Step 1: Agree to the Application Rating Notice\nRead the notice carefully and agree to proceed with the rating.\n\n' +
+      'Step 2: Select the Applied Role\nChoose the position you applied for at the company.\n\n' +
+      'Step 3: Complete the Application Rating Form\nProvide the required information:\n\n' +
+      '1. Days to First Response: Enter the number of days before the company first responded to your application.\n\n' +
+      '2. Total Process Length (Days): Enter the total number of days the application process took.\n\n' +
+      "3. Application Process Rating: Rate your experience with the company's application process.\n\n" +
+      '4. Would You Apply Again?: Select Yes or No.\n\n' +
+      '5. Outcome: Select Received Offer, Ghosted, Withdrew, or Still in Process.\n\n' +
+      '6. Your Review: Share your honest feedback about your application experience.\n\n' +
+      'Step 4: Confirm Your Rating\nReview your answers and confirm that all information is accurate before submitting.\n\n' +
+      'Step 5: Successful Submission\nOnce submitted successfully, a confirmation message will appear to inform you that your application rating has been recorded.',
+    'how can i track my job applications':
+      'You can track your job applications by following these steps:\n\n' +
+      '1. Open the Applications section in your AGAPAY account.\n\n' +
+      '2. Check the status of each application, whether it is Pending, For Interview, Hired, or Declined.\n\n' +
+      '3. Check whether the employer or recruiter has viewed your application.\n\n' +
+      '4. Regularly monitor this section to stay updated on your application progress and any changes in status.',
+  };
+  return answers[question] || null;
+};
+
 // Verified answers to frequently requested AGAPAY workflows, including static mode.
 const getRequestedWorkflowAnswer = (message, role) => {
   const q = normalizeText(message);
@@ -673,6 +718,9 @@ exports.sendChatbotMessage = async (req, res) => {
     if (isSystemOverviewQuestion(message)) {
       return res.json({ success: true, mode: 'knowledge', reply: COMMON_GUIDES[0].answer });
     }
+
+    const exactFaqAnswer = getExactFaqAnswer(message, role);
+    if (exactFaqAnswer) return res.json({ success: true, mode: 'knowledge', reply: exactFaqAnswer });
 
     const workflowAnswer = getRequestedWorkflowAnswer(message, role);
     if (workflowAnswer) return res.json({ success: true, mode: 'knowledge', reply: workflowAnswer });

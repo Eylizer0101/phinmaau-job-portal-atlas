@@ -134,16 +134,56 @@ From your approved AGAPAY Jobseeker dashboard, Complete the required My Profile 
 
 HOW CAN I IMPROVE MY JOB SEEKER RANKING?
 
-Complete My Profile with correct education, skills, experience, projects, certifications, and qualifications. Keep the resume updated. This helps job matching but does not guarantee a specific rank or hiring.
+To improve your job seeker ranking, follow these steps:
+
+1. Complete Your Resume Profile – Make sure all required sections of your resume are complete.
+2. Provide Accurate Information – Enter accurate and relevant information to the best of your knowledge.
+3. Include Your Educational Background – Provide your education details and qualifications.
+4. Highlight Your Skills and Work Experience – Include your relevant skills, work experience, and certifications.
+5. Keep Your Profile Updated – Regularly update your resume to improve your visibility to employers and increase your chances of being hired.
 
 HOW CAN I TRACK MY JOB APPLICATIONS?
 
-Open My Applications to review Pending, For Interview, Hired, Declined, and other application status updates. Also check Messages and Notifications.
+You can track your job applications by following these steps:
+
+1. Open the Applications section in your AGAPAY account.
+2. Check the status of each application, whether it is Pending, For Interview, Hired, or Declined.
+3. Check whether the employer or recruiter has viewed your application.
+4. Regularly monitor this section to stay updated on your application progress and any changes in status.
 
 HOW CAN I RATE A COMPANY ON AGAPAY?
 
-When the Application Rating option is available, agree to the notice, select the applied role, complete Days to First Response, Total Process Length, Application Process Rating, Would You Apply Again?, Outcome, and Your Review, then confirm and submit.
+You can rate a company by completing the Application Rating process. Follow these steps:
+
+Step 1: Agree to the Application Rating Notice
+Read the notice carefully and agree to proceed with the rating.
+
+Step 2: Select the Applied Role
+Choose the position you applied for at the company.
+
+Step 3: Complete the Application Rating Form
+Provide the required information:
+
+1. Days to First Response: Enter the number of days before the company first responded to your application.
+2. Total Process Length (Days): Enter the total number of days the application process took.
+3. Application Process Rating: Rate your experience with the company's application process.
+4. Would You Apply Again?: Select Yes or No.
+5. Outcome: Select Received Offer, Ghosted, Withdrew, or Still in Process.
+6. Your Review: Share your honest feedback about your application experience.
+
+Step 4: Confirm Your Rating
+Review your answers and confirm that all information is accurate before submitting.
+
+Step 5: Successful Submission
+Once submitted successfully, a confirmation message will appear to inform you that your application rating has been recorded.
 
 HOW CAN I EDIT MY JOB POST?
 
-Open Manage Jobs. If the job is still within its allowed direct-edit window, edit it there. Otherwise submit an Edit Request, select requested sections, provide a reason, and wait for administrator review before making authorized changes.
+To edit your job post, follow these steps:
+
+1. Click the Edit Icon – Open your job post and click the Edit icon.
+2. Submit an Edit Request – Send an edit request to the administrator.
+3. Select the Section to Modify – Choose the section you want to edit.
+4. Provide a Clear Reason – Explain why you need to make the requested changes.
+5. Review and Submit – Review your edit request carefully before submitting it.
+6. Wait for Admin Approval – The administrator will review your request and determine whether the changes can be approved.
