@@ -45,14 +45,14 @@ const INITIAL_MESSAGES = {
 const makeMessageId = () =>
   `chat_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-const ChatbotWidget = ({ role = 'jobseeker' }) => {
+const ChatbotWidgetContent = ({ role = 'jobseeker', accountId }) => {
   const location = useLocation();
   const inputRef = useRef(null);
   const sendingRef = useRef(false);
   const messagesEndRef = useRef(null);
 
   const normalizedRole = role === 'employer' ? 'employer' : 'jobseeker';
-  const storageKey = `agapAiMessages:${normalizedRole}`;
+  const storageKey = `agapAiMessages:v2:${normalizedRole}:${accountId}`;
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -102,6 +102,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
   const sendMessage = async (messageText) => {
     const cleanMessage = String(messageText || '').trim();
     if (!cleanMessage || isSending || sendingRef.current) return;
+    if (getChatbotAccountIdentity(normalizedRole) !== accountId) return;
     sendingRef.current = true;
 
     const userMessage = {
@@ -127,6 +128,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
         history: conversationHistory,
       });
 
+      if (getChatbotAccountIdentity(normalizedRole) !== accountId) return;
       const reply =
         response?.data?.reply ||
         'I could not find a guide for that question yet. Please try another question.';
@@ -141,6 +143,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
         },
       ]);
     } catch (error) {
+      if (getChatbotAccountIdentity(normalizedRole) !== accountId) return;
       const reply =
         error?.response?.status === 429
           ? 'Too many chatbot messages. Please wait a minute and try again.'
@@ -331,6 +334,42 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
       </button>
     </div>
   );
+};
+
+// Scope browser-stored chat history to a specific authenticated account.
+// Never migrate role-only legacy storage: it could belong to somebody else.
+const getChatbotAccountIdentity = (role) => {
+  try {
+    if (!localStorage.getItem('token')) return '';
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (user?.role !== role) return '';
+    const id = String(user?._id || user?.id || '').trim();
+    return /^[a-zA-Z0-9_-]{4,128}$/.test(id) ? id : '';
+  } catch {
+    return '';
+  }
+};
+
+const ChatbotWidget = ({ role = 'jobseeker' }) => {
+  const normalizedRole = role === 'employer' ? 'employer' : 'jobseeker';
+  const [accountId, setAccountId] = useState(() => getChatbotAccountIdentity(normalizedRole));
+
+  useEffect(() => {
+    const syncAccount = () => setAccountId(getChatbotAccountIdentity(normalizedRole));
+    syncAccount();
+    window.addEventListener('storage', syncAccount);
+    window.addEventListener('focus', syncAccount);
+    // Same-tab localStorage mutations do not emit a storage event.
+    const interval = window.setInterval(syncAccount, 500);
+    return () => {
+      window.removeEventListener('storage', syncAccount);
+      window.removeEventListener('focus', syncAccount);
+      window.clearInterval(interval);
+    };
+  }, [normalizedRole]);
+
+  if (!accountId) return null;
+  return <ChatbotWidgetContent key={`${normalizedRole}:${accountId}`} role={normalizedRole} accountId={accountId} />;
 };
 
 export default ChatbotWidget;

@@ -12,10 +12,6 @@ Employers can register a company account, submit business credentials for verifi
 
 Administrators or TEE staff review jobseeker and employer credentials, approve, reject, or place verification requests on hold, manage users, review system records, view dashboard analytics, and manage archived system content.
 
-SYSTEM TECHNOLOGY
-
-The frontend uses React and JavaScript with Tailwind CSS and Material UI. Axios sends REST API requests to a Node.js and Express.js backend. MongoDB stores user, job, application, message, and notification data. The deployed system uses role-based access control for jobseekers, employers, and administrators.
-
 DEVELOPERS
 
 When asked who developed AGAPAY, answer with these developers exactly:
@@ -51,7 +47,7 @@ AGAPAY tracks career and application activity, and supports employment-status-re
 
 AGAP-AI KNOWLEDGE PRIORITY
 
-Provide accurate, practical explanations of user-facing AGAPAY features. Knowledge guides describe the expected workflow but are not proof of any individual user's live account data. If guides disagree, avoid a definitive claim and refer the user to the current interface or AGAPAY/TEE support. Technical stack information listed in this overview is public, high-level background only; private configuration, source code, endpoints, and secrets must never be disclosed.
+Provide accurate, practical explanations of user-facing AGAPAY features. Knowledge guides describe the expected workflow but are not proof of any individual user's live account data. If guides disagree, avoid a definitive claim and refer the user to the current interface or AGAPAY/TEE support. Internal programming languages, framework names, implementation, architecture, configuration, source code, endpoints, and secrets must not be disclosed through Agap-AI.
 
 REMOVED FEATURE - COMMUNITY
 

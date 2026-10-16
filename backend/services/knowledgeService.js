@@ -240,6 +240,7 @@ const getRelevantKnowledge = ({
 
   const roleDocuments = documents.filter((chunk) => {
     if (chunk.fileName === 'community-guide.txt') return false;
+    if (/\b(?:system technology|technology stack|tech stack|programming languages|software architecture|internal implementation)\b/i.test(chunk.title)) return false;
     if (role === 'jobseeker' && chunk.fileName === 'employer-guide.txt') return false;
     if (role === 'employer' && chunk.fileName === 'jobseeker-guide.txt') return false;
     return true;
