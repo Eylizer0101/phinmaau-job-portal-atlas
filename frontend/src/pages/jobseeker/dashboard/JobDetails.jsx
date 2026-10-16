@@ -808,6 +808,22 @@ const JobDetails = () => {
 
   const sourcePage = location.state?.sourcePage || 'jobsearch';
   const returnTo = location.state?.returnTo || '';
+  const [submittedResumeEntry] = useState(() => {
+    try {
+      const entryKey = sessionStorage.getItem('agapay:submitted-resume-entry');
+      if (
+        location.state?.sourcePage === 'myapplications' &&
+        entryKey &&
+        entryKey === location.state?.submittedResumeEntryKey &&
+        String(location.state?.submittedResumeEntryKey).endsWith(`:${id}`)
+      ) {
+        return { jobId: String(id), applicationId: String(location.state.submittedResumeApplicationId || '') };
+      }
+    } catch {
+      // Never expose the submitted resume button without a valid navigation entry.
+    }
+    return null;
+  });
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -1555,7 +1571,7 @@ const JobDetails = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full lg:w-[260px] shrink-0">
-                  {hasApplied && hasSubmittedResumeSnapshot && submittedApplicationId && (
+                  {submittedResumeEntry?.jobId === String(id) && submittedResumeEntry?.applicationId === String(submittedApplicationId) && hasApplied && hasSubmittedResumeSnapshot && submittedApplicationId && (
                     <button type="button"
                       onMouseEnter={() => { preloadSubmittedResume(submittedApplicationId).catch(() => {}); }}
                       onFocus={() => { preloadSubmittedResume(submittedApplicationId).catch(() => {}); }}

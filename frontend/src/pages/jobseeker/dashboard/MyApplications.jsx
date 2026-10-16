@@ -1744,7 +1744,14 @@ const MyApplications = () => {
                             {jobId ? (
                               <Link
                                 to={`/jobseeker/job-details/${jobId}`}
-                                state={{ sourcePage: 'myapplications', returnTo: `${location.pathname}${location.search}`, returnState: location.state }}
+                                state={{ sourcePage: 'myapplications', submittedResumeApplicationId: String(application._id), submittedResumeEntryKey: `${application._id}:${jobId}`, returnTo: `${location.pathname}${location.search}`, returnState: location.state }}
+                                onClick={() => {
+                                  try {
+                                    sessionStorage.setItem('agapay:submitted-resume-entry', `${application._id}:${jobId}`);
+                                  } catch {
+                                    // Navigation remains available when session storage is disabled.
+                                  }
+                                }}
                                 className={`${UI.btnBase} ${UI.btnMd} w-[100px] ${UI.btnInfo} ${UI.ring}`}
                               >
                                 <SvgIcon name="eye" className="w-4 h-4" />
