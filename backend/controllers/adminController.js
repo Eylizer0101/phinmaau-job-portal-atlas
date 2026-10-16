@@ -6749,6 +6749,14 @@ const isVerifiedExportUser = (user = {}) => {
 
 // Share one authoritative set of options across Admin analytics, Users, and Filter Records.
 // Use verified active jobseeker records only; do not derive options from a paginated table.
+const getGenderFilterOptions = (values = []) => {
+  const options = ['Female', 'Male', 'Prefer not to say'];
+  const existing = Array.isArray(values) ? values : [];
+  return [...options, ...existing.filter((value) =>
+    !options.some((option) => option.toLowerCase() === String(value).trim().toLowerCase())
+  )];
+};
+
 const getVerifiedJobseekerFilterOptions = (users = []) => {
   const seekers = users.filter((user) => String(user.role || '').toLowerCase() === 'jobseeker' && isVerifiedExportUser(user));
   const valuesFor = (user, field) => {
@@ -6766,7 +6774,7 @@ const getVerifiedJobseekerFilterOptions = (users = []) => {
     campuses: unique('campus'),
     courses: unique('course'),
     yearsGraduated: unique('yearGraduated').filter((year) => /^\d{4}$/.test(year) && Number(year) >= 1950 && Number(year) <= new Date().getFullYear()).sort((a, b) => Number(b) - Number(a)),
-    genders: unique('gender'),
+    genders: getGenderFilterOptions(unique('gender')),
   };
 };
 
@@ -6942,7 +6950,7 @@ const buildAdminFilterRecords = async (rawFilters = {}) => {
       campuses: role === 'jobseeker' ? verifiedSeekerOptions.campuses : uniqueFilterValues(optionsSource, 'campus'),
       courses: role === 'jobseeker' ? verifiedSeekerOptions.courses : uniqueFilterValues(optionsSource, 'course'),
       yearsGraduated: role === 'jobseeker' ? verifiedSeekerOptions.yearsGraduated : uniqueFilterValues(optionsSource, 'yearGraduated'),
-      genders: role === 'jobseeker' ? verifiedSeekerOptions.genders : uniqueFilterValues(optionsSource, 'gender'),
+      genders: role === 'jobseeker' ? verifiedSeekerOptions.genders : getGenderFilterOptions(uniqueFilterValues(optionsSource, 'gender')),
       companyNames: uniqueFilterValues(optionsSource, 'companyName'),
       industries: uniqueFilterValues(optionsSource, 'industry'),
       jobTitles: uniqueFilterValues(optionsSource, 'jobTitle'),
