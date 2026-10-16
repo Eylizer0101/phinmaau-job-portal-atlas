@@ -6726,7 +6726,8 @@ const isActiveExportUser = (user = {}) => {
   const status = String(user.status || '').trim().toLowerCase();
   if (['deleted', 'inactive'].includes(status)) return false;
   if (user.isActive === false) return false;
-  if (user.inactiveBySystem === true) return false;
+  // Match Admin Dashboard / User Management: system inactivity excludes employers, not jobseekers.
+  if (user.role === 'employer' && user.inactiveBySystem === true) return false;
   return true;
 };
 
@@ -6736,12 +6737,10 @@ const isVerifiedExportUser = (user = {}) => {
   const role = String(user.role || '').toLowerCase();
   if (!['jobseeker', 'employer'].includes(role)) return false;
   if (role === 'jobseeker') {
-    const status = String(
-      user.jobSeekerProfile?.verificationDocs?.overallStatus ||
-      user.jobSeekerProfile?.verificationStatus ||
-      (user.isVerified ? 'verified' : '')
-    ).toLowerCase();
-    return status === 'verified';
+    // A verified flag in any supported field qualifies, just as on the Dashboard.
+    return user.isVerified === true ||
+      String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+      String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
   }
 
   return String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
@@ -6773,7 +6772,7 @@ const getVerifiedJobseekerFilterOptions = (users = []) => {
 const buildAdminFilterRecords = async (rawFilters = {}) => {
   const role = normalizeAdminFilterRole(rawFilters.role);
   const [users, jobs, applications] = await Promise.all([
-    User.find({ status: { $nin: ['deleted', 'inactive'] }, isActive: { $ne: false }, inactiveBySystem: { $ne: true } }).select('-password').lean(),
+    User.find({ status: { $nin: ['deleted', 'inactive'] }, isActive: { $ne: false }, $nor: [{ role: 'employer', inactiveBySystem: true }] }).select('-password').lean(),
     Job.find({}).lean(),
     Application.find({}).lean(),
   ]);

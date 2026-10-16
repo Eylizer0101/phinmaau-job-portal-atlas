@@ -489,7 +489,7 @@ const AdminFilterRecords = () => {
                   <div className="mt-3"><SelectField label="Campus" value={filters.campus} onChange={(value) => setFilter("campus", value)} options={optionItems(options.campuses)} placeholder="All Campus" /></div>
                   <div className="mt-3"><SelectField label="Course" value={filters.course} onChange={(value) => setFilter("course", value)} options={optionItems(options.courses)} placeholder="All Course" /></div>
                   <div className="mt-3"><SelectField label="Year Graduated" value={filters.yearGraduated} onChange={(value) => setFilter("yearGraduated", value)} options={optionItems(options.yearsGraduated)} placeholder="All Year Graduated" /></div>
-                  <div className="mt-3"><SelectField label="Gender" value={filters.gender} onChange={(value) => setFilter("gender", value)} options={optionItems(options.genders)} placeholder="All Gender" /></div>
+                  <div className="mt-3"><SelectField label="Gender" value={filters.gender} onChange={(value) => setFilter("gender", value)} options={optionItems([...(options.genders || []), ...((options.genders || []).some((gender) => String(gender).trim().toLowerCase() === "prefer not to say") ? [] : ["Prefer not to say"])])} placeholder="All Gender" /></div>
                 </>
               ) : null}
 
