@@ -1,6 +1,5 @@
 // BACKEND/controllers/authController.js
 const User = require('../models/User');
-const Job = require('../models/Job');
 const PendingEmailVerification = require('../models/PendingEmailVerification');
 const Notification = require('../models/Notification');
 const notificationController = require('./notificationController');
@@ -3538,20 +3537,6 @@ exports.updateCompanyProfile = async (req, res) => {
       { $set: { employerProfile: employerProfileUpdate, lastProfileUpdateAt: new Date() } },
       { new: true, runValidators: true }
     ).select('-password');
-
-    // Keep the company details embedded in existing job postings in sync with
-    // the employer profile. Jobs are used by employer, jobseeker, admin and
-    // public lists, so updating only User.employerProfile leaves old logos.
-    const oldLogo = String(currentProfile.companyLogo || '').trim();
-    const newLogo = String(employerProfileUpdate.companyLogo || '').trim();
-    const oldName = String(currentProfile.companyName || '').trim();
-    const newName = String(employerProfileUpdate.companyName || '').trim();
-    if (oldLogo !== newLogo || oldName !== newName) {
-      const jobChanges = {};
-      if (oldLogo !== newLogo) jobChanges.companyLogo = newLogo;
-      if (oldName !== newName) jobChanges.companyName = newName;
-      await Job.updateMany({ employer: userId }, { $set: jobChanges });
-    }
 
     return res.status(200).json({
       success: true,

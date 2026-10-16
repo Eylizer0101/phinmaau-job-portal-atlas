@@ -349,7 +349,9 @@ exports.getVerifiedCompanies = async (req, res) => {
 
     const baseQuery = {
       role: 'employer',
-      status: { $ne: 'deleted' },
+      status: 'active',
+      isActive: true,
+      inactiveBySystem: { $ne: true },
       'employerProfile.verificationDocs.overallStatus': 'verified',
       'employerProfile.profileVisible': true,
     };

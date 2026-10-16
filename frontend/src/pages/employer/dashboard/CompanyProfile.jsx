@@ -2390,33 +2390,6 @@ const CompanyProfile = () => {
         });
 
         if (response.data?.success) {
-          // Make the newly saved logo available immediately to the persistent
-          // EmployerLayout sidebar without requiring a logout or full reload.
-          const freshUser = response.data.user;
-          if (freshUser) {
-            try {
-              const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-              localStorage.setItem('user', JSON.stringify({ ...storedUser, ...freshUser }));
-            } catch {
-              // The profile was saved even if browser storage is unavailable.
-            }
-            window.dispatchEvent(new CustomEvent('agapay:company-profile-updated', {
-              detail: { user: freshUser },
-            }));
-          }
-
-          // Cached job lists can contain old embedded company logos. Refresh
-          // them on their next visit rather than displaying stale images.
-          try {
-            for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
-              const key = sessionStorage.key(index);
-              if (key && (/job-search-cache|job-offers-cache|my-applications:/i).test(key)) {
-                sessionStorage.removeItem(key);
-              }
-            }
-          } catch {
-            // Storage errors must not interfere with a successful save.
-          }
           setIsEditOpen(false);
           resetLocalUploads();
           await fetchCompanyProfile();
