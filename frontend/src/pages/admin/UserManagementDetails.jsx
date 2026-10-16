@@ -1753,7 +1753,7 @@ const UserManagementDetails = () => {
   const archiveBanner = isInactiveEmployerArchive ? (
     <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm font-bold">Account marked as inactive{isToyotaArchiveDemo ? " (Demo Data)" : ""}</p>
+        <p className="text-sm font-bold">Account marked as inactive{isToyotaArchiveDemo ? " " : ""}</p>
         <p className="mt-0.5 text-xs text-rose-600">
           Archived on {formatDate(displayedArchiveDate)} due to prolonged inactivity.
         </p>
