@@ -4,7 +4,7 @@ const Job = require('../models/Job');
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_INACTIVE_MONTHS = 6;
 const MAX_INACTIVE_MONTHS = 12;
-const DEFAULT_INACTIVE_MONTHS = 6;
+const DEFAULT_INACTIVE_MONTHS = 12;
 
 let monitorTimer = null;
 let checkInProgress = false;

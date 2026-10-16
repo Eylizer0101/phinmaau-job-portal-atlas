@@ -1720,20 +1720,20 @@ const UserManagementDetails = () => {
   }
 
   const archiveLastActive =
-    location.state?.lastActive ||
     user.lastLogin ||
-    user.createdAt;
+    user.createdAt ||
+    location.state?.lastActive;
   const archiveDate =
-    location.state?.archivedAt ||
     user.inactiveAt ||
+    location.state?.archivedAt ||
     user.updatedAt ||
     user.createdAt;
-  const archiveInactivityDays = Number.isFinite(Number(location.state?.inactivityDays))
-    ? Number(location.state.inactivityDays)
-    : Math.max(
-        0,
-        Math.floor((Date.now() - new Date(archiveLastActive || Date.now()).getTime()) / 86400000)
-      );
+  const archiveLastActiveTime = new Date(archiveLastActive || "").getTime();
+  const archiveTime = new Date(archiveDate || "").getTime();
+  const archiveInactivityDays =
+    Number.isFinite(archiveLastActiveTime) && Number.isFinite(archiveTime)
+      ? Math.max(0, Math.floor((archiveTime - archiveLastActiveTime) / 86400000))
+      : null;
   const isInactiveEmployerArchive =
     isArchiveView &&
     !isJobseeker &&
@@ -1755,7 +1755,7 @@ const UserManagementDetails = () => {
           Last Active: {formatDate(archiveLastActive)}
         </span>
         <span className="rounded-full border border-rose-200 bg-white px-3 py-1.5">
-          Total Inactivity: {archiveInactivityDays} days
+          Total Inactivity: {archiveInactivityDays === null ? "—" : `${archiveInactivityDays} days`}
         </span>
       </div>
     </div>
