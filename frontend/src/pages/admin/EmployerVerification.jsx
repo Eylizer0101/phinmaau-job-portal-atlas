@@ -40,6 +40,16 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
     );
   }
 
+  if (name === "archiveRestore") {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 11a9 9 0 1 1 2.7 6.4" />
+        <path d="M3 4v7h7" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    );
+  }
+
   const common = {
     className,
     fill: "none",
@@ -1353,11 +1363,11 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
                                     type="button"
                                     onClick={() => setRestoreTarget(item)}
                                     disabled={restoringId === item._id}
-                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white transition hover:border-[#255487] hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
                                     title="Restore"
                                     aria-label={`Restore ${companyName}`}
                                   >
-                                    <Icon name="restore" className="h-4 w-4" />
+                                    <Icon name="archiveRestore" className="h-4 w-4" />
                                   </button>
                                 ) : null}
                               </div>
@@ -1430,12 +1440,12 @@ const EmployerVerification = ({ pageTitle = "Employer Verification", showDashboa
 
                               {archiveMode ? (
                                 <Button
-                                  variant="secondary"
+                                  variant="primary"
                                   size="sm"
-                                  leftIcon={<Icon name="restore" className="h-4 w-4" />}
+                                  leftIcon={<Icon name="archiveRestore" className="h-4 w-4" />}
                                   onClick={() => setRestoreTarget(item)}
                                   disabled={restoringId === item._id}
-                                  className="h-10 w-10 !gap-0 !rounded-xl !border-slate-200 !p-0 !text-slate-600 hover:!border-[#2e66a6] hover:!bg-[#2e66a6] hover:!text-white"
+                                  className="h-10 w-10 !gap-0 !rounded-xl !border-[#2e66a6] !bg-[#2e66a6] !p-0 !text-white hover:!border-[#255487] hover:!bg-[#255487] hover:!text-white"
                                   title="Restore"
                                   aria-label={`Restore ${companyName}`}
                                 />

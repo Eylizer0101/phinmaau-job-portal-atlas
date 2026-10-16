@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useLayoutEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
@@ -1205,6 +1205,33 @@ const UserManagementDetails = () => {
   );
 
   const ResumePreview = () => {
+    const previewContainerRef = useRef(null);
+    const educationSectionRef = useRef(null);
+    const [educationPreviewHeight, setEducationPreviewHeight] = useState(null);
+
+    useLayoutEffect(() => {
+      const container = previewContainerRef.current;
+      const education = educationSectionRef.current;
+      if (!container || !education) {
+        setEducationPreviewHeight(null);
+        return undefined;
+      }
+
+      const updatePreviewHeight = () => {
+        const educationTop = education.getBoundingClientRect().top - container.getBoundingClientRect().top;
+        const nextHeight = Math.ceil(educationTop + 110);
+        setEducationPreviewHeight((previous) => previous === nextHeight ? previous : nextHeight);
+      };
+
+      updatePreviewHeight();
+      const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updatePreviewHeight) : null;
+      if (observer) observer.observe(container.querySelector("article") || education);
+      window.addEventListener("resize", updatePreviewHeight);
+      return () => {
+        if (observer) observer.disconnect();
+        window.removeEventListener("resize", updatePreviewHeight);
+      };
+    }, []);
     const avatarUrl = getFileUrl(user?.profileImage);
     const initials = fullName
       .split(/\s+/)
@@ -1218,17 +1245,17 @@ const UserManagementDetails = () => {
         <div className="flex flex-col gap-3 border-b border-[#d8e2ee] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div />
 
-          <button
+          {educationPreviewHeight !== null ? (<button
             type="button"
             onClick={handleOpenResumeFullView}
             className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-[15px]"
           >
             <Icon name="eye" className="h-4 w-4" />
             Full Resume
-          </button>
+          </button>) : null}
         </div>
 
-        <div className="relative max-h-[800px] overflow-hidden px-5 py-7 sm:px-8 lg:px-10">
+        <div ref={previewContainerRef} className="relative overflow-hidden px-5 py-7 sm:px-8 lg:px-10" style={educationPreviewHeight !== null ? { height: `${educationPreviewHeight}px` } : undefined}>
           <article className="mx-auto w-full bg-white font-serif text-[12px] leading-[1.45] text-black sm:text-[13px]">
             <header className="relative flex min-h-[120px] flex-col items-center justify-center pb-6 pr-0 text-center sm:pr-[132px]">
               <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em] sm:text-[31px]">
@@ -1357,7 +1384,7 @@ const UserManagementDetails = () => {
             ) : null}
 
             {meaningfulEducationEntries.length ? (
-              <section className="pt-5">
+              <section ref={educationSectionRef} className="pt-5">
                 <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Education
                 </h3>
@@ -1492,7 +1519,7 @@ const UserManagementDetails = () => {
               </div>
             ) : null}
           </article>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-white/0 via-white/70 to-white" aria-hidden="true" />
+          {educationPreviewHeight !== null ? (<div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-white/0 via-white/70 to-white" aria-hidden="true" />) : null}
         </div>
       </section>
     );
