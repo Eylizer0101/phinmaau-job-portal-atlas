@@ -131,3 +131,19 @@ No. The Community page was removed from AGAPAY. You can still use the existing M
 
 HOW TO APPLY AND WHAT SHOULD I DO FIRST?
 From your approved AGAPAY Jobseeker dashboard, Complete the required My Profile resume sections and make sure your CV is available under Profile Credentials. Then open Job Offers or Job Search, review a job in Job Details, select Apply Now, check the submission information, and submit. Track the result under My Applications. AGAPAY does not require using LinkedIn, Indeed, or a cover letter as part of these steps.
+
+HOW CAN I IMPROVE MY JOB SEEKER RANKING?
+
+Complete My Profile with correct education, skills, experience, projects, certifications, and qualifications. Keep the resume updated. This helps job matching but does not guarantee a specific rank or hiring.
+
+HOW CAN I TRACK MY JOB APPLICATIONS?
+
+Open My Applications to review Pending, For Interview, Hired, Declined, and other application status updates. Also check Messages and Notifications.
+
+HOW CAN I RATE A COMPANY ON AGAPAY?
+
+When the Application Rating option is available, agree to the notice, select the applied role, complete Days to First Response, Total Process Length, Application Process Rating, Would You Apply Again?, Outcome, and Your Review, then confirm and submit.
+
+HOW CAN I EDIT MY JOB POST?
+
+Open Manage Jobs. If the job is still within its allowed direct-edit window, edit it there. Otherwise submit an Edit Request, select requested sections, provide a reason, and wait for administrator review before making authorized changes.

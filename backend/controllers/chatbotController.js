@@ -339,6 +339,25 @@ const getRoleRestrictedAnswer = (message, role) => {
   return null;
 };
 
+// Verified answers to frequently requested AGAPAY workflows, including static mode.
+const getRequestedWorkflowAnswer = (message, role) => {
+  const q = normalizeText(message);
+  if (role === 'jobseeker') {
+    if (/\b(?:rank|ranking|matching|match score)\b/.test(q) && /\b(?:improve|increase|better|raise|boost|how)\b/.test(q)) {
+      return `To improve your jobseeker matching and visibility on AGAPAY:\n\n1. Open My Profile and complete all required resume sections.\n2. Add accurate educational background, skills, and work experience.\n3. Include relevant certifications, projects, and other qualifications when available.\n4. Keep your profile and resume updated.\n5. Apply to job postings that match your qualifications.\n\nComplete and accurate details can help AGAPAY identify more relevant job matches, but do not guarantee a specific ranking or employment.`;
+    }
+    if (/\b(?:rate|rating|review)\b/.test(q) && /\b(?:company|employer|application process)\b/.test(q)) {
+      return `To rate a company through the AGAPAY Application Rating process (when the rating option is available):\n\n1. Read and agree to the Application Rating Notice.\n2. Select the role you applied for at that company.\n3. Complete the rating form: Days to First Response, Total Process Length (Days), Application Process Rating, Would You Apply Again? (Yes or No), Outcome (Received Offer, Ghosted, Withdrew, or Still in Process), and Your Review.\n4. Review your answers and confirm they are accurate.\n5. Submit your rating and check for the confirmation message.\n\nIf you do not see a rating option, it may not be available for your application.`;
+    }
+    if (/\b(?:track|check|view|see|monitor)\b/.test(q) && /\b(?:applications?|application status|progress)\b/.test(q)) {
+      return `To track your job applications in AGAPAY:\n\n1. Sign in to your Jobseeker account.\n2. Open My Applications.\n3. Find the job you applied for and view its status, such as Pending, For Interview, Hired, or Declined.\n4. Open the application details for available progress information.\n5. Check Messages and Notifications for additional employer updates.\n\nAgap-AI cannot access your live application records.`;
+    }
+  } else if (/\b(?:edit|modify|change|update)\b/.test(q) && /\b(?:job|post|posting)\b/.test(q)) {
+    return `To edit your job post on AGAPAY:\n\n1. Open Manage Jobs and find your job post.\n2. Select the Edit action. A published job can be edited directly within the first hour after publication when permitted.\n3. If editing is locked, submit an Edit Request instead. Select only the section(s) you want to change and give a clear reason.\n4. Review and submit your request to the administrator.\n5. Check Manage Jobs and Notifications for the review decision. If approved, edit only the authorized sections during the allowed edit window.\n\nThe administrator must review a locked-post edit request; approval is not automatic.`;
+  }
+  return null;
+};
+
 const getVerifiedNavigationAnswer = (message, role) => {
   const q = normalizeText(message);
   if (/\bcommunity\b/.test(q)) return 'Sorry, there is no Community Page available in AGAPAY.';
@@ -654,6 +673,9 @@ exports.sendChatbotMessage = async (req, res) => {
     if (isSystemOverviewQuestion(message)) {
       return res.json({ success: true, mode: 'knowledge', reply: COMMON_GUIDES[0].answer });
     }
+
+    const workflowAnswer = getRequestedWorkflowAnswer(message, role);
+    if (workflowAnswer) return res.json({ success: true, mode: 'knowledge', reply: workflowAnswer });
 
     const navigationAnswer = getVerifiedNavigationAnswer(message, role);
     if (navigationAnswer && /\bcommunity\b/i.test(message)) {

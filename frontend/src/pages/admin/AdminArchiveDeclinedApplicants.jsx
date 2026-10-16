@@ -55,6 +55,23 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
   );
 };
 
+const ArchivedApplicantPhoto = ({ applicant }) => {
+  const [failed, setFailed] = useState(false);
+  const photo = applicant?.profileImage || applicant?.jobseeker?.profileImage || '';
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-500">
+      {photo && !failed ? (
+        <img src={photo} alt={`${applicant?.applicantName || 'Applicant'} profile`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+      ) : (
+        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" role="img" aria-label="Default profile picture">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4.1 3.1-7 8-7s8 2.9 8 7H4z" />
+        </svg>
+      )}
+    </div>
+  );
+};
+
 const DATE_OPTIONS = [
   { value: "all", label: "All Time" },
   { value: "today", label: "Today" },
@@ -582,10 +599,13 @@ const AdminArchiveDeclinedApplicants = () => {
                   >
                     <span className="text-sm text-slate-600">{formatDate(applicant.appliedAt)}</span>
 
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-black">{applicant.applicantName || "Jobseeker"}</p>
-                      <p className="truncate text-xs text-slate-500">{applicant.email || "—"}</p>
-                    </div>
+                    <div className="flex min-w-0 items-center gap-3">
+                       <ArchivedApplicantPhoto key={applicant.applicationId || applicant._id} applicant={applicant} />
+                       <div className="min-w-0 flex-1">
+                         <p className="truncate text-sm font-semibold text-black">{applicant.applicantName || "Jobseeker"}</p>
+                         <p className="truncate text-xs text-slate-500">{applicant.email || "—"}</p>
+                       </div>
+                     </div>
 
                     <span className="text-sm text-slate-600">{applicant.jobSeekerLevel || "Not specified"}</span>
 

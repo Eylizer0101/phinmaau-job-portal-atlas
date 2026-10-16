@@ -13,14 +13,17 @@ const ROLE_QUESTIONS = {
   jobseeker: [
     'How do I apply for a job?',
     'How do I complete my profile?',
-    'How do I track my application?',
+    'How can I track my job applications?',
     'What are common interview questions?',
     'Can we practice a mock interview?',
     'How can I prepare for an interview?',
+    'How can I improve my job seeker ranking?',
+    'How can I rate a company on AGAPAY?',
     'How can I increase my chances of getting hired?',
   ],
   employer: [
     'How do I post a job?',
+    'How can I edit my job post?',
     'How do I manage applicants?',
     'How do I add a hiring stage?',
     'What are good interview questions for applicants?',

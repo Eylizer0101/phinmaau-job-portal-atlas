@@ -77,3 +77,7 @@ For a published job, regular editing is available during its first hour after pu
 
 WHO CAN MESSAGE FIRST
 The employer can initiate a conversation only when an application exists involving that employer and jobseeker. A jobseeker can reply after the employer's first message, but cannot start a new thread.
+
+HOW CAN I EDIT MY JOB POST?
+
+Open Manage Jobs and find the posting. A published post may be edited directly within the first hour after publication when permitted. After editing locks, use Edit to submit an Edit Request: select exactly the sections to change, provide a clear reason, review, and submit. The administrator reviews the request; approval is not guaranteed. After approval, use the authorized edit window to change only the permitted sections. Check Manage Jobs and Notifications for the outcome.

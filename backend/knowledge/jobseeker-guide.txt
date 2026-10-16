@@ -90,3 +90,15 @@ An eligible application can be withdrawn from My Applications. Withdrawal is per
 
 AGAPAY-ONLY APPLY ANSWER
 When asked "how to apply", "how to apply and what should I do first", or similar, begin with an active verified Jobseeker account and a completed profile/CV in Profile Credentials. Direct the user to Job Offers or Job Search, Job Details, Apply Now, and My Applications. Never replace these steps with searching external job advertisements, setting up LinkedIn, writing a cover letter, or updating profiles outside AGAPAY.
+
+HOW CAN I IMPROVE MY JOB SEEKER RANKING?
+
+Complete and keep your My Profile resume information accurate and up to date. Include education, relevant technical and soft skills, work experience, certifications, projects, and other qualifications where applicable. This can help AGAPAY provide relevant job matches and improve the information employers see. A complete profile does not guarantee a specific ranking, interview, or hiring result.
+
+HOW CAN I TRACK MY JOB APPLICATIONS?
+
+Open My Applications and select the application you want to review. Check its displayed status, such as Pending, For Interview, Hired, or Declined, and review available application information. Check Messages and Notifications for updates from employers. Agap-AI cannot see a user's live application records.
+
+HOW CAN I RATE A COMPANY ON AGAPAY?
+
+When the Application Rating option is available, read and agree to the Application Rating Notice, choose the role you applied for, and complete the rating form. It asks for Days to First Response, Total Process Length (Days), Application Process Rating, Would You Apply Again? (Yes or No), Outcome (Received Offer, Ghosted, Withdrew, or Still in Process), and Your Review. Review your entries, confirm the details, and submit. A successful submission displays confirmation. Do not claim the option is available for every application.

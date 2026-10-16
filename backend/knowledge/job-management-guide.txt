@@ -67,3 +67,7 @@ Job posting forms enforce required inputs and length or value limits. Employers 
 
 PUBLISHED JOB EDIT WINDOW
 The employer may directly edit a published job within the first hour of publication. After that, the backend locks editing unless temporary permission is active. A locked post needs an administrator-reviewed edit request specifying exactly which sections need changing, along with a reason of no more than 500 characters. One pending request per job is allowed. The current system has explicit Job Details, Requirements & Qualifications, Skills & Benefits, Work Locations, Salary, and Deadline edit sections. Approved access does not authorize editing sections outside the approved request.
+
+HOW CAN I EDIT MY JOB POST?
+
+From Manage Jobs, select the job post and its Edit action. Published posts can be edited directly within the first hour when allowed. Once locked, submit an Edit Request with only the sections you want to change and a reason (maximum 500 characters). Wait for administrator review and check Manage Jobs and Notifications. Approval unlocks only the authorized sections for the allowed period; do not expect instant approval.

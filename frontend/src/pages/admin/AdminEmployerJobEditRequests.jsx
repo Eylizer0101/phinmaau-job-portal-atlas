@@ -234,6 +234,25 @@ const requestRowName = (item = {}) =>
         companyName(item)
       );
 
+const RequestProfileImage = ({ item, name }) => {
+  const [failed, setFailed] = useState(false);
+  const person = item.rowType === 'status_request' ? item?.jobseeker : item?.employer;
+  const photo = person?.profileImage || person?.jobSeekerProfile?.profileImage || '';
+
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-500">
+      {photo && !failed ? (
+        <img src={photo} alt={`${name} profile`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+      ) : (
+        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-label="Default profile picture" role="img">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4.1 3.1-7 8-7s8 2.9 8 7H4z" />
+        </svg>
+      )}
+    </div>
+  );
+};
+
 const requestRowSubtext = (item = {}) => {
   if (item.rowType === 'status_request') {
     return item?.jobseeker?.email || item?.job?.companyName || 'Job Seeker';
@@ -672,10 +691,13 @@ const AdminEmployerJobEditRequests = () => {
                 <td className="px-6 py-[18px] text-[13px] text-[#526d91]">{formatDate(requestDateValue(item))}</td>
 
                 <td className="px-6 py-[18px]">
-                  <div className="min-w-[220px]">
-                    <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
-                    <p className="mt-1 truncate text-xs text-[#526d91]">{subtext || '—'}</p>
-                  </div>
+                  <div className="flex min-w-[220px] items-center gap-3">
+                     <RequestProfileImage key={`${item.rowType}-${item._id}`} item={item} name={name} />
+                     <div className="min-w-0 flex-1">
+                       <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
+                       <p className="mt-1 truncate text-xs text-[#526d91]">{subtext || '—'}</p>
+                     </div>
+                   </div>
                 </td>
 
                 {role === 'all' && <td className="px-6 py-[18px] text-sm text-slate-900">{requestRoleLabel(item)}</td>}
