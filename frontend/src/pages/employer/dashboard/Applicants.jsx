@@ -1363,17 +1363,13 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
   const matchedSkills = requiredSkills.filter((requiredSkill) =>
     applicantSkills.some(
       (applicantSkill) =>
-        applicantSkill === requiredSkill ||
-        applicantSkill.includes(requiredSkill) ||
-        requiredSkill.includes(applicantSkill)
+        applicantSkill === requiredSkill // Only explicit required skills count as verified matches.
     )
   );
 
   const skillRatio = requiredSkills.length
     ? matchedSkills.length / requiredSkills.length
-    : applicantSkills.length
-      ? 0.75
-      : 0;
+    : 0; // Unspecified requirements are not evidence of a skills match.
 
   const latestEducation = Array.isArray(education) && education.length
     ? education[education.length - 1]
@@ -1411,11 +1407,16 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
     profile.experience || profile.whatHaveYouDone
   );
   const requiredYears = getRequiredExperienceYears(job.experienceLevel);
+  // Years in an unrelated occupation do not establish job-specific experience.
+  const roleWords = normalizeMatchText(`${job.title || ''} ${job.category || ''}`)
+    .split(' ').filter((word) => word.length >= 4 && !['staff', 'assistant', 'officer', 'worker', 'position', 'other'].includes(word));
+  const relatedWork = work.some((item) => {
+    const position = normalizeMatchText(item?.positionTitle || item?.title || '');
+    return roleWords.some((word) => new RegExp(`\\b${word}\\b`).test(position));
+  });
   const experienceRatio = requiredYears
-    ? Math.min(1, applicantYears / requiredYears)
-    : job.openToFreshGraduates || applicantYears >= 0
-      ? 1
-      : 0;
+    ? (relatedWork ? Math.min(1, applicantYears / requiredYears) : 0)
+    : 0;
 
   const applicantCourseText = normalizeMatchText(
     [
@@ -1446,9 +1447,9 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
 
   const courseWords = applicantCourseText
     .split(' ')
-    .filter((word) => word.length >= 4);
+    .filter((word) => word.length >= 4 && !['degree', 'master', 'bachelor', 'college', 'graduate', 'major', 'science'].includes(word));
 
-  const courseHits = courseWords.filter((word) => jobContextText.includes(word));
+  const courseHits = courseWords.filter((word) => new RegExp(`\\b${word}\\b`).test(jobContextText));
   const courseRatio = courseWords.length
     ? Math.min(1, courseHits.length / Math.min(courseWords.length, 4))
     : 0;
@@ -1457,7 +1458,7 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
   // A changed job post is scored from its current values, not an earlier saved percentage.
   const preferredMode = normalizeMatchText(profile.preferredWorkMode);
   const requiredMode = normalizeMatchText(job.workMode || job.workArrangement || job.workSetup);
-  const workModeRatio = !requiredMode ? 0.5 : preferredMode && (
+  const workModeRatio = !requiredMode ? 0 : preferredMode && (
     preferredMode === requiredMode ||
     (requiredMode.includes('remote') && (preferredMode.includes('remote') || preferredMode.includes('home'))) ||
     (requiredMode.includes('home') && (preferredMode.includes('home') || preferredMode.includes('remote'))) ||
@@ -1466,12 +1467,17 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
   ) ? 1 : 0;
   const requestedType = normalizeMatchText(job.jobType);
   const preferredType = normalizeMatchText(profile.employmentType);
-  const employmentTypeRatio = !requestedType ? 0.5 : requestedType && preferredType &&
+  const employmentTypeRatio = !requestedType ? 0 : requestedType && preferredType &&
     (requestedType === preferredType || requestedType.includes(preferredType) || preferredType.includes(requestedType)) ? 1 : 0;
   const requestedLocation = normalizeMatchText(job.location || '');
   const preferredLocation = normalizeMatchText(profile.address || profile.currentAddress || '');
-  const locationRatio = !requestedLocation ? 0.5 : requestedLocation && preferredLocation &&
-    (requestedLocation.includes(preferredLocation) || preferredLocation.includes(requestedLocation)) ? 1 : 0;
+  const requestedCity = normalizeMatchText(job.locationCity || '');
+  const requestedProvince = normalizeMatchText(job.locationProvince || '');
+  const locationRatio = requestedLocation && preferredLocation && (
+    (requestedCity && new RegExp(`\\b${requestedCity}\\b`).test(preferredLocation)) ||
+    (requestedProvince && new RegExp(`\\b${requestedProvince}\\b`).test(preferredLocation)) ||
+    requestedLocation === preferredLocation
+  ) ? 1 : 0;
   const score = Math.round(
     skillRatio * 35 +
     educationRatio * 18 +
@@ -1486,7 +1492,7 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
   const educationMatched = requiredEducationRank
     ? applicantEducationRank >= requiredEducationRank
     : Boolean(applicantEducationRank);
-  const experienceMatched = requiredYears ? applicantYears >= requiredYears : true;
+  const experienceMatched = requiredYears ? (relatedWork && applicantYears >= requiredYears) : false;
   const courseMatched = courseWords.length ? courseHits.length > 0 : false;
 
   const formatYears = (years) => {
@@ -1501,7 +1507,7 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
   return {
     score: Math.max(0, Math.min(100, score)),
     label: getMatchLabel(score),
-    skillsLabel: getMatchLabel(Math.round(skillRatio * 100)),
+    skillsLabel: requiredSkills.length ? getMatchLabel(Math.round(skillRatio * 100)) : 'Not Specified',
     matchedSkillsCount: matchedSkills.length,
     requiredSkillsCount: requiredSkills.length,
     matchedSkills,

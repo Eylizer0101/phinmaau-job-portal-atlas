@@ -184,42 +184,7 @@ const getJobSearchFields = (job = {}) => {
   return { title, category, skillText, combined };
 };
 
-const calculateJobMatchForUser = (job = {}, user = {}) => {
-  const keywords = buildJobseekerMatchKeywords(user);
-  if (!keywords.length) {
-    return { score: 0, matchedKeywords: [] };
-  }
-
-  const fields = getJobSearchFields(job);
-  let score = 0;
-  const matched = [];
-
-  keywords.forEach((keyword) => {
-    if (!keyword || (keyword.length < 3 && !['c#', 'c++'].includes(keyword))) return;
-
-    let keywordScore = 0;
-    if (fields.skillText.includes(keyword)) keywordScore += 6;
-    if (fields.title.includes(keyword)) keywordScore += 5;
-    if (fields.category.includes(keyword)) keywordScore += 4;
-    if (fields.combined.includes(keyword)) keywordScore += 2;
-
-    if (!keywordScore && keyword.includes(' ')) {
-      const parts = keyword.split(' ').filter((part) => part.length >= 3);
-      const partialHits = parts.filter((part) => fields.combined.includes(part)).length;
-      if (partialHits >= Math.min(2, parts.length)) keywordScore += partialHits;
-    }
-
-    if (keywordScore > 0) {
-      score += keywordScore;
-      matched.push(keyword);
-    }
-  });
-
-  return {
-    score,
-    matchedKeywords: [...new Set(matched)].slice(0, 10)
-  };
-};
+const { calculateJobMatchForUser } = require('../services/jobMatchService');
 
 const attachRecommendationData = (jobs = [], user = null) => {
   return (jobs || []).map((job) => {

@@ -94,29 +94,7 @@ const getMessageNotificationSenderName = (sender = {}) => {
     ).trim() || 'User';
 };
 
-const calculateNotificationJobMatch = (job = {}, user = {}) => {
-    const keywords = buildNotificationJobseekerKeywords(user);
-    const jobText = normalizeNotificationKeyword([
-        job.title,
-        job.companyName,
-        job.category,
-        Array.isArray(job.skillsRequired) ? job.skillsRequired.join(' ') : job.skillsRequired,
-        job.description,
-        job.requirements,
-        job.jobType,
-        job.workMode,
-        job.experienceLevel,
-        job.educationLevel,
-        job.location
-    ].filter(Boolean).join(' '));
-
-    const matchedKeywords = keywords.filter((keyword) => jobText.includes(keyword)).slice(0, 10);
-
-    return {
-        score: matchedKeywords.length,
-        matchedKeywords
-    };
-};
+const { calculateJobMatchForUser: calculateNotificationJobMatch } = require('../services/jobMatchService');
 
 // Get all notifications for user
 exports.getNotifications = async (req, res) => {
@@ -565,7 +543,7 @@ exports.createJobMatchNotification = async (jobseekerId, job, precomputedMatch =
     const match = precomputedMatch || calculateNotificationJobMatch(job, user);
     const matchingKeywords = Array.isArray(match?.matchedKeywords) ? match.matchedKeywords : [];
 
-    if (!Number(match?.score || 0) || matchingKeywords.length === 0) {
+    if (!match?.relevantEvidence || !Number(match?.score || 0) || matchingKeywords.length === 0) {
       console.log(`No profile match for jobseeker ${jobseekerId} and job ${job.title}`);
       return;
     }
@@ -584,8 +562,8 @@ exports.createJobMatchNotification = async (jobseekerId, job, precomputedMatch =
 
     const displayMatches = matchingKeywords.slice(0, 3);
     const message = displayMatches.length > 0
-      ? `New job opportunity matched your skills: ${job.title}. Matched with: ${displayMatches.join(', ')}.`
-      : `New job opportunity matched your skills: ${job.title}.`;
+      ? `New job opportunity may match your qualifications: ${job.title}. Verified matches: ${displayMatches.join(', ')}.`
+      : `New job opportunity may match your qualifications: ${job.title}.`;
 
     const notification = new Notification({
       user: jobseekerId,
