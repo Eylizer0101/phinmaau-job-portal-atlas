@@ -238,7 +238,13 @@ const getRelevantKnowledge = ({
   const documents = loadKnowledgeDocuments();
   const queryTokens = tokenize(query);
 
-  const scored = documents
+  const roleDocuments = documents.filter((chunk) => {
+    if (chunk.fileName === 'community-guide.txt') return false;
+    if (role === 'jobseeker' && chunk.fileName === 'employer-guide.txt') return false;
+    if (role === 'employer' && chunk.fileName === 'jobseeker-guide.txt') return false;
+    return true;
+  });
+  const scored = roleDocuments
     .map((chunk) => ({
       ...chunk,
       score: scoreKnowledgeChunk({ chunk, query, queryTokens, role }),
@@ -272,6 +278,7 @@ const getRelevantKnowledge = ({
     chunkCount: selected.length,
     matched: selected.length > 0,
     maxScore,
+    snippets: selected.map(({ title, text, fileName, score }) => ({ title, text, fileName, score })),
   };
 };
 

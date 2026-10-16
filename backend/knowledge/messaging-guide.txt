@@ -31,7 +31,7 @@ Agap-AI must not claim that it read a user's messages. The current chatbot route
 
 HOW TO USE AN EXISTING CONVERSATION
 
-1. Sign in and open Messages.
+1. Open Messages.
 2. Select the available company or candidate conversation.
 3. Read previous messages within your authorized account.
 4. Type and send a professional reply or attach a supported file when enabled.

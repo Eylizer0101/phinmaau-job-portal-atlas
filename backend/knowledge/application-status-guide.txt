@@ -61,7 +61,7 @@ When an employer changes an application status, the backend records the change i
 
 WHERE TO CHECK THE APPLICATION STATUS
 
-Jobseeker: sign in, open My Applications, locate the submitted job, then read its displayed status and activity/details. Employer: open Applicants or the appropriate status-specific page for a job and review the applicant record. Agap-AI cannot look up or confirm a particular person's application status.
+Jobseeker: open My Applications, locate the submitted job, then read its displayed status and activity/details. Employer: open Applicants or the appropriate status-specific page for a job and review the applicant record. Agap-AI cannot look up or confirm a particular person's application status.
 
 APPLICATION ACTIVITY AND SNAPSHOT
 

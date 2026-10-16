@@ -41,7 +41,7 @@ An employer can update only applications that belong to that employer's job post
 
 EMPLOYER JOB POSTING WORKFLOW
 
-1. Sign in to the approved employer account.
+1. Check that your Employer account is approved.
 2. Complete the required Company Profile fields and verification steps.
 3. Open Post Job.
 4. Enter job title, vacancies, salary details, location, work setup, educational requirements, description, qualifications, required skills, benefits, and deadline as requested by the form.

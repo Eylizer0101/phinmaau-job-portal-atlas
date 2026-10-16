@@ -24,7 +24,7 @@ The jobseeker can update profile data, add or edit work experience, upload a res
 
 HOW TO APPLY FOR A JOB
 
-1. Sign in using a verified and active jobseeker account.
+1. Make sure your Jobseeker account is approved and your profile is complete.
 2. Complete the jobseeker profile and make sure the Profile Credentials section contains a CV or resume.
 3. Open Job Offers or Job Search.
 4. Search or filter jobs by available information such as keyword, location, field, salary, employment type, experience, education, or work mode.
