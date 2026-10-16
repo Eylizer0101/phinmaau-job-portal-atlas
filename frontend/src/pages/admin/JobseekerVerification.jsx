@@ -31,10 +31,9 @@ const cn = (...classes) => classes.filter(Boolean).join(" ");
 const Icon = ({ name, className = "h-5 w-5", ...props }) => {
   if (name === "archiveRestore") {
     return (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M3 11a9 9 0 1 1 2.7 6.4" />
-        <path d="M3 4v7h7" />
-        <path d="M12 7v5l3 2" />
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3.5 10V4.5L9 10H3.5Z" />
+        <path d="M4.3 10a8.5 8.5 0 1 1-.1 5.1" />
       </svg>
     );
   }
@@ -82,12 +81,10 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
 
   if (name === "restore") {
     return (
-      <img
-        src="/images/restorist.png"
-        alt=""
-        className={`${className} scale-125 object-contain`}
-        aria-hidden="true"
-      />
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3.5 10V4.5L9 10H3.5Z" />
+        <path d="M4.3 10a8.5 8.5 0 1 1-.1 5.1" />
+      </svg>
     );
   }
 
