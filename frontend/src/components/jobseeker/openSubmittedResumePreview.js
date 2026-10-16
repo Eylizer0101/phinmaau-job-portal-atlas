@@ -1,11 +1,37 @@
 import api from '../../services/api';
 
-// Reuse the same submitted resume snapshot preview as the Admin application page.
+// Use a small, authorized snapshot-only endpoint instead of full application details.
 // Never rebuild historical application resumes from the current editable profile.
+// An immutable submitted snapshot can be reused within the same logged-in session.
+// Keep concurrent hover/click requests from fetching the same snapshot twice.
+const snapshotCache = new Map();
+const pendingSnapshots = new Map();
+
+const getCacheKey = (applicationId) =>
+  `${localStorage.getItem('token') || ''}:${applicationId}`;
+
+export const preloadSubmittedResume = (applicationId) => {
+  if (!applicationId) return Promise.resolve(null);
+  const key = getCacheKey(applicationId);
+  if (snapshotCache.has(key)) return Promise.resolve(snapshotCache.get(key));
+  if (pendingSnapshots.has(key)) return pendingSnapshots.get(key);
+
+  const request = api.get(`/applications/${applicationId}/submitted-resume`)
+    .then((response) => {
+      const snapshot = response.data?.resumeSnapshot;
+      if (!snapshot || typeof snapshot !== 'object' || !Object.keys(snapshot).length) {
+        throw new Error('The submitted resume is not available for this application.');
+      }
+      snapshotCache.set(key, snapshot);
+      return snapshot;
+    })
+    .finally(() => pendingSnapshots.delete(key));
+  pendingSnapshots.set(key, request);
+  return request;
+};
+
 const openSubmittedResumePreview = async (applicationId, navigate, returnTo, returnState = null) => {
-  const response = await api.get(`/applications/${applicationId}`);
-  const application = response.data?.application;
-  const snapshot = application?.resumeSnapshot;
+  const snapshot = await preloadSubmittedResume(applicationId);
   if (!snapshot || typeof snapshot !== 'object' || !Object.keys(snapshot).length) {
     throw new Error('The submitted resume is not available for this application.');
   }

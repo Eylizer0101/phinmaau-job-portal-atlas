@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
-import openSubmittedResumePreview from '../../../components/jobseeker/openSubmittedResumePreview';
+import openSubmittedResumePreview, { preloadSubmittedResume } from '../../../components/jobseeker/openSubmittedResumePreview';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
@@ -1557,6 +1557,8 @@ const JobDetails = () => {
                 <div className="flex flex-col gap-2 w-full lg:w-[260px] shrink-0">
                   {hasApplied && hasSubmittedResumeSnapshot && submittedApplicationId && (
                     <button type="button"
+                      onMouseEnter={() => { preloadSubmittedResume(submittedApplicationId).catch(() => {}); }}
+                      onFocus={() => { preloadSubmittedResume(submittedApplicationId).catch(() => {}); }}
                       onClick={async () => {
                         try {
                           await openSubmittedResumePreview(submittedApplicationId, navigate, `/jobseeker/job-details/${id}`, location.state);

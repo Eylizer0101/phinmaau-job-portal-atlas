@@ -17,6 +17,7 @@ const {
   updateApplicationHiringStage,
   updateInterviewSchedule,
   getApplicationDetails,
+  getMySubmittedResume,
   downloadApplicationResume,
   getMyApplications,
   getMyAppliedJobIds,
@@ -49,6 +50,7 @@ router.post(
 );
 
 router.get('/my-applications', protect, authorize('jobseeker'), getMyApplications);
+router.get('/:applicationId/submitted-resume', protect, authorize('jobseeker'), getMySubmittedResume);
 router.get('/my-applied-job-ids', protect, authorize('jobseeker'), getMyAppliedJobIds);
 router.get('/my-job-statuses', protect, authorize('jobseeker'), getMyJobStatuses);
 router.get('/jobseeker/all', protect, authorize('jobseeker'), getJobseekerApplications);

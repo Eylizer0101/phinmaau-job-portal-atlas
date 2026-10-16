@@ -3519,6 +3519,36 @@ exports.downloadApplicationResume = async (req, res) => {
   }
 };
 
+// Fetch only the immutable submitted resume for its owner, avoiding the
+// full application-detail populations and employment-status queries.
+exports.getMySubmittedResume = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(applicationId)) {
+      return res.status(400).json({ message: 'Invalid application ID' });
+    }
+
+    const application = await Application.findOne({
+      _id: applicationId,
+      jobseeker: req.user._id,
+    })
+      .select('resumeSnapshot')
+      .lean();
+
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+    if (!application.resumeSnapshot || !Object.keys(application.resumeSnapshot).length) {
+      return res.status(404).json({ message: 'The submitted resume is not available for this application.' });
+    }
+
+    return res.status(200).json({ success: true, resumeSnapshot: application.resumeSnapshot });
+  } catch (error) {
+    console.error('Error fetching submitted resume:', error);
+    return res.status(500).json({ message: 'Unable to load submitted resume. Please try again.' });
+  }
+};
+
 // GET APPLICATION DETAILS
 exports.getApplicationDetails = async (req, res) => {
   try {
