@@ -2236,7 +2236,7 @@ exports.getAdminAnalytics = async (req, res) => {
           roles: analyticsCountRows(userRoleChartUsers, (item) => item.role),
           statuses: analyticsCountRows(users, (item) => item.status),
           verification: [
-            { name: 'verified', value: users.filter((item) => item.role !== 'admin' && analyticsVerificationStatus(item) === 'verified').length },
+            { name: 'verified', value: hasDashboardUserKpiFilters ? verifiedActiveUsers.length : totalRegisteredUsers },
             { name: 'pending', value: users.filter((item) => item.role !== 'admin' && ['pending', 'submitted'].includes(analyticsVerificationStatus(item))).length },
             { name: 'on hold', value: users.filter((item) => item.role !== 'admin' && analyticsVerificationStatus(item) === 'hold').length },
             { name: 'declined', value: users.filter((item) => item.role !== 'admin' && analyticsVerificationStatus(item) === 'rejected').length },
