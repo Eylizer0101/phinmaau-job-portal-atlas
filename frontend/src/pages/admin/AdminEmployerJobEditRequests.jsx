@@ -234,10 +234,28 @@ const requestRowName = (item = {}) =>
         companyName(item)
       );
 
+const resolveRequestImage = (value, folder = 'profile-images') => {
+  const photo = String(value || '').trim();
+  if (!photo) return '';
+  if (/^(https?:|data:|blob:)/i.test(photo)) return photo;
+  if (photo.startsWith('//')) return `${window.location.protocol}${photo}`;
+  const apiOrigin = String(api.defaults.baseURL || '').replace(/\/api\/?$/, '');
+  if (photo.startsWith('/')) return `${apiOrigin}${photo}`;
+  if (photo.startsWith('uploads/')) return `${apiOrigin}/${photo}`;
+  if (!photo.includes('/')) return `${apiOrigin}/uploads/${folder}/${photo}`;
+  return `${apiOrigin}/${photo}`;
+};
+
 const RequestProfileImage = ({ item, name }) => {
   const [failed, setFailed] = useState(false);
-  const person = item.rowType === 'status_request' ? item?.jobseeker : item?.employer;
-  const photo = person?.profileImage || person?.jobSeekerProfile?.profileImage || '';
+  const isJobseeker = item.rowType === 'status_request';
+  const person = isJobseeker ? item?.jobseeker : item?.employer;
+  const imageValue = isJobseeker
+    ? (person?.profileImage || person?.jobSeekerProfile?.profileImage || '')
+    : (person?.employerProfile?.companyLogo || item?.job?.companyLogo || person?.profileImage || '');
+  const photo = resolveRequestImage(imageValue, isJobseeker ? 'profile-images' : 'logos');
+
+  useEffect(() => setFailed(false), [photo]);
 
   return (
     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-500">

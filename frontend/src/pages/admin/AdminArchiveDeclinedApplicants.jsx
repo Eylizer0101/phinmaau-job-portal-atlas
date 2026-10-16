@@ -55,9 +55,21 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
   );
 };
 
+const resolveApplicantPhoto = (value) => {
+  const photo = String(value || '').trim();
+  if (!photo) return '';
+  if (/^(https?:|data:|blob:)/i.test(photo)) return photo;
+  const apiOrigin = String(api.defaults.baseURL || '').replace(/\/api\/?$/, '');
+  if (photo.startsWith('//')) return `${window.location.protocol}${photo}`;
+  if (photo.startsWith('/')) return `${apiOrigin}${photo}`;
+  if (photo.startsWith('uploads/')) return `${apiOrigin}/${photo}`;
+  if (!photo.includes('/')) return `${apiOrigin}/uploads/profile-images/${photo}`;
+  return `${apiOrigin}/${photo}`;
+};
+
 const ArchivedApplicantPhoto = ({ applicant }) => {
   const [failed, setFailed] = useState(false);
-  const photo = applicant?.profileImage || applicant?.jobseeker?.profileImage || '';
+  const photo = resolveApplicantPhoto(applicant?.profileImage || applicant?.jobseeker?.profileImage || '');
   return (
     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-500">
       {photo && !failed ? (
