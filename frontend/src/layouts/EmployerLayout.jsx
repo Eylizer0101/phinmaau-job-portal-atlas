@@ -76,6 +76,29 @@ const EmployerLayout = ({ children }) => {
       return null;
     }
   });
+  // Refresh the sidebar immediately when Company Profile changes its logo.
+  // The browser's storage event only fires in other tabs, so the custom event
+  // also handles updates within the current tab.
+  useEffect(() => {
+    const syncCompanyProfile = (event) => {
+      let user = event?.detail?.user;
+      if (!user) {
+        try { user = JSON.parse(localStorage.getItem('user') || 'null'); }
+        catch { user = null; }
+      }
+      if (user?.role === 'employer') {
+        setSidebarUser(user);
+        setSidebarAvatarFailed(false);
+      }
+    };
+    window.addEventListener('agapay:company-profile-updated', syncCompanyProfile);
+    window.addEventListener('storage', syncCompanyProfile);
+    return () => {
+      window.removeEventListener('agapay:company-profile-updated', syncCompanyProfile);
+      window.removeEventListener('storage', syncCompanyProfile);
+    };
+  }, []);
+
   const [sidebarAvatarFailed, setSidebarAvatarFailed] = useState(false);
   const sidebarProfileRef = useRef(null);
   const [openDropdowns, setOpenDropdowns] = useState({
