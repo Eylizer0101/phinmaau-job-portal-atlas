@@ -310,7 +310,13 @@ PHINMA Araullo University
 
 ## License
 
-No software license has been verified for this repository. **Unless a license is explicitly added, do not assume that the code is open source or that reuse, redistribution, or modification is permitted.** Contact the repository owner for permission or licensing questions.
+© 2026 Eylizer De Afria. All Rights Reserved.
+
+This project is provided publicly for educational, portfolio, viewing, and evaluation purposes only. **No permission is granted to copy, modify, redistribute, sublicense, or use the project commercially** without prior written permission from the relevant copyright holder(s).
+
+Public availability on GitHub does not make the project open source. Any license field in a `package.json` file should not be interpreted as a repository-wide permission grant. Third-party libraries, assets, and contributions remain subject to their own licenses and ownership rights.
+
+For permission inquiries, contact the repository owner through GitHub.
 
 ---
 
